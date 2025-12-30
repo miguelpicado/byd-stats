@@ -463,7 +463,7 @@ export default function BYDStatsAnalyzer() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between mb-3 sm:mb-4">
             <div className="flex items-center gap-2 sm:gap-3">
-              <img src="/byd-stats/byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
+              <img src="byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
               <div>
                 <h1 className="text-sm sm:text-base md:text-lg font-bold">Estadísticas BYD</h1>
                 <p className="text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
