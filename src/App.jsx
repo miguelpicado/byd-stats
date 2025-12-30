@@ -459,9 +459,9 @@ export default function BYDStatsAnalyzer() {
         </div>
       )}
 
-      <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50">
+      <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-          <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
               <img src="byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
               <div>
@@ -479,26 +479,10 @@ export default function BYDStatsAnalyzer() {
               <span className="sm:hidden">+</span>
             </button>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTab(t.id)}
-                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0"
-                style={{
-                  backgroundColor: activeTab === t.id ? BYD_RED : 'rgba(51,65,85,0.5)',
-                  color: activeTab === t.id ? 'white' : '#94a3b8'
-                }}
-              >
-                <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                {t.label}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24">
         <div className="bg-slate-800/50 rounded-2xl p-3 sm:p-4 border border-slate-700/50 mb-4 sm:mb-6">
           <div className="flex flex-wrap items-center gap-2 sm:gap-4">
             <Filter className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: BYD_RED }} />
@@ -804,9 +788,31 @@ export default function BYDStatsAnalyzer() {
         )}
       </div>
 
-      <footer className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-600 text-sm border-t border-slate-800 mt-8">
+      <footer className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-600 text-sm border-t border-slate-800 mt-8 mb-20">
         Estadísticas BYD
       </footer>
+
+      {/* Bottom Navigation Bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur border-t border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="max-w-7xl mx-auto px-2 py-2">
+          <div className="flex justify-around items-center">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
+                style={{
+                  backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
+                  color: activeTab === t.id ? BYD_RED : '#94a3b8'
+                }}
+              >
+                <t.icon className="w-6 h-6 mb-1" />
+                <span className="text-[10px] font-medium">{t.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
