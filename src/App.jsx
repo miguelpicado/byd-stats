@@ -182,6 +182,8 @@ export default function BYDStatsAnalyzer() {
   // Swipe gesture state
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   const isNative = Capacitor.isNativePlatform();
 
@@ -324,36 +326,65 @@ export default function BYDStatsAnalyzer() {
     { id: 'records', label: 'Récords', icon: BarChart3 }
   ];
 
-  // Swipe gesture handlers
-  const minSwipeDistance = 50;
+  // Swipe gesture handlers with smooth animation
+  const minSwipeDistance = 80;
+  const swipeThreshold = 0.3; // 30% of screen width
 
   const onTouchStart = (e) => {
+    if (isTransitioning) return;
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setSwipeOffset(0);
   };
 
   const onTouchMove = (e) => {
-    setTouchEnd(e.targetTouches[0].clientX);
+    if (!touchStart || isTransitioning) return;
+
+    const currentTouch = e.targetTouches[0].clientX;
+    const diff = currentTouch - touchStart;
+    const currentIndex = tabs.findIndex(t => t.id === activeTab);
+
+    // Limit swipe at boundaries
+    if ((currentIndex === 0 && diff > 0) || (currentIndex === tabs.length - 1 && diff < 0)) {
+      setSwipeOffset(diff * 0.2); // Reduced resistance at edges
+      return;
+    }
+
+    setSwipeOffset(diff);
+    setTouchEnd(currentTouch);
   };
 
   const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) return;
+    if (!touchStart || isTransitioning) {
+      setSwipeOffset(0);
+      return;
+    }
 
-    const distance = touchStart - touchEnd;
-    const isLeftSwipe = distance > minSwipeDistance;
-    const isRightSwipe = distance < -minSwipeDistance;
+    const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    const screenWidth = window.innerWidth;
+    const swipeDistance = touchEnd ? touchEnd - touchStart : 0;
+    const swipePercentage = Math.abs(swipeDistance) / screenWidth;
 
-    if (isLeftSwipe || isRightSwipe) {
-      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    setIsTransitioning(true);
 
-      if (isLeftSwipe && currentIndex < tabs.length - 1) {
-        // Swipe left = next tab (to the right)
+    // Determine if swipe is significant enough
+    if (swipePercentage > swipeThreshold || Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance < 0 && currentIndex < tabs.length - 1) {
+        // Swipe left = next tab
         setActiveTab(tabs[currentIndex + 1].id);
-      } else if (isRightSwipe && currentIndex > 0) {
-        // Swipe right = previous tab (to the left)
+      } else if (swipeDistance > 0 && currentIndex > 0) {
+        // Swipe right = previous tab
         setActiveTab(tabs[currentIndex - 1].id);
       }
     }
+
+    // Reset with animation
+    setTimeout(() => {
+      setSwipeOffset(0);
+      setTouchStart(null);
+      setTouchEnd(null);
+      setIsTransitioning(false);
+    }, 300);
   };
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
@@ -520,11 +551,20 @@ export default function BYDStatsAnalyzer() {
       </div>
 
       <div
-        className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24"
+        className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
+        style={{ touchAction: 'pan-y' }}
       >
+        <div
+          style={{
+            transform: `translateX(${swipeOffset}px)`,
+            transition: isTransitioning ? 'transform 0.3s cubic-bezier(0.4, 0.0, 0.2, 1)' : 'none',
+            willChange: 'transform',
+            userSelect: 'none'
+          }}
+        >
         {!data ? (
           <div className="text-center py-12 bg-slate-800/30 rounded-2xl">
             <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
@@ -757,6 +797,7 @@ export default function BYDStatsAnalyzer() {
             )}
           </>
         )}
+        </div>
       </div>
 
       <footer className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-600 text-sm border-t border-slate-800 mt-8 mb-20">
