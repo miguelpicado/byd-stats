@@ -43,18 +43,44 @@ jobs:
 
       - name: Verify dist folder
         run: |
-          ls -la dist/
-          echo "✅ Dist folder exists"
+          echo "📁 Checking dist folder..."
+          ls -la dist/ || echo "❌ dist folder not found!"
+          echo "Files in dist:"
+          find dist -type f | head -20
+          echo "✅ Dist folder verified"
+
+      - name: Debug - Check Capacitor config
+        run: |
+          echo "📝 Checking capacitor.config.json..."
+          cat capacitor.config.json
+          echo ""
+          echo "📦 Checking package.json Capacitor deps..."
+          cat package.json | grep -A 5 "@capacitor"
+
+      - name: Debug - Check Android folder
+        run: |
+          echo "📂 Android folder structure before sync:"
+          ls -la android/
+          echo ""
+          echo "📂 app folder:"
+          ls -la android/app/ || echo "app folder missing"
 
       - name: Sync Capacitor
         run: |
-          npx cap sync android
+          echo "🔄 Starting Capacitor sync..."
+          npx cap sync android --verbose
           echo "✅ Capacitor sync completed"
 
       - name: Verify Android project
         run: |
+          echo "🔍 Verifying sync results..."
           ls -la android/
-          ls -la android/app/src/main/assets/
+          echo ""
+          echo "📂 Assets folder:"
+          ls -la android/app/src/main/assets/ || echo "assets folder missing"
+          echo ""
+          echo "📂 Public folder:"
+          ls -la android/app/src/main/assets/public/ || echo "public folder missing"
           echo "✅ Android project ready"
 
       - name: Make gradlew executable
