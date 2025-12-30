@@ -30,13 +30,21 @@ public class MainActivity extends BridgeActivity {
             window.setStatusBarColor(0xFF0F172A); // #0f172a
         }
 
-        // Set status bar icons to light/white color (for dark background)
+        // FORCE white status bar icons (for dark background)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             View decorView = window.getDecorView();
-            // Clear the light status bar flag to make icons white
+            // Get current flags and ensure light status bar flag is NOT set
             int flags = decorView.getSystemUiVisibility();
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; // Remove light flag = white icons
+            // Remove light status bar flag if present (this makes icons white)
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            // Apply the flags
             decorView.setSystemUiVisibility(flags);
+
+            // Also use WindowInsetsController for Android 11+ (additional insurance)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                window.getInsetsController().setSystemBarsAppearance(0,
+                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
+            }
         }
     }
 }

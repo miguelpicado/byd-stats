@@ -179,6 +179,10 @@ export default function BYDStatsAnalyzer() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // Swipe gesture state
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
+
   const isNative = Capacitor.isNativePlatform();
 
   useEffect(() => {
@@ -319,6 +323,38 @@ export default function BYDStatsAnalyzer() {
     { id: 'efficiency', label: 'Eficiencia', icon: Zap },
     { id: 'records', label: 'Récords', icon: BarChart3 }
   ];
+
+  // Swipe gesture handlers
+  const minSwipeDistance = 50;
+
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+
+    if (isLeftSwipe || isRightSwipe) {
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+
+      if (isLeftSwipe && currentIndex < tabs.length - 1) {
+        // Swipe left = next tab (to the right)
+        setActiveTab(tabs[currentIndex + 1].id);
+      } else if (isRightSwipe && currentIndex > 0) {
+        // Swipe right = previous tab (to the left)
+        setActiveTab(tabs[currentIndex - 1].id);
+      }
+    }
+  };
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
     <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-700/50">
@@ -483,7 +519,12 @@ export default function BYDStatsAnalyzer() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24">
+      <div
+        className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24"
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
         {!data ? (
           <div className="text-center py-12 bg-slate-800/30 rounded-2xl">
             <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
