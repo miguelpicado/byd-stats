@@ -44,6 +44,8 @@ No soy un desarrollador experto, ¡estoy aquí para aprender! :-)
 
 ¡Ahora disponible como app nativa para Android! Con diseño responsive optimizado para móviles y tablets.
 
+> **Última actualización:** 2025-12-30 - Build automático configurado ✅
+
 ### 🚀 Obtener la APK
 
 **Opción 1: Descargar desde GitHub Actions (Recomendado)**
