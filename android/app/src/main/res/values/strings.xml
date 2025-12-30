@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">BYD Stats</string>
+    <string name="title_activity_main">BYD Stats</string>
+    <string name="package_name">com.bydstats.app</string>
+    <string name="custom_url_scheme">com.bydstats.app</string>
+</resources>

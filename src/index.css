@@ -9,3 +9,13 @@ body,
   height: 100%;
   margin: 0;
 }
+
+/* Ocultar scrollbar en navegación de tabs */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

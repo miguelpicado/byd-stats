@@ -5,6 +5,7 @@ import {
   AreaChart, Area, ScatterChart, Scatter, Legend,
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
+import { Capacitor } from '@capacitor/core';
 
 const BYD_RED = '#EA0029';
 
@@ -177,6 +178,8 @@ export default function BYDStatsAnalyzer() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  const isNative = Capacitor.isNativePlatform();
+
   useEffect(() => {
     try {
       const s = localStorage.getItem(STORAGE_KEY);
@@ -317,16 +320,16 @@ export default function BYDStatsAnalyzer() {
   ];
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
-    <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50">
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${color}`}>
-        <Icon className="w-5 h-5" />
+    <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-700/50">
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`}>
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
-      <p className="text-slate-400 text-sm">{label}</p>
-      <p className="text-2xl font-bold text-white">
+      <p className="text-slate-400 text-xs sm:text-sm">{label}</p>
+      <p className="text-xl sm:text-2xl font-bold text-white">
         {value}
-        <span className="text-slate-500 text-lg ml-1">{unit}</span>
+        <span className="text-slate-500 text-sm sm:text-lg ml-1">{unit}</span>
       </p>
-      {sub && <p className="text-sm mt-1" style={{ color: BYD_RED }}>{sub}</p>}
+      {sub && <p className="text-xs sm:text-sm mt-1" style={{ color: BYD_RED }}>{sub}</p>}
     </div>
   );
 
@@ -348,10 +351,10 @@ export default function BYDStatsAnalyzer() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
-          <p className="text-white text-xl">Procesando...</p>
+          <p className="text-white text-lg md:text-xl">Procesando...</p>
         </div>
       </div>
     );
@@ -362,9 +365,9 @@ export default function BYDStatsAnalyzer() {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-8">
-            <img src="byd_logo.png" className="w-48 h-auto mx-auto mb-6" alt="BYD Logo" />
-            <h1 className="text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
-            <p className="text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
+            <img src="byd_logo.png" className="w-32 sm:w-40 md:w-48 h-auto mx-auto mb-4 md:mb-6" alt="BYD Logo" />
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
+            <p className="text-sm sm:text-base text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
 
           {!sqlReady && !error && (
@@ -383,14 +386,14 @@ export default function BYDStatsAnalyzer() {
           )}
 
           <div
-            className="border-2 border-dashed rounded-3xl p-12 text-center transition-all cursor-pointer"
+            className="border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer"
             style={{
               borderColor: dragOver ? BYD_RED : '#475569',
               backgroundColor: dragOver ? 'rgba(234,0,41,0.1)' : 'transparent'
             }}
-            onDragOver={(e) => { if (sqlReady) { e.preventDefault(); setDragOver(true); } }}
-            onDragLeave={() => setDragOver(false)}
-            onDrop={(e) => sqlReady && onDrop(e, false)}
+            onDragOver={(e) => { if (sqlReady && !isNative) { e.preventDefault(); setDragOver(true); } }}
+            onDragLeave={() => !isNative && setDragOver(false)}
+            onDrop={(e) => !isNative && sqlReady && onDrop(e, false)}
             onClick={() => sqlReady && document.getElementById('fileInput')?.click()}
           >
             <input
@@ -407,12 +410,14 @@ export default function BYDStatsAnalyzer() {
             >
               <Upload className="w-8 h-8" style={{ color: dragOver ? 'white' : BYD_RED }} />
             </div>
-            <p className="text-white text-xl mb-2">
-              {sqlReady ? 'Arrastra tu archivo EC_database.db' : 'Preparando...'}
+            <p className="text-white text-lg sm:text-xl mb-2">
+              {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Arrastra tu archivo EC_database.db') : 'Preparando...'}
             </p>
-            <p className="text-slate-500 text-sm">o haz clic para seleccionar</p>
+            {!isNative && <p className="text-slate-500 text-sm">o haz clic para seleccionar</p>}
             <p className="text-slate-600 text-xs mt-4">
-              Puedes encontrar este archivo en la carpeta EnergyData de tu coche
+              {isNative
+                ? 'Busca el archivo EC_Database.db en el almacenamiento de tu dispositivo'
+                : 'Puedes encontrar este archivo en la carpeta EnergyData de tu coche'}
             </p>
           </div>
 
@@ -455,36 +460,37 @@ export default function BYDStatsAnalyzer() {
       )}
 
       <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50">
-        <div className="max-w-7xl mx-auto px-4 py-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <img src="/byd-stats/byd_logo.png" className="w-20 h-auto" alt="BYD Logo" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+          <div className="flex items-center justify-between mb-3 sm:mb-4">
+            <div className="flex items-center gap-2 sm:gap-3">
+              <img src="/byd-stats/byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
               <div>
-                <h1 className="text-lg font-bold">Estadísticas BYD</h1>
-                <p className="text-slate-500 text-sm">{rawTrips.length} viajes</p>
+                <h1 className="text-sm sm:text-base md:text-lg font-bold">Estadísticas BYD</h1>
+                <p className="text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
               </div>
             </div>
             <button
               onClick={() => setShowModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
+              className="flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm font-medium text-white"
               style={{ backgroundColor: BYD_RED }}
             >
-              <Plus className="w-4 h-4" />
-              Actualizar
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Actualizar</span>
+              <span className="sm:hidden">+</span>
             </button>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-3 px-3 sm:mx-0 sm:px-0">
             {tabs.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setActiveTab(t.id)}
-                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-colors"
+                className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap transition-colors flex-shrink-0"
                 style={{
                   backgroundColor: activeTab === t.id ? BYD_RED : 'rgba(51,65,85,0.5)',
                   color: activeTab === t.id ? 'white' : '#94a3b8'
                 }}
               >
-                <t.icon className="w-4 h-4" />
+                <t.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 {t.label}
               </button>
             ))}
@@ -492,46 +498,48 @@ export default function BYDStatsAnalyzer() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 mb-6">
-          <div className="flex flex-wrap items-center gap-4">
-            <Filter className="w-5 h-5" style={{ color: BYD_RED }} />
-            <span className="text-white font-medium">Filtrar:</span>
-            <button
-              onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
-              className="px-4 py-2 rounded-xl text-sm"
-              style={{
-                backgroundColor: filterType === 'all' ? BYD_RED : '#334155',
-                color: filterType === 'all' ? 'white' : '#94a3b8'
-              }}
-            >
-              Todo ({rawTrips.length})
-            </button>
-            <button
-              onClick={() => setFilterType('month')}
-              className="px-4 py-2 rounded-xl text-sm"
-              style={{
-                backgroundColor: filterType === 'month' ? BYD_RED : '#334155',
-                color: filterType === 'month' ? 'white' : '#94a3b8'
-              }}
-            >
-              Por mes
-            </button>
-            <button
-              onClick={() => setFilterType('range')}
-              className="px-4 py-2 rounded-xl text-sm"
-              style={{
-                backgroundColor: filterType === 'range' ? BYD_RED : '#334155',
-                color: filterType === 'range' ? 'white' : '#94a3b8'
-              }}
-            >
-              Rango
-            </button>
+      <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
+        <div className="bg-slate-800/50 rounded-2xl p-3 sm:p-4 border border-slate-700/50 mb-4 sm:mb-6">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+            <Filter className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: BYD_RED }} />
+            <span className="text-white font-medium text-sm sm:text-base">Filtrar:</span>
+            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+              <button
+                onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm"
+                style={{
+                  backgroundColor: filterType === 'all' ? BYD_RED : '#334155',
+                  color: filterType === 'all' ? 'white' : '#94a3b8'
+                }}
+              >
+                Todo ({rawTrips.length})
+              </button>
+              <button
+                onClick={() => setFilterType('month')}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm"
+                style={{
+                  backgroundColor: filterType === 'month' ? BYD_RED : '#334155',
+                  color: filterType === 'month' ? 'white' : '#94a3b8'
+                }}
+              >
+                Por mes
+              </button>
+              <button
+                onClick={() => setFilterType('range')}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm"
+                style={{
+                  backgroundColor: filterType === 'range' ? BYD_RED : '#334155',
+                  color: filterType === 'range' ? 'white' : '#94a3b8'
+                }}
+              >
+                Rango
+              </button>
+            </div>
             {filterType === 'month' && (
               <select
                 value={selMonth}
                 onChange={(e) => setSelMonth(e.target.value)}
-                className="bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600"
+                className="bg-slate-700 text-white rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-slate-600 text-xs sm:text-sm w-full sm:w-auto"
               >
                 <option value="">Todos</option>
                 {months.map((m) => (
@@ -540,24 +548,24 @@ export default function BYDStatsAnalyzer() {
               </select>
             )}
             {filterType === 'range' && (
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <input
                   type="date"
                   value={dateFrom}
                   onChange={(e) => setDateFrom(e.target.value)}
-                  className="bg-slate-700 text-white rounded-xl px-3 py-2 border border-slate-600"
+                  className="bg-slate-700 text-white rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border border-slate-600 text-xs sm:text-sm"
                 />
-                <span className="text-slate-500">-</span>
+                <span className="text-slate-500 text-center sm:text-left">-</span>
                 <input
                   type="date"
                   value={dateTo}
                   onChange={(e) => setDateTo(e.target.value)}
-                  className="bg-slate-700 text-white rounded-xl px-3 py-2 border border-slate-600"
+                  className="bg-slate-700 text-white rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border border-slate-600 text-xs sm:text-sm"
                 />
               </div>
             )}
             {filtered.length !== rawTrips.length && (
-              <span className="text-slate-400 text-sm">{filtered.length} viajes</span>
+              <span className="text-slate-400 text-xs sm:text-sm">{filtered.length} viajes</span>
             )}
           </div>
         </div>
@@ -570,23 +578,23 @@ export default function BYDStatsAnalyzer() {
         ) : (
           <>
             {activeTab === 'overview' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
                   <StatCard icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
                   <StatCard icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
                   <StatCard icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
                 </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                   <StatCard icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                   <StatCard icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
                   <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                 </div>
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                    <h3 className="text-lg font-semibold mb-4">Evolución Mensual</h3>
-                    <ResponsiveContainer width="100%" height={280}>
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
+                    <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={monthly}>
                         <defs>
                           <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -602,9 +610,9 @@ export default function BYDStatsAnalyzer() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                    <h3 className="text-lg font-semibold mb-4">Distribución de Viajes</h3>
-                    <ResponsiveContainer width="100%" height={280}>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
+                    <ResponsiveContainer width="100%" height={240}>
                       <PieChart>
                         <Pie
                           data={tripDist}
@@ -629,25 +637,25 @@ export default function BYDStatsAnalyzer() {
             )}
 
             {activeTab === 'trends' && (
-              <div className="space-y-6">
-                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                  <h3 className="text-lg font-semibold mb-4">Km y kWh Mensual</h3>
-                  <ResponsiveContainer width="100%" height={350}>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
+                  <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={monthly}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="monthLabel" stroke="#64748b" />
-                      <YAxis yAxisId="l" stroke={BYD_RED} />
-                      <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" />
+                      <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
+                      <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
+                      <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
                       <Tooltip content={<ChartTip />} />
-                      <Legend />
+                      <Legend wrapperStyle={{ fontSize: '12px' }} />
                       <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} />
                       <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                  <h3 className="text-lg font-semibold mb-4">Últimos 60 días</h3>
-                  <ResponsiveContainer width="100%" height={300}>
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos 60 días</h3>
+                  <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={daily.slice(-60)}>
                       <defs>
                         <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
@@ -667,23 +675,23 @@ export default function BYDStatsAnalyzer() {
             )}
 
             {activeTab === 'patterns' && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                    <h3 className="text-lg font-semibold mb-4">Por Hora</h3>
-                    <ResponsiveContainer width="100%" height={300}>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
+                    <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={hourly}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                        <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} />
-                        <YAxis stroke="#64748b" />
+                        <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
+                        <YAxis stroke="#64748b" fontSize={11} />
                         <Tooltip content={<ChartTip />} />
                         <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                    <h3 className="text-lg font-semibold mb-4">Por Día</h3>
-                    <ResponsiveContainer width="100%" height={300}>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
+                    <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
                         <PolarGrid stroke="#334155" />
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
@@ -694,12 +702,12 @@ export default function BYDStatsAnalyzer() {
                     </ResponsiveContainer>
                   </div>
                 </div>
-                <div className="grid grid-cols-7 gap-2">
+                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                   {weekday.map((d, i) => (
-                    <div key={i} className="bg-slate-800/50 rounded-xl p-3 text-center border border-slate-700/50">
-                      <p className="text-slate-400 text-xs">{d.day}</p>
-                      <p className="text-xl font-bold">{d.trips}</p>
-                      <p className="text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
+                    <div key={i} className="bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-700/50">
+                      <p className="text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
+                      <p className="text-base sm:text-xl font-bold">{d.trips}</p>
+                      <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
                     </div>
                   ))}
                 </div>
@@ -707,15 +715,15 @@ export default function BYDStatsAnalyzer() {
             )}
 
             {activeTab === 'efficiency' && (
-              <div className="space-y-6">
-                <div className="grid md:grid-cols-3 gap-4">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                   <StatCard icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
                   <StatCard icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                  <h3 className="text-lg font-semibold mb-4">Eficiencia vs Distancia</h3>
-                  <ResponsiveContainer width="100%" height={400}>
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
+                  <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis dataKey="km" name="km" unit=" km" stroke="#64748b" />
@@ -742,50 +750,50 @@ export default function BYDStatsAnalyzer() {
             )}
 
             {activeTab === 'records' && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-red-500/30">
-                    <p className="text-sm mb-1">🏆 Más largo</p>
-                    <p className="text-3xl font-bold">{summary.maxKm} <span className="text-lg text-slate-500">km</span></p>
+              <div className="space-y-4 sm:space-y-6">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
+                    <p className="text-xs sm:text-sm mb-1">🏆 Más largo</p>
+                    <p className="text-xl sm:text-3xl font-bold">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-cyan-500/30">
-                    <p className="text-sm mb-1">⚡ Mayor consumo</p>
-                    <p className="text-3xl font-bold">{summary.maxKwh} <span className="text-lg text-slate-500">kWh</span></p>
+                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-cyan-500/30">
+                    <p className="text-xs sm:text-sm mb-1">⚡ Mayor consumo</p>
+                    <p className="text-xl sm:text-3xl font-bold">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500">kWh</span></p>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-amber-500/30">
-                    <p className="text-sm mb-1">⏱️ Más duración</p>
-                    <p className="text-3xl font-bold">{summary.maxMin} <span className="text-lg text-slate-500">min</span></p>
+                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-500/30">
+                    <p className="text-xs sm:text-sm mb-1">⏱️ Más duración</p>
+                    <p className="text-xl sm:text-3xl font-bold">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500">min</span></p>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-purple-500/30">
-                    <p className="text-sm mb-1">📍 Más corto</p>
-                    <p className="text-3xl font-bold">{summary.minKm} <span className="text-lg text-slate-500">km</span></p>
+                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/30">
+                    <p className="text-xs sm:text-sm mb-1">📍 Más corto</p>
+                    <p className="text-xl sm:text-3xl font-bold">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
                   </div>
                 </div>
-                <div className="grid md:grid-cols-3 gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                    <h3 className="text-lg font-semibold mb-4 text-red-400">🥇 Top Distancia</h3>
+                <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-red-400">🥇 Top Distancia</h3>
                     {top.km.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
-                        <span className="text-slate-400 text-sm">{i + 1}. {formatDate(t.date)}</span>
-                        <span className="font-medium">{t.trip?.toFixed(1)} km</span>
+                        <span className="text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                        <span className="font-medium text-sm sm:text-base">{t.trip?.toFixed(1)} km</span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                    <h3 className="text-lg font-semibold mb-4 text-cyan-400">⚡ Top Consumo</h3>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-cyan-400">⚡ Top Consumo</h3>
                     {top.kwh.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
-                        <span className="text-slate-400 text-sm">{i + 1}. {formatDate(t.date)}</span>
-                        <span className="font-medium">{t.electricity?.toFixed(1)} kWh</span>
+                        <span className="text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                        <span className="font-medium text-sm sm:text-base">{t.electricity?.toFixed(1)} kWh</span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
-                    <h3 className="text-lg font-semibold mb-4 text-amber-400">⏱️ Top Duración</h3>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-amber-400">⏱️ Top Duración</h3>
                     {top.dur.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
-                        <span className="text-slate-400 text-sm">{i + 1}. {formatDate(t.date)}</span>
-                        <span className="font-medium">{((t.duration || 0) / 60).toFixed(0)} min</span>
+                        <span className="text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                        <span className="font-medium text-sm sm:text-base">{((t.duration || 0) / 60).toFixed(0)} min</span>
                       </div>
                     ))}
                   </div>
