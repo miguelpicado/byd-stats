@@ -173,6 +173,7 @@ export default function BYDStatsAnalyzer() {
   const [activeTab, setActiveTab] = useState('overview');
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
   const [filterType, setFilterType] = useState('all');
   const [selMonth, setSelMonth] = useState('');
   const [dateFrom, setDateFrom] = useState('');
@@ -483,77 +484,6 @@ export default function BYDStatsAnalyzer() {
       </div>
 
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24">
-        <div className="bg-slate-800/50 rounded-2xl p-3 sm:p-4 border border-slate-700/50 mb-4 sm:mb-6">
-          <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-            <Filter className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: BYD_RED }} />
-            <span className="text-white font-medium text-sm sm:text-base">Filtrar:</span>
-            <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-              <button
-                onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm"
-                style={{
-                  backgroundColor: filterType === 'all' ? BYD_RED : '#334155',
-                  color: filterType === 'all' ? 'white' : '#94a3b8'
-                }}
-              >
-                Todo ({rawTrips.length})
-              </button>
-              <button
-                onClick={() => setFilterType('month')}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm"
-                style={{
-                  backgroundColor: filterType === 'month' ? BYD_RED : '#334155',
-                  color: filterType === 'month' ? 'white' : '#94a3b8'
-                }}
-              >
-                Por mes
-              </button>
-              <button
-                onClick={() => setFilterType('range')}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs sm:text-sm"
-                style={{
-                  backgroundColor: filterType === 'range' ? BYD_RED : '#334155',
-                  color: filterType === 'range' ? 'white' : '#94a3b8'
-                }}
-              >
-                Rango
-              </button>
-            </div>
-            {filterType === 'month' && (
-              <select
-                value={selMonth}
-                onChange={(e) => setSelMonth(e.target.value)}
-                className="bg-slate-700 text-white rounded-xl px-3 sm:px-4 py-1.5 sm:py-2 border border-slate-600 text-xs sm:text-sm w-full sm:w-auto"
-              >
-                <option value="">Todos</option>
-                {months.map((m) => (
-                  <option key={m} value={m}>{formatMonth(m)}</option>
-                ))}
-              </select>
-            )}
-            {filterType === 'range' && (
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                  className="bg-slate-700 text-white rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border border-slate-600 text-xs sm:text-sm"
-                />
-                <span className="text-slate-500 text-center sm:text-left">-</span>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                  className="bg-slate-700 text-white rounded-xl px-2 sm:px-3 py-1.5 sm:py-2 border border-slate-600 text-xs sm:text-sm"
-                />
-              </div>
-            )}
-            {filtered.length !== rawTrips.length && (
-              <span className="text-slate-400 text-xs sm:text-sm">{filtered.length} viajes</span>
-            )}
-          </div>
-        </div>
-
         {!data ? (
           <div className="text-center py-12 bg-slate-800/30 rounded-2xl">
             <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
@@ -791,6 +721,132 @@ export default function BYDStatsAnalyzer() {
       <footer className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-600 text-sm border-t border-slate-800 mt-8 mb-20">
         Estadísticas BYD
       </footer>
+
+      {/* Floating Filter Button */}
+      <button
+        onClick={() => setShowFilterModal(true)}
+        className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
+        style={{ backgroundColor: BYD_RED }}
+      >
+        <Filter className="w-6 h-6 text-white" />
+      </button>
+
+      {/* Filter Modal */}
+      {showFilterModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowFilterModal(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div className="relative bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5" style={{ color: BYD_RED }} />
+                <h2 className="text-xl font-bold text-white">Filtrar viajes</h2>
+              </div>
+              <button onClick={() => setShowFilterModal(false)} className="text-slate-400 hover:text-white">
+                <Plus className="w-6 h-6 rotate-45" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Filter Type Buttons */}
+              <div className="space-y-2">
+                <label className="text-slate-400 text-sm">Tipo de filtro:</label>
+                <div className="flex flex-col gap-2">
+                  <button
+                    onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
+                    className="px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left"
+                    style={{
+                      backgroundColor: filterType === 'all' ? BYD_RED : '#334155',
+                      color: filterType === 'all' ? 'white' : '#94a3b8'
+                    }}
+                  >
+                    📊 Todos los viajes ({rawTrips.length})
+                  </button>
+                  <button
+                    onClick={() => setFilterType('month')}
+                    className="px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left"
+                    style={{
+                      backgroundColor: filterType === 'month' ? BYD_RED : '#334155',
+                      color: filterType === 'month' ? 'white' : '#94a3b8'
+                    }}
+                  >
+                    📅 Por mes
+                  </button>
+                  <button
+                    onClick={() => setFilterType('range')}
+                    className="px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left"
+                    style={{
+                      backgroundColor: filterType === 'range' ? BYD_RED : '#334155',
+                      color: filterType === 'range' ? 'white' : '#94a3b8'
+                    }}
+                  >
+                    📆 Rango de fechas
+                  </button>
+                </div>
+              </div>
+
+              {/* Month Selector */}
+              {filterType === 'month' && (
+                <div className="space-y-2">
+                  <label className="text-slate-400 text-sm">Seleccionar mes:</label>
+                  <select
+                    value={selMonth}
+                    onChange={(e) => setSelMonth(e.target.value)}
+                    className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                  >
+                    <option value="">Todos los meses</option>
+                    {months.map((m) => (
+                      <option key={m} value={m}>{formatMonth(m)}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* Date Range Selector */}
+              {filterType === 'range' && (
+                <div className="space-y-2">
+                  <label className="text-slate-400 text-sm">Rango de fechas:</label>
+                  <div className="flex flex-col gap-2">
+                    <input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                      placeholder="Desde"
+                    />
+                    <input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                      placeholder="Hasta"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Results Count */}
+              {filtered.length !== rawTrips.length && (
+                <div className="pt-4 border-t border-slate-700">
+                  <p className="text-center text-sm">
+                    <span className="text-slate-400">Mostrando </span>
+                    <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
+                    <span className="text-slate-400"> de {rawTrips.length} viajes</span>
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Apply Button */}
+            <button
+              onClick={() => setShowFilterModal(false)}
+              className="w-full mt-6 py-3 rounded-xl font-medium text-white"
+              style={{ backgroundColor: BYD_RED }}
+            >
+              Aplicar filtro
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Navigation Bar */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur border-t border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
