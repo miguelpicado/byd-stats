@@ -94,7 +94,7 @@ jobs:
       - name: Try Capacitor sync with FULL output
         run: |
           echo "🔄 Attempting Capacitor sync with verbose logging..."
-          npx cap sync android --verbose 2>&1 | tee capacitor-sync.log
+          npx cap sync android 2>&1 | tee capacitor-sync.log
           echo ""
           echo "📄 Full sync log above ☝️"
 
