@@ -1,0 +1,804 @@
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import {
+  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  AreaChart, Area, ScatterChart, Scatter, Legend,
+  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
+} from 'recharts';
+
+const BYD_RED = '#EA0029';
+
+const BYDLogo = ({ className }) => (
+  <svg className={className} viewBox="0 0 200 60" fill={BYD_RED}>
+    <rect x="0" y="0" width="8" height="60" rx="2" />
+    <rect x="0" y="0" width="45" height="8" rx="2" />
+    <rect x="0" y="26" width="40" height="8" rx="2" />
+    <rect x="0" y="52" width="45" height="8" rx="2" />
+    <path d="M37 0 H45 Q55 0 55 13 Q55 26 45 26 H37 V18 H43 Q47 18 47 13 Q47 8 43 8 H37 Z" />
+    <path d="M32 26 H45 Q55 26 55 39 Q55 52 45 52 H32 V44 H43 Q47 44 47 39 Q47 34 43 34 H32 Z" />
+    <path d="M70 0 L85 25 L100 0 H110 L90 35 V60 H80 V35 L60 0 Z" />
+    <rect x="120" y="0" width="8" height="60" rx="2" />
+    <path d="M120 0 H155 Q180 0 180 30 Q180 60 155 60 H120 V52 H153 Q170 52 170 30 Q170 8 153 8 H120 Z" />
+  </svg>
+);
+
+const Battery = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="6" width="18" height="12" rx="2" /><line x1="23" y1="10" x2="23" y2="14" /></svg>;
+const Zap = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>;
+const MapPin = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>;
+const Clock = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>;
+const TrendingUp = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>;
+const Calendar = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>;
+const Upload = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>;
+const Car = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2" /><circle cx="6.5" cy="16.5" r="2.5" /><circle cx="16.5" cy="16.5" r="2.5" /></svg>;
+const Activity = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
+const BarChart3 = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>;
+const AlertCircle = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>;
+const Filter = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
+const Plus = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>;
+
+const STORAGE_KEY = 'byd_stats_data';
+
+const formatMonth = (m) => {
+  if (!m || m.length < 6) return m || '';
+  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  return months[parseInt(m.slice(4, 6), 10) - 1] + ' ' + m.slice(0, 4);
+};
+
+const formatDate = (d) => {
+  if (!d || d.length < 8) return d || '';
+  return d.slice(6, 8) + '/' + d.slice(4, 6) + '/' + d.slice(0, 4);
+};
+
+function processData(rows) {
+  if (!rows || rows.length === 0) return null;
+  const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
+  if (trips.length === 0) return null;
+
+  const totalKm = trips.reduce((s, r) => s + (r.trip || 0), 0);
+  const totalKwh = trips.reduce((s, r) => s + (r.electricity || 0), 0);
+  const totalDuration = trips.reduce((s, r) => s + (r.duration || 0), 0);
+  if (totalKm === 0) return null;
+
+  const monthlyData = {};
+  const dailyData = {};
+  const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
+  const weekdayData = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => ({ day: d, trips: 0, km: 0 }));
+
+  trips.forEach(trip => {
+    const m = trip.month || 'unknown';
+    if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
+    monthlyData[m].trips++;
+    monthlyData[m].km += trip.trip || 0;
+    monthlyData[m].kwh += trip.electricity || 0;
+
+    const d = trip.date || 'unknown';
+    if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
+    dailyData[d].trips++;
+    dailyData[d].km += trip.trip || 0;
+    dailyData[d].kwh += trip.electricity || 0;
+
+    if (trip.start_timestamp) {
+      try {
+        const dt = new Date(trip.start_timestamp * 1000);
+        const h = dt.getHours();
+        const w = dt.getDay();
+        hourlyData[h].trips++;
+        hourlyData[h].km += trip.trip || 0;
+        weekdayData[w].trips++;
+        weekdayData[w].km += trip.trip || 0;
+      } catch (e) {
+        console.error('Error processing timestamp:', e);
+      }
+    }
+  });
+
+  const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
+  monthlyArray.forEach(m => {
+    m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
+    m.monthLabel = formatMonth(m.month);
+  });
+
+  const dailyArray = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+  dailyArray.forEach(d => {
+    d.efficiency = d.km > 0 ? (d.kwh / d.km * 100) : 0;
+    d.dateLabel = formatDate(d.date);
+  });
+
+  const tripDistribution = [
+    { range: '0-5', count: 0, color: '#06b6d4' },
+    { range: '5-15', count: 0, color: '#10b981' },
+    { range: '15-30', count: 0, color: '#f59e0b' },
+    { range: '30-50', count: 0, color: BYD_RED },
+    { range: '50+', count: 0, color: '#8b5cf6' }
+  ];
+  trips.forEach(t => {
+    const km = t.trip || 0;
+    if (km <= 5) tripDistribution[0].count++;
+    else if (km <= 15) tripDistribution[1].count++;
+    else if (km <= 30) tripDistribution[2].count++;
+    else if (km <= 50) tripDistribution[3].count++;
+    else tripDistribution[4].count++;
+  });
+
+  const efficiencyScatter = trips
+    .filter(t => t.trip > 0 && t.electricity > 0)
+    .map(t => ({ km: t.trip, eff: (t.electricity / t.trip) * 100 }))
+    .filter(t => t.eff > 0 && t.eff < 50);
+
+  const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
+  const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
+  const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
+  const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
+  const sorted = [...trips].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+  return {
+    summary: {
+      totalTrips: trips.length,
+      totalKm: totalKm.toFixed(1),
+      totalKwh: totalKwh.toFixed(1),
+      totalHours: (totalDuration / 3600).toFixed(1),
+      avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
+      avgKm: (totalKm / trips.length).toFixed(1),
+      avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
+      avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
+      daysActive,
+      dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
+      maxKm: sortedByKm[0]?.trip?.toFixed(1) || '0',
+      minKm: sortedByKm[sortedByKm.length - 1]?.trip?.toFixed(1) || '0',
+      maxKwh: sortedByKwh[0]?.electricity?.toFixed(1) || '0',
+      maxMin: ((sortedByDur[0]?.duration || 0) / 60).toFixed(0),
+      tripsDay: (trips.length / daysActive).toFixed(1),
+      kmDay: (totalKm / daysActive).toFixed(1)
+    },
+    monthly: monthlyArray,
+    daily: dailyArray,
+    hourly: hourlyData,
+    weekday: weekdayData,
+    tripDist: tripDistribution,
+    effScatter: efficiencyScatter,
+    top: {
+      km: sortedByKm.slice(0, 10),
+      kwh: sortedByKwh.slice(0, 10),
+      dur: sortedByDur.slice(0, 10)
+    }
+  };
+}
+
+export default function BYDStatsAnalyzer() {
+  const [rawTrips, setRawTrips] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [sqlReady, setSqlReady] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
+  const [dragOver, setDragOver] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [filterType, setFilterType] = useState('all');
+  const [selMonth, setSelMonth] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem(STORAGE_KEY);
+      if (s) {
+        const p = JSON.parse(s);
+        if (Array.isArray(p) && p.length > 0) setRawTrips(p);
+      }
+    } catch (e) {
+      console.error('Error loading from localStorage:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (rawTrips.length > 0) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(rawTrips));
+      } catch (e) {
+        console.error('Error saving to localStorage:', e);
+      }
+    }
+  }, [rawTrips]);
+
+  useEffect(() => {
+    const sc = document.createElement('script');
+    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js';
+    sc.onload = async () => {
+      try {
+        window.SQL = await window.initSqlJs({
+          locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
+        });
+        setSqlReady(true);
+      } catch (e) {
+        setError('Error cargando SQL.js');
+        console.error('SQL.js load error:', e);
+      }
+    };
+    sc.onerror = () => {
+      setError('Error cargando SQL.js');
+    };
+    document.head.appendChild(sc);
+
+    return () => {
+      if (sc.parentNode) {
+        sc.parentNode.removeChild(sc);
+      }
+    };
+  }, []);
+
+  const months = useMemo(() => {
+    return [...new Set(rawTrips.map(t => t.month).filter(Boolean))].sort();
+  }, [rawTrips]);
+
+  const filtered = useMemo(() => {
+    if (rawTrips.length === 0) return [];
+    if (filterType === 'month' && selMonth) {
+      return rawTrips.filter(t => t.month === selMonth);
+    }
+    if (filterType === 'range') {
+      let r = [...rawTrips];
+      if (dateFrom) r = r.filter(t => t.date >= dateFrom.replace(/-/g, ''));
+      if (dateTo) r = r.filter(t => t.date <= dateTo.replace(/-/g, ''));
+      return r;
+    }
+    return rawTrips;
+  }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
+
+  const data = useMemo(() => {
+    return filtered.length > 0 ? processData(filtered) : null;
+  }, [filtered]);
+
+  const processDB = useCallback(async (file, merge = false) => {
+    if (!window.SQL) {
+      setError('SQL no está listo');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    try {
+      const buf = await file.arrayBuffer();
+      const db = new window.SQL.Database(new Uint8Array(buf));
+      const t = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='EnergyConsumption'");
+      if (!t.length || !t[0].values.length) throw new Error('Tabla no encontrada');
+      const res = db.exec("SELECT * FROM EnergyConsumption WHERE is_deleted = 0 ORDER BY date, start_timestamp");
+      if (res.length && res[0].values.length) {
+        const cols = res[0].columns;
+        const rows = res[0].values.map(r => {
+          const o = {};
+          cols.forEach((c, i) => { o[c] = r[i]; });
+          return o;
+        });
+        if (merge && rawTrips.length) {
+          const map = new Map();
+          rawTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
+          rows.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
+          setRawTrips(Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+        } else {
+          setRawTrips(rows);
+        }
+        setShowModal(false);
+      } else {
+        throw new Error('Sin datos');
+      }
+      db.close();
+    } catch (e) {
+      setError(e.message);
+      console.error('Database processing error:', e);
+    } finally {
+      setLoading(false);
+    }
+  }, [rawTrips]);
+
+  const onDrop = useCallback((e, merge) => {
+    e.preventDefault();
+    setDragOver(false);
+    const f = e.dataTransfer.files[0];
+    if (f) processDB(f, merge);
+  }, [processDB]);
+
+  const onFile = useCallback((e, merge) => {
+    const f = e.target.files[0];
+    if (f) processDB(f, merge);
+    e.target.value = '';
+  }, [processDB]);
+
+  const clearData = () => {
+    if (window.confirm('¿Borrar todos los datos?')) {
+      setRawTrips([]);
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Resumen', icon: Activity },
+    { id: 'trends', label: 'Tendencias', icon: TrendingUp },
+    { id: 'patterns', label: 'Patrones', icon: Clock },
+    { id: 'efficiency', label: 'Eficiencia', icon: Zap },
+    { id: 'records', label: 'Récords', icon: BarChart3 }
+  ];
+
+  const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
+    <div className="bg-slate-800/50 rounded-2xl p-5 border border-slate-700/50">
+      <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${color}`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <p className="text-slate-400 text-sm">{label}</p>
+      <p className="text-2xl font-bold text-white">
+        {value}
+        <span className="text-slate-500 text-lg ml-1">{unit}</span>
+      </p>
+      {sub && <p className="text-sm mt-1" style={{ color: BYD_RED }}>{sub}</p>}
+    </div>
+  );
+
+  const ChartTip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-slate-800 border border-slate-600 rounded-xl p-3">
+          <p className="text-white font-medium mb-1">{label}</p>
+          {payload.map((p, i) => (
+            <p key={i} style={{ color: p.color }} className="text-sm">
+              {p.name}: {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}
+            </p>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
+          <p className="text-white text-xl">Procesando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (rawTrips.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
+        <div className="w-full max-w-xl">
+          <div className="text-center mb-8">
+            <BYDLogo className="w-48 h-16 mx-auto mb-6" />
+            <h1 className="text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
+            <p className="text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
+          </div>
+
+          {!sqlReady && !error && (
+            <div className="text-center mb-6">
+              <div className="inline-flex items-center gap-3 px-4 py-2 bg-slate-800/50 rounded-xl">
+                <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
+                <span className="text-slate-400">Cargando...</span>
+              </div>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
+              <p style={{ color: BYD_RED }}>{error}</p>
+            </div>
+          )}
+
+          <div
+            className="border-2 border-dashed rounded-3xl p-12 text-center transition-all cursor-pointer"
+            style={{
+              borderColor: dragOver ? BYD_RED : '#475569',
+              backgroundColor: dragOver ? 'rgba(234,0,41,0.1)' : 'transparent'
+            }}
+            onDragOver={(e) => { if (sqlReady) { e.preventDefault(); setDragOver(true); } }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => sqlReady && onDrop(e, false)}
+            onClick={() => sqlReady && document.getElementById('fileInput')?.click()}
+          >
+            <input
+              id="fileInput"
+              type="file"
+              accept=".db"
+              className="hidden"
+              onChange={(e) => onFile(e, false)}
+              disabled={!sqlReady}
+            />
+            <div
+              className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center"
+              style={{ backgroundColor: dragOver ? BYD_RED : '#334155' }}
+            >
+              <Upload className="w-8 h-8" style={{ color: dragOver ? 'white' : BYD_RED }} />
+            </div>
+            <p className="text-white text-xl mb-2">
+              {sqlReady ? 'Arrastra tu archivo EC_database.db' : 'Preparando...'}
+            </p>
+            <p className="text-slate-500 text-sm">o haz clic para seleccionar</p>
+            <p className="text-slate-600 text-xs mt-4">
+              Puedes encontrar este archivo en la carpeta EnergyData de tu coche
+            </p>
+          </div>
+
+          {sqlReady && (
+            <p className="text-center mt-4 text-sm" style={{ color: BYD_RED }}>
+              ✓ Listo para cargar datos
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  const { summary, monthly, daily, hourly, weekday, tripDist, effScatter, top } = data || {};
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+      {showModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
+          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold mb-4">Actualizar datos</h3>
+            <div className="space-y-3">
+              <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
+                <input type="file" accept=".db" className="hidden" onChange={(e) => onFile(e, true)} />
+                <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
+                <p className="text-white">Combinar con existentes</p>
+              </label>
+              <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
+                <input type="file" accept=".db" className="hidden" onChange={(e) => onFile(e, false)} />
+                <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
+                <p className="text-white">Reemplazar todo</p>
+              </label>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button onClick={() => setShowModal(false)} className="flex-1 py-2 bg-slate-700 rounded-xl hover:bg-slate-600">Cancelar</button>
+              <button onClick={clearData} className="py-2 px-4 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30">Borrar todo</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-3">
+              <BYDLogo className="w-20 h-8" />
+              <div>
+                <h1 className="text-lg font-bold">Estadísticas BYD</h1>
+                <p className="text-slate-500 text-sm">{rawTrips.length} viajes</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white"
+              style={{ backgroundColor: BYD_RED }}
+            >
+              <Plus className="w-4 h-4" />
+              Actualizar
+            </button>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setActiveTab(t.id)}
+                className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm whitespace-nowrap transition-colors"
+                style={{
+                  backgroundColor: activeTab === t.id ? BYD_RED : 'rgba(51,65,85,0.5)',
+                  color: activeTab === t.id ? 'white' : '#94a3b8'
+                }}
+              >
+                <t.icon className="w-4 h-4" />
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        <div className="bg-slate-800/50 rounded-2xl p-4 border border-slate-700/50 mb-6">
+          <div className="flex flex-wrap items-center gap-4">
+            <Filter className="w-5 h-5" style={{ color: BYD_RED }} />
+            <span className="text-white font-medium">Filtrar:</span>
+            <button
+              onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
+              className="px-4 py-2 rounded-xl text-sm"
+              style={{
+                backgroundColor: filterType === 'all' ? BYD_RED : '#334155',
+                color: filterType === 'all' ? 'white' : '#94a3b8'
+              }}
+            >
+              Todo ({rawTrips.length})
+            </button>
+            <button
+              onClick={() => setFilterType('month')}
+              className="px-4 py-2 rounded-xl text-sm"
+              style={{
+                backgroundColor: filterType === 'month' ? BYD_RED : '#334155',
+                color: filterType === 'month' ? 'white' : '#94a3b8'
+              }}
+            >
+              Por mes
+            </button>
+            <button
+              onClick={() => setFilterType('range')}
+              className="px-4 py-2 rounded-xl text-sm"
+              style={{
+                backgroundColor: filterType === 'range' ? BYD_RED : '#334155',
+                color: filterType === 'range' ? 'white' : '#94a3b8'
+              }}
+            >
+              Rango
+            </button>
+            {filterType === 'month' && (
+              <select
+                value={selMonth}
+                onChange={(e) => setSelMonth(e.target.value)}
+                className="bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600"
+              >
+                <option value="">Todos</option>
+                {months.map((m) => (
+                  <option key={m} value={m}>{formatMonth(m)}</option>
+                ))}
+              </select>
+            )}
+            {filterType === 'range' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="bg-slate-700 text-white rounded-xl px-3 py-2 border border-slate-600"
+                />
+                <span className="text-slate-500">-</span>
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="bg-slate-700 text-white rounded-xl px-3 py-2 border border-slate-600"
+                />
+              </div>
+            )}
+            {filtered.length !== rawTrips.length && (
+              <span className="text-slate-400 text-sm">{filtered.length} viajes</span>
+            )}
+          </div>
+        </div>
+
+        {!data ? (
+          <div className="text-center py-12 bg-slate-800/30 rounded-2xl">
+            <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
+            <p className="text-slate-400">No hay datos para mostrar</p>
+          </div>
+        ) : (
+          <>
+            {activeTab === 'overview' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <StatCard icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
+                  <StatCard icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                  <StatCard icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
+                  <StatCard icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                  <StatCard icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                  <StatCard icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
+                  <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
+                </div>
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                    <h3 className="text-lg font-semibold mb-4">Evolución Mensual</h3>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <AreaChart data={monthly}>
+                        <defs>
+                          <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor={BYD_RED} stopOpacity={0.4} />
+                            <stop offset="95%" stopColor={BYD_RED} stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
+                        <YAxis stroke="#64748b" fontSize={12} />
+                        <Tooltip content={<ChartTip />} />
+                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                    <h3 className="text-lg font-semibold mb-4">Distribución de Viajes</h3>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={tripDist}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          paddingAngle={3}
+                          dataKey="count"
+                          label={({ range, count }) => count > 0 ? `${range} km` : ''}
+                        >
+                          {tripDist.map((e, i) => (
+                            <Cell key={`cell-${i}`} fill={e.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip content={<ChartTip />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'trends' && (
+              <div className="space-y-6">
+                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                  <h3 className="text-lg font-semibold mb-4">Km y kWh Mensual</h3>
+                  <ResponsiveContainer width="100%" height={350}>
+                    <BarChart data={monthly}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="monthLabel" stroke="#64748b" />
+                      <YAxis yAxisId="l" stroke={BYD_RED} />
+                      <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" />
+                      <Tooltip content={<ChartTip />} />
+                      <Legend />
+                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} />
+                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                  <h3 className="text-lg font-semibold mb-4">Últimos 60 días</h3>
+                  <ResponsiveContainer width="100%" height={300}>
+                    <AreaChart data={daily.slice(-60)}>
+                      <defs>
+                        <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
+                          <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
+                      <YAxis stroke="#64748b" />
+                      <Tooltip content={<ChartTip />} />
+                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'patterns' && (
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                    <h3 className="text-lg font-semibold mb-4">Por Hora</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={hourly}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} />
+                        <YAxis stroke="#64748b" />
+                        <Tooltip content={<ChartTip />} />
+                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                    <h3 className="text-lg font-semibold mb-4">Por Día</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <RadarChart data={weekday}>
+                        <PolarGrid stroke="#334155" />
+                        <PolarAngleAxis dataKey="day" stroke="#64748b" />
+                        <PolarRadiusAxis stroke="#64748b" />
+                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" />
+                        <Tooltip content={<ChartTip />} />
+                      </RadarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                <div className="grid grid-cols-7 gap-2">
+                  {weekday.map((d, i) => (
+                    <div key={i} className="bg-slate-800/50 rounded-xl p-3 text-center border border-slate-700/50">
+                      <p className="text-slate-400 text-xs">{d.day}</p>
+                      <p className="text-xl font-bold">{d.trips}</p>
+                      <p className="text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'efficiency' && (
+              <div className="space-y-6">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                  <StatCard icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                  <StatCard icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
+                </div>
+                <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                  <h3 className="text-lg font-semibold mb-4">Eficiencia vs Distancia</h3>
+                  <ResponsiveContainer width="100%" height={400}>
+                    <ScatterChart>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <XAxis dataKey="km" name="km" unit=" km" stroke="#64748b" />
+                      <YAxis dataKey="eff" name="kWh/100km" stroke="#64748b" />
+                      <Tooltip
+                        cursor={{ strokeDasharray: '3 3' }}
+                        content={({ active, payload }) => {
+                          if (active && payload && payload.length) {
+                            return (
+                              <div className="bg-slate-800 border border-slate-600 rounded-xl p-3">
+                                <p className="text-white">{payload[0]?.value?.toFixed(1)} km</p>
+                                <p style={{ color: BYD_RED }}>{payload[1]?.value?.toFixed(2)} kWh/100km</p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }}
+                      />
+                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} />
+                    </ScatterChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'records' && (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-red-500/30">
+                    <p className="text-sm mb-1">🏆 Más largo</p>
+                    <p className="text-3xl font-bold">{summary.maxKm} <span className="text-lg text-slate-500">km</span></p>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-cyan-500/30">
+                    <p className="text-sm mb-1">⚡ Mayor consumo</p>
+                    <p className="text-3xl font-bold">{summary.maxKwh} <span className="text-lg text-slate-500">kWh</span></p>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-amber-500/30">
+                    <p className="text-sm mb-1">⏱️ Más duración</p>
+                    <p className="text-3xl font-bold">{summary.maxMin} <span className="text-lg text-slate-500">min</span></p>
+                  </div>
+                  <div className="bg-slate-800/50 rounded-2xl p-5 border border-purple-500/30">
+                    <p className="text-sm mb-1">📍 Más corto</p>
+                    <p className="text-3xl font-bold">{summary.minKm} <span className="text-lg text-slate-500">km</span></p>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-3 gap-6">
+                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                    <h3 className="text-lg font-semibold mb-4 text-red-400">🥇 Top Distancia</h3>
+                    {top.km.map((t, i) => (
+                      <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
+                        <span className="text-slate-400 text-sm">{i + 1}. {formatDate(t.date)}</span>
+                        <span className="font-medium">{t.trip?.toFixed(1)} km</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                    <h3 className="text-lg font-semibold mb-4 text-cyan-400">⚡ Top Consumo</h3>
+                    {top.kwh.map((t, i) => (
+                      <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
+                        <span className="text-slate-400 text-sm">{i + 1}. {formatDate(t.date)}</span>
+                        <span className="font-medium">{t.electricity?.toFixed(1)} kWh</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-slate-800/50 rounded-2xl p-6 border border-slate-700/50">
+                    <h3 className="text-lg font-semibold mb-4 text-amber-400">⏱️ Top Duración</h3>
+                    {top.dur.map((t, i) => (
+                      <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
+                        <span className="text-slate-400 text-sm">{i + 1}. {formatDate(t.date)}</span>
+                        <span className="font-medium">{((t.duration || 0) / 60).toFixed(0)} min</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      <footer className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-600 text-sm border-t border-slate-800 mt-8">
+        Estadísticas BYD
+      </footer>
+    </div>
+  );
+}
