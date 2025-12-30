@@ -6,12 +6,14 @@ on:
       - main
       - master
       - develop
+      - 'claude/**'
     tags:
       - 'v*'
   pull_request:
     branches:
       - main
       - master
+      - 'claude/**'
   workflow_dispatch:
 
 jobs:
