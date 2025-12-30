@@ -86,11 +86,14 @@ jobs:
           ls -la android/app/src/main/assets/public/ || echo "public folder missing"
           echo "✅ Android project ready"
 
-      - name: Install Android SDK Platform 36
+      - name: Accept Android SDK licenses
+        run: yes | ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Install Android SDK Platform 35
         run: |
-          echo "📦 Installing Android SDK Platform 36..."
-          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-36"
-          echo "✅ Android SDK 36 installed"
+          echo "📦 Installing Android SDK Platform 35..."
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager "platforms;android-35" "build-tools;34.0.0"
+          echo "✅ Android SDK 35 installed"
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
