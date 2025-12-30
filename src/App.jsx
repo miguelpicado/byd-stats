@@ -362,7 +362,7 @@ export default function BYDStatsAnalyzer() {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-8">
-            <img src="/byd-stats/byd_logo.png" className="w-48 h-auto mx-auto mb-6" alt="BYD Logo" />
+            <img src="byd_logo.png" className="w-48 h-auto mx-auto mb-6" alt="BYD Logo" />
             <h1 className="text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
             <p className="text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
