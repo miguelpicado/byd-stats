@@ -86,6 +86,12 @@ jobs:
           ls -la android/app/src/main/assets/public/ || echo "public folder missing"
           echo "✅ Android project ready"
 
+      - name: Install Android SDK Platform 36
+        run: |
+          echo "📦 Installing Android SDK Platform 36..."
+          ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "platforms;android-36"
+          echo "✅ Android SDK 36 installed"
+
       - name: Make gradlew executable
         run: chmod +x android/gradlew
 
