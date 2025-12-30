@@ -30,13 +30,13 @@ public class MainActivity extends BridgeActivity {
             window.setStatusBarColor(0xFF0F172A); // #0f172a
         }
 
-        // Set status bar icons to light color (for dark background)
+        // Set status bar icons to light/white color (for dark background)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            WindowInsetsControllerCompat windowInsetsController =
-                WindowCompat.getInsetsController(window, window.getDecorView());
-            if (windowInsetsController != null) {
-                windowInsetsController.setAppearanceLightStatusBars(false); // Light icons
-            }
+            View decorView = window.getDecorView();
+            // Clear the light status bar flag to make icons white
+            int flags = decorView.getSystemUiVisibility();
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; // Remove light flag = white icons
+            decorView.setSystemUiVisibility(flags);
         }
     }
 }
