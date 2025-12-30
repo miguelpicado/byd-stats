@@ -44,8 +44,21 @@ jobs:
       - name: Build web app
         run: npm run build
 
+      - name: Verify dist folder
+        run: |
+          ls -la dist/
+          echo "✅ Dist folder exists"
+
       - name: Sync Capacitor
-        run: npx cap sync android
+        run: |
+          npx cap sync android
+          echo "✅ Capacitor sync completed"
+
+      - name: Verify Android project
+        run: |
+          ls -la android/
+          ls -la android/app/src/main/assets/
+          echo "✅ Android project ready"
 
       - name: Make gradlew executable
         run: chmod +x android/gradlew
