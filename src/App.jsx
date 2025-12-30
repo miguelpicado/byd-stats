@@ -362,7 +362,7 @@ export default function BYDStatsAnalyzer() {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-8">
-            <BYDLogo className="w-48 h-16 mx-auto mb-6" />
+            <img src="/byd-stats/byd_logo.png" className="w-48 h-auto mx-auto mb-6" alt="BYD Logo" />
             <h1 className="text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
             <p className="text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
@@ -458,7 +458,7 @@ export default function BYDStatsAnalyzer() {
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
-              <BYDLogo className="w-20 h-8" />
+              <img src="/byd-stats/byd_logo.png" className="w-20 h-auto" alt="BYD Logo" />
               <div>
                 <h1 className="text-lg font-bold">Estadísticas BYD</h1>
                 <p className="text-slate-500 text-sm">{rawTrips.length} viajes</p>
