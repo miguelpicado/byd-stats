@@ -40,12 +40,57 @@ No soy un desarrollador experto, ¡estoy aquí para aprender! :-)
 
 ---
 
+## 📱 Versión Android
+
+¡Ahora disponible como app nativa para Android! Con diseño responsive optimizado para móviles y tablets.
+
+### 🚀 Obtener la APK
+
+**Opción 1: Descargar desde GitHub Actions (Recomendado)**
+
+1. Ve a la pestaña [Actions](../../actions) de este repositorio
+2. Selecciona el workflow "Manual APK Build"
+3. Haz clic en "Run workflow" → "Run workflow"
+4. Espera 5-10 minutos a que compile
+5. Descarga el archivo APK desde "Artifacts"
+
+**Opción 2: Descargar desde Releases**
+
+Si hay un tag de versión (v1.0.0, etc.), la APK estará disponible en [Releases](../../releases)
+
+**Opción 3: Compilar localmente**
+
+Consulta [ANDROID_BUILD.md](ANDROID_BUILD.md) para instrucciones detalladas
+
+### ✨ Características de la app Android
+
+- ✅ Funciona 100% offline
+- ✅ Diseño responsive para móvil y tablet
+- ✅ Todas las funcionalidades de la versión web
+- ✅ Privacidad total (datos procesados localmente)
+- ✅ Compatible con Android 5.0+
+
+Para más información, consulta [README_ANDROID.md](README_ANDROID.md)
+
+---
+
 ## 🛠️ Instalación local (desarrollo)
 ```bash
-git clone [https://github.com/miguelpicado/byd-stats.git](https://github.com/miguelpicado/byd-stats.git)
+git clone https://github.com/miguelpicado/byd-stats.git
 cd byd-stats
 npm install
 npm run dev
+```
+
+### Scripts disponibles
+
+```bash
+npm run dev              # Servidor de desarrollo
+npm run build            # Build para producción
+npm run android:sync     # Build + sincronizar con Android
+npm run android:open     # Abrir proyecto en Android Studio
+npm run android:build    # Build completo de APK
+```
 
 ---
 Hecho en Galicia con ❤️ y mucha curiosidad
