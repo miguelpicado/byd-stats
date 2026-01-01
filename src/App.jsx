@@ -190,6 +190,7 @@ export default function BYDStatsAnalyzer() {
   const [allTripsDateFrom, setAllTripsDateFrom] = useState('');
   const [allTripsDateTo, setAllTripsDateTo] = useState('');
   const [allTripsSortBy, setAllTripsSortBy] = useState('date'); // 'date', 'efficiency', 'distance', 'consumption'
+  const [allTripsSortOrder, setAllTripsSortOrder] = useState('desc'); // 'asc' or 'desc'
 
   // Swipe gesture state
   const [touchStart, setTouchStart] = useState(null);
@@ -342,7 +343,7 @@ export default function BYDStatsAnalyzer() {
   ];
 
   // Swipe gesture handlers with direction detection
-  const minSwipeDistance = 30;
+  const minSwipeDistance = 15;
   const swipeThreshold = 0.15; // 15% of screen width
   const directionThreshold = 15; // pixels to determine direction
   const transitionDuration = 750; // ms - slower transition for better visibility
@@ -437,7 +438,7 @@ export default function BYDStatsAnalyzer() {
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
     <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-700/50">
-      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`}>
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`} style={{ pointerEvents: 'none' }}>
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
       <p className="text-slate-400 text-xs sm:text-sm">{label}</p>
@@ -600,23 +601,31 @@ export default function BYDStatsAnalyzer() {
 
     // Sort trips
     allTripsFiltered.sort((a, b) => {
+      let comparison = 0;
+
       if (allTripsSortBy === 'date') {
         const dateCompare = (b.date || '').localeCompare(a.date || '');
-        if (dateCompare !== 0) return dateCompare;
-        return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+        if (dateCompare !== 0) {
+          comparison = dateCompare;
+        } else {
+          comparison = (b.start_timestamp || 0) - (a.start_timestamp || 0);
+        }
       } else if (allTripsSortBy === 'efficiency') {
         const effA = a.trip > 0 && a.electricity > 0 ? (a.electricity / a.trip) * 100 : Infinity;
         const effB = b.trip > 0 && b.electricity > 0 ? (b.electricity / b.trip) * 100 : Infinity;
-        return effA - effB; // Lower is better
+        comparison = effA - effB; // Lower is better (ascending by default)
       } else if (allTripsSortBy === 'distance') {
-        return (b.trip || 0) - (a.trip || 0); // Higher first
+        comparison = (b.trip || 0) - (a.trip || 0); // Descending by default
       } else if (allTripsSortBy === 'consumption') {
-        return (b.electricity || 0) - (a.electricity || 0); // Higher first
+        comparison = (b.electricity || 0) - (a.electricity || 0); // Descending by default
       }
-      return 0;
+
+      // Apply sort order
+      return allTripsSortOrder === 'asc' ? -comparison : comparison;
     });
 
-    const validTrips = allTripsFiltered.filter(t => t.trip > 0 && t.electricity > 0);
+    // Filter trips >= 1km for scoring calculation
+    const validTrips = allTripsFiltered.filter(t => t.trip >= 1 && t.electricity > 0);
     const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
     const minEff = efficiencies.length > 0 ? Math.min(...efficiencies) : 0;
     const maxEff = efficiencies.length > 0 ? Math.max(...efficiencies) : 0;
@@ -716,44 +725,84 @@ export default function BYDStatsAnalyzer() {
               <div className="flex gap-2 overflow-x-auto pb-2">
                 <span className="text-xs text-slate-400 px-2 py-1.5">Ordenar:</span>
                 <button
-                  onClick={() => setAllTripsSortBy('date')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  onClick={() => {
+                    if (allTripsSortBy === 'date') {
+                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setAllTripsSortBy('date');
+                      setAllTripsSortOrder('desc');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
                   style={{
                     backgroundColor: allTripsSortBy === 'date' ? BYD_RED : '#334155',
                     color: allTripsSortBy === 'date' ? 'white' : '#94a3b8'
                   }}
                 >
                   Fecha
+                  {allTripsSortBy === 'date' && (
+                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
                 </button>
                 <button
-                  onClick={() => setAllTripsSortBy('efficiency')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  onClick={() => {
+                    if (allTripsSortBy === 'efficiency') {
+                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setAllTripsSortBy('efficiency');
+                      setAllTripsSortOrder('desc');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
                   style={{
                     backgroundColor: allTripsSortBy === 'efficiency' ? BYD_RED : '#334155',
                     color: allTripsSortBy === 'efficiency' ? 'white' : '#94a3b8'
                   }}
                 >
                   Eficiencia
+                  {allTripsSortBy === 'efficiency' && (
+                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
                 </button>
                 <button
-                  onClick={() => setAllTripsSortBy('distance')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  onClick={() => {
+                    if (allTripsSortBy === 'distance') {
+                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setAllTripsSortBy('distance');
+                      setAllTripsSortOrder('desc');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
                   style={{
                     backgroundColor: allTripsSortBy === 'distance' ? BYD_RED : '#334155',
                     color: allTripsSortBy === 'distance' ? 'white' : '#94a3b8'
                   }}
                 >
                   Distancia
+                  {allTripsSortBy === 'distance' && (
+                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
                 </button>
                 <button
-                  onClick={() => setAllTripsSortBy('consumption')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  onClick={() => {
+                    if (allTripsSortBy === 'consumption') {
+                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setAllTripsSortBy('consumption');
+                      setAllTripsSortOrder('desc');
+                    }
+                  }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
                   style={{
                     backgroundColor: allTripsSortBy === 'consumption' ? BYD_RED : '#334155',
                     color: allTripsSortBy === 'consumption' ? 'white' : '#94a3b8'
                   }}
                 >
                   Consumo
+                  {allTripsSortBy === 'consumption' && (
+                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
+                  )}
                 </button>
               </div>
             </div>
@@ -1150,7 +1199,8 @@ export default function BYDStatsAnalyzer() {
                       return (b.start_timestamp || 0) - (a.start_timestamp || 0);
                     });
 
-                    const validTrips = allTrips.filter(t => t.trip > 0 && t.electricity > 0);
+                    // Filter trips >= 1km for scoring calculation
+                    const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity > 0);
                     const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
                     const minEff = Math.min(...efficiencies);
                     const maxEff = Math.max(...efficiencies);
