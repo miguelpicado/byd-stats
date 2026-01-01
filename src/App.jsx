@@ -185,6 +185,37 @@ export default function BYDStatsAnalyzer() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // Add global styles to remove all chart interaction visuals
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .recharts-wrapper svg * {
+        outline: none !important;
+      }
+      .recharts-wrapper svg *:focus {
+        outline: none !important;
+      }
+      .recharts-surface {
+        outline: none !important;
+      }
+      .recharts-active-shape,
+      .recharts-active-dot {
+        display: none !important;
+      }
+      .recharts-rectangle.recharts-active-bar {
+        stroke: none !important;
+        stroke-width: 0 !important;
+      }
+      .recharts-layer.recharts-active-dot circle {
+        display: none !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   // All trips view states
   const [allTripsFilterType, setAllTripsFilterType] = useState('all');
   const [allTripsMonth, setAllTripsMonth] = useState('');
