@@ -63,7 +63,7 @@ function processData(rows) {
   const monthlyData = {};
   const dailyData = {};
   const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
-  const weekdayData = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(d => ({ day: d, trips: 0, km: 0 }));
+  const weekdayData = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => ({ day: d, trips: 0, km: 0 }));
 
   trips.forEach(trip => {
     const m = trip.month || 'unknown';
@@ -85,8 +85,10 @@ function processData(rows) {
         const w = dt.getDay();
         hourlyData[h].trips++;
         hourlyData[h].km += trip.trip || 0;
-        weekdayData[w].trips++;
-        weekdayData[w].km += trip.trip || 0;
+        // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, 2 (Tue) -> 1, etc.
+        const weekdayIndex = (w + 6) % 7;
+        weekdayData[weekdayIndex].trips++;
+        weekdayData[weekdayIndex].km += trip.trip || 0;
       } catch (e) {
         console.error('Error processing timestamp:', e);
       }
@@ -124,7 +126,8 @@ function processData(rows) {
   const efficiencyScatter = trips
     .filter(t => t.trip > 0 && t.electricity > 0)
     .map(t => ({ km: t.trip, eff: (t.electricity / t.trip) * 100 }))
-    .filter(t => t.eff > 0 && t.eff < 50);
+    .filter(t => t.eff > 0 && t.eff < 50)
+    .sort((a, b) => a.km - b.km);
 
   const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
   const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
@@ -332,7 +335,7 @@ export default function BYDStatsAnalyzer() {
   const minSwipeDistance = 60;
   const swipeThreshold = 0.2; // 20% of screen width
   const directionThreshold = 20; // pixels to determine direction
-  const transitionDuration = 200; // ms - reduced for slower, more visible transitions
+  const transitionDuration = 750; // ms - slower transition for better visibility
 
   const onTouchStart = (e) => {
     if (isTransitioning) return;
