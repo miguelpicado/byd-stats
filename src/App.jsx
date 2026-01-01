@@ -184,6 +184,13 @@ export default function BYDStatsAnalyzer() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // All trips view states
+  const [allTripsFilterType, setAllTripsFilterType] = useState('all');
+  const [allTripsMonth, setAllTripsMonth] = useState('');
+  const [allTripsDateFrom, setAllTripsDateFrom] = useState('');
+  const [allTripsDateTo, setAllTripsDateTo] = useState('');
+  const [allTripsSortBy, setAllTripsSortBy] = useState('date'); // 'date', 'efficiency', 'distance', 'consumption'
+
   // Swipe gesture state
   const [touchStart, setTouchStart] = useState(null);
   const [touchEnd, setTouchEnd] = useState(null);
@@ -459,9 +466,13 @@ export default function BYDStatsAnalyzer() {
   };
 
   // Calculate efficiency score (0-10) based on consumption
+  // LOWER kWh/100km = BETTER efficiency = HIGHER score (10)
+  // HIGHER kWh/100km = WORSE efficiency = LOWER score (0)
   const calculateScore = (efficiency, minEff, maxEff) => {
     if (!efficiency || maxEff === minEff) return 5;
-    // Lower efficiency is better, so invert the score
+    // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
+    // Score should be 10 when efficiency equals minEff (best)
+    // Score should be 0 when efficiency equals maxEff (worst)
     const normalized = (maxEff - efficiency) / (maxEff - minEff);
     return Math.max(0, Math.min(10, normalized * 10));
   };
@@ -573,6 +584,234 @@ export default function BYDStatsAnalyzer() {
   }
 
   const { summary, monthly, daily, hourly, weekday, tripDist, effScatter, top } = data || {};
+
+  // Filter and sort trips for the all trips view
+  const allTripsFiltered = useMemo(() => {
+    if (rawTrips.length === 0) return [];
+
+    let trips = [...rawTrips];
+
+    // Apply filters
+    if (allTripsFilterType === 'month' && allTripsMonth) {
+      trips = trips.filter(t => t.month === allTripsMonth);
+    } else if (allTripsFilterType === 'range') {
+      if (allTripsDateFrom) trips = trips.filter(t => t.date >= allTripsDateFrom.replace(/-/g, ''));
+      if (allTripsDateTo) trips = trips.filter(t => t.date <= allTripsDateTo.replace(/-/g, ''));
+    }
+
+    // Sort trips
+    trips.sort((a, b) => {
+      if (allTripsSortBy === 'date') {
+        const dateCompare = (b.date || '').localeCompare(a.date || '');
+        if (dateCompare !== 0) return dateCompare;
+        return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+      } else if (allTripsSortBy === 'efficiency') {
+        const effA = a.trip > 0 && a.electricity > 0 ? (a.electricity / a.trip) * 100 : Infinity;
+        const effB = b.trip > 0 && b.electricity > 0 ? (b.electricity / b.trip) * 100 : Infinity;
+        return effA - effB; // Lower is better
+      } else if (allTripsSortBy === 'distance') {
+        return (b.trip || 0) - (a.trip || 0); // Higher first
+      } else if (allTripsSortBy === 'consumption') {
+        return (b.electricity || 0) - (a.electricity || 0); // Higher first
+      }
+      return 0;
+    });
+
+    return trips;
+  }, [rawTrips, allTripsFilterType, allTripsMonth, allTripsDateFrom, allTripsDateTo, allTripsSortBy]);
+
+  // If showing all trips view, render full screen view
+  if (showAllTripsModal) {
+    const validTrips = allTripsFiltered.filter(t => t.trip > 0 && t.electricity > 0);
+    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+    const minEff = efficiencies.length > 0 ? Math.min(...efficiencies) : 0;
+    const maxEff = efficiencies.length > 0 ? Math.max(...efficiencies) : 0;
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+        {/* Header */}
+        <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={() => setShowAllTripsModal(false)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white hover:bg-slate-800"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-sm sm:text-base md:text-lg font-bold">Todos los viajes</h1>
+                  <p className="text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} viajes</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Filters and Sort */}
+            <div className="mt-4 space-y-3">
+              {/* Filter Type */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <button
+                  onClick={() => { setAllTripsFilterType('all'); setAllTripsMonth(''); setAllTripsDateFrom(''); setAllTripsDateTo(''); }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allTripsFilterType === 'all' ? BYD_RED : '#334155',
+                    color: allTripsFilterType === 'all' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  Todos
+                </button>
+                <button
+                  onClick={() => setAllTripsFilterType('month')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allTripsFilterType === 'month' ? BYD_RED : '#334155',
+                    color: allTripsFilterType === 'month' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  Por mes
+                </button>
+                <button
+                  onClick={() => setAllTripsFilterType('range')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allTripsFilterType === 'range' ? BYD_RED : '#334155',
+                    color: allTripsFilterType === 'range' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  Rango de fechas
+                </button>
+              </div>
+
+              {/* Month Selector */}
+              {allTripsFilterType === 'month' && (
+                <select
+                  value={allTripsMonth}
+                  onChange={(e) => setAllTripsMonth(e.target.value)}
+                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                >
+                  <option value="">Seleccionar mes</option>
+                  {months.map((m) => (
+                    <option key={m} value={m}>{formatMonth(m)}</option>
+                  ))}
+                </select>
+              )}
+
+              {/* Date Range */}
+              {allTripsFilterType === 'range' && (
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={allTripsDateFrom}
+                    onChange={(e) => setAllTripsDateFrom(e.target.value)}
+                    className="flex-1 bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                  />
+                  <input
+                    type="date"
+                    value={allTripsDateTo}
+                    onChange={(e) => setAllTripsDateTo(e.target.value)}
+                    className="flex-1 bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                  />
+                </div>
+              )}
+
+              {/* Sort Options */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <span className="text-xs text-slate-400 px-2 py-1.5">Ordenar:</span>
+                <button
+                  onClick={() => setAllTripsSortBy('date')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allTripsSortBy === 'date' ? BYD_RED : '#334155',
+                    color: allTripsSortBy === 'date' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  Fecha
+                </button>
+                <button
+                  onClick={() => setAllTripsSortBy('efficiency')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allTripsSortBy === 'efficiency' ? BYD_RED : '#334155',
+                    color: allTripsSortBy === 'efficiency' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  Eficiencia
+                </button>
+                <button
+                  onClick={() => setAllTripsSortBy('distance')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allTripsSortBy === 'distance' ? BYD_RED : '#334155',
+                    color: allTripsSortBy === 'distance' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  Distancia
+                </button>
+                <button
+                  onClick={() => setAllTripsSortBy('consumption')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allTripsSortBy === 'consumption' ? BYD_RED : '#334155',
+                    color: allTripsSortBy === 'consumption' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  Consumo
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Trip List */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
+          <div className="space-y-3">
+            {allTripsFiltered.map((trip, i) => {
+              const efficiency = trip.trip > 0 && trip.electricity > 0
+                ? (trip.electricity / trip.trip) * 100
+                : 0;
+              const score = calculateScore(efficiency, minEff, maxEff);
+              const scoreColor = getScoreColor(score);
+
+              return (
+                <div key={i} className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
+                      <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg sm:text-xl font-bold" style={{ color: scoreColor }}>
+                        {score.toFixed(1)}
+                      </p>
+                      <p className="text-slate-500 text-xs">puntos</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
+                    <div>
+                      <p className="text-slate-400 text-[10px] sm:text-xs">Distancia</p>
+                      <p className="text-white text-xs sm:text-sm font-medium">{trip.trip?.toFixed(1)} km</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] sm:text-xs">Consumo</p>
+                      <p className="text-white text-xs sm:text-sm font-medium">{trip.electricity?.toFixed(2)} kWh</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-[10px] sm:text-xs">Eficiencia</p>
+                      <p className="text-white text-xs sm:text-sm font-medium">{efficiency.toFixed(2)} kWh/100km</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
@@ -1102,86 +1341,6 @@ export default function BYDStatsAnalyzer() {
             >
               Aplicar filtro
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* All Trips Modal */}
-      {showAllTripsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowAllTripsModal(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div className="relative bg-slate-800 rounded-2xl p-6 max-w-2xl w-full h-[80vh] border border-slate-700 flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <List className="w-5 h-5" style={{ color: BYD_RED }} />
-                <h2 className="text-xl font-bold text-white">Todos los viajes</h2>
-              </div>
-              <button onClick={() => setShowAllTripsModal(false)} className="text-slate-400 hover:text-white">
-                <Plus className="w-6 h-6 rotate-45" />
-              </button>
-            </div>
-
-            {/* Scrollable content */}
-            <div className="flex-1 overflow-y-auto space-y-3 -mx-2 px-2">
-              {(() => {
-                const allTrips = [...filtered].sort((a, b) => {
-                  const dateCompare = (b.date || '').localeCompare(a.date || '');
-                  if (dateCompare !== 0) return dateCompare;
-                  return (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                });
-
-                const validTrips = allTrips.filter(t => t.trip > 0 && t.electricity > 0);
-                const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-                const minEff = Math.min(...efficiencies);
-                const maxEff = Math.max(...efficiencies);
-
-                return allTrips.map((trip, i) => {
-                  const efficiency = trip.trip > 0 && trip.electricity > 0
-                    ? (trip.electricity / trip.trip) * 100
-                    : 0;
-                  const score = calculateScore(efficiency, minEff, maxEff);
-                  const scoreColor = getScoreColor(score);
-
-                  return (
-                    <div key={i} className="bg-slate-700/50 rounded-xl p-3 sm:p-4 border border-slate-600/50">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
-                          <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg sm:text-xl font-bold" style={{ color: scoreColor }}>
-                            {score.toFixed(1)}
-                          </p>
-                          <p className="text-slate-500 text-xs">puntos</p>
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
-                        <div>
-                          <p className="text-slate-400 text-[10px] sm:text-xs">Distancia</p>
-                          <p className="text-white text-xs sm:text-sm font-medium">{trip.trip?.toFixed(1)} km</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 text-[10px] sm:text-xs">Consumo</p>
-                          <p className="text-white text-xs sm:text-sm font-medium">{trip.electricity?.toFixed(2)} kWh</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 text-[10px] sm:text-xs">Eficiencia</p>
-                          <p className="text-white text-xs sm:text-sm font-medium">{efficiency.toFixed(2)} kWh/100km</p>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                });
-              })()}
-            </div>
-
-            {/* Trip count footer */}
-            <div className="mt-4 pt-4 border-t border-slate-700">
-              <p className="text-center text-sm text-slate-400">
-                Total: <span className="font-bold text-white">{filtered.length}</span> viajes
-              </p>
-            </div>
           </div>
         </div>
       )}
