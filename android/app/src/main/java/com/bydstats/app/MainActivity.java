@@ -60,7 +60,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         // Re-apply status bar configuration in case something overrode it
         configureStatusBar();
