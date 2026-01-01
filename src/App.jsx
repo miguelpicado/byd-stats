@@ -636,7 +636,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={monthly}>
@@ -649,12 +649,12 @@ export default function BYDStatsAnalyzer() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip content={<ChartTip />} cursor={false} />
-                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" />
+                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <PieChart>
@@ -667,12 +667,13 @@ export default function BYDStatsAnalyzer() {
                           paddingAngle={3}
                           dataKey="count"
                           label={({ range, count }) => count > 0 ? `${range} km` : ''}
+                          isAnimationActive={false}
                         >
                           {tripDist.map((e, i) => (
                             <Cell key={`cell-${i}`} fill={e.color} />
                           ))}
                         </Pie>
-                        <Tooltip content={<ChartTip />} cursor={false} />
+                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -683,7 +684,7 @@ export default function BYDStatsAnalyzer() {
             {/* Slide 2: Trends */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={monthly}>
@@ -691,14 +692,14 @@ export default function BYDStatsAnalyzer() {
                       <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                       <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
                       <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
-                      <Tooltip content={<ChartTip />} cursor={false} />
+                      <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
                       <Legend wrapperStyle={{ fontSize: '12px' }} />
-                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} />
-                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} />
+                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos 60 días</h3>
                   <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={daily.slice(-60)}>
@@ -711,8 +712,8 @@ export default function BYDStatsAnalyzer() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
                       <YAxis stroke="#64748b" />
-                      <Tooltip content={<ChartTip />} cursor={false} />
-                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" />
+                      <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -723,27 +724,27 @@ export default function BYDStatsAnalyzer() {
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={hourly}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
                         <YAxis stroke="#64748b" fontSize={11} />
-                        <Tooltip content={<ChartTip />} cursor={false} />
-                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} />
+                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
                         <PolarGrid stroke="#334155" />
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
                         <PolarRadiusAxis stroke="#64748b" />
-                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" />
-                        <Tooltip content={<ChartTip />} cursor={false} />
+                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} />
+                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
@@ -769,7 +770,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                   <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
                   <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart>
@@ -796,6 +797,7 @@ export default function BYDStatsAnalyzer() {
                       />
                       <Tooltip
                         cursor={false}
+                        isAnimationActive={false}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             return (
@@ -808,7 +810,7 @@ export default function BYDStatsAnalyzer() {
                           return null;
                         }}
                       />
-                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} />
+                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} />
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
