@@ -11,6 +11,43 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+
+    private void configureStatusBar() {
+        Window window = getWindow();
+
+        // Enable edge-to-edge display
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(0xFF0F172A); // #0f172a dark background
+        }
+
+        // CRITICAL: Use WindowInsetsControllerCompat for consistent behavior across Android versions
+        WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(window, window.getDecorView());
+        if (insetsController != null) {
+            // FALSE = white icons (for dark background)
+            // TRUE = dark icons (for light background)
+            insetsController.setAppearanceLightStatusBars(false);
+        }
+
+        // Additional approach for Android M to Q (API 23-29) - deprecated but still works
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
+            View decorView = window.getDecorView();
+            int flags = decorView.getSystemUiVisibility();
+            // Ensure LIGHT_STATUS_BAR flag is NOT set (makes icons white)
+            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            decorView.setSystemUiVisibility(flags);
+        }
+
+        // Modern approach for Android R+ (API 30+) - Samsung Android 16 should use this
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            // Clear the light status bars appearance flag (0 = white icons)
+            window.getInsetsController().setSystemBarsAppearance(
+                0, // value: 0 means white icons
+                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS // mask
+            );
+        }
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -18,33 +55,14 @@ public class MainActivity extends BridgeActivity {
         // Enable WebView debugging for troubleshooting
         WebView.setWebContentsDebuggingEnabled(true);
 
-        // Configure status bar to be visible and styled
-        Window window = getWindow();
+        // Configure status bar
+        configureStatusBar();
+    }
 
-        // Make status bar visible (don't draw behind it)
-        WindowCompat.setDecorFitsSystemWindows(window, true);
-
-        // Set status bar color to match app theme (dark blue)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(0xFF0F172A); // #0f172a
-        }
-
-        // FORCE white status bar icons (for dark background)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            View decorView = window.getDecorView();
-            // Get current flags and ensure light status bar flag is NOT set
-            int flags = decorView.getSystemUiVisibility();
-            // Remove light status bar flag if present (this makes icons white)
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
-            // Apply the flags
-            decorView.setSystemUiVisibility(flags);
-
-            // Also use WindowInsetsController for Android 11+ (additional insurance)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                window.getInsetsController().setSystemBarsAppearance(0,
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS);
-            }
-        }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // Re-apply status bar configuration in case something overrode it
+        configureStatusBar();
     }
 }
