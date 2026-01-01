@@ -158,9 +158,9 @@ function processData(rows) {
     tripDist: tripDistribution,
     effScatter: efficiencyScatter,
     top: {
-      km: sortedByKm.slice(0, 10),
-      kwh: sortedByKwh.slice(0, 10),
-      dur: sortedByDur.slice(0, 10)
+      km: sortedByKm.slice(0, 5),
+      kwh: sortedByKwh.slice(0, 5),
+      dur: sortedByDur.slice(0, 5)
     }
   };
 }
@@ -332,6 +332,7 @@ export default function BYDStatsAnalyzer() {
   const minSwipeDistance = 60;
   const swipeThreshold = 0.2; // 20% of screen width
   const directionThreshold = 20; // pixels to determine direction
+  const transitionDuration = 200; // ms - reduced for slower, more visible transitions
 
   const onTouchStart = (e) => {
     if (isTransitioning) return;
@@ -411,7 +412,7 @@ export default function BYDStatsAnalyzer() {
         setTouchEnd(null);
         setSwipeDirection(null);
         setIsTransitioning(false);
-      }, 400);
+      }, transitionDuration);
     } else {
       // Reset immediately if it wasn't a horizontal swipe
       setSwipeOffset(0);
@@ -595,11 +596,15 @@ export default function BYDStatsAnalyzer() {
           style={{
             display: 'flex',
             width: `${tabs.length * 100}%`,
-            transform: `translateX(calc(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}% + ${swipeOffset}px))`,
-            transition: isTransitioning ? 'transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)' : 'none',
+            transform: `translate3d(calc(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}% + ${swipeOffset}px), 0, 0)`,
+            transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.4, 0.0, 0.2, 1)` : 'none',
             willChange: 'transform',
             backfaceVisibility: 'hidden',
+            WebkitBackfaceVisibility: 'hidden',
             perspective: 1000,
+            WebkitPerspective: 1000,
+            transformStyle: 'preserve-3d',
+            WebkitTransformStyle: 'preserve-3d',
             userSelect: 'none'
           }}
         >
@@ -756,18 +761,31 @@ export default function BYDStatsAnalyzer() {
             {/* Slide 4: Efficiency */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                   <StatCard icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                  <StatCard icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
+                  <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
+                  <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
                 </div>
                 <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
                   <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart>
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                      <XAxis dataKey="km" name="km" unit=" km" stroke="#64748b" />
-                      <YAxis dataKey="eff" name="kWh/100km" stroke="#64748b" />
+                      <XAxis
+                        dataKey="km"
+                        name="Distancia"
+                        stroke="#64748b"
+                        fontSize={11}
+                        label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 11 }}
+                      />
+                      <YAxis
+                        dataKey="eff"
+                        name="Eficiencia"
+                        stroke="#64748b"
+                        fontSize={11}
+                        label={{ value: 'kWh/100km', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 11 }}
+                      />
                       <Tooltip
                         cursor={{ strokeDasharray: '3 3' }}
                         content={({ active, payload }) => {
