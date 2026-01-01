@@ -600,7 +600,7 @@ export default function BYDStatsAnalyzer() {
             display: 'flex',
             width: `${tabs.length * 100}%`,
             transform: `translate3d(calc(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}% + ${swipeOffset}px), 0, 0)`,
-            transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.4, 0.0, 0.2, 1)` : 'none',
+            transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.19, 1, 0.22, 1)` : 'none',
             willChange: 'transform',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
@@ -780,6 +780,8 @@ export default function BYDStatsAnalyzer() {
                         name="Distancia"
                         stroke="#64748b"
                         fontSize={11}
+                        allowDecimals={false}
+                        tickFormatter={(value) => Math.round(value)}
                         label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 11 }}
                       />
                       <YAxis
@@ -787,6 +789,8 @@ export default function BYDStatsAnalyzer() {
                         name="Eficiencia"
                         stroke="#64748b"
                         fontSize={11}
+                        allowDecimals={false}
+                        tickFormatter={(value) => Math.round(value)}
                         label={{ value: 'kWh/100km', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 11 }}
                       />
                       <Tooltip
