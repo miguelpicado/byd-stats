@@ -989,7 +989,7 @@ export default function BYDStatsAnalyzer() {
                         <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} />
+                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -1033,8 +1033,8 @@ export default function BYDStatsAnalyzer() {
                       <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
                       <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       <Legend wrapperStyle={{ fontSize: '12px' }} />
-                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} />
-                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
+                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1052,7 +1052,7 @@ export default function BYDStatsAnalyzer() {
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
                       <YAxis stroke="#64748b" />
                       <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} />
+                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -1071,7 +1071,7 @@ export default function BYDStatsAnalyzer() {
                         <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
                         <YAxis stroke="#64748b" fontSize={11} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} />
+                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={false} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1082,7 +1082,7 @@ export default function BYDStatsAnalyzer() {
                         <PolarGrid stroke="#334155" />
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
                         <PolarRadiusAxis stroke="#64748b" />
-                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} />
+                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={false} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       </RadarChart>
                     </ResponsiveContainer>
@@ -1149,7 +1149,7 @@ export default function BYDStatsAnalyzer() {
                           return null;
                         }}
                       />
-                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} />
+                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} activeShape={false} />
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
