@@ -585,22 +585,21 @@ export default function BYDStatsAnalyzer() {
 
   const { summary, monthly, daily, hourly, weekday, tripDist, effScatter, top } = data || {};
 
-  // Filter and sort trips for the all trips view
-  const allTripsFiltered = useMemo(() => {
-    if (rawTrips.length === 0) return [];
-
-    let trips = [...rawTrips];
+  // If showing all trips view, render full screen view
+  if (showAllTripsModal) {
+    // Filter and sort trips for the all trips view
+    let allTripsFiltered = [...rawTrips];
 
     // Apply filters
     if (allTripsFilterType === 'month' && allTripsMonth) {
-      trips = trips.filter(t => t.month === allTripsMonth);
+      allTripsFiltered = allTripsFiltered.filter(t => t.month === allTripsMonth);
     } else if (allTripsFilterType === 'range') {
-      if (allTripsDateFrom) trips = trips.filter(t => t.date >= allTripsDateFrom.replace(/-/g, ''));
-      if (allTripsDateTo) trips = trips.filter(t => t.date <= allTripsDateTo.replace(/-/g, ''));
+      if (allTripsDateFrom) allTripsFiltered = allTripsFiltered.filter(t => t.date >= allTripsDateFrom.replace(/-/g, ''));
+      if (allTripsDateTo) allTripsFiltered = allTripsFiltered.filter(t => t.date <= allTripsDateTo.replace(/-/g, ''));
     }
 
     // Sort trips
-    trips.sort((a, b) => {
+    allTripsFiltered.sort((a, b) => {
       if (allTripsSortBy === 'date') {
         const dateCompare = (b.date || '').localeCompare(a.date || '');
         if (dateCompare !== 0) return dateCompare;
@@ -617,11 +616,6 @@ export default function BYDStatsAnalyzer() {
       return 0;
     });
 
-    return trips;
-  }, [rawTrips, allTripsFilterType, allTripsMonth, allTripsDateFrom, allTripsDateTo, allTripsSortBy]);
-
-  // If showing all trips view, render full screen view
-  if (showAllTripsModal) {
     const validTrips = allTripsFiltered.filter(t => t.trip > 0 && t.electricity > 0);
     const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
     const minEff = efficiencies.length > 0 ? Math.min(...efficiencies) : 0;
