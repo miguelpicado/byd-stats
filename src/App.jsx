@@ -426,6 +426,17 @@ export default function BYDStatsAnalyzer() {
     }
   };
 
+  const handleTabClick = (tabId) => {
+    if (tabId === activeTab || isTransitioning) return;
+
+    setIsTransitioning(true);
+    setActiveTab(tabId);
+
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, transitionDuration);
+  };
+
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
     <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-700/50">
       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`}>
@@ -600,7 +611,7 @@ export default function BYDStatsAnalyzer() {
             display: 'flex',
             width: `${tabs.length * 100}%`,
             transform: `translate3d(calc(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}% + ${swipeOffset}px), 0, 0)`,
-            transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.19, 1, 0.22, 1)` : 'none',
+            transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.33, 1, 0.68, 1)` : 'none',
             willChange: 'transform',
             backfaceVisibility: 'hidden',
             WebkitBackfaceVisibility: 'hidden',
@@ -782,6 +793,8 @@ export default function BYDStatsAnalyzer() {
                         fontSize={11}
                         allowDecimals={false}
                         tickFormatter={(value) => Math.round(value)}
+                        interval="preserveStartEnd"
+                        minTickGap={30}
                         label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 11 }}
                       />
                       <YAxis
@@ -1008,7 +1021,7 @@ export default function BYDStatsAnalyzer() {
             {tabs.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setActiveTab(t.id)}
+                onClick={() => handleTabClick(t.id)}
                 className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
                 style={{
                   backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
