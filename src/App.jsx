@@ -330,7 +330,7 @@ export default function BYDStatsAnalyzer() {
 
   // Swipe gesture handlers with direction detection
   const minSwipeDistance = 60;
-  const swipeThreshold = 0.25; // 25% of screen width
+  const swipeThreshold = 0.2; // 20% of screen width
   const directionThreshold = 20; // pixels to determine direction
 
   const onTouchStart = (e) => {
@@ -411,7 +411,7 @@ export default function BYDStatsAnalyzer() {
         setTouchEnd(null);
         setSwipeDirection(null);
         setIsTransitioning(false);
-      }, 250);
+      }, 400);
     } else {
       // Reset immediately if it wasn't a horizontal swipe
       setSwipeOffset(0);
@@ -596,8 +596,10 @@ export default function BYDStatsAnalyzer() {
             display: 'flex',
             width: `${tabs.length * 100}%`,
             transform: `translateX(calc(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}% + ${swipeOffset}px))`,
-            transition: isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
+            transition: isTransitioning ? 'transform 0.4s cubic-bezier(0.4, 0.0, 0.2, 1)' : 'none',
             willChange: 'transform',
+            backfaceVisibility: 'hidden',
+            perspective: 1000,
             userSelect: 'none'
           }}
         >
