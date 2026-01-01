@@ -362,11 +362,11 @@ export default function BYDStatsAnalyzer() {
     { id: 'history', label: 'Histórico', icon: List }
   ];
 
-  // Swipe gesture handlers with direction detection
-  const minSwipeDistance = 8; // Muy reducido para swipes rápidos
-  const swipeThreshold = 0.03; // 3% del ancho de pantalla
-  const directionThreshold = 8; // Reducido para detección más rápida
-  const transitionDuration = 750; // ms - slower transition for better visibility
+  // Swipe gesture handlers with improved detection
+  const minSwipeDistance = 5; // Extremadamente reducido para swipes muy rápidos
+  const swipeThreshold = 0.02; // 2% del ancho de pantalla
+  const directionThreshold = 3; // Mínimo para detección inmediata
+  const transitionDuration = 750; // ms
 
   const onTouchStart = (e) => {
     if (isTransitioning) return;
@@ -385,30 +385,37 @@ export default function BYDStatsAnalyzer() {
     const diffX = Math.abs(currentTouchX - touchStart);
     const diffY = Math.abs(currentTouchY - touchStartY);
 
-    // Determine swipe direction on first significant movement
-    if (!swipeDirection && (diffX > directionThreshold || diffY > directionThreshold)) {
-      if (diffX > diffY) {
-        setSwipeDirection('horizontal');
-      } else {
-        setSwipeDirection('vertical');
+    // Detección de dirección mucho más temprana y agresiva
+    if (!swipeDirection) {
+      if (diffX > directionThreshold || diffY > directionThreshold) {
+        if (diffX > diffY) {
+          setSwipeDirection('horizontal');
+          // Prevenir scroll vertical cuando se detecta swipe horizontal
+          e.preventDefault();
+        } else {
+          setSwipeDirection('vertical');
+        }
+      } else if (diffX > 1 || diffY > 1) {
+        // Si hay cualquier movimiento, asumir la dirección más probable
+        setSwipeDirection(diffX >= diffY ? 'horizontal' : 'vertical');
       }
     }
 
-    // Only handle horizontal swipes
+    // Solo manejar swipes horizontales
     if (swipeDirection === 'horizontal') {
+      e.preventDefault(); // Prevenir scroll durante swipe horizontal
       const diff = currentTouchX - touchStart;
       const currentIndex = tabs.findIndex(t => t.id === activeTab);
 
-      // Limit swipe at boundaries with elastic effect
+      // Límite en los bordes con efecto elástico
       if ((currentIndex === 0 && diff > 0) || (currentIndex === tabs.length - 1 && diff < 0)) {
-        setSwipeOffset(diff * 0.15); // Strong resistance at edges
+        setSwipeOffset(diff * 0.15);
         return;
       }
 
       setSwipeOffset(diff);
       setTouchEnd(currentTouchX);
     }
-    // Vertical swipes are ignored, allowing normal scrolling
   };
 
   const onTouchEnd = () => {
@@ -418,26 +425,24 @@ export default function BYDStatsAnalyzer() {
       return;
     }
 
-    // Only process if it was a horizontal swipe
+    // Procesar si fue un swipe horizontal
     if (swipeDirection === 'horizontal' && !isTransitioning) {
       const currentIndex = tabs.findIndex(t => t.id === activeTab);
       const screenWidth = window.innerWidth;
       const swipeDistance = touchEnd ? touchEnd - touchStart : 0;
       const swipePercentage = Math.abs(swipeDistance) / screenWidth;
 
-      // Determine if swipe is significant enough
+      // Umbral muy bajo para permitir swipes rápidos
       if (swipePercentage > swipeThreshold || Math.abs(swipeDistance) > minSwipeDistance) {
         if (swipeDistance < 0 && currentIndex < tabs.length - 1) {
-          // Swipe left = next tab
           handleTabClick(tabs[currentIndex + 1].id);
         } else if (swipeDistance > 0 && currentIndex > 0) {
-          // Swipe right = previous tab
           handleTabClick(tabs[currentIndex - 1].id);
         }
       }
     }
 
-    // Reset touch variables
+    // Reset
     setSwipeOffset(0);
     setTouchStart(null);
     setTouchStartY(null);
@@ -458,7 +463,7 @@ export default function BYDStatsAnalyzer() {
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
     <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-700/50">
-      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`} style={{ pointerEvents: 'none' }}>
+      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`} >
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
       <p className="text-slate-400 text-xs sm:text-sm">{label}</p>
@@ -631,9 +636,14 @@ export default function BYDStatsAnalyzer() {
           comparison = (b.start_timestamp || 0) - (a.start_timestamp || 0);
         }
       } else if (allTripsSortBy === 'efficiency') {
-        const effA = a.trip > 0 && a.electricity > 0 ? (a.electricity / a.trip) * 100 : Infinity;
-        const effB = b.trip > 0 && b.electricity > 0 ? (b.electricity / b.trip) * 100 : Infinity;
-        comparison = effA - effB; // Lower is better (ascending by default)
+        // Calcular eficiencia permitiendo valores negativos (regeneración)
+        const effA = a.trip > 0 && a.electricity !== undefined && a.electricity !== null && a.electricity !== 0
+          ? (a.electricity / a.trip) * 100
+          : Infinity;
+        const effB = b.trip > 0 && b.electricity !== undefined && b.electricity !== null && b.electricity !== 0
+          ? (b.electricity / b.trip) * 100
+          : Infinity;
+        comparison = effA - effB; // Valores más bajos (incluyendo negativos) primero
       } else if (allTripsSortBy === 'distance') {
         comparison = (b.trip || 0) - (a.trip || 0); // Descending by default
       } else if (allTripsSortBy === 'consumption') {
@@ -842,34 +852,32 @@ export default function BYDStatsAnalyzer() {
 
               return (
                 <div key={i} className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50">
-                  <div className="flex justify-between items-stretch gap-3">
-                    {/* Left: Info */}
-                    <div className="flex-1">
-                      <div className="mb-3">
-                        <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
-                        <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
-                      </div>
-                      <div className="grid grid-cols-3 gap-3">
-                        <div>
-                          <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Distancia</p>
-                          <p className="text-white text-sm sm:text-base font-semibold">{trip.trip?.toFixed(1)}</p>
-                          <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Consumo</p>
-                          <p className="text-white text-base sm:text-lg font-bold">{trip.electricity?.toFixed(2)}</p>
-                          <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
-                        </div>
-                        <div>
-                          <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Eficiencia</p>
-                          <p className="text-white text-base sm:text-lg font-bold">{efficiency.toFixed(2)}</p>
-                          <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
-                        </div>
-                      </div>
+                  {/* Fecha y hora centrada - 100% */}
+                  <div className="text-center mb-3">
+                    <p className="text-white font-semibold text-sm sm:text-base">
+                      {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+                    </p>
+                  </div>
+                  {/* 4 columnas de 25% cada una */}
+                  <div className="grid grid-cols-4 gap-2">
+                    <div className="text-center">
+                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                      <p className="text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                      <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
                     </div>
-                    {/* Right: Score */}
-                    <div className="flex items-center">
-                      <p className="text-3xl sm:text-4xl font-bold" style={{ color: scoreColor }}>
+                    <div className="text-center">
+                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                      <p className="text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                      <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                      <p className="text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                      <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                      <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
                         {score.toFixed(1)}
                       </p>
                     </div>
@@ -936,7 +944,6 @@ export default function BYDStatsAnalyzer() {
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        style={{ touchAction: 'pan-y' }}
       >
         <div
           style={{
@@ -980,7 +987,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={monthly}>
@@ -993,12 +1000,12 @@ export default function BYDStatsAnalyzer() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} />
                         <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <PieChart>
@@ -1017,7 +1024,7 @@ export default function BYDStatsAnalyzer() {
                             <Cell key={`cell-${i}`} fill={e.color} />
                           ))}
                         </Pie>
-                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -1028,7 +1035,7 @@ export default function BYDStatsAnalyzer() {
             {/* Slide 2: Trends */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={monthly}>
@@ -1036,14 +1043,14 @@ export default function BYDStatsAnalyzer() {
                       <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                       <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
                       <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
-                      <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                      <Tooltip content={<ChartTip />} isAnimationActive={false} />
                       <Legend wrapperStyle={{ fontSize: '12px' }} />
                       <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                       <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos 60 días</h3>
                   <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={daily.slice(-60)}>
@@ -1056,7 +1063,7 @@ export default function BYDStatsAnalyzer() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
                       <YAxis stroke="#64748b" />
-                      <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                      <Tooltip content={<ChartTip />} isAnimationActive={false} />
                       <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -1068,19 +1075,19 @@ export default function BYDStatsAnalyzer() {
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={hourly}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
                         <YAxis stroke="#64748b" fontSize={11} />
-                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} />
                         <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
+                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
@@ -1088,7 +1095,7 @@ export default function BYDStatsAnalyzer() {
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
                         <PolarRadiusAxis stroke="#64748b" />
                         <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} />
-                        <Tooltip content={<ChartTip />} cursor={false} isAnimationActive={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1114,7 +1121,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                   <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" style={{ pointerEvents: 'none' }}>
+                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
                   <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart>
@@ -1242,34 +1249,32 @@ export default function BYDStatsAnalyzer() {
 
                       return (
                         <div key={i} className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50">
-                          <div className="flex justify-between items-stretch gap-3">
-                            {/* Left: Info */}
-                            <div className="flex-1">
-                              <div className="mb-3">
-                                <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
-                                <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
-                              </div>
-                              <div className="grid grid-cols-3 gap-3">
-                                <div>
-                                  <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Distancia</p>
-                                  <p className="text-white text-sm sm:text-base font-semibold">{trip.trip?.toFixed(1)}</p>
-                                  <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Consumo</p>
-                                  <p className="text-white text-base sm:text-lg font-bold">{trip.electricity?.toFixed(2)}</p>
-                                  <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
-                                </div>
-                                <div>
-                                  <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Eficiencia</p>
-                                  <p className="text-white text-base sm:text-lg font-bold">{efficiency.toFixed(2)}</p>
-                                  <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
-                                </div>
-                              </div>
+                          {/* Fecha y hora centrada - 100% */}
+                          <div className="text-center mb-3">
+                            <p className="text-white font-semibold text-sm sm:text-base">
+                              {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+                            </p>
+                          </div>
+                          {/* 4 columnas de 25% cada una */}
+                          <div className="grid grid-cols-4 gap-2">
+                            <div className="text-center">
+                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                              <p className="text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                              <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
                             </div>
-                            {/* Right: Score */}
-                            <div className="flex items-center">
-                              <p className="text-3xl sm:text-4xl font-bold" style={{ color: scoreColor }}>
+                            <div className="text-center">
+                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                              <p className="text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                              <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                              <p className="text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                              <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                            </div>
+                            <div className="text-center">
+                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                              <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
                                 {score.toFixed(1)}
                               </p>
                             </div>
