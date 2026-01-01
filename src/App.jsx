@@ -184,6 +184,8 @@ export default function BYDStatsAnalyzer() {
   const [touchEnd, setTouchEnd] = useState(null);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [touchStartY, setTouchStartY] = useState(null);
+  const [swipeDirection, setSwipeDirection] = useState(null); // 'horizontal' | 'vertical' | null
 
   const isNative = Capacitor.isNativePlatform();
 
@@ -326,65 +328,98 @@ export default function BYDStatsAnalyzer() {
     { id: 'records', label: 'Récords', icon: BarChart3 }
   ];
 
-  // Swipe gesture handlers with smooth animation
-  const minSwipeDistance = 80;
-  const swipeThreshold = 0.3; // 30% of screen width
+  // Swipe gesture handlers with direction detection
+  const minSwipeDistance = 60;
+  const swipeThreshold = 0.25; // 25% of screen width
+  const directionThreshold = 20; // pixels to determine direction
 
   const onTouchStart = (e) => {
     if (isTransitioning) return;
     setTouchEnd(null);
     setTouchStart(e.targetTouches[0].clientX);
+    setTouchStartY(e.targetTouches[0].clientY);
     setSwipeOffset(0);
+    setSwipeDirection(null);
   };
 
   const onTouchMove = (e) => {
     if (!touchStart || isTransitioning) return;
 
-    const currentTouch = e.targetTouches[0].clientX;
-    const diff = currentTouch - touchStart;
-    const currentIndex = tabs.findIndex(t => t.id === activeTab);
+    const currentTouchX = e.targetTouches[0].clientX;
+    const currentTouchY = e.targetTouches[0].clientY;
+    const diffX = Math.abs(currentTouchX - touchStart);
+    const diffY = Math.abs(currentTouchY - touchStartY);
 
-    // Limit swipe at boundaries
-    if ((currentIndex === 0 && diff > 0) || (currentIndex === tabs.length - 1 && diff < 0)) {
-      setSwipeOffset(diff * 0.2); // Reduced resistance at edges
-      return;
-    }
-
-    setSwipeOffset(diff);
-    setTouchEnd(currentTouch);
-  };
-
-  const onTouchEnd = () => {
-    if (!touchStart || isTransitioning) {
-      setSwipeOffset(0);
-      return;
-    }
-
-    const currentIndex = tabs.findIndex(t => t.id === activeTab);
-    const screenWidth = window.innerWidth;
-    const swipeDistance = touchEnd ? touchEnd - touchStart : 0;
-    const swipePercentage = Math.abs(swipeDistance) / screenWidth;
-
-    setIsTransitioning(true);
-
-    // Determine if swipe is significant enough
-    if (swipePercentage > swipeThreshold || Math.abs(swipeDistance) > minSwipeDistance) {
-      if (swipeDistance < 0 && currentIndex < tabs.length - 1) {
-        // Swipe left = next tab
-        setActiveTab(tabs[currentIndex + 1].id);
-      } else if (swipeDistance > 0 && currentIndex > 0) {
-        // Swipe right = previous tab
-        setActiveTab(tabs[currentIndex - 1].id);
+    // Determine swipe direction on first significant movement
+    if (!swipeDirection && (diffX > directionThreshold || diffY > directionThreshold)) {
+      if (diffX > diffY) {
+        setSwipeDirection('horizontal');
+      } else {
+        setSwipeDirection('vertical');
       }
     }
 
-    // Reset with animation
-    setTimeout(() => {
+    // Only handle horizontal swipes
+    if (swipeDirection === 'horizontal') {
+      const diff = currentTouchX - touchStart;
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+
+      // Limit swipe at boundaries with elastic effect
+      if ((currentIndex === 0 && diff > 0) || (currentIndex === tabs.length - 1 && diff < 0)) {
+        setSwipeOffset(diff * 0.15); // Strong resistance at edges
+        return;
+      }
+
+      setSwipeOffset(diff);
+      setTouchEnd(currentTouchX);
+    }
+    // Vertical swipes are ignored, allowing normal scrolling
+  };
+
+  const onTouchEnd = () => {
+    if (!touchStart) {
+      setSwipeOffset(0);
+      setSwipeDirection(null);
+      return;
+    }
+
+    // Only process if it was a horizontal swipe
+    if (swipeDirection === 'horizontal' && !isTransitioning) {
+      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+      const screenWidth = window.innerWidth;
+      const swipeDistance = touchEnd ? touchEnd - touchStart : 0;
+      const swipePercentage = Math.abs(swipeDistance) / screenWidth;
+
+      setIsTransitioning(true);
+
+      // Determine if swipe is significant enough
+      if (swipePercentage > swipeThreshold || Math.abs(swipeDistance) > minSwipeDistance) {
+        if (swipeDistance < 0 && currentIndex < tabs.length - 1) {
+          // Swipe left = next tab
+          setActiveTab(tabs[currentIndex + 1].id);
+        } else if (swipeDistance > 0 && currentIndex > 0) {
+          // Swipe right = previous tab
+          setActiveTab(tabs[currentIndex - 1].id);
+        }
+      }
+
+      // Reset with animation
+      setTimeout(() => {
+        setSwipeOffset(0);
+        setTouchStart(null);
+        setTouchStartY(null);
+        setTouchEnd(null);
+        setSwipeDirection(null);
+        setIsTransitioning(false);
+      }, 250);
+    } else {
+      // Reset immediately if it wasn't a horizontal swipe
       setSwipeOffset(0);
       setTouchStart(null);
+      setTouchStartY(null);
       setTouchEnd(null);
-      setIsTransitioning(false);
-    }, 300);
+      setSwipeDirection(null);
+    }
   };
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
@@ -550,7 +585,7 @@ export default function BYDStatsAnalyzer() {
       </div>
 
       <div
-        className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-24 overflow-hidden"
+        className="max-w-7xl mx-auto py-4 sm:py-6 pb-24 overflow-hidden"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -558,20 +593,26 @@ export default function BYDStatsAnalyzer() {
       >
         <div
           style={{
-            transform: `translateX(${swipeOffset}px)`,
+            display: 'flex',
+            width: `${tabs.length * 100}%`,
+            transform: `translateX(calc(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}% + ${swipeOffset}px))`,
             transition: isTransitioning ? 'transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1)' : 'none',
             willChange: 'transform',
             userSelect: 'none'
           }}
         >
         {!data ? (
-          <div className="text-center py-12 bg-slate-800/30 rounded-2xl">
-            <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-            <p className="text-slate-400">No hay datos para mostrar</p>
-          </div>
+          // Show error message on all slides
+          tabs.map((tab) => (
+            <div key={tab.id} className="text-center py-12 bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
+              <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
+              <p className="text-slate-400">No hay datos para mostrar</p>
+            </div>
+          ))
         ) : (
           <>
-            {activeTab === 'overview' && (
+            {/* Slide 1: Overview */}
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
@@ -628,9 +669,10 @@ export default function BYDStatsAnalyzer() {
                   </div>
                 </div>
               </div>
-            )}
+            </div>
 
-            {activeTab === 'trends' && (
+            {/* Slide 2: Trends */}
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
@@ -666,9 +708,10 @@ export default function BYDStatsAnalyzer() {
                   </ResponsiveContainer>
                 </div>
               </div>
-            )}
+            </div>
 
-            {activeTab === 'patterns' && (
+            {/* Slide 3: Patterns */}
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
@@ -706,9 +749,10 @@ export default function BYDStatsAnalyzer() {
                   ))}
                 </div>
               </div>
-            )}
+            </div>
 
-            {activeTab === 'efficiency' && (
+            {/* Slide 4: Efficiency */}
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
                   <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
@@ -741,9 +785,10 @@ export default function BYDStatsAnalyzer() {
                   </ResponsiveContainer>
                 </div>
               </div>
-            )}
+            </div>
 
-            {activeTab === 'records' && (
+            {/* Slide 5: Records */}
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
@@ -793,7 +838,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
                 </div>
               </div>
-            )}
+            </div>
           </>
         )}
         </div>
