@@ -6,6 +6,7 @@ import {
   RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
 } from 'recharts';
 import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const BYD_RED = '#EA0029';
 
@@ -202,6 +203,25 @@ export default function BYDStatsAnalyzer() {
 
   const isNative = Capacitor.isNativePlatform();
 
+  // Handle Android back button
+  useEffect(() => {
+    if (!isNative) return;
+
+    const backHandler = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      if (showAllTripsModal) {
+        // Si estamos en la vista de todos los viajes, volver a la vista normal
+        setShowAllTripsModal(false);
+      } else if (!canGoBack) {
+        // Si no hay más navegación hacia atrás, salir de la app
+        CapacitorApp.exitApp();
+      }
+    });
+
+    return () => {
+      backHandler.then(h => h.remove());
+    };
+  }, [showAllTripsModal, isNative]);
+
   useEffect(() => {
     try {
       const s = localStorage.getItem(STORAGE_KEY);
@@ -343,9 +363,9 @@ export default function BYDStatsAnalyzer() {
   ];
 
   // Swipe gesture handlers with direction detection
-  const minSwipeDistance = 15;
-  const swipeThreshold = 0.15; // 15% of screen width
-  const directionThreshold = 15; // pixels to determine direction
+  const minSwipeDistance = 8; // Muy reducido para swipes rápidos
+  const swipeThreshold = 0.03; // 3% del ancho de pantalla
+  const directionThreshold = 8; // Reducido para detección más rápida
   const transitionDuration = 750; // ms - slower transition for better visibility
 
   const onTouchStart = (e) => {
@@ -625,7 +645,8 @@ export default function BYDStatsAnalyzer() {
     });
 
     // Filter trips >= 1km for scoring calculation
-    const validTrips = allTripsFiltered.filter(t => t.trip >= 1 && t.electricity > 0);
+    // Incluir eficiencias negativas (regeneración) que son las MEJORES
+    const validTrips = allTripsFiltered.filter(t => t.trip >= 1 && t.electricity !== 0);
     const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
     const minEff = efficiencies.length > 0 ? Math.min(...efficiencies) : 0;
     const maxEff = efficiencies.length > 0 ? Math.max(...efficiencies) : 0;
@@ -813,7 +834,7 @@ export default function BYDStatsAnalyzer() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
           <div className="space-y-3">
             {allTripsFiltered.map((trip, i) => {
-              const efficiency = trip.trip > 0 && trip.electricity > 0
+              const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
                 ? (trip.electricity / trip.trip) * 100
                 : 0;
               const score = calculateScore(efficiency, minEff, maxEff);
@@ -821,30 +842,36 @@ export default function BYDStatsAnalyzer() {
 
               return (
                 <div key={i} className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50">
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
-                      <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
+                  <div className="flex justify-between items-stretch gap-3">
+                    {/* Left: Info */}
+                    <div className="flex-1">
+                      <div className="mb-3">
+                        <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
+                        <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
+                      </div>
+                      <div className="grid grid-cols-3 gap-3">
+                        <div>
+                          <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Distancia</p>
+                          <p className="text-white text-sm sm:text-base font-semibold">{trip.trip?.toFixed(1)}</p>
+                          <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Consumo</p>
+                          <p className="text-white text-base sm:text-lg font-bold">{trip.electricity?.toFixed(2)}</p>
+                          <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                        </div>
+                        <div>
+                          <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Eficiencia</p>
+                          <p className="text-white text-base sm:text-lg font-bold">{efficiency.toFixed(2)}</p>
+                          <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg sm:text-xl font-bold" style={{ color: scoreColor }}>
+                    {/* Right: Score */}
+                    <div className="flex items-center">
+                      <p className="text-3xl sm:text-4xl font-bold" style={{ color: scoreColor }}>
                         {score.toFixed(1)}
                       </p>
-                      <p className="text-slate-500 text-xs">puntos</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
-                    <div>
-                      <p className="text-slate-400 text-[10px] sm:text-xs">Distancia</p>
-                      <p className="text-white text-xs sm:text-sm font-medium">{trip.trip?.toFixed(1)} km</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-[10px] sm:text-xs">Consumo</p>
-                      <p className="text-white text-xs sm:text-sm font-medium">{trip.electricity?.toFixed(2)} kWh</p>
-                    </div>
-                    <div>
-                      <p className="text-slate-400 text-[10px] sm:text-xs">Eficiencia</p>
-                      <p className="text-white text-xs sm:text-sm font-medium">{efficiency.toFixed(2)} kWh/100km</p>
                     </div>
                   </div>
                 </div>
@@ -1200,13 +1227,14 @@ export default function BYDStatsAnalyzer() {
                     });
 
                     // Filter trips >= 1km for scoring calculation
-                    const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity > 0);
+                    // Incluir eficiencias negativas (regeneración) que son las MEJORES
+                    const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
                     const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
                     const minEff = Math.min(...efficiencies);
                     const maxEff = Math.max(...efficiencies);
 
                     return allTrips.slice(0, 15).map((trip, i) => {
-                      const efficiency = trip.trip > 0 && trip.electricity > 0
+                      const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
                         ? (trip.electricity / trip.trip) * 100
                         : 0;
                       const score = calculateScore(efficiency, minEff, maxEff);
@@ -1214,30 +1242,36 @@ export default function BYDStatsAnalyzer() {
 
                       return (
                         <div key={i} className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
-                              <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
+                          <div className="flex justify-between items-stretch gap-3">
+                            {/* Left: Info */}
+                            <div className="flex-1">
+                              <div className="mb-3">
+                                <p className="text-white font-medium text-sm sm:text-base">{formatDate(trip.date)}</p>
+                                <p className="text-slate-400 text-xs sm:text-sm">{formatTime(trip.start_timestamp)}</p>
+                              </div>
+                              <div className="grid grid-cols-3 gap-3">
+                                <div>
+                                  <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Distancia</p>
+                                  <p className="text-white text-sm sm:text-base font-semibold">{trip.trip?.toFixed(1)}</p>
+                                  <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Consumo</p>
+                                  <p className="text-white text-base sm:text-lg font-bold">{trip.electricity?.toFixed(2)}</p>
+                                  <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                                </div>
+                                <div>
+                                  <p className="text-slate-400 text-[10px] sm:text-xs mb-0.5">Eficiencia</p>
+                                  <p className="text-white text-base sm:text-lg font-bold">{efficiency.toFixed(2)}</p>
+                                  <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className="text-lg sm:text-xl font-bold" style={{ color: scoreColor }}>
+                            {/* Right: Score */}
+                            <div className="flex items-center">
+                              <p className="text-3xl sm:text-4xl font-bold" style={{ color: scoreColor }}>
                                 {score.toFixed(1)}
                               </p>
-                              <p className="text-slate-500 text-xs">puntos</p>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-3 gap-2 sm:gap-3 mt-3">
-                            <div>
-                              <p className="text-slate-400 text-[10px] sm:text-xs">Distancia</p>
-                              <p className="text-white text-xs sm:text-sm font-medium">{trip.trip?.toFixed(1)} km</p>
-                            </div>
-                            <div>
-                              <p className="text-slate-400 text-[10px] sm:text-xs">Consumo</p>
-                              <p className="text-white text-xs sm:text-sm font-medium">{trip.electricity?.toFixed(2)} kWh</p>
-                            </div>
-                            <div>
-                              <p className="text-slate-400 text-[10px] sm:text-xs">Eficiencia</p>
-                              <p className="text-white text-xs sm:text-sm font-medium">{efficiency.toFixed(2)} kWh/100km</p>
                             </div>
                           </div>
                         </div>
