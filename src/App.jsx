@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -194,11 +194,10 @@ export default function BYDStatsAnalyzer() {
   const [allTripsSortOrder, setAllTripsSortOrder] = useState('desc'); // 'asc' or 'desc'
 
   // Swipe gesture state
-  const [touchStart, setTouchStart] = useState(null);
-  const [touchEnd, setTouchEnd] = useState(null);
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const [touchStartY, setTouchStartY] = useState(null);
-  const [swipeDirection, setSwipeDirection] = useState(null); // 'horizontal' | 'vertical' | null
+  const touchStartRef = useRef(null);
+  const touchStartYRef = useRef(null);
+  const swipeContainerRef = useRef(null);
 
   const isNative = Capacitor.isNativePlatform();
 
@@ -361,63 +360,80 @@ export default function BYDStatsAnalyzer() {
     { id: 'history', label: 'Histórico', icon: List }
   ];
 
-  // Swipe gesture - ultra simplified
+  // Swipe gesture - completely rewritten with refs
   const minSwipeDistance = 30; // Distancia mínima en píxeles
   const transitionDuration = 750;
 
-  const onTouchStart = (e) => {
-    if (isTransitioning) return;
-    setTouchStart(e.touches[0].clientX);
-    setTouchStartY(e.touches[0].clientY);
-    setTouchEnd(null);
-    setSwipeDirection(null);
-  };
+  // Swipe detection using native event listeners for better performance
+  useEffect(() => {
+    const container = swipeContainerRef.current;
+    if (!container) return;
 
-  const onTouchMove = (e) => {
-    if (!touchStart || isTransitioning) return;
-    const currentX = e.touches[0].clientX;
-    const currentY = e.touches[0].clientY;
+    let swipeDirection = null;
 
-    // Detectar dirección solo una vez
-    if (!swipeDirection) {
-      const diffX = Math.abs(currentX - touchStart);
-      const diffY = Math.abs(currentY - touchStartY);
-      setSwipeDirection(diffX > diffY ? 'horizontal' : 'vertical');
-    }
+    const handleTouchStart = (e) => {
+      if (isTransitioning) return;
+      const touch = e.touches[0];
+      touchStartRef.current = touch.clientX;
+      touchStartYRef.current = touch.clientY;
+      swipeDirection = null;
+    };
 
-    if (swipeDirection === 'horizontal') {
-      setTouchEnd(currentX);
-    }
-  };
+    const handleTouchMove = (e) => {
+      if (!touchStartRef.current || isTransitioning) return;
 
-  const onTouchEnd = () => {
-    if (!touchStart || !touchEnd) {
-      setTouchStart(null);
-      setTouchEnd(null);
-      setSwipeDirection(null);
-      return;
-    }
+      const touch = e.touches[0];
+      const diffX = Math.abs(touch.clientX - touchStartRef.current);
+      const diffY = Math.abs(touch.clientY - touchStartYRef.current);
 
-    if (swipeDirection === 'horizontal') {
-      const distance = touchEnd - touchStart;
-      const currentIndex = tabs.findIndex(t => t.id === activeTab);
+      // Detectar dirección solo una vez
+      if (!swipeDirection) {
+        swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
+      }
 
-      if (Math.abs(distance) > minSwipeDistance) {
-        if (distance < 0 && currentIndex < tabs.length - 1) {
-          // Swipe left
+      // Si es swipe horizontal, prevenir scroll vertical
+      if (swipeDirection === 'horizontal' && diffX > 10) {
+        e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!touchStartRef.current) return;
+
+      const touch = e.changedTouches[0];
+      const diffX = touch.clientX - touchStartRef.current;
+      const diffY = Math.abs(touch.clientY - touchStartYRef.current);
+
+      // Solo procesar si fue swipe horizontal
+      if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
+        const currentIndex = tabs.findIndex(t => t.id === activeTab);
+
+        if (diffX < 0 && currentIndex < tabs.length - 1) {
+          // Swipe left - siguiente tab
           handleTabClick(tabs[currentIndex + 1].id);
-        } else if (distance > 0 && currentIndex > 0) {
-          // Swipe right
+        } else if (diffX > 0 && currentIndex > 0) {
+          // Swipe right - tab anterior
           handleTabClick(tabs[currentIndex - 1].id);
         }
       }
-    }
 
-    setTouchStart(null);
-    setTouchEnd(null);
-    setTouchStartY(null);
-    setSwipeDirection(null);
-  };
+      // Reset
+      touchStartRef.current = null;
+      touchStartYRef.current = null;
+      swipeDirection = null;
+    };
+
+    // Agregar event listeners con opciones pasivas cuando sea posible
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+    return () => {
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
+    };
+  }, [isTransitioning, activeTab, tabs]);
 
   const handleTabClick = (tabId) => {
     if (tabId === activeTab || isTransitioning) return;
@@ -865,10 +881,8 @@ export default function BYDStatsAnalyzer() {
 
   return (
     <div
+      ref={swipeContainerRef}
       className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white"
-      onTouchStart={onTouchStart}
-      onTouchMove={onTouchMove}
-      onTouchEnd={onTouchEnd}
     >
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
@@ -974,8 +988,8 @@ export default function BYDStatsAnalyzer() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} cursor={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -992,13 +1006,13 @@ export default function BYDStatsAnalyzer() {
                           paddingAngle={3}
                           dataKey="count"
                           label={({ range, count }) => count > 0 ? `${range} km` : ''}
-                          isAnimationActive={false} cursor={false}
+                          isAnimationActive={false}
                         >
                           {tripDist.map((e, i) => (
                             <Cell key={`cell-${i}`} fill={e.color} />
                           ))}
                         </Pie>
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -1017,10 +1031,10 @@ export default function BYDStatsAnalyzer() {
                       <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                       <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
                       <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
-                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
                       <Legend wrapperStyle={{ fontSize: '12px' }} />
-                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} cursor={false} />
-                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} cursor={false} />
+                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} />
+                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1037,8 +1051,8 @@ export default function BYDStatsAnalyzer() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
                       <YAxis stroke="#64748b" />
-                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} cursor={false} />
+                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -1056,8 +1070,8 @@ export default function BYDStatsAnalyzer() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
                         <YAxis stroke="#64748b" fontSize={11} />
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} cursor={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1068,8 +1082,8 @@ export default function BYDStatsAnalyzer() {
                         <PolarGrid stroke="#334155" />
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
                         <PolarRadiusAxis stroke="#64748b" />
-                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} cursor={false} />
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1121,7 +1135,8 @@ export default function BYDStatsAnalyzer() {
                         label={{ value: 'kWh/100km', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 11 }}
                       />
                       <Tooltip
-                        isAnimationActive={false} cursor={false}
+                        isAnimationActive={false}
+                        cursor={{ stroke: 'none' }}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             return (
@@ -1134,7 +1149,7 @@ export default function BYDStatsAnalyzer() {
                           return null;
                         }}
                       />
-                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} cursor={false} />
+                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} />
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
