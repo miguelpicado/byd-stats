@@ -988,7 +988,7 @@ export default function BYDStatsAnalyzer() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                         <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -1012,7 +1012,7 @@ export default function BYDStatsAnalyzer() {
                             <Cell key={`cell-${i}`} fill={e.color} />
                           ))}
                         </Pie>
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       </PieChart>
                     </ResponsiveContainer>
                   </div>
@@ -1031,7 +1031,7 @@ export default function BYDStatsAnalyzer() {
                       <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                       <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
                       <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
-                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       <Legend wrapperStyle={{ fontSize: '12px' }} />
                       <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} />
                       <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} />
@@ -1051,7 +1051,7 @@ export default function BYDStatsAnalyzer() {
                       <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
                       <YAxis stroke="#64748b" />
-                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                      <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} />
                     </AreaChart>
                   </ResponsiveContainer>
@@ -1070,7 +1070,7 @@ export default function BYDStatsAnalyzer() {
                         <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                         <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
                         <YAxis stroke="#64748b" fontSize={11} />
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                         <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} />
                       </BarChart>
                     </ResponsiveContainer>
@@ -1083,7 +1083,7 @@ export default function BYDStatsAnalyzer() {
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
                         <PolarRadiusAxis stroke="#64748b" />
                         <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} />
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={{ stroke: 'none' }} />
+                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       </RadarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1136,7 +1136,7 @@ export default function BYDStatsAnalyzer() {
                       />
                       <Tooltip
                         isAnimationActive={false}
-                        cursor={{ stroke: 'none' }}
+                        cursor={false}
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             return (
