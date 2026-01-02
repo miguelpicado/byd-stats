@@ -497,10 +497,13 @@ export default function BYDStatsAnalyzer() {
   const ChartTip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-800 border border-slate-600 rounded-xl p-3">
-          <p className="text-white font-medium mb-1">{label}</p>
+        <div className="bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: payload[0]?.color || BYD_RED }}></div>
+            <p className="text-white font-medium">{label}</p>
+          </div>
           {payload.map((p, i) => (
-            <p key={i} style={{ color: p.color }} className="text-sm">
+            <p key={i} style={{ color: p.color }} className="text-sm font-medium">
               {p.name}: {typeof p.value === 'number' ? p.value.toFixed(1) : p.value}
             </p>
           ))}
@@ -967,6 +970,7 @@ export default function BYDStatsAnalyzer() {
         <div
           style={{
             display: 'flex',
+            alignItems: 'flex-start',
             width: `${tabs.length * 100}%`,
             transform: `translate3d(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}%, 0, 0)`,
             transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.33, 1, 0.68, 1)` : 'none',
@@ -1026,26 +1030,58 @@ export default function BYDStatsAnalyzer() {
                   </div>
                   <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
-                    <ResponsiveContainer width="100%" height={240}>
-                      <PieChart>
-                        <Pie
-                          data={tripDist}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          paddingAngle={3}
-                          dataKey="count"
-                          label={({ range, count }) => count > 0 ? `${range} km` : ''}
-                          isAnimationActive={false}
-                        >
-                          {tripDist.map((e, i) => (
-                            <Cell key={`cell-${i}`} fill={e.color} />
-                          ))}
-                        </Pie>
-                        <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                      </PieChart>
-                    </ResponsiveContainer>
+                    <div className="flex flex-col items-center">
+                      <ResponsiveContainer width="100%" height={200}>
+                        <PieChart>
+                          <Pie
+                            data={tripDist}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={55}
+                            outerRadius={85}
+                            paddingAngle={2}
+                            dataKey="count"
+                            label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
+                            labelLine={false}
+                            isAnimationActive={false}
+                          >
+                            {tripDist.map((e, i) => (
+                              <Cell key={`cell-${i}`} fill={e.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            content={({ active, payload }) => {
+                              if (active && payload && payload.length) {
+                                const data = payload[0];
+                                const total = tripDist.reduce((s, d) => s + d.count, 0);
+                                const percent = ((data.value / total) * 100).toFixed(1);
+                                return (
+                                  <div className="bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }}></div>
+                                      <p className="text-white font-bold">{data.payload.range} km</p>
+                                    </div>
+                                    <p className="text-sm text-slate-300">{data.value} viajes ({percent}%)</p>
+                                  </div>
+                                );
+                              }
+                              return null;
+                            }}
+                            isAnimationActive={false}
+                            cursor={false}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="grid grid-cols-5 gap-2 w-full mt-4">
+                        {tripDist.map((d, i) => (
+                          <div key={i} className="flex flex-col items-center">
+                            <div className="w-3 h-3 rounded-full mb-1" style={{ backgroundColor: d.color }}></div>
+                            <p className="text-[9px] sm:text-[10px] text-slate-400 text-center">{d.range}km</p>
+                            <p className="text-xs sm:text-sm font-bold text-white">{d.count}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
