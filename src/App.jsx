@@ -38,7 +38,7 @@ const AlertCircle = ({ className }) => <svg className={className} viewBox="0 0 2
 const Filter = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
 const Plus = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>;
 const List = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>;
-const Settings = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 1v6m0 6v6m9-9h-6m-6 0H3" /><path d="m19.07 4.93-4.24 4.24m0 5.66 4.24 4.24M4.93 4.93l4.24 4.24m5.66 0 4.24-4.24" /></svg>;
+const Settings = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>;
 
 const STORAGE_KEY = 'byd_stats_data';
 
@@ -372,12 +372,6 @@ export default function BYDStatsAnalyzer() {
           cols.forEach((c, i) => { o[c] = r[i]; });
           return o;
         });
-
-        // Log available fields for diagnostic
-        if (rows.length > 0) {
-          console.log('📊 Campos disponibles en la base de datos:', Object.keys(rows[0]));
-          console.log('📝 Ejemplo de viaje completo:', rows[0]);
-        }
 
         if (merge && rawTrips.length) {
           const map = new Map();
@@ -750,6 +744,136 @@ export default function BYDStatsAnalyzer() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+        {/* Trip Detail Modal (higher z-index to appear over everything) */}
+        {showTripDetailModal && selectedTrip && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-60 p-4" onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}>
+            <div className="bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold">Detalle del viaje</h3>
+                <button onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-700">
+                  <Plus className="w-6 h-6 rotate-45" />
+                </button>
+              </div>
+
+              {(() => {
+                const efficiency = selectedTrip.trip > 0 ? (selectedTrip.electricity / selectedTrip.trip) * 100 : 0;
+                const avgSpeed = selectedTrip.duration > 0 ? (selectedTrip.trip / (selectedTrip.duration / 3600)) : 0;
+                const endTime = selectedTrip.start_timestamp && selectedTrip.duration ? selectedTrip.start_timestamp + selectedTrip.duration : null;
+                const cost = (selectedTrip.electricity || 0) * settings.electricityPrice;
+                const avgEfficiency = data ? parseFloat(data.summary.avgEff) : 0;
+                const comparisonPercent = avgEfficiency > 0 ? ((efficiency - avgEfficiency) / avgEfficiency * 100) : 0;
+                const percentile = calculatePercentile(selectedTrip, rawTrips);
+
+                return (
+                  <div className="space-y-4">
+                    {/* Fecha y hora */}
+                    <div className="bg-slate-700/50 rounded-xl p-4">
+                      <p className="text-slate-400 text-sm mb-1">Fecha y hora</p>
+                      <p className="text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <div>
+                          <p className="text-slate-400 text-xs">Inicio</p>
+                          <p className="text-white font-medium">{formatTime(selectedTrip.start_timestamp)}</p>
+                        </div>
+                        {endTime && (
+                          <>
+                            <span className="text-slate-600">→</span>
+                            <div>
+                              <p className="text-slate-400 text-xs">Fin</p>
+                              <p className="text-white font-medium">{formatTime(endTime)}</p>
+                            </div>
+                          </>
+                        )}
+                        <div className="ml-auto">
+                          <p className="text-slate-400 text-xs">Duración</p>
+                          <p className="text-white font-medium">{formatDuration(selectedTrip.duration)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Grid de métricas */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="bg-slate-700/50 rounded-xl p-3">
+                        <p className="text-slate-400 text-xs mb-1">Distancia</p>
+                        <p className="text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
+                        <p className="text-slate-500 text-xs">km</p>
+                      </div>
+                      <div className="bg-slate-700/50 rounded-xl p-3">
+                        <p className="text-slate-400 text-xs mb-1">Velocidad media</p>
+                        <p className="text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
+                        <p className="text-slate-500 text-xs">km/h</p>
+                      </div>
+                      <div className="bg-slate-700/50 rounded-xl p-3">
+                        <p className="text-slate-400 text-xs mb-1">Consumo</p>
+                        <p className="text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
+                        <p className="text-slate-500 text-xs">kWh</p>
+                      </div>
+                      <div className="bg-slate-700/50 rounded-xl p-3">
+                        <p className="text-slate-400 text-xs mb-1">Eficiencia</p>
+                        <p className="text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
+                        <p className="text-slate-500 text-xs">kWh/100km</p>
+                      </div>
+                    </div>
+
+                    {/* SOC si está disponible */}
+                    {(selectedTrip.start_soc !== undefined || selectedTrip.end_soc !== undefined) && (
+                      <div className="bg-slate-700/50 rounded-xl p-4">
+                        <p className="text-slate-400 text-sm mb-3">Estado de carga</p>
+                        <div className="flex items-center gap-4">
+                          {selectedTrip.start_soc !== undefined && (
+                            <div className="flex-1">
+                              <p className="text-xs text-slate-400">Inicial</p>
+                              <p className="text-3xl font-bold text-green-400">{selectedTrip.start_soc}%</p>
+                            </div>
+                          )}
+                          {selectedTrip.start_soc !== undefined && selectedTrip.end_soc !== undefined && (
+                            <span className="text-slate-600 text-2xl">→</span>
+                          )}
+                          {selectedTrip.end_soc !== undefined && (
+                            <div className="flex-1">
+                              <p className="text-xs text-slate-400">Final</p>
+                              <p className="text-3xl font-bold text-orange-400">{selectedTrip.end_soc}%</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Regeneración si está disponible */}
+                    {selectedTrip.regeneration !== undefined && selectedTrip.regeneration !== null && (
+                      <div className="bg-slate-700/50 rounded-xl p-4">
+                        <p className="text-slate-400 text-sm mb-1">Energía regenerada</p>
+                        <p className="text-green-400 text-2xl font-bold">{selectedTrip.regeneration?.toFixed(2)} kWh</p>
+                      </div>
+                    )}
+
+                    {/* Comparación y percentil */}
+                    <div className="bg-slate-700/50 rounded-xl p-4">
+                      <p className="text-slate-400 text-sm mb-3">Análisis</p>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-300 text-sm">Comparación con tu media</span>
+                          <span className={`font-bold ${comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            {comparisonPercent > 0 ? '+' : ''}{comparisonPercent.toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-300 text-sm">Percentil</span>
+                          <span className="font-bold text-cyan-400">Top {percentile}%</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-300 text-sm">Coste estimado</span>
+                          <span className="font-bold" style={{ color: BYD_RED }}>{cost.toFixed(2)}€</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
           <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
@@ -1596,7 +1720,7 @@ export default function BYDStatsAnalyzer() {
             {/* Slide 6: History */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
-                <h2 className="text-xl sm:text-2xl font-bold">Últimos 15 viajes</h2>
+                <h2 className="text-xl sm:text-2xl font-bold">Últimos 10 viajes</h2>
                 <div className="space-y-3">
                   {(() => {
                     const allTrips = [...filtered].sort((a, b) => {
@@ -1612,7 +1736,7 @@ export default function BYDStatsAnalyzer() {
                     const minEff = Math.min(...efficiencies);
                     const maxEff = Math.max(...efficiencies);
 
-                    return allTrips.slice(0, 15).map((trip, i) => {
+                    return allTrips.slice(0, 10).map((trip, i) => {
                       const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
                         ? (trip.electricity / trip.trip) * 100
                         : 0;
