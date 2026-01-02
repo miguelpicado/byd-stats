@@ -39,8 +39,11 @@ const Filter = ({ className }) => <svg className={className} viewBox="0 0 24 24"
 const Plus = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>;
 const List = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>;
 const Settings = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>;
+const Download = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
+const Database = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>;
 
 const STORAGE_KEY = 'byd_stats_data';
+const TRIP_HISTORY_KEY = 'byd_trip_history';
 
 const formatMonth = (m) => {
   if (!m || m.length < 6) return m || '';
@@ -183,11 +186,16 @@ export default function BYDStatsAnalyzer() {
   const [showAllTripsModal, setShowAllTripsModal] = useState(false);
   const [showTripDetailModal, setShowTripDetailModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [selMonth, setSelMonth] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [tripHistory, setTripHistory] = useState([]);
+
+  // Layout mode state: 'vertical' (mobile) or 'horizontal' (tablet/desktop)
+  const [layoutMode, setLayoutMode] = useState('vertical');
 
   // Settings state
   const [settings, setSettings] = useState(() => {
@@ -360,6 +368,13 @@ export default function BYDStatsAnalyzer() {
         const p = JSON.parse(s);
         if (Array.isArray(p) && p.length > 0) setRawTrips(p);
       }
+
+      // Load trip history
+      const h = localStorage.getItem(TRIP_HISTORY_KEY);
+      if (h) {
+        const history = JSON.parse(h);
+        if (Array.isArray(history)) setTripHistory(history);
+      }
     } catch (e) {
       console.error('Error loading from localStorage:', e);
     }
@@ -374,6 +389,52 @@ export default function BYDStatsAnalyzer() {
       }
     }
   }, [rawTrips]);
+
+  // Save trip history to localStorage
+  useEffect(() => {
+    if (tripHistory.length > 0) {
+      try {
+        localStorage.setItem(TRIP_HISTORY_KEY, JSON.stringify(tripHistory));
+      } catch (e) {
+        console.error('Error saving trip history:', e);
+      }
+    }
+  }, [tripHistory]);
+
+  // Detect device type and orientation for layout mode
+  useEffect(() => {
+    const updateLayoutMode = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      const isLandscape = width > height;
+
+      // Detect if webapp (not native)
+      if (!isNative) {
+        // Webapp always uses horizontal layout
+        setLayoutMode('horizontal');
+        return;
+      }
+
+      // For native apps (APK), detect screen size and orientation
+      // Tablet is typically > 10 inches (600dp ~ 960px in landscape)
+      const isTablet = width >= 960 || (width >= 768 && isLandscape);
+
+      if (isTablet && isLandscape) {
+        setLayoutMode('horizontal');
+      } else {
+        setLayoutMode('vertical');
+      }
+    };
+
+    updateLayoutMode();
+    window.addEventListener('resize', updateLayoutMode);
+    window.addEventListener('orientationchange', updateLayoutMode);
+
+    return () => {
+      window.removeEventListener('resize', updateLayoutMode);
+      window.removeEventListener('orientationchange', updateLayoutMode);
+    };
+  }, [isNative]);
 
   useEffect(() => {
     const sc = document.createElement('script');
@@ -485,6 +546,114 @@ export default function BYDStatsAnalyzer() {
     }
   };
 
+  // Export database to EC_Database.db format
+  const exportDatabase = useCallback(async () => {
+    if (!window.SQL || filtered.length === 0) {
+      alert('No hay datos para exportar');
+      return;
+    }
+
+    try {
+      // Create a new SQLite database
+      const db = new window.SQL.Database();
+
+      // Create EnergyConsumption table with all columns
+      db.run(`
+        CREATE TABLE IF NOT EXISTS EnergyConsumption (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          trip REAL,
+          electricity REAL,
+          duration INTEGER,
+          date TEXT,
+          start_timestamp INTEGER,
+          month TEXT,
+          is_deleted INTEGER DEFAULT 0
+        )
+      `);
+
+      // Insert all filtered trips
+      const stmt = db.prepare(`
+        INSERT INTO EnergyConsumption (trip, electricity, duration, date, start_timestamp, month, is_deleted)
+        VALUES (?, ?, ?, ?, ?, ?, 0)
+      `);
+
+      filtered.forEach(trip => {
+        stmt.run([
+          trip.trip || 0,
+          trip.electricity || 0,
+          trip.duration || 0,
+          trip.date || '',
+          trip.start_timestamp || 0,
+          trip.month || ''
+        ]);
+      });
+      stmt.free();
+
+      // Export database to file
+      const data = db.export();
+      const blob = new Blob([data], { type: 'application/x-sqlite3' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `EC_Database_${new Date().toISOString().slice(0, 10)}.db`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      db.close();
+      alert('Base de datos exportada correctamente');
+    } catch (e) {
+      console.error('Error exporting database:', e);
+      alert('Error al exportar la base de datos: ' + e.message);
+    }
+  }, [filtered]);
+
+  // Save current trips to history
+  const saveToHistory = useCallback(() => {
+    if (rawTrips.length === 0) {
+      alert('No hay viajes para guardar');
+      return;
+    }
+
+    // Merge current trips with existing history using unique key
+    const map = new Map();
+
+    // Add existing history
+    tripHistory.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
+
+    // Add current trips
+    rawTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
+
+    const newHistory = Array.from(map.values()).sort((a, b) =>
+      (a.date || '').localeCompare(b.date || '')
+    );
+
+    setTripHistory(newHistory);
+    alert(`Registro guardado: ${newHistory.length} viajes en total (${newHistory.length - tripHistory.length} nuevos)`);
+  }, [rawTrips, tripHistory]);
+
+  // Load history as current trips
+  const loadFromHistory = useCallback(() => {
+    if (tripHistory.length === 0) {
+      alert('No hay historial guardado');
+      return;
+    }
+
+    if (window.confirm(`¿Cargar ${tripHistory.length} viajes del historial?`)) {
+      setRawTrips(tripHistory);
+    }
+  }, [tripHistory]);
+
+  // Clear trip history
+  const clearHistory = useCallback(() => {
+    if (window.confirm('¿Borrar el historial de viajes permanentemente?')) {
+      setTripHistory([]);
+      localStorage.removeItem(TRIP_HISTORY_KEY);
+      alert('Historial borrado');
+    }
+  }, []);
+
   const tabs = [
     { id: 'overview', label: 'Resumen', icon: Activity },
     { id: 'trends', label: 'Tendencias', icon: TrendingUp },
@@ -499,9 +668,10 @@ export default function BYDStatsAnalyzer() {
   const transitionDuration = 500;
 
   // Swipe detection using native event listeners for better performance
+  // Only enabled in vertical layout mode
   useEffect(() => {
     const container = swipeContainerRef.current;
-    if (!container) return;
+    if (!container || layoutMode === 'horizontal') return;
 
     let swipeDirection = null;
 
@@ -567,20 +737,28 @@ export default function BYDStatsAnalyzer() {
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isTransitioning, activeTab, tabs]);
+  }, [isTransitioning, activeTab, tabs, layoutMode]);
 
   const handleTabClick = (tabId) => {
-    if (tabId === activeTab || isTransitioning) return;
+    if (tabId === activeTab) return;
 
-    setIsTransitioning(true);
-    setActiveTab(tabId);
+    // Only use transitions in vertical layout mode
+    if (layoutMode === 'vertical') {
+      if (isTransitioning) return;
+      setIsTransitioning(true);
+      setActiveTab(tabId);
 
-    // Scroll to top al cambiar de tab
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+      // Scroll to top al cambiar de tab
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    setTimeout(() => {
-      setIsTransitioning(false);
-    }, transitionDuration);
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, transitionDuration);
+    } else {
+      // In horizontal mode, just switch tabs immediately
+      setActiveTab(tabId);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
@@ -1455,6 +1633,70 @@ export default function BYDStatsAnalyzer() {
         </div>
       )}
 
+      {/* History Modal */}
+      {showHistoryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowHistoryModal(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <Database className="w-5 h-5" style={{ color: BYD_RED }} />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Historial de viajes</h2>
+              </div>
+              <button onClick={() => setShowHistoryModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                <Plus className="w-6 h-6 rotate-45" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
+                <p className="text-sm text-slate-600 dark:text-slate-400">
+                  El historial mantiene un registro permanente de todos los viajes que has cargado.
+                </p>
+                <p className="text-lg font-bold text-slate-900 dark:text-white mt-2">
+                  {tripHistory.length} viajes guardados
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <button
+                  onClick={() => {
+                    saveToHistory();
+                    setShowHistoryModal(false);
+                  }}
+                  className="w-full py-3 rounded-xl font-medium text-white"
+                  style={{ backgroundColor: BYD_RED }}
+                >
+                  Guardar viajes actuales al historial
+                </button>
+
+                <button
+                  onClick={() => {
+                    loadFromHistory();
+                    setShowHistoryModal(false);
+                  }}
+                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                  disabled={tripHistory.length === 0}
+                >
+                  Cargar historial completo
+                </button>
+
+                <button
+                  onClick={() => {
+                    clearHistory();
+                    setShowHistoryModal(false);
+                  }}
+                  className="w-full py-3 rounded-xl font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
+                  disabled={tripHistory.length === 0}
+                >
+                  Borrar historial
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
@@ -1467,8 +1709,22 @@ export default function BYDStatsAnalyzer() {
             </div>
             <div className="flex items-center gap-2">
               <button
+                onClick={exportDatabase}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                title="Exportar base de datos"
+              >
+                <Download className="w-5 h-5" />
+              </button>
+              <button
+                onClick={() => setShowHistoryModal(true)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                title="Historial de viajes"
+              >
+                <Database className="w-5 h-5" />
+              </button>
+              <button
                 onClick={() => setShowSettingsModal(true)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-white dark:bg-slate-800 transition-colors"
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
               >
                 <Settings className="w-5 h-5" />
               </button>
@@ -1485,37 +1741,61 @@ export default function BYDStatsAnalyzer() {
         </div>
       </div>
 
-      <div
-        className="flex-1 overflow-hidden"
-      >
-        <div className="max-w-7xl mx-auto h-full">
-          <div
-            style={{
-              display: 'flex',
-              height: '100%',
-              width: `${tabs.length * 100}%`,
-              transform: `translate3d(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}%, 0, 0)`,
-              transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.33, 1, 0.68, 1)` : 'none',
-              willChange: 'transform',
-              backfaceVisibility: 'hidden',
-              WebkitBackfaceVisibility: 'hidden',
-              perspective: 1000,
-              WebkitPerspective: 1000,
-              transformStyle: 'preserve-3d',
-              WebkitTransformStyle: 'preserve-3d',
-              userSelect: 'none'
-            }}
-          >
-        {!data ? (
-          // Show error message on all slides
-          tabs.map((tab) => (
-            <div key={tab.id} className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
-              <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
-              <p className="text-slate-400">No hay datos para mostrar</p>
+      <div className="flex-1 overflow-hidden" style={{ display: layoutMode === 'horizontal' ? 'flex' : 'block' }}>
+        {/* Horizontal Layout: Sidebar with tabs */}
+        {layoutMode === 'horizontal' && (
+          <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
+            <div className="p-4 space-y-2">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => handleTabClick(t.id)}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left"
+                  style={{
+                    backgroundColor: activeTab === t.id ? BYD_RED : 'transparent',
+                    color: activeTab === t.id ? 'white' : '#94a3b8'
+                  }}
+                >
+                  <t.icon className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium">{t.label}</span>
+                </button>
+              ))}
             </div>
-          ))
-        ) : (
-          <>
+          </div>
+        )}
+
+        {/* Content container */}
+        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto' : 'max-w-7xl mx-auto h-full'}>
+          {layoutMode === 'vertical' ? (
+            // Vertical layout: sliding tabs with transitions
+            <div
+              ref={swipeContainerRef}
+              style={{
+                display: 'flex',
+                height: '100%',
+                width: `${tabs.length * 100}%`,
+                transform: `translate3d(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}%, 0, 0)`,
+                transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.33, 1, 0.68, 1)` : 'none',
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+                perspective: 1000,
+                WebkitPerspective: 1000,
+                transformStyle: 'preserve-3d',
+                WebkitTransformStyle: 'preserve-3d',
+                userSelect: 'none'
+              }}
+            >
+          {!data ? (
+            // Show error message on all slides
+            tabs.map((tab) => (
+              <div key={tab.id} className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
+                <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
+                <p className="text-slate-400">No hay datos para mostrar</p>
+              </div>
+            ))
+          ) : (
+            <>
             {/* Slide 1: Overview */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
@@ -1876,11 +2156,233 @@ export default function BYDStatsAnalyzer() {
             </div>
           </>
         )}
-          </div>
+            </div>
+          ) : (
+            // Horizontal layout: show only active tab content
+            <div ref={swipeContainerRef} className="p-4">
+              {!data ? (
+                <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
+                  <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
+                  <p className="text-slate-400">No hay datos para mostrar</p>
+                </div>
+              ) : (
+                <>
+                  {activeTab === 'overview' && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <StatCard icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
+                        <StatCard icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
+                        <StatCard icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
+                      </div>
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                        <StatCard icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
+                        <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
+                          <ResponsiveContainer width="100%" height={240}>
+                            <AreaChart data={monthly}>
+                              <defs>
+                                <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor={BYD_RED} stopOpacity={0.4} />
+                                  <stop offset="95%" stopColor={BYD_RED} stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
+                              <YAxis stroke="#64748b" fontSize={12} />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
+                          <ResponsiveContainer width="100%" height={240}>
+                            <PieChart>
+                              <Pie data={tripDist} dataKey="count" cx="50%" cy="50%" outerRadius={80} isAnimationActive={false}>
+                                {tripDist.map((e, i) => <Cell key={i} fill={e.color} />)}
+                              </Pie>
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Legend verticalAlign="bottom" height={36} formatter={(v, e) => `${e.payload.range} km (${e.payload.count})`} />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === 'trends' && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Kilómetros diarios</h3>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <LineChart data={daily}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={80} />
+                            <YAxis stroke="#64748b" fontSize={12} />
+                            <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                            <Line type="monotone" dataKey="km" stroke={BYD_RED} strokeWidth={2} dot={{ r: 3, fill: BYD_RED }} name="Km" isAnimationActive={false} activeDot={{ r: 5 }} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === 'patterns' && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Viajes por hora</h3>
+                          <ResponsiveContainer width="100%" height={240}>
+                            <BarChart data={hourly}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis dataKey="hour" stroke="#64748b" fontSize={12} tickFormatter={(v) => `${v}h`} />
+                              <YAxis stroke="#64748b" fontSize={12} />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Bar dataKey="trips" fill={BYD_RED} name="Viajes" isAnimationActive={false} radius={[8, 8, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Viajes por día de la semana</h3>
+                          <ResponsiveContainer width="100%" height={240}>
+                            <RadarChart data={weekday}>
+                              <PolarGrid stroke="#cbd5e1" />
+                              <PolarAngleAxis dataKey="day" stroke="#64748b" fontSize={12} />
+                              <PolarRadiusAxis stroke="#64748b" fontSize={11} />
+                              <Radar name="Viajes" dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.4} isAnimationActive={false} />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === 'efficiency' && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                        <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
+                        <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                      </div>
+                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
+                        <ResponsiveContainer width="100%" height={320}>
+                          <ScatterChart>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                            <XAxis
+                              dataKey="km"
+                              name="Distancia"
+                              stroke="#64748b"
+                              fontSize={12}
+                              tickFormatter={(v) => `${v.toFixed(0)}km`}
+                            />
+                            <YAxis
+                              dataKey="eff"
+                              name="Eficiencia"
+                              stroke="#64748b"
+                              fontSize={11}
+                              domain={[0, 'dataMax + 2']}
+                              tickFormatter={(v) => `${v.toFixed(1)}`}
+                            />
+                            <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                            <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
+                          </ScatterChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === 'records' && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Top 5 Viajes Largos</h3>
+                        <div className="space-y-2">
+                          {top.km.map((t, i) => {
+                            const km = t.trip || 0;
+                            const electricity = t.electricity || 0;
+                            const efficiency = km > 0 ? (electricity / km) * 100 : 0;
+                            return (
+                              <div key={i} className="flex items-center gap-3 p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl">
+                                <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: BYD_RED + '30', color: BYD_RED }}>
+                                  {i + 1}
+                                </div>
+                                <div className="flex-1">
+                                  <p className="text-xs text-slate-600 dark:text-slate-400">{formatDate(t.date)}</p>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-lg font-bold text-slate-900 dark:text-white">{km.toFixed(1)} km</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-500">{efficiency.toFixed(2)} kWh/100km</p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {activeTab === 'history' && (
+                    <div className="space-y-4 sm:space-y-6">
+                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos viajes</h3>
+                        <div className="space-y-2">
+                          {(() => {
+                            return filtered.slice(-10).reverse().map((trip, i) => {
+                              const km = trip.trip || 0;
+                              const electricity = trip.electricity || 0;
+                              const efficiency = km > 0 ? (electricity / km) * 100 : 0;
+                              return (
+                                <div
+                                  key={i}
+                                  className="flex items-center gap-2 p-2 sm:p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                                  onClick={() => {
+                                    setSelectedTrip(trip);
+                                    setShowTripDetailModal(true);
+                                  }}
+                                >
+                                  <div className="flex-1">
+                                    <p className="text-xs text-slate-600 dark:text-slate-400">{formatDate(trip.date)}</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Km</p>
+                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{km.toFixed(1)}</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">kWh</p>
+                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{electricity.toFixed(2)}</p>
+                                  </div>
+                                  <div className="text-center">
+                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                                  </div>
+                                </div>
+                              );
+                            });
+                          })()}
+                        </div>
+                        <button
+                          onClick={() => setShowAllTripsModal(true)}
+                          className="w-full mt-4 py-3 rounded-xl font-medium text-white"
+                          style={{ backgroundColor: BYD_RED }}
+                        >
+                          Mostrar todo
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Floating Filter Button */}
+      {/* Floating Filter Button - Only show in vertical mode */}
+      {layoutMode === 'vertical' && (
       <button
         onClick={() => setShowFilterModal(true)}
         className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
@@ -1888,6 +2390,18 @@ export default function BYDStatsAnalyzer() {
       >
         <Filter className="w-6 h-6 text-white" />
       </button>
+      )}
+
+      {/* Floating Filter Button for Horizontal mode */}
+      {layoutMode === 'horizontal' && (
+      <button
+        onClick={() => setShowFilterModal(true)}
+        className="fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
+        style={{ backgroundColor: BYD_RED }}
+      >
+        <Filter className="w-6 h-6 text-white" />
+      </button>
+      )}
 
       {/* Filter Modal */}
       {showFilterModal && (
@@ -2006,27 +2520,29 @@ export default function BYDStatsAnalyzer() {
         </div>
       )}
 
-      {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-        <div className="max-w-7xl mx-auto px-2 py-2">
-          <div className="flex justify-around items-center">
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                onClick={() => handleTabClick(t.id)}
-                className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
-                style={{
-                  backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
-                  color: activeTab === t.id ? BYD_RED : '#94a3b8'
-                }}
-              >
-                <t.icon className="w-6 h-6 mb-1" />
-                <span className="text-[10px] font-medium">{t.label}</span>
-              </button>
-            ))}
+      {/* Bottom Navigation Bar - Only show in vertical mode */}
+      {layoutMode === 'vertical' && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+          <div className="max-w-7xl mx-auto px-2 py-2">
+            <div className="flex justify-around items-center">
+              {tabs.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => handleTabClick(t.id)}
+                  className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
+                  style={{
+                    backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
+                    color: activeTab === t.id ? BYD_RED : '#94a3b8'
+                  }}
+                >
+                  <t.icon className="w-6 h-6 mb-1" />
+                  <span className="text-[10px] font-medium">{t.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
