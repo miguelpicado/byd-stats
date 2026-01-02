@@ -1,7 +1,7 @@
 {
-  "name": "mi-app",
+  "name": "byd-stats",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,7 +11,8 @@
     "deploy": "npx gh-pages -d dist",
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
-    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug"
+    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
+    "android:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
