@@ -282,9 +282,23 @@ export default function BYDStatsAnalyzer() {
     };
   }, [showTripDetailModal, showSettingsModal, showAllTripsModal, isNative]);
 
-  // Theme management
+  // Theme management - CRITICAL: Apply theme immediately on load
+  useEffect(() => {
+    // Force apply theme on initial load
+    const currentTheme = settings.theme || 'dark';
+    const isDark = currentTheme === 'dark' ||
+                   (currentTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, []); // Run once on mount
+
   useEffect(() => {
     const applyTheme = async (isDark) => {
+      console.log('Applying theme:', isDark ? 'dark' : 'light');
       if (isDark) {
         document.documentElement.classList.add('dark');
       } else {
@@ -307,6 +321,8 @@ export default function BYDStatsAnalyzer() {
 
     let mediaQueryHandler = null;
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    console.log('Current theme setting:', settings.theme);
 
     if (settings.theme === 'dark') {
       applyTheme(true);
@@ -788,13 +804,13 @@ export default function BYDStatsAnalyzer() {
     const maxEff = efficiencies.length > 0 ? Math.max(...efficiencies) : 0;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white">
         {/* Trip Detail Modal (higher z-index to appear over everything) */}
         {showTripDetailModal && selectedTrip && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 pt-24" onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}>
             <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-bold">Detalle del viaje</h3>
+                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Detalle del viaje</h3>
                 <button onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-700">
                   <Plus className="w-6 h-6 rotate-45" />
                 </button>
@@ -812,7 +828,7 @@ export default function BYDStatsAnalyzer() {
                 return (
                   <div className="space-y-4">
                     {/* Fecha y hora */}
-                    <div className="bg-slate-700/50 rounded-xl p-4">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                       <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Fecha y hora</p>
                       <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
                       <div className="flex items-center gap-4 mt-2">
@@ -838,22 +854,22 @@ export default function BYDStatsAnalyzer() {
 
                     {/* Grid de métricas */}
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="bg-slate-700/50 rounded-xl p-3">
+                      <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                         <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Distancia</p>
                         <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
                         <p className="text-slate-500 dark:text-slate-500 text-xs">km</p>
                       </div>
-                      <div className="bg-slate-700/50 rounded-xl p-3">
+                      <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                         <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Velocidad media</p>
                         <p className="text-slate-900 dark:text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
                         <p className="text-slate-500 dark:text-slate-500 text-xs">km/h</p>
                       </div>
-                      <div className="bg-slate-700/50 rounded-xl p-3">
+                      <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                         <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Consumo</p>
                         <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
                         <p className="text-slate-500 dark:text-slate-500 text-xs">kWh</p>
                       </div>
-                      <div className="bg-slate-700/50 rounded-xl p-3">
+                      <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                         <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Eficiencia</p>
                         <p className="text-slate-900 dark:text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
                         <p className="text-slate-500 dark:text-slate-500 text-xs">kWh/100km</p>
@@ -862,7 +878,7 @@ export default function BYDStatsAnalyzer() {
 
                     {/* SOC si está disponible */}
                     {(selectedTrip.start_soc !== undefined || selectedTrip.end_soc !== undefined) && (
-                      <div className="bg-slate-700/50 rounded-xl p-4">
+                      <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                         <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Estado de carga</p>
                         <div className="flex items-center gap-4">
                           {selectedTrip.start_soc !== undefined && (
@@ -886,14 +902,14 @@ export default function BYDStatsAnalyzer() {
 
                     {/* Regeneración si está disponible */}
                     {selectedTrip.regeneration !== undefined && selectedTrip.regeneration !== null && (
-                      <div className="bg-slate-700/50 rounded-xl p-4">
+                      <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                         <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Energía regenerada</p>
                         <p className="text-green-400 text-2xl font-bold">{selectedTrip.regeneration?.toFixed(2)} kWh</p>
                       </div>
                     )}
 
                     {/* Comparación y percentil */}
-                    <div className="bg-slate-700/50 rounded-xl p-4">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                       <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
@@ -948,7 +964,7 @@ export default function BYDStatsAnalyzer() {
                   onClick={() => { setAllTripsFilterType('all'); setAllTripsMonth(''); setAllTripsDateFrom(''); setAllTripsDateTo(''); }}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
                   style={{
-                    backgroundColor: allTripsFilterType === 'all' ? BYD_RED : '#334155',
+                    backgroundColor: allTripsFilterType === "all" ? BYD_RED : undefined,
                     color: allTripsFilterType === 'all' ? 'white' : '#94a3b8'
                   }}
                 >
@@ -958,7 +974,7 @@ export default function BYDStatsAnalyzer() {
                   onClick={() => setAllTripsFilterType('month')}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
                   style={{
-                    backgroundColor: allTripsFilterType === 'month' ? BYD_RED : '#334155',
+                    backgroundColor: allTripsFilterType === 'month' ? BYD_RED : undefined,
                     color: allTripsFilterType === 'month' ? 'white' : '#94a3b8'
                   }}
                 >
@@ -968,7 +984,7 @@ export default function BYDStatsAnalyzer() {
                   onClick={() => setAllTripsFilterType('range')}
                   className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
                   style={{
-                    backgroundColor: allTripsFilterType === 'range' ? BYD_RED : '#334155',
+                    backgroundColor: allTripsFilterType === 'range' ? BYD_RED : undefined,
                     color: allTripsFilterType === 'range' ? 'white' : '#94a3b8'
                   }}
                 >
@@ -1110,7 +1126,7 @@ export default function BYDStatsAnalyzer() {
                 <div
                   key={i}
                   onClick={() => openTripDetail(trip)}
-                  className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors"
+                  className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:bg-slate-700/50 transition-colors"
                 >
                   {/* Fecha y hora centrada - 100% */}
                   <div className="text-center mb-3">
@@ -1185,7 +1201,7 @@ export default function BYDStatsAnalyzer() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 pt-24" onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold">Detalle del viaje</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Detalle del viaje</h3>
               <button onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-700">
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
@@ -1203,7 +1219,7 @@ export default function BYDStatsAnalyzer() {
               return (
                 <div className="space-y-4">
                   {/* Fecha y hora */}
-                  <div className="bg-slate-700/50 rounded-xl p-4">
+                  <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                     <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Fecha y hora</p>
                     <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
                     <div className="flex items-center gap-4 mt-2">
@@ -1229,22 +1245,22 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Grid de métricas */}
                   <div className="grid grid-cols-2 gap-3">
-                    <div className="bg-slate-700/50 rounded-xl p-3">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                       <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Distancia</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">km</p>
                     </div>
-                    <div className="bg-slate-700/50 rounded-xl p-3">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                       <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Velocidad media</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">km/h</p>
                     </div>
-                    <div className="bg-slate-700/50 rounded-xl p-3">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                       <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Consumo</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">kWh</p>
                     </div>
-                    <div className="bg-slate-700/50 rounded-xl p-3">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
                       <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Eficiencia</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">kWh/100km</p>
@@ -1253,7 +1269,7 @@ export default function BYDStatsAnalyzer() {
 
                   {/* SOC si está disponible */}
                   {(selectedTrip.start_soc !== undefined || selectedTrip.end_soc !== undefined) && (
-                    <div className="bg-slate-700/50 rounded-xl p-4">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                       <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Estado de carga</p>
                       <div className="flex items-center gap-4">
                         {selectedTrip.start_soc !== undefined && (
@@ -1277,14 +1293,14 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Regeneración si está disponible */}
                   {selectedTrip.regeneration !== undefined && selectedTrip.regeneration !== null && (
-                    <div className="bg-slate-700/50 rounded-xl p-4">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                       <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Energía regenerada</p>
                       <p className="text-green-400 text-2xl font-bold">{selectedTrip.regeneration?.toFixed(2)} kWh</p>
                     </div>
                   )}
 
                   {/* Comparación y percentil */}
-                  <div className="bg-slate-700/50 rounded-xl p-4">
+                  <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                     <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -1505,7 +1521,7 @@ export default function BYDStatsAnalyzer() {
                             <stop offset="95%" stopColor={BYD_RED} stopOpacity={0} />
                           </linearGradient>
                         </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                         <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
@@ -1631,7 +1647,7 @@ export default function BYDStatsAnalyzer() {
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
-                        <PolarGrid stroke="#334155" />
+                        <PolarGrid stroke="#cbd5e1" opacity={0.3} />
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
                         <PolarRadiusAxis stroke="#64748b" />
                         <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
@@ -1665,7 +1681,7 @@ export default function BYDStatsAnalyzer() {
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
                   <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                       <XAxis
                         dataKey="km"
                         name="Distancia"
@@ -1791,7 +1807,7 @@ export default function BYDStatsAnalyzer() {
                         <div
                           key={i}
                           onClick={() => openTripDetail(trip)}
-                          className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors"
+                          className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:bg-slate-700/50 transition-colors"
                         >
                           {/* Fecha y hora centrada - 100% */}
                           <div className="text-center mb-3">
