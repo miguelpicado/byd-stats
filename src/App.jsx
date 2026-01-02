@@ -915,9 +915,7 @@ export default function BYDStatsAnalyzer() {
             </p>
             {!isNative && <p className="text-slate-500 dark:text-slate-500 text-sm">o haz clic para seleccionar</p>}
             <p className="text-slate-600 text-xs mt-4">
-              {isNative
-                ? 'Busca el archivo EC_Database.db en el almacenamiento de tu dispositivo'
-                : 'Puedes encontrar este archivo en la carpeta EnergyData de tu coche'}
+              Selecciona el fichero EC_Database.db en la carpeta "EnergyData" de tu coche
             </p>
           </div>
 
@@ -2210,15 +2208,35 @@ export default function BYDStatsAnalyzer() {
                   {activeTab === 'trends' && (
                     <div className="space-y-4 sm:space-y-6">
                       <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Kilómetros diarios</h3>
+                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
                         <ResponsiveContainer width="100%" height={280}>
-                          <LineChart data={daily}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={80} />
-                            <YAxis stroke="#64748b" fontSize={12} />
+                          <BarChart data={monthly}>
+                            <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
+                            <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
+                            <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
                             <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Line type="monotone" dataKey="km" stroke={BYD_RED} strokeWidth={2} dot={{ r: 3, fill: BYD_RED }} name="Km" isAnimationActive={false} activeDot={{ r: 5 }} />
-                          </LineChart>
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
+                            <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
+                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos 60 días</h3>
+                        <ResponsiveContainer width="100%" height={260}>
+                          <AreaChart data={daily.slice(-60)}>
+                            <defs>
+                              <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
+                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
+                            <YAxis stroke="#64748b" />
+                            <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                            <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
+                          </AreaChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
@@ -2227,29 +2245,38 @@ export default function BYDStatsAnalyzer() {
                     <div className="space-y-4 sm:space-y-6">
                       <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                         <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Viajes por hora</h3>
-                          <ResponsiveContainer width="100%" height={240}>
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
+                          <ResponsiveContainer width="100%" height={260}>
                             <BarChart data={hourly}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis dataKey="hour" stroke="#64748b" fontSize={12} tickFormatter={(v) => `${v}h`} />
-                              <YAxis stroke="#64748b" fontSize={12} />
+                              <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
+                              <YAxis stroke="#64748b" fontSize={11} />
                               <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Bar dataKey="trips" fill={BYD_RED} name="Viajes" isAnimationActive={false} radius={[8, 8, 0, 0]} />
+                              <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
                             </BarChart>
                           </ResponsiveContainer>
                         </div>
                         <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Viajes por día de la semana</h3>
-                          <ResponsiveContainer width="100%" height={240}>
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
+                          <ResponsiveContainer width="100%" height={260}>
                             <RadarChart data={weekday}>
-                              <PolarGrid stroke="#cbd5e1" />
-                              <PolarAngleAxis dataKey="day" stroke="#64748b" fontSize={12} />
-                              <PolarRadiusAxis stroke="#64748b" fontSize={11} />
-                              <Radar name="Viajes" dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.4} isAnimationActive={false} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} />
+                              <PolarGrid stroke="#cbd5e1" opacity={0.3} />
+                              <PolarAngleAxis dataKey="day" stroke="#cbd5e1" />
+                              <PolarRadiusAxis stroke="#cbd5e1" />
+                              <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                             </RadarChart>
                           </ResponsiveContainer>
                         </div>
+                      </div>
+                      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                        {weekday.map((d, i) => (
+                          <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
+                            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
+                            <p className="text-base sm:text-xl font-bold">{d.trips}</p>
+                            <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   )}
@@ -2290,80 +2317,128 @@ export default function BYDStatsAnalyzer() {
                   )}
                   {activeTab === 'records' && (
                     <div className="space-y-4 sm:space-y-6">
-                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Top 5 Viajes Largos</h3>
-                        <div className="space-y-2">
-                          {top.km.map((t, i) => {
-                            const km = t.trip || 0;
-                            const electricity = t.electricity || 0;
-                            const efficiency = km > 0 ? (electricity / km) * 100 : 0;
-                            return (
-                              <div key={i} className="flex items-center gap-3 p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl">
-                                <div className="flex-shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: BYD_RED + '30', color: BYD_RED }}>
-                                  {i + 1}
-                                </div>
-                                <div className="flex-1">
-                                  <p className="text-xs text-slate-600 dark:text-slate-400">{formatDate(t.date)}</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="text-lg font-bold text-slate-900 dark:text-white">{km.toFixed(1)} km</p>
-                                  <p className="text-xs text-slate-500 dark:text-slate-500">{efficiency.toFixed(2)} kWh/100km</p>
-                                </div>
-                              </div>
-                            );
-                          })}
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
+                          <p className="text-xs sm:text-sm mb-1">🏆 Más largo</p>
+                          <p className="text-xl sm:text-3xl font-bold">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-cyan-500/30">
+                          <p className="text-xs sm:text-sm mb-1">⚡ Mayor consumo</p>
+                          <p className="text-xl sm:text-3xl font-bold">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500">kWh</span></p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-500/30">
+                          <p className="text-xs sm:text-sm mb-1">⏱️ Más duración</p>
+                          <p className="text-xl sm:text-3xl font-bold">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500">min</span></p>
+                        </div>
+                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/30">
+                          <p className="text-xs sm:text-sm mb-1">📍 Más corto</p>
+                          <p className="text-xl sm:text-3xl font-bold">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
+                        </div>
+                      </div>
+                      <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-red-400">🥇 Top Distancia</h3>
+                          {top.km.map((t, i) => (
+                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                              <span className="font-medium text-sm sm:text-base">{t.trip?.toFixed(1)} km</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-cyan-400">⚡ Top Consumo</h3>
+                          {top.kwh.map((t, i) => (
+                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                              <span className="font-medium text-sm sm:text-base">{t.electricity?.toFixed(1)} kWh</span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
+                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-amber-400">⏱️ Top Duración</h3>
+                          {top.dur.map((t, i) => (
+                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                              <span className="font-medium text-sm sm:text-base">{((t.duration || 0) / 60).toFixed(0)} min</span>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
                   )}
                   {activeTab === 'history' && (
                     <div className="space-y-4 sm:space-y-6">
-                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos viajes</h3>
-                        <div className="space-y-2">
-                          {(() => {
-                            return filtered.slice(-10).reverse().map((trip, i) => {
-                              const km = trip.trip || 0;
-                              const electricity = trip.electricity || 0;
-                              const efficiency = km > 0 ? (electricity / km) * 100 : 0;
-                              return (
-                                <div
-                                  key={i}
-                                  className="flex items-center gap-2 p-2 sm:p-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                                  onClick={() => {
-                                    setSelectedTrip(trip);
-                                    setShowTripDetailModal(true);
-                                  }}
-                                >
-                                  <div className="flex-1">
-                                    <p className="text-xs text-slate-600 dark:text-slate-400">{formatDate(trip.date)}</p>
+                      <h2 className="text-xl sm:text-2xl font-bold">Últimos 10 viajes</h2>
+                      <div className="space-y-3">
+                        {(() => {
+                          const allTrips = [...filtered].sort((a, b) => {
+                            const dateCompare = (b.date || '').localeCompare(a.date || '');
+                            if (dateCompare !== 0) return dateCompare;
+                            return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                          });
+
+                          // Filter trips >= 1km for scoring calculation
+                          // Incluir eficiencias negativas (regeneración) que son las MEJORES
+                          const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+                          const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+                          const minEff = Math.min(...efficiencies);
+                          const maxEff = Math.max(...efficiencies);
+
+                          return allTrips.slice(0, 10).map((trip, i) => {
+                            const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
+                              ? (trip.electricity / trip.trip) * 100
+                              : 0;
+                            const score = calculateScore(efficiency, minEff, maxEff);
+                            const scoreColor = getScoreColor(score);
+
+                            return (
+                              <div
+                                key={i}
+                                onClick={() => openTripDetail(trip)}
+                                className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                              >
+                                {/* Fecha y hora centrada - 100% */}
+                                <div className="text-center mb-3">
+                                  <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
+                                    {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+                                  </p>
+                                </div>
+                                {/* 4 columnas de 25% cada una */}
+                                <div className="grid grid-cols-4 gap-2">
+                                  <div className="text-center">
+                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">km</p>
                                   </div>
                                   <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Km</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{km.toFixed(1)}</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">kWh</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{electricity.toFixed(2)}</p>
+                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
                                   </div>
                                   <div className="text-center">
                                     <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
                                     <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
                                     <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
                                   </div>
+                                  <div className="text-center">
+                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                                    <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
+                                      {score.toFixed(1)}
+                                    </p>
+                                  </div>
                                 </div>
-                              );
-                            });
-                          })()}
-                        </div>
-                        <button
-                          onClick={() => setShowAllTripsModal(true)}
-                          className="w-full mt-4 py-3 rounded-xl font-medium text-white"
-                          style={{ backgroundColor: BYD_RED }}
-                        >
-                          Mostrar todo
-                        </button>
+                              </div>
+                            );
+                          });
+                        })()}
                       </div>
+                      <button
+                        onClick={() => setShowAllTripsModal(true)}
+                        className="w-full py-3 rounded-xl font-medium text-white"
+                        style={{ backgroundColor: BYD_RED }}
+                      >
+                        Mostrar todo
+                      </button>
                     </div>
                   )}
                 </>
