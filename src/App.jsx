@@ -185,7 +185,7 @@ export default function BYDStatsAnalyzer() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  // Add global styles to remove all chart interaction visuals
+  // Add global styles to remove outlines but keep active elements visible
   useEffect(() => {
     const style = document.createElement('style');
     style.textContent = `
@@ -197,17 +197,6 @@ export default function BYDStatsAnalyzer() {
       }
       .recharts-surface {
         outline: none !important;
-      }
-      .recharts-active-shape,
-      .recharts-active-dot {
-        display: none !important;
-      }
-      .recharts-rectangle.recharts-active-bar {
-        stroke: none !important;
-        stroke-width: 0 !important;
-      }
-      .recharts-layer.recharts-active-dot circle {
-        display: none !important;
       }
     `;
     document.head.appendChild(style);
@@ -393,7 +382,7 @@ export default function BYDStatsAnalyzer() {
 
   // Swipe gesture - completely rewritten with refs
   const minSwipeDistance = 30; // Distancia mínima en píxeles
-  const transitionDuration = 750;
+  const transitionDuration = 500;
 
   // Swipe detection using native event listeners for better performance
   useEffect(() => {
@@ -965,7 +954,7 @@ export default function BYDStatsAnalyzer() {
       </div>
 
       <div
-        className="max-w-7xl mx-auto py-4 sm:py-6 pb-24 overflow-hidden"
+        className="max-w-7xl mx-auto py-4 sm:py-6 overflow-hidden"
       >
         <div
           style={{
@@ -1024,7 +1013,7 @@ export default function BYDStatsAnalyzer() {
                         <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
                         <YAxis stroke="#64748b" fontSize={12} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={false} />
+                        <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -1044,6 +1033,7 @@ export default function BYDStatsAnalyzer() {
                             label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                             labelLine={false}
                             isAnimationActive={false}
+                            activeShape={{ outerRadius: 95, stroke: '#fff', strokeWidth: 2 }}
                           >
                             {tripDist.map((e, i) => (
                               <Cell key={`cell-${i}`} fill={e.color} />
@@ -1100,8 +1090,8 @@ export default function BYDStatsAnalyzer() {
                       <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
                       <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       <Legend wrapperStyle={{ fontSize: '12px' }} />
-                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
-                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={false} />
+                      <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
+                      <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -1119,7 +1109,7 @@ export default function BYDStatsAnalyzer() {
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
                       <YAxis stroke="#64748b" />
                       <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={false} />
+                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
@@ -1138,7 +1128,7 @@ export default function BYDStatsAnalyzer() {
                         <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
                         <YAxis stroke="#64748b" fontSize={11} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={false} />
+                        <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
@@ -1149,7 +1139,7 @@ export default function BYDStatsAnalyzer() {
                         <PolarGrid stroke="#334155" />
                         <PolarAngleAxis dataKey="day" stroke="#64748b" />
                         <PolarRadiusAxis stroke="#64748b" />
-                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={false} />
+                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       </RadarChart>
                     </ResponsiveContainer>
@@ -1216,7 +1206,7 @@ export default function BYDStatsAnalyzer() {
                           return null;
                         }}
                       />
-                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} activeShape={false} />
+                      <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} activeShape={{ r: 8, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
@@ -1278,7 +1268,7 @@ export default function BYDStatsAnalyzer() {
 
             {/* Slide 6: History */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
-              <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-4 sm:space-y-6 pb-24">
                 <h2 className="text-xl sm:text-2xl font-bold">Últimos 15 viajes</h2>
                 <div className="space-y-3">
                   {(() => {
