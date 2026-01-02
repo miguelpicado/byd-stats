@@ -905,7 +905,7 @@ export default function BYDStatsAnalyzer() {
   return (
     <div
       ref={swipeContainerRef}
-      className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white"
+      className="h-screen flex flex-col bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 text-white overflow-hidden"
     >
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
@@ -931,7 +931,7 @@ export default function BYDStatsAnalyzer() {
         </div>
       )}
 
-      <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
+      <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -954,25 +954,26 @@ export default function BYDStatsAnalyzer() {
       </div>
 
       <div
-        className="max-w-7xl mx-auto py-4 sm:py-6 overflow-hidden"
+        className="flex-1 overflow-hidden"
       >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            width: `${tabs.length * 100}%`,
-            transform: `translate3d(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}%, 0, 0)`,
-            transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.33, 1, 0.68, 1)` : 'none',
-            willChange: 'transform',
-            backfaceVisibility: 'hidden',
-            WebkitBackfaceVisibility: 'hidden',
-            perspective: 1000,
-            WebkitPerspective: 1000,
-            transformStyle: 'preserve-3d',
-            WebkitTransformStyle: 'preserve-3d',
-            userSelect: 'none'
-          }}
-        >
+        <div className="max-w-7xl mx-auto h-full">
+          <div
+            style={{
+              display: 'flex',
+              height: '100%',
+              width: `${tabs.length * 100}%`,
+              transform: `translate3d(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}%, 0, 0)`,
+              transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.33, 1, 0.68, 1)` : 'none',
+              willChange: 'transform',
+              backfaceVisibility: 'hidden',
+              WebkitBackfaceVisibility: 'hidden',
+              perspective: 1000,
+              WebkitPerspective: 1000,
+              transformStyle: 'preserve-3d',
+              WebkitTransformStyle: 'preserve-3d',
+              userSelect: 'none'
+            }}
+          >
         {!data ? (
           // Show error message on all slides
           tabs.map((tab) => (
@@ -984,7 +985,7 @@ export default function BYDStatsAnalyzer() {
         ) : (
           <>
             {/* Slide 1: Overview */}
-            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <StatCard icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
@@ -1078,7 +1079,7 @@ export default function BYDStatsAnalyzer() {
             </div>
 
             {/* Slide 2: Trends */}
-            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
@@ -1117,7 +1118,7 @@ export default function BYDStatsAnalyzer() {
             </div>
 
             {/* Slide 3: Patterns */}
-            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
                   <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
@@ -1158,7 +1159,7 @@ export default function BYDStatsAnalyzer() {
             </div>
 
             {/* Slide 4: Efficiency */}
-            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-2 gap-3 sm:gap-4">
                   <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
@@ -1214,7 +1215,7 @@ export default function BYDStatsAnalyzer() {
             </div>
 
             {/* Slide 5: Records */}
-            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
@@ -1267,8 +1268,8 @@ export default function BYDStatsAnalyzer() {
             </div>
 
             {/* Slide 6: History */}
-            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, padding: '0 12px' }}>
-              <div className="space-y-4 sm:space-y-6 pb-24">
+            <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
+              <div className="space-y-4 sm:space-y-6">
                 <h2 className="text-xl sm:text-2xl font-bold">Últimos 15 viajes</h2>
                 <div className="space-y-3">
                   {(() => {
@@ -1340,12 +1341,9 @@ export default function BYDStatsAnalyzer() {
             </div>
           </>
         )}
+          </div>
         </div>
       </div>
-
-      <footer className="max-w-7xl mx-auto px-4 py-8 text-center text-slate-600 text-sm border-t border-slate-800 mt-8 mb-20">
-        Estadísticas BYD
-      </footer>
 
       {/* Floating Filter Button */}
       <button
