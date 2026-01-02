@@ -200,7 +200,7 @@ export default function BYDStatsAnalyzer() {
         batterySize: 60.48,
         soh: 100,
         electricityPrice: 0.15,
-        theme: 'auto'
+        theme: 'dark'
       };
     } catch {
       return {
@@ -210,7 +210,7 @@ export default function BYDStatsAnalyzer() {
         batterySize: 60.48,
         soh: 100,
         electricityPrice: 0.15,
-        theme: 'auto'
+        theme: 'dark'
       };
     }
   });
@@ -284,13 +284,29 @@ export default function BYDStatsAnalyzer() {
 
   // Theme management
   useEffect(() => {
-    const applyTheme = (isDark) => {
+    const applyTheme = async (isDark) => {
       if (isDark) {
         document.documentElement.classList.add('dark');
       } else {
         document.documentElement.classList.remove('dark');
       }
+
+      // Update status bar for native apps
+      if (isNative && window.StatusBar) {
+        try {
+          if (isDark) {
+            await window.StatusBar.setStyle({ style: 'DARK' });
+          } else {
+            await window.StatusBar.setStyle({ style: 'LIGHT' });
+          }
+        } catch (e) {
+          console.error('Error setting status bar:', e);
+        }
+      }
     };
+
+    let mediaQueryHandler = null;
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 
     if (settings.theme === 'dark') {
       applyTheme(true);
@@ -298,14 +314,18 @@ export default function BYDStatsAnalyzer() {
       applyTheme(false);
     } else {
       // Auto mode - follow system preference
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       applyTheme(mediaQuery.matches);
-
-      const handler = (e) => applyTheme(e.matches);
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
+      mediaQueryHandler = (e) => applyTheme(e.matches);
+      mediaQuery.addEventListener('change', mediaQueryHandler);
     }
-  }, [settings.theme]);
+
+    // Cleanup
+    return () => {
+      if (mediaQueryHandler) {
+        mediaQuery.removeEventListener('change', mediaQueryHandler);
+      }
+    };
+  }, [settings.theme, isNative]);
 
   useEffect(() => {
     try {
@@ -543,7 +563,7 @@ export default function BYDStatsAnalyzer() {
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
       <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{label}</p>
-      <p className="text-xl sm:text-2xl font-bold text-white">
+      <p className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
         {value}
         <span className="text-slate-500 dark:text-slate-500 text-sm sm:text-lg ml-1">{unit}</span>
       </p>
@@ -1144,12 +1164,12 @@ export default function BYDStatsAnalyzer() {
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
                 <input type="file" accept=".db" className="hidden" onChange={(e) => onFile(e, true)} />
                 <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                <p className="text-white">Combinar con existentes</p>
+                <p className="text-slate-900 dark:text-white">Combinar con existentes</p>
               </label>
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
                 <input type="file" accept=".db" className="hidden" onChange={(e) => onFile(e, false)} />
                 <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
-                <p className="text-white">Reemplazar todo</p>
+                <p className="text-slate-900 dark:text-white">Reemplazar todo</p>
               </label>
             </div>
             <div className="flex gap-3 mt-6">
@@ -1560,7 +1580,6 @@ export default function BYDStatsAnalyzer() {
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={monthly}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
                       <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                       <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
                       <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
@@ -1581,7 +1600,7 @@ export default function BYDStatsAnalyzer() {
                           <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                         </linearGradient>
                       </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
                       <YAxis stroke="#64748b" />
                       <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
@@ -1600,7 +1619,7 @@ export default function BYDStatsAnalyzer() {
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={hourly}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                         <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
                         <YAxis stroke="#64748b" fontSize={11} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
@@ -1674,7 +1693,7 @@ export default function BYDStatsAnalyzer() {
                           if (active && payload && payload.length) {
                             return (
                               <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3">
-                                <p className="text-white">{payload[0]?.value?.toFixed(1)} km</p>
+                                <p className="text-slate-900 dark:text-white">{payload[0]?.value?.toFixed(1)} km</p>
                                 <p style={{ color: BYD_RED }}>{payload[1]?.value?.toFixed(2)} kWh/100km</p>
                               </div>
                             );
