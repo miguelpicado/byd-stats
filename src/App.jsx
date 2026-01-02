@@ -191,9 +191,11 @@ export default function BYDStatsAnalyzer() {
 
   // Settings state
   const [settings, setSettings] = useState(() => {
+    console.log('=== INITIALIZING SETTINGS STATE ===');
     try {
       const saved = localStorage.getItem('byd_settings');
-      return saved ? JSON.parse(saved) : {
+      console.log('Saved settings from localStorage:', saved);
+      const parsedSettings = saved ? JSON.parse(saved) : {
         carModel: '',
         licensePlate: '',
         insurancePolicy: '',
@@ -202,7 +204,11 @@ export default function BYDStatsAnalyzer() {
         electricityPrice: 0.15,
         theme: 'dark'
       };
-    } catch {
+      console.log('Initial settings state:', parsedSettings);
+      console.log('Initial theme:', parsedSettings.theme);
+      return parsedSettings;
+    } catch (e) {
+      console.error('Error loading settings, using defaults:', e);
       return {
         carModel: '',
         licensePlate: '',
@@ -253,8 +259,14 @@ export default function BYDStatsAnalyzer() {
 
   // Save settings to localStorage
   useEffect(() => {
+    console.log('=== SAVING SETTINGS TO LOCALSTORAGE ===');
+    console.log('Settings being saved:', settings);
     try {
       localStorage.setItem('byd_settings', JSON.stringify(settings));
+      console.log('✓ Settings saved successfully');
+      // Verify it was saved
+      const saved = localStorage.getItem('byd_settings');
+      console.log('Verified saved settings:', saved);
     } catch (e) {
       console.error('Error saving settings:', e);
     }
@@ -282,65 +294,63 @@ export default function BYDStatsAnalyzer() {
     };
   }, [showTripDetailModal, showSettingsModal, showAllTripsModal, isNative]);
 
-  // Theme management - CRITICAL: Apply theme immediately on load
+  // Theme management - SIMPLIFIED AND FIXED
   useEffect(() => {
-    // Force apply theme on initial load
-    const currentTheme = settings.theme || 'dark';
-    const isDark = currentTheme === 'dark' ||
-                   (currentTheme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, []); // Run once on mount
-
-  useEffect(() => {
-    const applyTheme = async (isDark) => {
-      console.log('Applying theme:', isDark ? 'dark' : 'light');
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
-
-      // Update status bar for native apps
-      if (isNative && window.StatusBar) {
-        try {
-          if (isDark) {
-            await window.StatusBar.setStyle({ style: 'DARK' });
-          } else {
-            await window.StatusBar.setStyle({ style: 'LIGHT' });
-          }
-        } catch (e) {
-          console.error('Error setting status bar:', e);
-        }
-      }
-    };
-
-    let mediaQueryHandler = null;
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-
+    console.log('=== THEME CHANGE USEEFFECT TRIGGERED ===');
     console.log('Current theme setting:', settings.theme);
+    console.log('Current HTML classes BEFORE:', document.documentElement.className);
+    console.log('Has dark class BEFORE:', document.documentElement.classList.contains('dark'));
+
+    let isDark = false;
 
     if (settings.theme === 'dark') {
-      applyTheme(true);
+      isDark = true;
+      console.log('→ Theme is "dark", setting isDark = true');
     } else if (settings.theme === 'light') {
-      applyTheme(false);
+      isDark = false;
+      console.log('→ Theme is "light", setting isDark = false');
     } else {
-      // Auto mode - follow system preference
-      applyTheme(mediaQuery.matches);
-      mediaQueryHandler = (e) => applyTheme(e.matches);
-      mediaQuery.addEventListener('change', mediaQueryHandler);
+      // Auto mode
+      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      console.log('→ Auto mode, system prefers:', isDark ? 'dark' : 'light');
     }
 
-    // Cleanup
-    return () => {
-      if (mediaQueryHandler) {
-        mediaQuery.removeEventListener('change', mediaQueryHandler);
-      }
-    };
+    console.log('Final isDark value:', isDark);
+
+    // Apply theme to document
+    if (isDark) {
+      console.log('Adding "dark" class to html element...');
+      document.documentElement.classList.add('dark');
+      console.log('✓ Dark class added');
+    } else {
+      console.log('Removing "dark" class from html element...');
+      document.documentElement.classList.remove('dark');
+      console.log('✓ Dark class removed');
+    }
+
+    console.log('Current HTML classes AFTER:', document.documentElement.className);
+    console.log('Has dark class AFTER:', document.documentElement.classList.contains('dark'));
+
+    // Update status bar for native apps
+    if (isNative && window.StatusBar) {
+      window.StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' })
+        .catch(e => console.error('StatusBar error:', e));
+    }
+
+    // Only listen to system changes in auto mode
+    if (settings.theme === 'auto') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = (e) => {
+        console.log('System theme changed to:', e.matches ? 'dark' : 'light');
+        if (e.matches) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      };
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    }
   }, [settings.theme, isNative]);
 
   useEffect(() => {
@@ -1036,11 +1046,12 @@ export default function BYDStatsAnalyzer() {
                       setAllTripsSortOrder('desc');
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
-                  style={{
-                    backgroundColor: allTripsSortBy === 'date' ? BYD_RED : '#334155',
-                    color: allTripsSortBy === 'date' ? 'white' : '#94a3b8'
-                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    allTripsSortBy === 'date'
+                      ? 'text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                  }`}
+                  style={allTripsSortBy === 'date' ? { backgroundColor: BYD_RED } : {}}
                 >
                   Fecha
                   {allTripsSortBy === 'date' && (
@@ -1056,11 +1067,12 @@ export default function BYDStatsAnalyzer() {
                       setAllTripsSortOrder('desc');
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
-                  style={{
-                    backgroundColor: allTripsSortBy === 'efficiency' ? BYD_RED : '#334155',
-                    color: allTripsSortBy === 'efficiency' ? 'white' : '#94a3b8'
-                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    allTripsSortBy === 'efficiency'
+                      ? 'text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                  }`}
+                  style={allTripsSortBy === 'efficiency' ? { backgroundColor: BYD_RED } : {}}
                 >
                   Eficiencia
                   {allTripsSortBy === 'efficiency' && (
@@ -1076,11 +1088,12 @@ export default function BYDStatsAnalyzer() {
                       setAllTripsSortOrder('desc');
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
-                  style={{
-                    backgroundColor: allTripsSortBy === 'distance' ? BYD_RED : '#334155',
-                    color: allTripsSortBy === 'distance' ? 'white' : '#94a3b8'
-                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    allTripsSortBy === 'distance'
+                      ? 'text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                  }`}
+                  style={allTripsSortBy === 'distance' ? { backgroundColor: BYD_RED } : {}}
                 >
                   Distancia
                   {allTripsSortBy === 'distance' && (
@@ -1096,11 +1109,12 @@ export default function BYDStatsAnalyzer() {
                       setAllTripsSortOrder('desc');
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1"
-                  style={{
-                    backgroundColor: allTripsSortBy === 'consumption' ? BYD_RED : '#334155',
-                    color: allTripsSortBy === 'consumption' ? 'white' : '#94a3b8'
-                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${
+                    allTripsSortBy === 'consumption'
+                      ? 'text-white'
+                      : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
+                  }`}
+                  style={allTripsSortBy === 'consumption' ? { backgroundColor: BYD_RED } : {}}
                 >
                   Consumo
                   {allTripsSortBy === 'consumption' && (
@@ -1409,7 +1423,14 @@ export default function BYDStatsAnalyzer() {
                   {['auto', 'light', 'dark'].map(theme => (
                     <button
                       key={theme}
-                      onClick={() => setSettings({...settings, theme})}
+                      onClick={() => {
+                        console.log('=== THEME BUTTON CLICKED ===');
+                        console.log('Clicked theme:', theme);
+                        console.log('Current settings.theme:', settings.theme);
+                        console.log('Setting new theme to:', theme);
+                        setSettings({...settings, theme});
+                        console.log('setSettings called with theme:', theme);
+                      }}
                       className="flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors"
                       style={{
                         backgroundColor: settings.theme === theme ? BYD_RED : '#334155',
@@ -1648,8 +1669,8 @@ export default function BYDStatsAnalyzer() {
                     <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
                         <PolarGrid stroke="#cbd5e1" opacity={0.3} />
-                        <PolarAngleAxis dataKey="day" stroke="#64748b" />
-                        <PolarRadiusAxis stroke="#64748b" />
+                        <PolarAngleAxis dataKey="day" stroke="#cbd5e1" />
+                        <PolarRadiusAxis stroke="#cbd5e1" />
                         <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       </RadarChart>
