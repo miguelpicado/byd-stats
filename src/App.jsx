@@ -330,6 +330,13 @@ export default function BYDStatsAnalyzer() {
           cols.forEach((c, i) => { o[c] = r[i]; });
           return o;
         });
+
+        // Log available fields for diagnostic
+        if (rows.length > 0) {
+          console.log('📊 Campos disponibles en la base de datos:', Object.keys(rows[0]));
+          console.log('📝 Ejemplo de viaje completo:', rows[0]);
+        }
+
         if (merge && rawTrips.length) {
           const map = new Map();
           rawTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
