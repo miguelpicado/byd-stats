@@ -538,14 +538,14 @@ export default function BYDStatsAnalyzer() {
   };
 
   const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
-    <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-700/50">
+    <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 dark:border-slate-700/50">
       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`} >
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
-      <p className="text-slate-400 text-xs sm:text-sm">{label}</p>
+      <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{label}</p>
       <p className="text-xl sm:text-2xl font-bold text-white">
         {value}
-        <span className="text-slate-500 text-sm sm:text-lg ml-1">{unit}</span>
+        <span className="text-slate-500 dark:text-slate-500 text-sm sm:text-lg ml-1">{unit}</span>
       </p>
       {sub && <p className="text-xs sm:text-sm mt-1" style={{ color: BYD_RED }}>{sub}</p>}
     </div>
@@ -554,10 +554,10 @@ export default function BYDStatsAnalyzer() {
   const ChartTip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
+        <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
           <div className="flex items-center gap-2 mb-2">
             <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: payload[0]?.color || BYD_RED }}></div>
-            <p className="text-white font-medium">{label}</p>
+            <p className="text-slate-900 dark:text-white font-medium">{label}</p>
           </div>
           {payload.map((p, i) => (
             <p key={i} style={{ color: p.color }} className="text-sm font-medium">
@@ -638,7 +638,7 @@ export default function BYDStatsAnalyzer() {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center px-4">
         <div className="text-center">
           <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
-          <p className="text-white text-lg md:text-xl">Procesando...</p>
+          <p className="text-slate-900 dark:text-white text-lg md:text-xl">Procesando...</p>
         </div>
       </div>
     );
@@ -650,13 +650,13 @@ export default function BYDStatsAnalyzer() {
         <div className="w-full max-w-xl">
           <div className="text-center mb-8">
             <img src="byd_logo.png" className="w-32 sm:w-40 md:w-48 h-auto mx-auto mb-4 md:mb-6" alt="BYD Logo" />
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">Estadísticas BYD</h1>
             <p className="text-sm sm:text-base text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
 
           {!sqlReady && !error && (
             <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-3 px-4 py-2 bg-slate-800/50 rounded-xl">
+              <div className="inline-flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800/50 rounded-xl">
                 <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
                 <span className="text-slate-400">Cargando...</span>
               </div>
@@ -694,10 +694,10 @@ export default function BYDStatsAnalyzer() {
             >
               <Upload className="w-8 h-8" style={{ color: dragOver ? 'white' : BYD_RED }} />
             </div>
-            <p className="text-white text-lg sm:text-xl mb-2">
+            <p className="text-slate-900 dark:text-white text-lg sm:text-xl mb-2">
               {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Arrastra tu archivo EC_database.db') : 'Preparando...'}
             </p>
-            {!isNative && <p className="text-slate-500 text-sm">o haz clic para seleccionar</p>}
+            {!isNative && <p className="text-slate-500 dark:text-slate-500 text-sm">o haz clic para seleccionar</p>}
             <p className="text-slate-600 text-xs mt-4">
               {isNative
                 ? 'Busca el archivo EC_Database.db en el almacenamiento de tu dispositivo'
@@ -772,7 +772,7 @@ export default function BYDStatsAnalyzer() {
         {/* Trip Detail Modal (higher z-index to appear over everything) */}
         {showTripDetailModal && selectedTrip && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 pt-24" onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}>
-            <div className="bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-6">
                 <h3 className="text-xl font-bold">Detalle del viaje</h3>
                 <button onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-700">
@@ -793,25 +793,25 @@ export default function BYDStatsAnalyzer() {
                   <div className="space-y-4">
                     {/* Fecha y hora */}
                     <div className="bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-400 text-sm mb-1">Fecha y hora</p>
-                      <p className="text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Fecha y hora</p>
+                      <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
                       <div className="flex items-center gap-4 mt-2">
                         <div>
-                          <p className="text-slate-400 text-xs">Inicio</p>
-                          <p className="text-white font-medium">{formatTime(selectedTrip.start_timestamp)}</p>
+                          <p className="text-slate-600 dark:text-slate-400 text-xs">Inicio</p>
+                          <p className="text-slate-900 dark:text-white font-medium">{formatTime(selectedTrip.start_timestamp)}</p>
                         </div>
                         {endTime && (
                           <>
                             <span className="text-slate-600">→</span>
                             <div>
-                              <p className="text-slate-400 text-xs">Fin</p>
-                              <p className="text-white font-medium">{formatTime(endTime)}</p>
+                              <p className="text-slate-600 dark:text-slate-400 text-xs">Fin</p>
+                              <p className="text-slate-900 dark:text-white font-medium">{formatTime(endTime)}</p>
                             </div>
                           </>
                         )}
                         <div className="ml-auto">
-                          <p className="text-slate-400 text-xs">Duración</p>
-                          <p className="text-white font-medium">{formatDuration(selectedTrip.duration)}</p>
+                          <p className="text-slate-600 dark:text-slate-400 text-xs">Duración</p>
+                          <p className="text-slate-900 dark:text-white font-medium">{formatDuration(selectedTrip.duration)}</p>
                         </div>
                       </div>
                     </div>
@@ -819,31 +819,31 @@ export default function BYDStatsAnalyzer() {
                     {/* Grid de métricas */}
                     <div className="grid grid-cols-2 gap-3">
                       <div className="bg-slate-700/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs mb-1">Distancia</p>
-                        <p className="text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
-                        <p className="text-slate-500 text-xs">km</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Distancia</p>
+                        <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
+                        <p className="text-slate-500 dark:text-slate-500 text-xs">km</p>
                       </div>
                       <div className="bg-slate-700/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs mb-1">Velocidad media</p>
-                        <p className="text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
-                        <p className="text-slate-500 text-xs">km/h</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Velocidad media</p>
+                        <p className="text-slate-900 dark:text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
+                        <p className="text-slate-500 dark:text-slate-500 text-xs">km/h</p>
                       </div>
                       <div className="bg-slate-700/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs mb-1">Consumo</p>
-                        <p className="text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
-                        <p className="text-slate-500 text-xs">kWh</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Consumo</p>
+                        <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
+                        <p className="text-slate-500 dark:text-slate-500 text-xs">kWh</p>
                       </div>
                       <div className="bg-slate-700/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs mb-1">Eficiencia</p>
-                        <p className="text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
-                        <p className="text-slate-500 text-xs">kWh/100km</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Eficiencia</p>
+                        <p className="text-slate-900 dark:text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
+                        <p className="text-slate-500 dark:text-slate-500 text-xs">kWh/100km</p>
                       </div>
                     </div>
 
                     {/* SOC si está disponible */}
                     {(selectedTrip.start_soc !== undefined || selectedTrip.end_soc !== undefined) && (
                       <div className="bg-slate-700/50 rounded-xl p-4">
-                        <p className="text-slate-400 text-sm mb-3">Estado de carga</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Estado de carga</p>
                         <div className="flex items-center gap-4">
                           {selectedTrip.start_soc !== undefined && (
                             <div className="flex-1">
@@ -867,14 +867,14 @@ export default function BYDStatsAnalyzer() {
                     {/* Regeneración si está disponible */}
                     {selectedTrip.regeneration !== undefined && selectedTrip.regeneration !== null && (
                       <div className="bg-slate-700/50 rounded-xl p-4">
-                        <p className="text-slate-400 text-sm mb-1">Energía regenerada</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Energía regenerada</p>
                         <p className="text-green-400 text-2xl font-bold">{selectedTrip.regeneration?.toFixed(2)} kWh</p>
                       </div>
                     )}
 
                     {/* Comparación y percentil */}
                     <div className="bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-400 text-sm mb-3">Análisis</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-300 text-sm">Comparación con tu media</span>
@@ -900,13 +900,13 @@ export default function BYDStatsAnalyzer() {
         )}
 
         {/* Header */}
-        <div className="sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
+        <div className="sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
           <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 sm:gap-3">
                 <button
                   onClick={() => setShowAllTripsModal(false)}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-white hover:bg-slate-800"
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 dark:text-white hover:bg-white dark:bg-slate-800"
                 >
                   <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="19" y1="12" x2="5" y2="12" />
@@ -915,7 +915,7 @@ export default function BYDStatsAnalyzer() {
                 </button>
                 <div>
                   <h1 className="text-sm sm:text-base md:text-lg font-bold">Todos los viajes</h1>
-                  <p className="text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} viajes</p>
+                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} viajes</p>
                 </div>
               </div>
             </div>
@@ -961,7 +961,7 @@ export default function BYDStatsAnalyzer() {
                 <select
                   value={allTripsMonth}
                   onChange={(e) => setAllTripsMonth(e.target.value)}
-                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
                 >
                   <option value="">Seleccionar mes</option>
                   {months.map((m) => (
@@ -977,20 +977,20 @@ export default function BYDStatsAnalyzer() {
                     type="date"
                     value={allTripsDateFrom}
                     onChange={(e) => setAllTripsDateFrom(e.target.value)}
-                    className="flex-1 bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
                   />
                   <input
                     type="date"
                     value={allTripsDateTo}
                     onChange={(e) => setAllTripsDateTo(e.target.value)}
-                    className="flex-1 bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
                   />
                 </div>
               )}
 
               {/* Sort Options */}
               <div className="flex gap-2 overflow-x-auto pb-2">
-                <span className="text-xs text-slate-400 px-2 py-1.5">Ordenar:</span>
+                <span className="text-xs text-slate-600 dark:text-slate-400 px-2 py-1.5">Ordenar:</span>
                 <button
                   onClick={() => {
                     if (allTripsSortBy === 'date') {
@@ -1090,33 +1090,33 @@ export default function BYDStatsAnalyzer() {
                 <div
                   key={i}
                   onClick={() => openTripDetail(trip)}
-                  className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors"
+                  className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors"
                 >
                   {/* Fecha y hora centrada - 100% */}
                   <div className="text-center mb-3">
-                    <p className="text-white font-semibold text-sm sm:text-base">
+                    <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
                       {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
                     </p>
                   </div>
                   {/* 4 columnas de 25% cada una */}
                   <div className="grid grid-cols-4 gap-2">
                     <div className="text-center">
-                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                      <p className="text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                      <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                      <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">km</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                      <p className="text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                      <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                      <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                      <p className="text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                      <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                      <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
                       <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
                         {score.toFixed(1)}
                       </p>
@@ -1134,11 +1134,11 @@ export default function BYDStatsAnalyzer() {
   return (
     <div
       ref={swipeContainerRef}
-      className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white overflow-hidden transition-colors"
+      className="h-screen flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-900 dark:text-white overflow-hidden transition-colors"
     >
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold mb-4">Actualizar datos</h3>
             <div className="space-y-3">
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
@@ -1163,7 +1163,7 @@ export default function BYDStatsAnalyzer() {
       {/* Trip Detail Modal */}
       {showTripDetailModal && selectedTrip && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 pt-24" onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}>
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold">Detalle del viaje</h3>
               <button onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-700">
@@ -1184,25 +1184,25 @@ export default function BYDStatsAnalyzer() {
                 <div className="space-y-4">
                   {/* Fecha y hora */}
                   <div className="bg-slate-700/50 rounded-xl p-4">
-                    <p className="text-slate-400 text-sm mb-1">Fecha y hora</p>
-                    <p className="text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Fecha y hora</p>
+                    <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
                     <div className="flex items-center gap-4 mt-2">
                       <div>
-                        <p className="text-slate-400 text-xs">Inicio</p>
-                        <p className="text-white font-medium">{formatTime(selectedTrip.start_timestamp)}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">Inicio</p>
+                        <p className="text-slate-900 dark:text-white font-medium">{formatTime(selectedTrip.start_timestamp)}</p>
                       </div>
                       {endTime && (
                         <>
                           <span className="text-slate-600">→</span>
                           <div>
-                            <p className="text-slate-400 text-xs">Fin</p>
-                            <p className="text-white font-medium">{formatTime(endTime)}</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-xs">Fin</p>
+                            <p className="text-slate-900 dark:text-white font-medium">{formatTime(endTime)}</p>
                           </div>
                         </>
                       )}
                       <div className="ml-auto">
-                        <p className="text-slate-400 text-xs">Duración</p>
-                        <p className="text-white font-medium">{formatDuration(selectedTrip.duration)}</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">Duración</p>
+                        <p className="text-slate-900 dark:text-white font-medium">{formatDuration(selectedTrip.duration)}</p>
                       </div>
                     </div>
                   </div>
@@ -1210,31 +1210,31 @@ export default function BYDStatsAnalyzer() {
                   {/* Grid de métricas */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-400 text-xs mb-1">Distancia</p>
-                      <p className="text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
-                      <p className="text-slate-500 text-xs">km</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Distancia</p>
+                      <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
+                      <p className="text-slate-500 dark:text-slate-500 text-xs">km</p>
                     </div>
                     <div className="bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-400 text-xs mb-1">Velocidad media</p>
-                      <p className="text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
-                      <p className="text-slate-500 text-xs">km/h</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Velocidad media</p>
+                      <p className="text-slate-900 dark:text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
+                      <p className="text-slate-500 dark:text-slate-500 text-xs">km/h</p>
                     </div>
                     <div className="bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-400 text-xs mb-1">Consumo</p>
-                      <p className="text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
-                      <p className="text-slate-500 text-xs">kWh</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Consumo</p>
+                      <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
+                      <p className="text-slate-500 dark:text-slate-500 text-xs">kWh</p>
                     </div>
                     <div className="bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-400 text-xs mb-1">Eficiencia</p>
-                      <p className="text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
-                      <p className="text-slate-500 text-xs">kWh/100km</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Eficiencia</p>
+                      <p className="text-slate-900 dark:text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
+                      <p className="text-slate-500 dark:text-slate-500 text-xs">kWh/100km</p>
                     </div>
                   </div>
 
                   {/* SOC si está disponible */}
                   {(selectedTrip.start_soc !== undefined || selectedTrip.end_soc !== undefined) && (
                     <div className="bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-400 text-sm mb-3">Estado de carga</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Estado de carga</p>
                       <div className="flex items-center gap-4">
                         {selectedTrip.start_soc !== undefined && (
                           <div className="flex-1">
@@ -1258,14 +1258,14 @@ export default function BYDStatsAnalyzer() {
                   {/* Regeneración si está disponible */}
                   {selectedTrip.regeneration !== undefined && selectedTrip.regeneration !== null && (
                     <div className="bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-400 text-sm mb-1">Energía regenerada</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Energía regenerada</p>
                       <p className="text-green-400 text-2xl font-bold">{selectedTrip.regeneration?.toFixed(2)} kWh</p>
                     </div>
                   )}
 
                   {/* Comparación y percentil */}
                   <div className="bg-slate-700/50 rounded-xl p-4">
-                    <p className="text-slate-400 text-sm mb-3">Análisis</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
                         <span className="text-slate-300 text-sm">Comparación con tu media</span>
@@ -1293,7 +1293,7 @@ export default function BYDStatsAnalyzer() {
       {/* Settings Modal */}
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowSettingsModal(false)}>
-          <div className="bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
               <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
               Configuración
@@ -1301,74 +1301,74 @@ export default function BYDStatsAnalyzer() {
 
             <div className="space-y-4">
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Modelo del coche</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Modelo del coche</label>
                 <input
                   type="text"
                   value={settings.carModel}
                   onChange={(e) => setSettings({...settings, carModel: e.target.value})}
                   placeholder="BYD Seal"
-                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Matrícula</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Matrícula</label>
                 <input
                   type="text"
                   value={settings.licensePlate}
                   onChange={(e) => setSettings({...settings, licensePlate: e.target.value.toUpperCase()})}
                   placeholder="1234ABC"
-                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600 uppercase"
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 uppercase"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Nº Póliza del seguro</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Nº Póliza del seguro</label>
                 <input
                   type="text"
                   value={settings.insurancePolicy}
                   onChange={(e) => setSettings({...settings, insurancePolicy: e.target.value})}
                   placeholder="123456789"
-                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Tamaño de la batería (kWh)</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tamaño de la batería (kWh)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={settings.batterySize}
                   onChange={(e) => setSettings({...settings, batterySize: parseFloat(e.target.value) || 0})}
-                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-slate-400 mb-2">State of Health - SoH (%)</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">State of Health - SoH (%)</label>
                 <input
                   type="number"
                   min="0"
                   max="100"
                   value={settings.soh}
                   onChange={(e) => setSettings({...settings, soh: parseInt(e.target.value) || 100})}
-                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Precio de electricidad (€/kWh)</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Precio de electricidad (€/kWh)</label>
                 <input
                   type="number"
                   step="0.01"
                   value={settings.electricityPrice}
                   onChange={(e) => setSettings({...settings, electricityPrice: parseFloat(e.target.value) || 0})}
-                  className="w-full bg-slate-700 text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
                 />
               </div>
 
               <div>
-                <label className="block text-sm text-slate-400 mb-2">Tema</label>
+                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tema</label>
                 <div className="flex gap-2">
                   {['auto', 'light', 'dark'].map(theme => (
                     <button
@@ -1398,20 +1398,20 @@ export default function BYDStatsAnalyzer() {
         </div>
       )}
 
-      <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-900/90 backdrop-blur border-b border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
+      <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
               <img src="byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
               <div>
                 <h1 className="text-sm sm:text-base md:text-lg font-bold">Estadísticas BYD</h1>
-                <p className="text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
+                <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowSettingsModal(true)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:text-white hover:bg-white dark:bg-slate-800 transition-colors"
               >
                 <Settings className="w-5 h-5" />
               </button>
@@ -1452,8 +1452,8 @@ export default function BYDStatsAnalyzer() {
         {!data ? (
           // Show error message on all slides
           tabs.map((tab) => (
-            <div key={tab.id} className="text-center py-12 bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
-              <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
+            <div key={tab.id} className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
+              <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
               <p className="text-slate-400">No hay datos para mostrar</p>
             </div>
           ))
@@ -1475,7 +1475,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
                     <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={monthly}>
@@ -1493,7 +1493,7 @@ export default function BYDStatsAnalyzer() {
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
                     <div className="flex flex-col items-center">
                       <ResponsiveContainer width="100%" height={200}>
@@ -1522,10 +1522,10 @@ export default function BYDStatsAnalyzer() {
                                 const total = tripDist.reduce((s, d) => s + d.count, 0);
                                 const percent = ((data.value / total) * 100).toFixed(1);
                                 return (
-                                  <div className="bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
+                                  <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
                                     <div className="flex items-center gap-2 mb-2">
                                       <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }}></div>
-                                      <p className="text-white font-bold">{data.payload.range} km</p>
+                                      <p className="text-slate-900 dark:text-white font-bold">{data.payload.range} km</p>
                                     </div>
                                     <p className="text-sm text-slate-300">{data.value} viajes ({percent}%)</p>
                                   </div>
@@ -1542,7 +1542,7 @@ export default function BYDStatsAnalyzer() {
                         {tripDist.map((d, i) => (
                           <div key={i} className="flex flex-col items-center">
                             <div className="w-3 h-3 rounded-full mb-1" style={{ backgroundColor: d.color }}></div>
-                            <p className="text-[9px] sm:text-[10px] text-slate-400 text-center">{d.range}km</p>
+                            <p className="text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-400 text-center">{d.range}km</p>
                             <p className="text-xs sm:text-sm font-bold text-white">{d.count}</p>
                           </div>
                         ))}
@@ -1556,7 +1556,7 @@ export default function BYDStatsAnalyzer() {
             {/* Slide 2: Trends */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
+                <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={monthly}>
@@ -1571,7 +1571,7 @@ export default function BYDStatsAnalyzer() {
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
+                <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos 60 días</h3>
                   <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={daily.slice(-60)}>
@@ -1596,7 +1596,7 @@ export default function BYDStatsAnalyzer() {
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={hourly}>
@@ -1608,7 +1608,7 @@ export default function BYDStatsAnalyzer() {
                       </BarChart>
                     </ResponsiveContainer>
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
                     <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
@@ -1623,8 +1623,8 @@ export default function BYDStatsAnalyzer() {
                 </div>
                 <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                   {weekday.map((d, i) => (
-                    <div key={i} className="bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-700/50">
-                      <p className="text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
+                    <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
+                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
                       <p className="text-base sm:text-xl font-bold">{d.trips}</p>
                       <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
                     </div>
@@ -1642,7 +1642,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                   <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
                 </div>
-                <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50" >
+                <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
                   <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
                   <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart>
@@ -1673,7 +1673,7 @@ export default function BYDStatsAnalyzer() {
                         content={({ active, payload }) => {
                           if (active && payload && payload.length) {
                             return (
-                              <div className="bg-slate-800 border border-slate-600 rounded-xl p-3">
+                              <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3">
                                 <p className="text-white">{payload[0]?.value?.toFixed(1)} km</p>
                                 <p style={{ color: BYD_RED }}>{payload[1]?.value?.toFixed(2)} kWh/100km</p>
                               </div>
@@ -1693,47 +1693,47 @@ export default function BYDStatsAnalyzer() {
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
+                  <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
                     <p className="text-xs sm:text-sm mb-1">🏆 Más largo</p>
                     <p className="text-xl sm:text-3xl font-bold">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
                   </div>
-                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-cyan-500/30">
+                  <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-cyan-500/30">
                     <p className="text-xs sm:text-sm mb-1">⚡ Mayor consumo</p>
                     <p className="text-xl sm:text-3xl font-bold">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500">kWh</span></p>
                   </div>
-                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-500/30">
+                  <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-500/30">
                     <p className="text-xs sm:text-sm mb-1">⏱️ Más duración</p>
                     <p className="text-xl sm:text-3xl font-bold">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500">min</span></p>
                   </div>
-                  <div className="bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/30">
+                  <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/30">
                     <p className="text-xs sm:text-sm mb-1">📍 Más corto</p>
                     <p className="text-xl sm:text-3xl font-bold">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
                   </div>
                 </div>
                 <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-red-400">🥇 Top Distancia</h3>
                     {top.km.map((t, i) => (
-                      <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
-                        <span className="text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                      <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                        <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                         <span className="font-medium text-sm sm:text-base">{t.trip?.toFixed(1)} km</span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-cyan-400">⚡ Top Consumo</h3>
                     {top.kwh.map((t, i) => (
-                      <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
-                        <span className="text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                      <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                        <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                         <span className="font-medium text-sm sm:text-base">{t.electricity?.toFixed(1)} kWh</span>
                       </div>
                     ))}
                   </div>
-                  <div className="bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-700/50">
+                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
                     <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-amber-400">⏱️ Top Duración</h3>
                     {top.dur.map((t, i) => (
-                      <div key={i} className="flex justify-between py-2 border-b border-slate-700/50 last:border-0">
-                        <span className="text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
+                      <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                        <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                         <span className="font-medium text-sm sm:text-base">{((t.duration || 0) / 60).toFixed(0)} min</span>
                       </div>
                     ))}
@@ -1772,33 +1772,33 @@ export default function BYDStatsAnalyzer() {
                         <div
                           key={i}
                           onClick={() => openTripDetail(trip)}
-                          className="bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors"
+                          className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-700/50 transition-colors"
                         >
                           {/* Fecha y hora centrada - 100% */}
                           <div className="text-center mb-3">
-                            <p className="text-white font-semibold text-sm sm:text-base">
+                            <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
                               {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
                             </p>
                           </div>
                           {/* 4 columnas de 25% cada una */}
                           <div className="grid grid-cols-4 gap-2">
                             <div className="text-center">
-                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                              <p className="text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                              <p className="text-slate-500 text-[9px] sm:text-[10px]">km</p>
+                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                              <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                              <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">km</p>
                             </div>
                             <div className="text-center">
-                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                              <p className="text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                              <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                              <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                              <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
                             </div>
                             <div className="text-center">
-                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                              <p className="text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                              <p className="text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                              <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                              <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
                             </div>
                             <div className="text-center">
-                              <p className="text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
                               <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
                                 {score.toFixed(1)}
                               </p>
@@ -1837,13 +1837,13 @@ export default function BYDStatsAnalyzer() {
       {showFilterModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowFilterModal(false)}>
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div className="relative bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-700" onClick={(e) => e.stopPropagation()}>
+          <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <Filter className="w-5 h-5" style={{ color: BYD_RED }} />
                 <h2 className="text-xl font-bold text-white">Filtrar viajes</h2>
               </div>
-              <button onClick={() => setShowFilterModal(false)} className="text-slate-400 hover:text-white">
+              <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-white">
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
             </div>
@@ -1851,7 +1851,7 @@ export default function BYDStatsAnalyzer() {
             <div className="space-y-4">
               {/* Filter Type Buttons */}
               <div className="space-y-2">
-                <label className="text-slate-400 text-sm">Tipo de filtro:</label>
+                <label className="text-slate-600 dark:text-slate-400 text-sm">Tipo de filtro:</label>
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
@@ -1889,11 +1889,11 @@ export default function BYDStatsAnalyzer() {
               {/* Month Selector */}
               {filterType === 'month' && (
                 <div className="space-y-2">
-                  <label className="text-slate-400 text-sm">Seleccionar mes:</label>
+                  <label className="text-slate-600 dark:text-slate-400 text-sm">Seleccionar mes:</label>
                   <select
                     value={selMonth}
                     onChange={(e) => setSelMonth(e.target.value)}
-                    className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                    className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
                   >
                     <option value="">Todos los meses</option>
                     {months.map((m) => (
@@ -1906,20 +1906,20 @@ export default function BYDStatsAnalyzer() {
               {/* Date Range Selector */}
               {filterType === 'range' && (
                 <div className="space-y-2">
-                  <label className="text-slate-400 text-sm">Rango de fechas:</label>
+                  <label className="text-slate-600 dark:text-slate-400 text-sm">Rango de fechas:</label>
                   <div className="flex flex-col gap-2">
                     <input
                       type="date"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                      className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
                       placeholder="Desde"
                     />
                     <input
                       type="date"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full bg-slate-700 text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                      className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
                       placeholder="Hasta"
                     />
                   </div>
@@ -1928,7 +1928,7 @@ export default function BYDStatsAnalyzer() {
 
               {/* Results Count */}
               {filtered.length !== rawTrips.length && (
-                <div className="pt-4 border-t border-slate-700">
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                   <p className="text-center text-sm">
                     <span className="text-slate-400">Mostrando </span>
                     <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
@@ -1951,7 +1951,7 @@ export default function BYDStatsAnalyzer() {
       )}
 
       {/* Bottom Navigation Bar */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-900/95 backdrop-blur border-t border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="max-w-7xl mx-auto px-2 py-2">
           <div className="flex justify-around items-center">
             {tabs.map((t) => (
