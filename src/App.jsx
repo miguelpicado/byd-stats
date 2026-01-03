@@ -47,7 +47,7 @@ const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24"
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
 
-const GitHubFooter = () => (
+const GitHubFooter = React.memo(() => (
   <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
     <a
       href="https://github.com/miguelpicado/byd-stats"
@@ -59,7 +59,7 @@ const GitHubFooter = () => (
       <span>Ver en GitHub</span>
     </a>
   </div>
-);
+));
 
 const formatMonth = (m) => {
   if (!m || m.length < 6) return m || '';
@@ -190,6 +190,40 @@ function processData(rows) {
   };
 }
 
+// Helper functions
+const calculateScore = (efficiency, minEff, maxEff) => {
+  if (!efficiency || maxEff === minEff) return 5;
+  // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
+  // Score should be 10 when efficiency equals minEff (best)
+  // Score should be 0 when efficiency equals maxEff (worst)
+  const normalized = (maxEff - efficiency) / (maxEff - minEff);
+  return Math.max(0, Math.min(10, normalized * 10));
+};
+
+// Get color based on score (0=red, 5=orange, 10=green)
+const getScoreColor = (score) => {
+  if (score >= 5) {
+    // Green to orange (score 5-10)
+    const ratio = (score - 5) / 5;
+    const r = Math.round(255 - ratio * 155);
+    const g = Math.round(165 + ratio * 90);
+    return `rgb(${r}, ${g}, 0)`;
+  } else {
+    // Red to orange (score 0-5)
+    const ratio = score / 5;
+    const r = Math.round(234 + ratio * 21);
+    const g = Math.round(ratio * 165);
+    return `rgb(${r}, ${g}, 41)`;
+  }
+};
+
+// Format time from timestamp
+const formatTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+};
+
 export default function BYDStatsAnalyzer() {
   const [rawTrips, setRawTrips] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -216,10 +250,8 @@ export default function BYDStatsAnalyzer() {
 
   // Settings state
   const [settings, setSettings] = useState(() => {
-    console.log('=== INITIALIZING SETTINGS STATE ===');
     try {
       const saved = localStorage.getItem('byd_settings');
-      console.log('Saved settings from localStorage:', saved);
       const parsedSettings = saved ? JSON.parse(saved) : {
         carModel: '',
         licensePlate: '',
@@ -229,8 +261,6 @@ export default function BYDStatsAnalyzer() {
         electricityPrice: 0.15,
         theme: 'dark'
       };
-      console.log('Initial settings state:', parsedSettings);
-      console.log('Initial theme:', parsedSettings.theme);
       return parsedSettings;
     } catch (e) {
       console.error('Error loading settings, using defaults:', e);
@@ -284,14 +314,8 @@ export default function BYDStatsAnalyzer() {
 
   // Save settings to localStorage
   useEffect(() => {
-    console.log('=== SAVING SETTINGS TO LOCALSTORAGE ===');
-    console.log('Settings being saved:', settings);
     try {
       localStorage.setItem('byd_settings', JSON.stringify(settings));
-      console.log('✓ Settings saved successfully');
-      // Verify it was saved
-      const saved = localStorage.getItem('byd_settings');
-      console.log('Verified saved settings:', saved);
     } catch (e) {
       console.error('Error saving settings:', e);
     }
@@ -321,40 +345,23 @@ export default function BYDStatsAnalyzer() {
 
   // Theme management - SIMPLIFIED AND FIXED
   useEffect(() => {
-    console.log('=== THEME CHANGE USEEFFECT TRIGGERED ===');
-    console.log('Current theme setting:', settings.theme);
-    console.log('Current HTML classes BEFORE:', document.documentElement.className);
-    console.log('Has dark class BEFORE:', document.documentElement.classList.contains('dark'));
-
     let isDark = false;
 
     if (settings.theme === 'dark') {
       isDark = true;
-      console.log('→ Theme is "dark", setting isDark = true');
     } else if (settings.theme === 'light') {
       isDark = false;
-      console.log('→ Theme is "light", setting isDark = false');
     } else {
       // Auto mode
       isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      console.log('→ Auto mode, system prefers:', isDark ? 'dark' : 'light');
     }
-
-    console.log('Final isDark value:', isDark);
 
     // Apply theme to document
     if (isDark) {
-      console.log('Adding "dark" class to html element...');
       document.documentElement.classList.add('dark');
-      console.log('✓ Dark class added');
     } else {
-      console.log('Removing "dark" class from html element...');
       document.documentElement.classList.remove('dark');
-      console.log('✓ Dark class removed');
     }
-
-    console.log('Current HTML classes AFTER:', document.documentElement.className);
-    console.log('Has dark class AFTER:', document.documentElement.classList.contains('dark'));
 
     // Update status bar for native apps
     if (isNative && window.StatusBar) {
@@ -366,7 +373,6 @@ export default function BYDStatsAnalyzer() {
     if (settings.theme === 'auto') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handler = (e) => {
-        console.log('System theme changed to:', e.matches ? 'dark' : 'light');
         if (e.matches) {
           document.documentElement.classList.add('dark');
         } else {
@@ -492,6 +498,18 @@ export default function BYDStatsAnalyzer() {
 
   const data = useMemo(() => {
     return filtered.length > 0 ? processData(filtered) : null;
+  }, [filtered]);
+
+  // Memoize efficiency range calculation for scoring
+  const efficiencyRange = useMemo(() => {
+    const validTrips = filtered.filter(t => t.trip >= 1 && t.electricity !== 0);
+    if (validTrips.length === 0) return { min: 0, max: 0, validTrips: [] };
+    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+    return {
+      min: Math.min(...efficiencies),
+      max: Math.max(...efficiencies),
+      validTrips
+    };
   }, [filtered]);
 
   const processDB = useCallback(async (file, merge = false) => {
@@ -771,7 +789,7 @@ export default function BYDStatsAnalyzer() {
     }
   };
 
-  const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
+  const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub }) => (
     <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 dark:border-slate-700/50">
       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`} >
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -783,9 +801,9 @@ export default function BYDStatsAnalyzer() {
       </p>
       {sub && <p className="text-xs sm:text-sm mt-1" style={{ color: BYD_RED }}>{sub}</p>}
     </div>
-  );
+  ));
 
-  const ChartTip = ({ active, payload, label }) => {
+  const ChartTip = React.memo(({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
@@ -802,43 +820,69 @@ export default function BYDStatsAnalyzer() {
       );
     }
     return null;
-  };
+  });
 
-  // Calculate efficiency score (0-10) based on consumption
-  // LOWER kWh/100km = BETTER efficiency = HIGHER score (10)
-  // HIGHER kWh/100km = WORSE efficiency = LOWER score (0)
-  const calculateScore = (efficiency, minEff, maxEff) => {
-    if (!efficiency || maxEff === minEff) return 5;
-    // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
-    // Score should be 10 when efficiency equals minEff (best)
-    // Score should be 0 when efficiency equals maxEff (worst)
-    const normalized = (maxEff - efficiency) / (maxEff - minEff);
-    return Math.max(0, Math.min(10, normalized * 10));
-  };
+  const ChartCard = React.memo(({ title, children, className = "" }) => (
+    <div className={`bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50 ${className}`}>
+      {title && <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-slate-900 dark:text-white">{title}</h3>}
+      {children}
+    </div>
+  ));
 
-  // Get color based on score (0=red, 5=orange, 10=green)
-  const getScoreColor = (score) => {
-    if (score >= 5) {
-      // Green to orange (score 5-10)
-      const ratio = (score - 5) / 5;
-      const r = Math.round(255 - ratio * 155);
-      const g = Math.round(165 + ratio * 90);
-      return `rgb(${r}, ${g}, 0)`;
-    } else {
-      // Red to orange (score 0-5)
-      const ratio = score / 5;
-      const r = Math.round(234 + ratio * 21);
-      const g = Math.round(ratio * 165);
-      return `rgb(${r}, ${g}, 41)`;
-    }
-  };
+  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor }) => {
+    const efficiency = useMemo(() => {
+      if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
+        return 0;
+      }
+      return (trip.electricity / trip.trip) * 100;
+    }, [trip.trip, trip.electricity]);
 
-  // Format time from timestamp
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  };
+    const score = useMemo(() =>
+      calculateScore(efficiency, minEff, maxEff),
+      [efficiency, minEff, maxEff, calculateScore]
+    );
+
+    const scoreColor = useMemo(() =>
+      getScoreColor(score),
+      [score, getScoreColor]
+    );
+
+    return (
+      <div
+        onClick={() => onClick(trip)}
+        className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+      >
+        <div className="text-center mb-3">
+          <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
+            {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+          </p>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+            <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+            <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+            <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+            <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
+              {score.toFixed(1)}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  });
 
   // Format duration in minutes/hours
   const formatDuration = (seconds) => {
@@ -1609,12 +1653,7 @@ export default function BYDStatsAnalyzer() {
                     <button
                       key={theme}
                       onClick={() => {
-                        console.log('=== THEME BUTTON CLICKED ===');
-                        console.log('Clicked theme:', theme);
-                        console.log('Current settings.theme:', settings.theme);
-                        console.log('Setting new theme to:', theme);
                         setSettings({...settings, theme});
-                        console.log('setSettings called with theme:', theme);
                       }}
                       className="flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors"
                       style={{
@@ -1787,7 +1826,7 @@ export default function BYDStatsAnalyzer() {
             <div className="flex items-center gap-2 sm:gap-3">
               <img src="byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
               <div>
-                <h1 className="text-sm sm:text-base md:text-lg font-bold">Estadísticas BYD</h1>
+                <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
                 <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
               </div>
             </div>
@@ -1896,8 +1935,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
+                  <ChartCard title="Evolución Mensual">
                     <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={monthly}>
                         <defs>
@@ -1913,9 +1951,8 @@ export default function BYDStatsAnalyzer() {
                         <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                       </AreaChart>
                     </ResponsiveContainer>
-                  </div>
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
+                  </ChartCard>
+                  <ChartCard title="Distribución de Viajes">
                     <div className="flex flex-col items-center">
                       <ResponsiveContainer width="100%" height={200}>
                         <PieChart>
@@ -1969,7 +2006,7 @@ export default function BYDStatsAnalyzer() {
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </ChartCard>
                 </div>
                 <GitHubFooter />
               </div>
@@ -2686,27 +2723,14 @@ export default function BYDStatsAnalyzer() {
         </div>
       </div>
 
-      {/* Floating Filter Button - Only show in vertical mode */}
-      {layoutMode === 'vertical' && (
+      {/* Floating Filter Button */}
       <button
         onClick={() => setShowFilterModal(true)}
-        className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
+        className={`fixed ${layoutMode === 'vertical' ? 'bottom-20' : 'bottom-4'} right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
         style={{ backgroundColor: BYD_RED }}
       >
         <Filter className="w-6 h-6 text-white" />
       </button>
-      )}
-
-      {/* Floating Filter Button for Horizontal mode */}
-      {layoutMode === 'horizontal' && (
-      <button
-        onClick={() => setShowFilterModal(true)}
-        className="fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
-        style={{ backgroundColor: BYD_RED }}
-      >
-        <Filter className="w-6 h-6 text-white" />
-      </button>
-      )}
 
       {/* Filter Modal */}
       {showFilterModal && (
