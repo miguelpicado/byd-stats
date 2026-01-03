@@ -42,6 +42,8 @@ const Settings = ({ className }) => <svg className={className} viewBox="0 0 24 2
 const Download = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
 const Database = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>;
 const HelpCircle = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
+const Mail = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>;
+const Bug = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 2v4M16 2v4M9 18h6M10 11v6M14 11v6M21 9h-3M6 9H3M21 15h-3M6 15H3M12 2a3 3 0 013 3v1a7 7 0 11-6 0V5a3 3 0 013-3z" /></svg>;
 const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.840 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>;
 
 const STORAGE_KEY = 'byd_stats_data';
@@ -1540,7 +1542,7 @@ export default function BYDStatsAnalyzer() {
       {showSettingsModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowSettingsModal(false)}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
               <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
               Configuración
             </h3>
@@ -1553,7 +1555,7 @@ export default function BYDStatsAnalyzer() {
                   value={settings.carModel}
                   onChange={(e) => setSettings({...settings, carModel: e.target.value})}
                   placeholder="BYD Seal"
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                 />
               </div>
 
@@ -1564,7 +1566,7 @@ export default function BYDStatsAnalyzer() {
                   value={settings.licensePlate}
                   onChange={(e) => setSettings({...settings, licensePlate: e.target.value.toUpperCase()})}
                   placeholder="1234ABC"
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 uppercase"
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 uppercase"
                 />
               </div>
 
@@ -1575,7 +1577,7 @@ export default function BYDStatsAnalyzer() {
                   value={settings.insurancePolicy}
                   onChange={(e) => setSettings({...settings, insurancePolicy: e.target.value})}
                   placeholder="123456789"
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                 />
               </div>
 
@@ -1586,7 +1588,7 @@ export default function BYDStatsAnalyzer() {
                   step="0.01"
                   value={settings.batterySize}
                   onChange={(e) => setSettings({...settings, batterySize: parseFloat(e.target.value) || 0})}
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                 />
               </div>
 
@@ -1598,7 +1600,7 @@ export default function BYDStatsAnalyzer() {
                   max="100"
                   value={settings.soh}
                   onChange={(e) => setSettings({...settings, soh: parseInt(e.target.value) || 100})}
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                 />
               </div>
 
@@ -1609,7 +1611,7 @@ export default function BYDStatsAnalyzer() {
                   step="0.01"
                   value={settings.electricityPrice}
                   onChange={(e) => setSettings({...settings, electricityPrice: parseFloat(e.target.value) || 0})}
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600"
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                 />
               </div>
 
@@ -1622,10 +1624,13 @@ export default function BYDStatsAnalyzer() {
                       onClick={() => {
                         setSettings({...settings, theme});
                       }}
-                      className="flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors"
+                      className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${
+                        settings.theme === theme
+                          ? 'text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                      }`}
                       style={{
-                        backgroundColor: settings.theme === theme ? BYD_RED : '#334155',
-                        color: settings.theme === theme ? 'white' : '#94a3b8'
+                        backgroundColor: settings.theme === theme ? BYD_RED : ''
                       }}
                     >
                       {theme === 'auto' ? 'Automático' : theme === 'light' ? 'Claro' : 'Oscuro'}
@@ -1755,7 +1760,7 @@ export default function BYDStatsAnalyzer() {
                   className="w-full py-3 rounded-xl font-medium text-white flex items-center justify-center gap-2"
                   style={{ backgroundColor: BYD_RED }}
                 >
-                  <AlertCircle className="w-5 h-5" />
+                  <Bug className="w-5 h-5" />
                   Reportar Bug
                 </a>
 
@@ -1773,7 +1778,7 @@ export default function BYDStatsAnalyzer() {
                   href="mailto:contacto@bydstats.com?subject=BYD Stats - Contacto&body=Hola,%0A%0AMe gustaría contactar sobre..."
                   className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
                 >
-                  <Settings className="w-5 h-5" />
+                  <Mail className="w-5 h-5" />
                   Enviar Email
                 </a>
               </div>
@@ -1791,7 +1796,11 @@ export default function BYDStatsAnalyzer() {
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 sm:gap-3">
-              <img src="byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
+              <img
+                src="byd_logo.png"
+                className={`${layoutMode === 'horizontal' ? 'w-48 h-16' : 'w-12 sm:w-16 md:w-20'} h-auto object-contain`}
+                alt="BYD Logo"
+              />
               <div>
                 <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
                 <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
@@ -1840,10 +1849,13 @@ export default function BYDStatsAnalyzer() {
                 <button
                   key={t.id}
                   onClick={() => handleTabClick(t.id)}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left"
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${
+                    activeTab === t.id
+                      ? 'text-white'
+                      : 'text-slate-600 dark:text-slate-400'
+                  }`}
                   style={{
-                    backgroundColor: activeTab === t.id ? BYD_RED : 'transparent',
-                    color: activeTab === t.id ? 'white' : '#94a3b8'
+                    backgroundColor: activeTab === t.id ? BYD_RED : 'transparent'
                   }}
                 >
                   <t.icon className="w-5 h-5 flex-shrink-0" />
@@ -2379,20 +2391,20 @@ export default function BYDStatsAnalyzer() {
                     <div className="space-y-4 sm:space-y-6">
                       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                         <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
-                          <p className="text-xs sm:text-sm mb-1">🏆 Más largo</p>
-                          <p className="text-xl sm:text-3xl font-bold">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
+                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">🏆 Más largo</p>
+                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
                         </div>
                         <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-cyan-500/30">
-                          <p className="text-xs sm:text-sm mb-1">⚡ Mayor consumo</p>
-                          <p className="text-xl sm:text-3xl font-bold">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500">kWh</span></p>
+                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">⚡ Mayor consumo</p>
+                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">kWh</span></p>
                         </div>
                         <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-500/30">
-                          <p className="text-xs sm:text-sm mb-1">⏱️ Más duración</p>
-                          <p className="text-xl sm:text-3xl font-bold">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500">min</span></p>
+                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">⏱️ Más duración</p>
+                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">min</span></p>
                         </div>
                         <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/30">
-                          <p className="text-xs sm:text-sm mb-1">📍 Más corto</p>
-                          <p className="text-xl sm:text-3xl font-bold">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
+                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">📍 Más corto</p>
+                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
                         </div>
                       </div>
                       <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
@@ -2633,9 +2645,9 @@ export default function BYDStatsAnalyzer() {
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
                 <Filter className="w-5 h-5" style={{ color: BYD_RED }} />
-                <h2 className="text-xl font-bold text-white">Filtrar viajes</h2>
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
               </div>
-              <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-white">
+              <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
             </div>
@@ -2647,30 +2659,39 @@ export default function BYDStatsAnalyzer() {
                 <div className="flex flex-col gap-2">
                   <button
                     onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
-                    className="px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left"
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${
+                      filterType === 'all'
+                        ? 'text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                    }`}
                     style={{
-                      backgroundColor: filterType === 'all' ? BYD_RED : '#334155',
-                      color: filterType === 'all' ? 'white' : '#94a3b8'
+                      backgroundColor: filterType === 'all' ? BYD_RED : ''
                     }}
                   >
                     📊 Todos los viajes ({rawTrips.length})
                   </button>
                   <button
                     onClick={() => setFilterType('month')}
-                    className="px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left"
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${
+                      filterType === 'month'
+                        ? 'text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                    }`}
                     style={{
-                      backgroundColor: filterType === 'month' ? BYD_RED : '#334155',
-                      color: filterType === 'month' ? 'white' : '#94a3b8'
+                      backgroundColor: filterType === 'month' ? BYD_RED : ''
                     }}
                   >
                     📅 Por mes
                   </button>
                   <button
                     onClick={() => setFilterType('range')}
-                    className="px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left"
+                    className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${
+                      filterType === 'range'
+                        ? 'text-white'
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                    }`}
                     style={{
-                      backgroundColor: filterType === 'range' ? BYD_RED : '#334155',
-                      color: filterType === 'range' ? 'white' : '#94a3b8'
+                      backgroundColor: filterType === 'range' ? BYD_RED : ''
                     }}
                   >
                     📆 Rango de fechas
@@ -2685,7 +2706,7 @@ export default function BYDStatsAnalyzer() {
                   <select
                     value={selMonth}
                     onChange={(e) => setSelMonth(e.target.value)}
-                    className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                    className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                   >
                     <option value="">Todos los meses</option>
                     {months.map((m) => (
@@ -2704,14 +2725,14 @@ export default function BYDStatsAnalyzer() {
                       type="date"
                       value={dateFrom}
                       onChange={(e) => setDateFrom(e.target.value)}
-                      className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                      className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                       placeholder="Desde"
                     />
                     <input
                       type="date"
                       value={dateTo}
                       onChange={(e) => setDateTo(e.target.value)}
-                      className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-600 text-sm"
+                      className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                       placeholder="Hasta"
                     />
                   </div>
@@ -2754,11 +2775,11 @@ export default function BYDStatsAnalyzer() {
                   className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
                   style={{
                     backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
-                    color: activeTab === t.id ? BYD_RED : '#94a3b8'
+                    color: activeTab === t.id ? BYD_RED : ''
                   }}
                 >
-                  <t.icon className="w-6 h-6 mb-1" />
-                  <span className="text-[10px] font-medium">{t.label}</span>
+                  <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
+                  <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
                 </button>
               ))}
             </div>
