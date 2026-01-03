@@ -41,9 +41,25 @@ const List = ({ className }) => <svg className={className} viewBox="0 0 24 24" f
 const Settings = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>;
 const Download = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
 const Database = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>;
+const HelpCircle = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
+const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.840 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>;
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
+
+const GitHubFooter = () => (
+  <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+    <a
+      href="https://github.com/miguelpicado/byd-stats"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mx-auto w-fit"
+    >
+      <GitHub className="w-5 h-5" />
+      <span>Ver en GitHub</span>
+    </a>
+  </div>
+);
 
 const formatMonth = (m) => {
   if (!m || m.length < 6) return m || '';
@@ -167,9 +183,9 @@ function processData(rows) {
     tripDist: tripDistribution,
     effScatter: efficiencyScatter,
     top: {
-      km: sortedByKm.slice(0, 5),
-      kwh: sortedByKwh.slice(0, 5),
-      dur: sortedByDur.slice(0, 5)
+      km: sortedByKm.slice(0, 10),
+      kwh: sortedByKwh.slice(0, 10),
+      dur: sortedByDur.slice(0, 10)
     }
   };
 }
@@ -187,6 +203,7 @@ export default function BYDStatsAnalyzer() {
   const [showTripDetailModal, setShowTripDetailModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [selMonth, setSelMonth] = useState('');
@@ -1681,6 +1698,83 @@ export default function BYDStatsAnalyzer() {
                 >
                   Borrar historial
                 </button>
+
+                <button
+                  onClick={() => {
+                    exportDatabase();
+                    setShowHistoryModal(false);
+                  }}
+                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                  disabled={filtered.length === 0}
+                >
+                  <Download className="w-5 h-5" />
+                  Exportar base de datos
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Help/Bug Report Modal */}
+      {showHelpModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowHelpModal(false)}>
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+          <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5" style={{ color: BYD_RED }} />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Ayuda y Soporte</h2>
+              </div>
+              <button onClick={() => setShowHelpModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                <Plus className="w-6 h-6 rotate-45" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
+                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
+                  ¿Encontraste un error o tienes sugerencias?
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-500">
+                  Puedes reportar bugs, solicitar features o contribuir al proyecto en GitHub.
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <a
+                  href="https://github.com/miguelpicado/byd-stats/issues/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 rounded-xl font-medium text-white flex items-center justify-center gap-2"
+                  style={{ backgroundColor: BYD_RED }}
+                >
+                  <AlertCircle className="w-5 h-5" />
+                  Reportar Bug
+                </a>
+
+                <a
+                  href="https://github.com/miguelpicado/byd-stats"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  <GitHub className="w-5 h-5" />
+                  Ver en GitHub
+                </a>
+
+                <a
+                  href="mailto:contacto@bydstats.com?subject=BYD Stats - Contacto&body=Hola,%0A%0AMe gustaría contactar sobre..."
+                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Settings className="w-5 h-5" />
+                  Enviar Email
+                </a>
+              </div>
+
+              <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
+                <p>BYD Stats Analyzer v1.0</p>
+                <p className="mt-1">Hecho con ❤️ para la comunidad BYD</p>
               </div>
             </div>
           </div>
@@ -1699,11 +1793,11 @@ export default function BYDStatsAnalyzer() {
             </div>
             <div className="flex items-center gap-2">
               <button
-                onClick={exportDatabase}
+                onClick={() => setShowHelpModal(true)}
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                title="Exportar base de datos"
+                title="Ayuda y Bug Report"
               >
-                <Download className="w-5 h-5" />
+                <HelpCircle className="w-5 h-5" />
               </button>
               <button
                 onClick={() => setShowHistoryModal(true)}
@@ -1870,13 +1964,14 @@ export default function BYDStatsAnalyzer() {
                           <div key={i} className="flex flex-col items-center">
                             <div className="w-3 h-3 rounded-full mb-1" style={{ backgroundColor: d.color }}></div>
                             <p className="text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-400 text-center">{d.range}km</p>
-                            <p className="text-xs sm:text-sm font-bold text-white">{d.count}</p>
+                            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{d.count}</p>
                           </div>
                         ))}
                       </div>
                     </div>
                   </div>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -1915,6 +2010,7 @@ export default function BYDStatsAnalyzer() {
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -1956,6 +2052,7 @@ export default function BYDStatsAnalyzer() {
                     </div>
                   ))}
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2012,6 +2109,7 @@ export default function BYDStatsAnalyzer() {
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2020,20 +2118,20 @@ export default function BYDStatsAnalyzer() {
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
-                    <p className="text-xs sm:text-sm mb-1">🏆 Más largo</p>
-                    <p className="text-xl sm:text-3xl font-bold">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">🏆 Más largo</p>
+                    <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
                   </div>
                   <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-cyan-500/30">
-                    <p className="text-xs sm:text-sm mb-1">⚡ Mayor consumo</p>
-                    <p className="text-xl sm:text-3xl font-bold">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500">kWh</span></p>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">⚡ Mayor consumo</p>
+                    <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">kWh</span></p>
                   </div>
                   <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-500/30">
-                    <p className="text-xs sm:text-sm mb-1">⏱️ Más duración</p>
-                    <p className="text-xl sm:text-3xl font-bold">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500">min</span></p>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">⏱️ Más duración</p>
+                    <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">min</span></p>
                   </div>
                   <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/30">
-                    <p className="text-xs sm:text-sm mb-1">📍 Más corto</p>
-                    <p className="text-xl sm:text-3xl font-bold">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500">km</span></p>
+                    <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">📍 Más corto</p>
+                    <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
                   </div>
                 </div>
                 <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
@@ -2042,7 +2140,7 @@ export default function BYDStatsAnalyzer() {
                     {top.km.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                         <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                        <span className="font-medium text-sm sm:text-base">{t.trip?.toFixed(1)} km</span>
+                        <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.trip?.toFixed(1)} km</span>
                       </div>
                     ))}
                   </div>
@@ -2051,7 +2149,7 @@ export default function BYDStatsAnalyzer() {
                     {top.kwh.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                         <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                        <span className="font-medium text-sm sm:text-base">{t.electricity?.toFixed(1)} kWh</span>
+                        <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.electricity?.toFixed(1)} kWh</span>
                       </div>
                     ))}
                   </div>
@@ -2060,11 +2158,12 @@ export default function BYDStatsAnalyzer() {
                     {top.dur.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                         <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                        <span className="font-medium text-sm sm:text-base">{((t.duration || 0) / 60).toFixed(0)} min</span>
+                        <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{((t.duration || 0) / 60).toFixed(0)} min</span>
                       </div>
                     ))}
                   </div>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2111,17 +2210,17 @@ export default function BYDStatsAnalyzer() {
                             <div className="text-center">
                               <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
                               <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                              <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">km</p>
+                              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
                             </div>
                             <div className="text-center">
                               <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
                               <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                              <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
                             </div>
                             <div className="text-center">
                               <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
                               <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                              <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
                             </div>
                             <div className="text-center">
                               <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
@@ -2142,6 +2241,7 @@ export default function BYDStatsAnalyzer() {
                 >
                   Mostrar todo
                 </button>
+                <GitHubFooter />
               </div>
             </div>
           </>
@@ -2203,6 +2303,7 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </div>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'trends' && (
@@ -2239,6 +2340,7 @@ export default function BYDStatsAnalyzer() {
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'patterns' && (
@@ -2278,6 +2380,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         ))}
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'efficiency' && (
@@ -2313,6 +2416,7 @@ export default function BYDStatsAnalyzer() {
                           </ScatterChart>
                         </ResponsiveContainer>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'records' && (
@@ -2364,81 +2468,215 @@ export default function BYDStatsAnalyzer() {
                           ))}
                         </div>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'history' && (
                     <div className="space-y-4 sm:space-y-6">
-                      <h2 className="text-xl sm:text-2xl font-bold">Últimos 10 viajes</h2>
-                      <div className="space-y-3">
-                        {(() => {
-                          const allTrips = [...filtered].sort((a, b) => {
-                            const dateCompare = (b.date || '').localeCompare(a.date || '');
-                            if (dateCompare !== 0) return dateCompare;
-                            return (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                          });
+                      {/* Grid de 4 columnas en horizontal mode */}
+                      <div className="grid lg:grid-cols-4 gap-6">
+                        {/* Columnas 1-3: Lista de viajes en 2 columnas */}
+                        <div className="lg:col-span-3 space-y-4">
+                          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
+                          {(() => {
+                            const allTrips = [...filtered].sort((a, b) => {
+                              const dateCompare = (b.date || '').localeCompare(a.date || '');
+                              if (dateCompare !== 0) return dateCompare;
+                              return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                            });
 
-                          // Filter trips >= 1km for scoring calculation
-                          // Incluir eficiencias negativas (regeneración) que son las MEJORES
-                          const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
-                          const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-                          const minEff = Math.min(...efficiencies);
-                          const maxEff = Math.max(...efficiencies);
+                            // Filter trips >= 1km for scoring calculation
+                            const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+                            const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+                            const minEff = Math.min(...efficiencies);
+                            const maxEff = Math.max(...efficiencies);
 
-                          return allTrips.slice(0, 10).map((trip, i) => {
-                            const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
-                              ? (trip.electricity / trip.trip) * 100
-                              : 0;
-                            const score = calculateScore(efficiency, minEff, maxEff);
-                            const scoreColor = getScoreColor(score);
+                            const last10 = allTrips.slice(0, 10);
+                            const firstColumn = last10.slice(0, 5);
+                            const secondColumn = last10.slice(5, 10);
 
-                            return (
-                              <div
-                                key={i}
-                                onClick={() => openTripDetail(trip)}
-                                className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
-                              >
-                                {/* Fecha y hora centrada - 100% */}
-                                <div className="text-center mb-3">
-                                  <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
-                                    {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-                                  </p>
-                                </div>
-                                {/* 4 columnas de 25% cada una */}
-                                <div className="grid grid-cols-4 gap-2">
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">km</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
-                                  </div>
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
-                                    <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
-                                      {score.toFixed(1)}
+                            const renderTripCard = (trip, i) => {
+                              const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
+                                ? (trip.electricity / trip.trip) * 100
+                                : 0;
+                              const score = calculateScore(efficiency, minEff, maxEff);
+                              const scoreColor = getScoreColor(score);
+
+                              return (
+                                <div
+                                  key={i}
+                                  onClick={() => openTripDetail(trip)}
+                                  className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                                >
+                                  {/* Fecha y hora centrada - 100% */}
+                                  <div className="text-center mb-3">
+                                    <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
+                                      {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
                                     </p>
                                   </div>
+                                  {/* 4 columnas de 25% cada una */}
+                                  <div className="grid grid-cols-4 gap-2">
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                                      <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
+                                        {score.toFixed(1)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            };
+
+                            return (
+                              <div className="grid lg:grid-cols-2 gap-4">
+                                {/* Primera columna de viajes */}
+                                <div className="space-y-3">
+                                  {firstColumn.map((trip, i) => renderTripCard(trip, i))}
+                                </div>
+                                {/* Segunda columna de viajes */}
+                                <div className="space-y-3">
+                                  {secondColumn.map((trip, i) => renderTripCard(trip, i + 5))}
                                 </div>
                               </div>
                             );
-                          });
-                        })()}
+                          })()}
+                          <button
+                            onClick={() => setShowAllTripsModal(true)}
+                            className="w-full py-3 rounded-xl font-medium text-white"
+                            style={{ backgroundColor: BYD_RED }}
+                          >
+                            Mostrar todo
+                          </button>
+                        </div>
+
+                        {/* Columna 4: Estadísticas promedio */}
+                        <div className="lg:col-span-1 space-y-4">
+                          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Estadísticas promedio</h2>
+                          {(() => {
+                            const allTrips = [...filtered].sort((a, b) => {
+                              const dateCompare = (b.date || '').localeCompare(a.date || '');
+                              if (dateCompare !== 0) return dateCompare;
+                              return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                            });
+                            const last10 = allTrips.slice(0, 10);
+
+                            // Calcular promedios
+                            const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length;
+                            const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length;
+                            const avgEfficiency = last10.reduce((sum, t) => {
+                              if (t.trip > 0 && t.electricity !== undefined) {
+                                return sum + ((t.electricity / t.trip) * 100);
+                              }
+                              return sum;
+                            }, 0) / last10.length;
+                            const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length;
+                            const avgSpeed = last10.reduce((sum, t) => {
+                              const duration = (t.duration || 0) / 3600;
+                              if (duration > 0 && t.trip > 0) {
+                                return sum + (t.trip / duration);
+                              }
+                              return sum;
+                            }, 0) / last10.filter(t => t.duration > 0 && t.trip > 0).length;
+
+                            return (
+                              <div className="space-y-3">
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                      <MapPin className="w-5 h-5 text-red-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Distancia promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                      <Zap className="w-5 h-5 text-cyan-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Consumo promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                      <Battery className="w-5 h-5 text-green-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Eficiencia promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                      <Clock className="w-5 h-5 text-amber-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Duración promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                      <TrendingUp className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Velocidad promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 dark:from-red-500/20 dark:to-orange-500/20 rounded-xl p-4 border border-red-500/30 dark:border-red-500/30">
+                                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 text-center">Total de viajes analizados</p>
+                                  <p className="text-4xl font-bold text-center" style={{ color: BYD_RED }}>
+                                    {last10.length}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
                       </div>
-                      <button
-                        onClick={() => setShowAllTripsModal(true)}
-                        className="w-full py-3 rounded-xl font-medium text-white"
-                        style={{ backgroundColor: BYD_RED }}
-                      >
-                        Mostrar todo
-                      </button>
+                      <GitHubFooter />
                     </div>
                   )}
                 </>
