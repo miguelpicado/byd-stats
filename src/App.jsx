@@ -1793,23 +1793,21 @@ export default function BYDStatsAnalyzer() {
       )}
 
       <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+        <div className={`${layoutMode === 'horizontal' ? 'px-3 sm:px-4' : 'max-w-7xl mx-auto px-3 sm:px-4'} py-3 sm:py-4`}>
           <div className="flex items-center justify-between">
-            {/* Logo y título solo en modo vertical */}
-            {layoutMode === 'vertical' && (
-              <div className="flex items-center gap-2 sm:gap-3">
-                <img
-                  src="byd_logo.png"
-                  className="w-12 sm:w-16 md:w-20 h-auto object-contain"
-                  alt="BYD Logo"
-                />
-                <div>
-                  <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
-                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
-                </div>
+            {/* Logo y título */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <img
+                src="byd_logo.png"
+                className={`${layoutMode === 'horizontal' ? 'h-10 w-auto' : 'w-12 sm:w-16 md:w-20'} object-contain`}
+                alt="BYD Logo"
+              />
+              <div>
+                <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
+                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">{rawTrips.length} viajes</p>
               </div>
-            )}
-            <div className={`flex items-center gap-2 ${layoutMode === 'horizontal' ? 'ml-auto' : ''}`}>
+            </div>
+            <div className="flex items-center gap-2">
               <button
                 onClick={() => setShowHelpModal(true)}
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
@@ -1847,14 +1845,6 @@ export default function BYDStatsAnalyzer() {
         {/* Horizontal Layout: Sidebar with tabs */}
         {layoutMode === 'horizontal' && (
           <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
-            {/* Logo en el sidebar */}
-            <div className="p-4 pb-2 flex justify-center border-b border-slate-200 dark:border-slate-700/50">
-              <img
-                src="byd_logo.png"
-                className="w-48 h-16 object-contain"
-                alt="BYD Logo"
-              />
-            </div>
             <div className="p-4 space-y-2">
               {tabs.map((t) => (
                 <button
@@ -1879,13 +1869,6 @@ export default function BYDStatsAnalyzer() {
 
         {/* Content container */}
         <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto' : 'max-w-7xl mx-auto h-full'}>
-          {/* Título para modo horizontal */}
-          {layoutMode === 'horizontal' && (
-            <div className="sticky top-0 z-30 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50 px-6 py-4">
-              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
-              <p className="text-slate-500 dark:text-slate-400 text-sm">{rawTrips.length} viajes</p>
-            </div>
-          )}
           {layoutMode === 'vertical' ? (
             // Vertical layout: sliding tabs with transitions
             <div
@@ -1932,7 +1915,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <ChartCard title="Evolución Mensual">
+                  <ChartCard title="Evolución mensual (distancia)">
                     <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={monthly}>
                         <defs>
@@ -2025,7 +2008,7 @@ export default function BYDStatsAnalyzer() {
                     </BarChart>
                   </ResponsiveContainer>
                 </ChartCard>
-                <ChartCard title="Últimos 60 días">
+                <ChartCard title="Km recorridos en últimos 60 días">
                   <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={daily.slice(-60)}>
                       <defs>
@@ -2036,7 +2019,7 @@ export default function BYDStatsAnalyzer() {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                      <YAxis stroke="#64748b" />
+                      <YAxis stroke="#64748b" fontSize={11} />
                       <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                     </AreaChart>
@@ -2077,7 +2060,7 @@ export default function BYDStatsAnalyzer() {
                   {weekday.map((d, i) => (
                     <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
                       <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
-                      <p className="text-base sm:text-xl font-bold">{d.trips}</p>
+                      <p className="text-base sm:text-xl font-bold text-slate-900 dark:text-white">{d.trips}</p>
                       <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
                     </div>
                   ))}
@@ -2104,10 +2087,13 @@ export default function BYDStatsAnalyzer() {
                         name="Distancia"
                         stroke="#64748b"
                         fontSize={11}
+                        type="number"
+                        scale="log"
+                        domain={['auto', 'auto']}
+                        ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
                         allowDecimals={false}
-                        tickFormatter={(value) => Math.round(value)}
-                        interval="preserveStartEnd"
-                        minTickGap={30}
+                        allowDataOverflow={false}
+                        tickFormatter={(value) => `${Math.round(value)}`}
                         label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 11 }}
                       />
                       <YAxis
@@ -2196,7 +2182,7 @@ export default function BYDStatsAnalyzer() {
             {/* Slide 6: History */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
-                <h2 className="text-xl sm:text-2xl font-bold">Últimos 10 viajes</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
                 <div className="space-y-3">
                   {(() => {
                     const allTrips = [...filtered].sort((a, b) => {
@@ -2265,7 +2251,7 @@ export default function BYDStatsAnalyzer() {
                         <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
                       <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                        <ChartCard title="Evolución Mensual">
+                        <ChartCard title="Evolución mensual (distancia)">
                           <ResponsiveContainer width="100%" height={240}>
                             <AreaChart data={monthly}>
                               <defs>
@@ -2312,20 +2298,20 @@ export default function BYDStatsAnalyzer() {
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartCard>
-                      <ChartCard title="Últimos 60 días">
+                      <ChartCard title="Km recorridos en últimos 60 días">
                         <ResponsiveContainer width="100%" height={260}>
                           <AreaChart data={daily.slice(-60)}>
                             <defs>
-                              <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
+                              <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
                                 <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                             <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                            <YAxis stroke="#64748b" />
+                            <YAxis stroke="#64748b" fontSize={11} />
                             <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
+                            <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </ChartCard>
@@ -2362,7 +2348,7 @@ export default function BYDStatsAnalyzer() {
                         {weekday.map((d, i) => (
                           <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
                             <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
-                            <p className="text-base sm:text-xl font-bold">{d.trips}</p>
+                            <p className="text-base sm:text-xl font-bold text-slate-900 dark:text-white">{d.trips}</p>
                             <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
                           </div>
                         ))}
@@ -2387,7 +2373,13 @@ export default function BYDStatsAnalyzer() {
                               name="Distancia"
                               stroke="#64748b"
                               fontSize={12}
-                              tickFormatter={(v) => `${v.toFixed(0)}km`}
+                              type="number"
+                              scale="log"
+                              domain={['auto', 'auto']}
+                              ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
+                              allowDecimals={false}
+                              allowDataOverflow={false}
+                              tickFormatter={(v) => `${Math.round(v)}km`}
                             />
                             <YAxis
                               dataKey="eff"
@@ -2430,7 +2422,7 @@ export default function BYDStatsAnalyzer() {
                           {top.km.map((t, i) => (
                             <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                               <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base">{t.trip?.toFixed(1)} km</span>
+                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.trip?.toFixed(1)} km</span>
                             </div>
                           ))}
                         </ChartCard>
@@ -2438,7 +2430,7 @@ export default function BYDStatsAnalyzer() {
                           {top.kwh.map((t, i) => (
                             <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                               <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base">{t.electricity?.toFixed(1)} kWh</span>
+                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.electricity?.toFixed(1)} kWh</span>
                             </div>
                           ))}
                         </ChartCard>
@@ -2446,7 +2438,7 @@ export default function BYDStatsAnalyzer() {
                           {top.dur.map((t, i) => (
                             <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                               <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base">{((t.duration || 0) / 60).toFixed(0)} min</span>
+                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{((t.duration || 0) / 60).toFixed(0)} min</span>
                             </div>
                           ))}
                         </ChartCard>
@@ -2456,10 +2448,10 @@ export default function BYDStatsAnalyzer() {
                   )}
                   {activeTab === 'history' && (
                     <div className="space-y-4 sm:space-y-6">
-                      {/* Grid de 4 columnas en horizontal mode */}
-                      <div className="grid lg:grid-cols-4 gap-6">
-                        {/* Columnas 1-3: Lista de viajes en 2 columnas */}
-                        <div className="lg:col-span-3 space-y-4">
+                      {/* Grid de 8 columnas en horizontal mode */}
+                      <div className="grid lg:grid-cols-8 gap-6">
+                        {/* Columnas 1-6: Lista de viajes en 2 columnas (75%) */}
+                        <div className="lg:col-span-6 space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
@@ -2524,9 +2516,9 @@ export default function BYDStatsAnalyzer() {
                           </button>
                         </div>
 
-                        {/* Columna 4: Estadísticas promedio */}
-                        <div className="lg:col-span-1 space-y-4">
-                          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Estadísticas promedio</h2>
+                        {/* Columnas 7-8: Estadísticas promedio (25%) */}
+                        <div className="lg:col-span-2 space-y-4">
+                          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Promedio últimos 10 viajes</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
                               const dateCompare = (b.date || '').localeCompare(a.date || '');
@@ -2556,11 +2548,11 @@ export default function BYDStatsAnalyzer() {
                             return (
                               <div className="space-y-3">
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
                                       <MapPin className="w-5 h-5 text-red-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Distancia promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
@@ -2570,11 +2562,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                                       <Zap className="w-5 h-5 text-cyan-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Consumo promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
@@ -2584,11 +2576,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
                                       <Battery className="w-5 h-5 text-green-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Eficiencia promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
@@ -2598,11 +2590,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
                                       <Clock className="w-5 h-5 text-amber-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Duración promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
@@ -2612,11 +2604,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
                                       <TrendingUp className="w-5 h-5 text-blue-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Velocidad promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
