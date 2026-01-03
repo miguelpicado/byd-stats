@@ -1971,6 +1971,7 @@ export default function BYDStatsAnalyzer() {
                     </div>
                   </div>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2009,6 +2010,7 @@ export default function BYDStatsAnalyzer() {
                     </AreaChart>
                   </ResponsiveContainer>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2050,6 +2052,7 @@ export default function BYDStatsAnalyzer() {
                     </div>
                   ))}
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2106,6 +2109,7 @@ export default function BYDStatsAnalyzer() {
                     </ScatterChart>
                   </ResponsiveContainer>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2159,6 +2163,7 @@ export default function BYDStatsAnalyzer() {
                     ))}
                   </div>
                 </div>
+                <GitHubFooter />
               </div>
             </div>
 
@@ -2236,6 +2241,7 @@ export default function BYDStatsAnalyzer() {
                 >
                   Mostrar todo
                 </button>
+                <GitHubFooter />
               </div>
             </div>
           </>
@@ -2297,6 +2303,7 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </div>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'trends' && (
@@ -2333,6 +2340,7 @@ export default function BYDStatsAnalyzer() {
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'patterns' && (
@@ -2372,6 +2380,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         ))}
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'efficiency' && (
@@ -2407,6 +2416,7 @@ export default function BYDStatsAnalyzer() {
                           </ScatterChart>
                         </ResponsiveContainer>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'records' && (
@@ -2458,81 +2468,201 @@ export default function BYDStatsAnalyzer() {
                           ))}
                         </div>
                       </div>
+                      <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'history' && (
                     <div className="space-y-4 sm:space-y-6">
-                      <h2 className="text-xl sm:text-2xl font-bold">Últimos 10 viajes</h2>
-                      <div className="space-y-3">
-                        {(() => {
-                          const allTrips = [...filtered].sort((a, b) => {
-                            const dateCompare = (b.date || '').localeCompare(a.date || '');
-                            if (dateCompare !== 0) return dateCompare;
-                            return (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                          });
+                      {/* Grid de 2 columnas en horizontal mode */}
+                      <div className="grid lg:grid-cols-2 gap-6">
+                        {/* Columna izquierda: Lista de viajes */}
+                        <div className="space-y-4">
+                          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
+                          <div className="space-y-3">
+                            {(() => {
+                              const allTrips = [...filtered].sort((a, b) => {
+                                const dateCompare = (b.date || '').localeCompare(a.date || '');
+                                if (dateCompare !== 0) return dateCompare;
+                                return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                              });
 
-                          // Filter trips >= 1km for scoring calculation
-                          // Incluir eficiencias negativas (regeneración) que son las MEJORES
-                          const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
-                          const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-                          const minEff = Math.min(...efficiencies);
-                          const maxEff = Math.max(...efficiencies);
+                              // Filter trips >= 1km for scoring calculation
+                              // Incluir eficiencias negativas (regeneración) que son las MEJORES
+                              const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+                              const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+                              const minEff = Math.min(...efficiencies);
+                              const maxEff = Math.max(...efficiencies);
 
-                          return allTrips.slice(0, 10).map((trip, i) => {
-                            const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
-                              ? (trip.electricity / trip.trip) * 100
-                              : 0;
-                            const score = calculateScore(efficiency, minEff, maxEff);
-                            const scoreColor = getScoreColor(score);
+                              return allTrips.slice(0, 10).map((trip, i) => {
+                                const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
+                                  ? (trip.electricity / trip.trip) * 100
+                                  : 0;
+                                const score = calculateScore(efficiency, minEff, maxEff);
+                                const scoreColor = getScoreColor(score);
+
+                                return (
+                                  <div
+                                    key={i}
+                                    onClick={() => openTripDetail(trip)}
+                                    className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                                  >
+                                    {/* Fecha y hora centrada - 100% */}
+                                    <div className="text-center mb-3">
+                                      <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
+                                        {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+                                      </p>
+                                    </div>
+                                    {/* 4 columnas de 25% cada una */}
+                                    <div className="grid grid-cols-4 gap-2">
+                                      <div className="text-center">
+                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                                        <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
+                                      </div>
+                                      <div className="text-center">
+                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                                        <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
+                                      </div>
+                                      <div className="text-center">
+                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                                        <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                                        <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
+                                      </div>
+                                      <div className="text-center">
+                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                                        <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
+                                          {score.toFixed(1)}
+                                        </p>
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              });
+                            })()}
+                          </div>
+                          <button
+                            onClick={() => setShowAllTripsModal(true)}
+                            className="w-full py-3 rounded-xl font-medium text-white"
+                            style={{ backgroundColor: BYD_RED }}
+                          >
+                            Mostrar todo
+                          </button>
+                        </div>
+
+                        {/* Columna derecha: Estadísticas promedio */}
+                        <div className="space-y-4">
+                          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Estadísticas promedio</h2>
+                          {(() => {
+                            const allTrips = [...filtered].sort((a, b) => {
+                              const dateCompare = (b.date || '').localeCompare(a.date || '');
+                              if (dateCompare !== 0) return dateCompare;
+                              return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                            });
+                            const last10 = allTrips.slice(0, 10);
+
+                            // Calcular promedios
+                            const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length;
+                            const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length;
+                            const avgEfficiency = last10.reduce((sum, t) => {
+                              if (t.trip > 0 && t.electricity !== undefined) {
+                                return sum + ((t.electricity / t.trip) * 100);
+                              }
+                              return sum;
+                            }, 0) / last10.length;
+                            const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length;
+                            const avgSpeed = last10.reduce((sum, t) => {
+                              const duration = (t.duration || 0) / 3600;
+                              if (duration > 0 && t.trip > 0) {
+                                return sum + (t.trip / duration);
+                              }
+                              return sum;
+                            }, 0) / last10.filter(t => t.duration > 0 && t.trip > 0).length;
 
                             return (
-                              <div
-                                key={i}
-                                onClick={() => openTripDetail(trip)}
-                                className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
-                              >
-                                {/* Fecha y hora centrada - 100% */}
-                                <div className="text-center mb-3">
-                                  <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
-                                    {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-                                  </p>
+                              <div className="space-y-3">
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
+                                      <MapPin className="w-5 h-5 text-red-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Distancia promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
-                                {/* 4 columnas de 25% cada una */}
-                                <div className="grid grid-cols-4 gap-2">
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">km</p>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
+                                      <Zap className="w-5 h-5 text-cyan-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Consumo promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
+                                      <Battery className="w-5 h-5 text-green-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Eficiencia promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                                    <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                                    <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                                      <Clock className="w-5 h-5 text-amber-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Duración promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
+                                      </p>
+                                    </div>
                                   </div>
-                                  <div className="text-center">
-                                    <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
-                                    <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
-                                      {score.toFixed(1)}
-                                    </p>
+                                </div>
+
+                                <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
+                                      <TrendingUp className="w-5 h-5 text-blue-400" />
+                                    </div>
+                                    <div className="flex-1">
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">Velocidad promedio</p>
+                                      <p className="text-2xl font-bold text-slate-900 dark:text-white">
+                                        {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
+                                      </p>
+                                    </div>
                                   </div>
+                                </div>
+
+                                <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 dark:from-red-500/20 dark:to-orange-500/20 rounded-xl p-4 border border-red-500/30 dark:border-red-500/30">
+                                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 text-center">Total de viajes analizados</p>
+                                  <p className="text-4xl font-bold text-center" style={{ color: BYD_RED }}>
+                                    {last10.length}
+                                  </p>
                                 </div>
                               </div>
                             );
-                          });
-                        })()}
+                          })()}
+                        </div>
                       </div>
-                      <button
-                        onClick={() => setShowAllTripsModal(true)}
-                        className="w-full py-3 rounded-xl font-medium text-white"
-                        style={{ backgroundColor: BYD_RED }}
-                      >
-                        Mostrar todo
-                      </button>
+                      <GitHubFooter />
                     </div>
                   )}
                 </>
