@@ -2012,22 +2012,16 @@ export default function BYDStatsAnalyzer() {
                   <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={daily.slice(-60)}>
                       <defs>
-                        <linearGradient id="dayGradKm" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
                           <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                        </linearGradient>
-                        <linearGradient id="dayGradKwh" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#10b981" stopOpacity={0.5} />
-                          <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                         </linearGradient>
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                       <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                      <YAxis yAxisId="left" stroke="#06b6d4" fontSize={11} />
-                      <YAxis yAxisId="right" orientation="right" stroke="#10b981" fontSize={11} />
+                      <YAxis stroke="#64748b" fontSize={11} />
                       <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                      <Area yAxisId="left" type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGradKm)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
-                      <Area yAxisId="right" type="monotone" dataKey="kwh" stroke="#10b981" fill="url(#dayGradKwh)" name="kWh" isAnimationActive={false} activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
+                      <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                     </AreaChart>
                   </ResponsiveContainer>
                 </ChartCard>
@@ -2094,9 +2088,10 @@ export default function BYDStatsAnalyzer() {
                         stroke="#64748b"
                         fontSize={11}
                         type="number"
+                        scale="log"
                         domain={['auto', 'auto']}
                         allowDecimals={false}
-                        allowDuplicatedCategory={false}
+                        allowDataOverflow={false}
                         label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 11 }}
                       />
                       <YAxis
@@ -2305,22 +2300,16 @@ export default function BYDStatsAnalyzer() {
                         <ResponsiveContainer width="100%" height={260}>
                           <AreaChart data={daily.slice(-60)}>
                             <defs>
-                              <linearGradient id="dayGradKm2" x1="0" y1="0" x2="0" y2="1">
+                              <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
                                 <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                              </linearGradient>
-                              <linearGradient id="dayGradKwh2" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.5} />
-                                <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                             <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                            <YAxis yAxisId="left" stroke="#06b6d4" fontSize={11} />
-                            <YAxis yAxisId="right" orientation="right" stroke="#10b981" fontSize={11} />
+                            <YAxis stroke="#64748b" fontSize={11} />
                             <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Area yAxisId="left" type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGradKm2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
-                            <Area yAxisId="right" type="monotone" dataKey="kwh" stroke="#10b981" fill="url(#dayGradKwh2)" name="kWh" isAnimationActive={false} activeDot={{ r: 6, fill: '#10b981', stroke: '#fff', strokeWidth: 2 }} />
+                            <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </ChartCard>
@@ -2383,9 +2372,10 @@ export default function BYDStatsAnalyzer() {
                               stroke="#64748b"
                               fontSize={12}
                               type="number"
+                              scale="log"
                               domain={['auto', 'auto']}
                               allowDecimals={false}
-                              allowDuplicatedCategory={false}
+                              allowDataOverflow={false}
                               tickFormatter={(v) => `${v.toFixed(0)}km`}
                             />
                             <YAxis
@@ -2457,8 +2447,8 @@ export default function BYDStatsAnalyzer() {
                     <div className="space-y-4 sm:space-y-6">
                       {/* Grid de 10 columnas en horizontal mode */}
                       <div className="grid lg:grid-cols-10 gap-6">
-                        {/* Columnas 1-7: Lista de viajes en 2 columnas */}
-                        <div className="lg:col-span-7 space-y-4">
+                        {/* Columnas 1-6: Lista de viajes en 2 columnas */}
+                        <div className="lg:col-span-6 space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
@@ -2523,8 +2513,8 @@ export default function BYDStatsAnalyzer() {
                           </button>
                         </div>
 
-                        {/* Columnas 8-10: Estadísticas promedio */}
-                        <div className="lg:col-span-3 space-y-4">
+                        {/* Columnas 7-10: Estadísticas promedio */}
+                        <div className="lg:col-span-4 space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Promedio últimos 10 viajes</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
@@ -2555,11 +2545,11 @@ export default function BYDStatsAnalyzer() {
                             return (
                               <div className="space-y-3">
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-red-500/20 flex items-center justify-center">
                                       <MapPin className="w-5 h-5 text-red-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Distancia promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
@@ -2569,11 +2559,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-cyan-500/20 flex items-center justify-center">
                                       <Zap className="w-5 h-5 text-cyan-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Consumo promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
@@ -2583,11 +2573,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-green-500/20 flex items-center justify-center">
                                       <Battery className="w-5 h-5 text-green-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Eficiencia promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
@@ -2597,11 +2587,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
                                       <Clock className="w-5 h-5 text-amber-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Duración promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
@@ -2611,11 +2601,11 @@ export default function BYDStatsAnalyzer() {
                                 </div>
 
                                 <div className="bg-white dark:bg-slate-800/50 rounded-xl p-4 border border-slate-200 dark:border-slate-700/50">
-                                  <div className="flex items-center gap-3 mb-2">
+                                  <div className="flex flex-col items-center text-center gap-2">
                                     <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
                                       <TrendingUp className="w-5 h-5 text-blue-400" />
                                     </div>
-                                    <div className="flex-1">
+                                    <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">Velocidad promedio</p>
                                       <p className="text-2xl font-bold text-slate-900 dark:text-white">
                                         {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
