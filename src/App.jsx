@@ -1358,52 +1358,19 @@ export default function BYDStatsAnalyzer() {
         {/* Trip List */}
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
           <div className="space-y-3">
-            {allTripsFiltered.map((trip, i) => {
-              const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
-                ? (trip.electricity / trip.trip) * 100
-                : 0;
-              const score = calculateScore(efficiency, minEff, maxEff);
-              const scoreColor = getScoreColor(score);
-
-              return (
-                <div
-                  key={i}
-                  onClick={() => openTripDetail(trip)}
-                  className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:bg-slate-700/50 transition-colors"
-                >
-                  {/* Fecha y hora centrada - 100% */}
-                  <div className="text-center mb-3">
-                    <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
-                      {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-                    </p>
-                  </div>
-                  {/* 4 columnas de 25% cada una */}
-                  <div className="grid grid-cols-4 gap-2">
-                    <div className="text-center">
-                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                      <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">km</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                      <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                      <p className="text-slate-500 dark:text-slate-500 text-[9px] sm:text-[10px]">kWh/100km</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
-                      <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
-                        {score.toFixed(1)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {allTripsFiltered.map((trip, i) => (
+              <TripCard
+                key={i}
+                trip={trip}
+                minEff={minEff}
+                maxEff={maxEff}
+                onClick={openTripDetail}
+                formatDate={formatDate}
+                formatTime={formatTime}
+                calculateScore={calculateScore}
+                getScoreColor={getScoreColor}
+              />
+            ))}
           </div>
         </div>
       </div>
@@ -2215,52 +2182,19 @@ export default function BYDStatsAnalyzer() {
                     const minEff = Math.min(...efficiencies);
                     const maxEff = Math.max(...efficiencies);
 
-                    return allTrips.slice(0, 10).map((trip, i) => {
-                      const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
-                        ? (trip.electricity / trip.trip) * 100
-                        : 0;
-                      const score = calculateScore(efficiency, minEff, maxEff);
-                      const scoreColor = getScoreColor(score);
-
-                      return (
-                        <div
-                          key={i}
-                          onClick={() => openTripDetail(trip)}
-                          className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:bg-slate-700/50 transition-colors"
-                        >
-                          {/* Fecha y hora centrada - 100% */}
-                          <div className="text-center mb-3">
-                            <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
-                              {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-                            </p>
-                          </div>
-                          {/* 4 columnas de 25% cada una */}
-                          <div className="grid grid-cols-4 gap-2">
-                            <div className="text-center">
-                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                              <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                              <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                              <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
-                            </div>
-                            <div className="text-center">
-                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
-                              <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
-                                {score.toFixed(1)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    });
+                    return allTrips.slice(0, 10).map((trip, i) => (
+                      <TripCard
+                        key={i}
+                        trip={trip}
+                        minEff={minEff}
+                        maxEff={maxEff}
+                        onClick={openTripDetail}
+                        formatDate={formatDate}
+                        formatTime={formatTime}
+                        calculateScore={calculateScore}
+                        getScoreColor={getScoreColor}
+                      />
+                    ));
                   })()}
                 </div>
                 <button
@@ -2514,62 +2448,39 @@ export default function BYDStatsAnalyzer() {
                             const firstColumn = last10.slice(0, 5);
                             const secondColumn = last10.slice(5, 10);
 
-                            const renderTripCard = (trip, i) => {
-                              const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
-                                ? (trip.electricity / trip.trip) * 100
-                                : 0;
-                              const score = calculateScore(efficiency, minEff, maxEff);
-                              const scoreColor = getScoreColor(score);
-
-                              return (
-                                <div
-                                  key={i}
-                                  onClick={() => openTripDetail(trip)}
-                                  className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
-                                >
-                                  {/* Fecha y hora centrada - 100% */}
-                                  <div className="text-center mb-3">
-                                    <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
-                                      {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-                                    </p>
-                                  </div>
-                                  {/* 4 columnas de 25% cada una */}
-                                  <div className="grid grid-cols-4 gap-2">
-                                    <div className="text-center">
-                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
-                                    </div>
-                                    <div className="text-center">
-                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
-                                    </div>
-                                    <div className="text-center">
-                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
-                                    </div>
-                                    <div className="text-center">
-                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
-                                      <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
-                                        {score.toFixed(1)}
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            };
-
                             return (
                               <div className="grid lg:grid-cols-2 gap-4">
                                 {/* Primera columna de viajes */}
                                 <div className="space-y-3">
-                                  {firstColumn.map((trip, i) => renderTripCard(trip, i))}
+                                  {firstColumn.map((trip, i) => (
+                                    <TripCard
+                                      key={i}
+                                      trip={trip}
+                                      minEff={minEff}
+                                      maxEff={maxEff}
+                                      onClick={openTripDetail}
+                                      formatDate={formatDate}
+                                      formatTime={formatTime}
+                                      calculateScore={calculateScore}
+                                      getScoreColor={getScoreColor}
+                                    />
+                                  ))}
                                 </div>
                                 {/* Segunda columna de viajes */}
                                 <div className="space-y-3">
-                                  {secondColumn.map((trip, i) => renderTripCard(trip, i + 5))}
+                                  {secondColumn.map((trip, i) => (
+                                    <TripCard
+                                      key={i + 5}
+                                      trip={trip}
+                                      minEff={minEff}
+                                      maxEff={maxEff}
+                                      onClick={openTripDetail}
+                                      formatDate={formatDate}
+                                      formatTime={formatTime}
+                                      calculateScore={calculateScore}
+                                      getScoreColor={getScoreColor}
+                                    />
+                                  ))}
                                 </div>
                               </div>
                             );
