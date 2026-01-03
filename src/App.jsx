@@ -2090,8 +2090,10 @@ export default function BYDStatsAnalyzer() {
                         type="number"
                         scale="log"
                         domain={['auto', 'auto']}
+                        ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
                         allowDecimals={false}
                         allowDataOverflow={false}
+                        tickFormatter={(value) => `${Math.round(value)}`}
                         label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 11 }}
                       />
                       <YAxis
@@ -2374,9 +2376,10 @@ export default function BYDStatsAnalyzer() {
                               type="number"
                               scale="log"
                               domain={['auto', 'auto']}
+                              ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
                               allowDecimals={false}
                               allowDataOverflow={false}
-                              tickFormatter={(v) => `${v.toFixed(0)}km`}
+                              tickFormatter={(v) => `${Math.round(v)}km`}
                             />
                             <YAxis
                               dataKey="eff"
@@ -2445,9 +2448,9 @@ export default function BYDStatsAnalyzer() {
                   )}
                   {activeTab === 'history' && (
                     <div className="space-y-4 sm:space-y-6">
-                      {/* Grid de 10 columnas en horizontal mode */}
-                      <div className="grid lg:grid-cols-10 gap-6">
-                        {/* Columnas 1-6: Lista de viajes en 2 columnas */}
+                      {/* Grid de 8 columnas en horizontal mode */}
+                      <div className="grid lg:grid-cols-8 gap-6">
+                        {/* Columnas 1-6: Lista de viajes en 2 columnas (75%) */}
                         <div className="lg:col-span-6 space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
                           {(() => {
@@ -2513,8 +2516,8 @@ export default function BYDStatsAnalyzer() {
                           </button>
                         </div>
 
-                        {/* Columnas 7-10: Estadísticas promedio */}
-                        <div className="lg:col-span-4 space-y-4">
+                        {/* Columnas 7-8: Estadísticas promedio (25%) */}
+                        <div className="lg:col-span-2 space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Promedio últimos 10 viajes</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
