@@ -25,20 +25,6 @@ Una herramienta (web + Android) para visualizar y analizar las estadísticas del
 
 ---
 
-## 🖼️ Capturas
-A continuación tienes algunas capturas de ejemplo (puedes sustituirlas por capturas reales):
-
-![Carga de DB](src/assets/screenshots/upload-db.svg)
-*Carga del archivo `EC_Database.db` en la aplicación web.*
-
-![Resumen de datos](src/assets/screenshots/overview.svg)
-*Resumen, tendencias y estadísticas principales.*
-
-![App Android](src/assets/screenshots/android-app.svg)
-*Interfaz y compatibilidad Android.*
-
----
-
 ## 🗂️ Cómo obtener tus datos (EC_Database.db)
 1. Introduce un pendrive en el puerto USB del vehículo BYD.
 2. Abre la carpeta `EnergyData` en la unidad USB.
