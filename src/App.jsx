@@ -2473,74 +2473,88 @@ export default function BYDStatsAnalyzer() {
                   )}
                   {activeTab === 'history' && (
                     <div className="space-y-4 sm:space-y-6">
-                      {/* Grid de 2 columnas en horizontal mode */}
-                      <div className="grid lg:grid-cols-2 gap-6">
-                        {/* Columna izquierda: Lista de viajes */}
-                        <div className="space-y-4">
+                      {/* Grid de 4 columnas en horizontal mode */}
+                      <div className="grid lg:grid-cols-4 gap-6">
+                        {/* Columnas 1-3: Lista de viajes en 2 columnas */}
+                        <div className="lg:col-span-3 space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
-                          <div className="space-y-3">
-                            {(() => {
-                              const allTrips = [...filtered].sort((a, b) => {
-                                const dateCompare = (b.date || '').localeCompare(a.date || '');
-                                if (dateCompare !== 0) return dateCompare;
-                                return (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                              });
+                          {(() => {
+                            const allTrips = [...filtered].sort((a, b) => {
+                              const dateCompare = (b.date || '').localeCompare(a.date || '');
+                              if (dateCompare !== 0) return dateCompare;
+                              return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                            });
 
-                              // Filter trips >= 1km for scoring calculation
-                              // Incluir eficiencias negativas (regeneración) que son las MEJORES
-                              const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
-                              const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-                              const minEff = Math.min(...efficiencies);
-                              const maxEff = Math.max(...efficiencies);
+                            // Filter trips >= 1km for scoring calculation
+                            const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+                            const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+                            const minEff = Math.min(...efficiencies);
+                            const maxEff = Math.max(...efficiencies);
 
-                              return allTrips.slice(0, 10).map((trip, i) => {
-                                const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
-                                  ? (trip.electricity / trip.trip) * 100
-                                  : 0;
-                                const score = calculateScore(efficiency, minEff, maxEff);
-                                const scoreColor = getScoreColor(score);
+                            const last10 = allTrips.slice(0, 10);
+                            const firstColumn = last10.slice(0, 5);
+                            const secondColumn = last10.slice(5, 10);
 
-                                return (
-                                  <div
-                                    key={i}
-                                    onClick={() => openTripDetail(trip)}
-                                    className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
-                                  >
-                                    {/* Fecha y hora centrada - 100% */}
-                                    <div className="text-center mb-3">
-                                      <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
-                                        {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+                            const renderTripCard = (trip, i) => {
+                              const efficiency = trip.trip > 0 && trip.electricity !== undefined && trip.electricity !== null
+                                ? (trip.electricity / trip.trip) * 100
+                                : 0;
+                              const score = calculateScore(efficiency, minEff, maxEff);
+                              const scoreColor = getScoreColor(score);
+
+                              return (
+                                <div
+                                  key={i}
+                                  onClick={() => openTripDetail(trip)}
+                                  className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+                                >
+                                  {/* Fecha y hora centrada - 100% */}
+                                  <div className="text-center mb-3">
+                                    <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
+                                      {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+                                    </p>
+                                  </div>
+                                  {/* 4 columnas de 25% cada una */}
+                                  <div className="grid grid-cols-4 gap-2">
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+                                      <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+                                      <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
+                                    </div>
+                                    <div className="text-center">
+                                      <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+                                      <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
+                                        {score.toFixed(1)}
                                       </p>
                                     </div>
-                                    {/* 4 columnas de 25% cada una */}
-                                    <div className="grid grid-cols-4 gap-2">
-                                      <div className="text-center">
-                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
-                                        <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
-                                        <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
-                                      </div>
-                                      <div className="text-center">
-                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
-                                        <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
-                                        <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
-                                      </div>
-                                      <div className="text-center">
-                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
-                                        <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
-                                        <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
-                                      </div>
-                                      <div className="text-center">
-                                        <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
-                                        <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
-                                          {score.toFixed(1)}
-                                        </p>
-                                      </div>
-                                    </div>
                                   </div>
-                                );
-                              });
-                            })()}
-                          </div>
+                                </div>
+                              );
+                            };
+
+                            return (
+                              <div className="grid lg:grid-cols-2 gap-4">
+                                {/* Primera columna de viajes */}
+                                <div className="space-y-3">
+                                  {firstColumn.map((trip, i) => renderTripCard(trip, i))}
+                                </div>
+                                {/* Segunda columna de viajes */}
+                                <div className="space-y-3">
+                                  {secondColumn.map((trip, i) => renderTripCard(trip, i + 5))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                           <button
                             onClick={() => setShowAllTripsModal(true)}
                             className="w-full py-3 rounded-xl font-medium text-white"
@@ -2550,8 +2564,8 @@ export default function BYDStatsAnalyzer() {
                           </button>
                         </div>
 
-                        {/* Columna derecha: Estadísticas promedio */}
-                        <div className="space-y-4">
+                        {/* Columna 4: Estadísticas promedio */}
+                        <div className="lg:col-span-1 space-y-4">
                           <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Estadísticas promedio</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
