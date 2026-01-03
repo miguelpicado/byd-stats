@@ -2015,8 +2015,7 @@ export default function BYDStatsAnalyzer() {
             {/* Slide 2: Trends */}
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                  <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
+                <ChartCard title="Km y kWh Mensual">
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={monthly}>
                       <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
@@ -2028,9 +2027,8 @@ export default function BYDStatsAnalyzer() {
                       <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
                     </BarChart>
                   </ResponsiveContainer>
-                </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                  <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos 60 días</h3>
+                </ChartCard>
+                <ChartCard title="Últimos 60 días">
                   <ResponsiveContainer width="100%" height={260}>
                     <AreaChart data={daily.slice(-60)}>
                       <defs>
@@ -2046,7 +2044,7 @@ export default function BYDStatsAnalyzer() {
                       <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                     </AreaChart>
                   </ResponsiveContainer>
-                </div>
+                </ChartCard>
                 <GitHubFooter />
               </div>
             </div>
@@ -2055,8 +2053,7 @@ export default function BYDStatsAnalyzer() {
             <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
               <div className="space-y-4 sm:space-y-6">
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
+                  <ChartCard title="Por Hora">
                     <ResponsiveContainer width="100%" height={260}>
                       <BarChart data={hourly}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
@@ -2066,9 +2063,8 @@ export default function BYDStatsAnalyzer() {
                         <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
                       </BarChart>
                     </ResponsiveContainer>
-                  </div>
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
+                  </ChartCard>
+                  <ChartCard title="Por Día">
                     <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
                         <PolarGrid stroke="#cbd5e1" opacity={0.3} />
@@ -2078,7 +2074,7 @@ export default function BYDStatsAnalyzer() {
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       </RadarChart>
                     </ResponsiveContainer>
-                  </div>
+                  </ChartCard>
                 </div>
                 <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                   {weekday.map((d, i) => (
@@ -2102,8 +2098,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                   <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
                 </div>
-                <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                  <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
+                <ChartCard title="Eficiencia vs Distancia">
                   <ResponsiveContainer width="100%" height={320}>
                     <ScatterChart>
                       <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
@@ -2145,7 +2140,7 @@ export default function BYDStatsAnalyzer() {
                       <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} activeShape={{ r: 8, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                     </ScatterChart>
                   </ResponsiveContainer>
-                </div>
+                </ChartCard>
                 <GitHubFooter />
               </div>
             </div>
@@ -2172,33 +2167,30 @@ export default function BYDStatsAnalyzer() {
                   </div>
                 </div>
                 <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-red-400">🥇 Top Distancia</h3>
+                  <ChartCard title="🥇 Top Distancia">
                     {top.km.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                         <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                         <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.trip?.toFixed(1)} km</span>
                       </div>
                     ))}
-                  </div>
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-cyan-400">⚡ Top Consumo</h3>
+                  </ChartCard>
+                  <ChartCard title="⚡ Top Consumo">
                     {top.kwh.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                         <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                         <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.electricity?.toFixed(1)} kWh</span>
                       </div>
                     ))}
-                  </div>
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-amber-400">⏱️ Top Duración</h3>
+                  </ChartCard>
+                  <ChartCard title="⏱️ Top Duración">
                     {top.dur.map((t, i) => (
                       <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                         <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                         <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{((t.duration || 0) / 60).toFixed(0)} min</span>
                       </div>
                     ))}
-                  </div>
+                  </ChartCard>
                 </div>
                 <GitHubFooter />
               </div>
@@ -2309,8 +2301,7 @@ export default function BYDStatsAnalyzer() {
                         <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
                       <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
+                        <ChartCard title="Evolución Mensual">
                           <ResponsiveContainer width="100%" height={240}>
                             <AreaChart data={monthly}>
                               <defs>
@@ -2326,9 +2317,8 @@ export default function BYDStatsAnalyzer() {
                               <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                             </AreaChart>
                           </ResponsiveContainer>
-                        </div>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
+                        </ChartCard>
+                        <ChartCard title="Distribución de Viajes">
                           <ResponsiveContainer width="100%" height={240}>
                             <PieChart>
                               <Pie data={tripDist} dataKey="count" cx="50%" cy="50%" outerRadius={80} isAnimationActive={false}>
@@ -2338,15 +2328,14 @@ export default function BYDStatsAnalyzer() {
                               <Legend verticalAlign="bottom" height={36} formatter={(v, e) => `${e.payload.range} km (${e.payload.count})`} />
                             </PieChart>
                           </ResponsiveContainer>
-                        </div>
+                        </ChartCard>
                       </div>
                       <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'trends' && (
                     <div className="space-y-4 sm:space-y-6">
-                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Km y kWh Mensual</h3>
+                      <ChartCard title="Km y kWh Mensual">
                         <ResponsiveContainer width="100%" height={280}>
                           <BarChart data={monthly}>
                             <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
@@ -2358,9 +2347,8 @@ export default function BYDStatsAnalyzer() {
                             <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
                           </BarChart>
                         </ResponsiveContainer>
-                      </div>
-                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Últimos 60 días</h3>
+                      </ChartCard>
+                      <ChartCard title="Últimos 60 días">
                         <ResponsiveContainer width="100%" height={260}>
                           <AreaChart data={daily.slice(-60)}>
                             <defs>
@@ -2376,15 +2364,14 @@ export default function BYDStatsAnalyzer() {
                             <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                           </AreaChart>
                         </ResponsiveContainer>
-                      </div>
+                      </ChartCard>
                       <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'patterns' && (
                     <div className="space-y-4 sm:space-y-6">
                       <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Hora</h3>
+                        <ChartCard title="Por Hora">
                           <ResponsiveContainer width="100%" height={260}>
                             <BarChart data={hourly}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
@@ -2394,9 +2381,8 @@ export default function BYDStatsAnalyzer() {
                               <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
                             </BarChart>
                           </ResponsiveContainer>
-                        </div>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Por Día</h3>
+                        </ChartCard>
+                        <ChartCard title="Por Día">
                           <ResponsiveContainer width="100%" height={260}>
                             <RadarChart data={weekday}>
                               <PolarGrid stroke="#cbd5e1" opacity={0.3} />
@@ -2406,7 +2392,7 @@ export default function BYDStatsAnalyzer() {
                               <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                             </RadarChart>
                           </ResponsiveContainer>
-                        </div>
+                        </ChartCard>
                       </div>
                       <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                         {weekday.map((d, i) => (
@@ -2428,8 +2414,7 @@ export default function BYDStatsAnalyzer() {
                         <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                         <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
-                      <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                        <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Eficiencia vs Distancia</h3>
+                      <ChartCard title="Eficiencia vs Distancia">
                         <ResponsiveContainer width="100%" height={320}>
                           <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
@@ -2452,7 +2437,7 @@ export default function BYDStatsAnalyzer() {
                             <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
                           </ScatterChart>
                         </ResponsiveContainer>
-                      </div>
+                      </ChartCard>
                       <GitHubFooter />
                     </div>
                   )}
@@ -2477,33 +2462,30 @@ export default function BYDStatsAnalyzer() {
                         </div>
                       </div>
                       <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-red-400">🥇 Top Distancia</h3>
+                        <ChartCard title="🥇 Top Distancia">
                           {top.km.map((t, i) => (
                             <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                               <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                               <span className="font-medium text-sm sm:text-base">{t.trip?.toFixed(1)} km</span>
                             </div>
                           ))}
-                        </div>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-cyan-400">⚡ Top Consumo</h3>
+                        </ChartCard>
+                        <ChartCard title="⚡ Top Consumo">
                           {top.kwh.map((t, i) => (
                             <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                               <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                               <span className="font-medium text-sm sm:text-base">{t.electricity?.toFixed(1)} kWh</span>
                             </div>
                           ))}
-                        </div>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50">
-                          <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-amber-400">⏱️ Top Duración</h3>
+                        </ChartCard>
+                        <ChartCard title="⏱️ Top Duración">
                           {top.dur.map((t, i) => (
                             <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
                               <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
                               <span className="font-medium text-sm sm:text-base">{((t.duration || 0) / 60).toFixed(0)} min</span>
                             </div>
                           ))}
-                        </div>
+                        </ChartCard>
                       </div>
                       <GitHubFooter />
                     </div>
