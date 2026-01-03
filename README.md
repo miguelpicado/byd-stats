@@ -1,5 +1,11 @@
 # 🚗 BYD Stats — Analizador de estadísticas de BYD
 
+[![Android Build](https://github.com/miguelpicado/byd-stats/actions/workflows/android-build.yml/badge.svg)](https://github.com/miguelpicado/byd-stats/actions/workflows/android-build.yml)
+[![Manual APK Build](https://github.com/miguelpicado/byd-stats/actions/workflows/manual-build.yml/badge.svg)](https://github.com/miguelpicado/byd-stats/actions/workflows/manual-build.yml)
+[![Release](https://img.shields.io/github/v/release/miguelpicado/byd-stats?style=flat-square)](https://github.com/miguelpicado/byd-stats/releases)
+[![License](https://img.shields.io/github/license/miguelpicado/byd-stats?style=flat-square)](LICENSE)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fbydstats.com)](https://bydstats.com)
+
 Una herramienta (web + Android) para visualizar y analizar las estadísticas del vehículo BYD a partir del archivo `EC_Database.db`.
 
 ## 📌 Resumen
@@ -16,6 +22,20 @@ Una herramienta (web + Android) para visualizar y analizar las estadísticas del
 - Clasificación de viajes (más largos, más eficientes, mayor consumo)
 - Funciona completamente offline: procesamiento local con `sql.js` y almacenamiento en localStorage
 - App Android con mismas funcionalidades y soporte para seleccionar fichero `.db`
+
+---
+
+## 🖼️ Capturas
+A continuación tienes algunas capturas de ejemplo (puedes sustituirlas por capturas reales):
+
+![Carga de DB](src/assets/screenshots/upload-db.svg)
+*Carga del archivo `EC_Database.db` en la aplicación web.*
+
+![Resumen de datos](src/assets/screenshots/overview.svg)
+*Resumen, tendencias y estadísticas principales.*
+
+![App Android](src/assets/screenshots/android-app.svg)
+*Interfaz y compatibilidad Android.*
 
 ---
 
