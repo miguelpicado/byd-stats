@@ -1,98 +1,113 @@
-# 🚗 BYD Stats Analyzer (AI Experiment)
+# 🚗 BYD Stats — Analizador de estadísticas de BYD
 
-Este proyecto es un **analizador visual de estadísticas para vehículos BYD**. Permite cargar el archivo de base de datos interna del coche para generar gráficos detallados sobre consumo, eficiencia, rutas y patrones de uso.
+Una herramienta (web + Android) para visualizar y analizar las estadísticas del vehículo BYD a partir del archivo `EC_Database.db`.
 
----
-
-## 📊 ¿Qué hace esta aplicación?
-La web procesa el archivo `EC_Database.db` que los vehículos BYD generan automáticamente. Al cargar el archivo, la aplicación extrae datos para mostrar:
-* **Resumen General:** Kilómetros totales, energía consumida (kWh), eficiencia media y tiempo de conducción.
-* **Tendencias:** Evolución mensual y diaria de distancias y consumos.
-* **Patrones de Uso:** Análisis de viajes por hora del día y día de la semana.
-* **Eficiencia:** Gráficos de dispersión que relacionan la distancia con el consumo (kWh/100km).
-* **Récords:** Tus viajes más largos, más eficientes o de mayor duración.
+## 📌 Resumen
+- Procesa el archivo `EC_Database.db` del coche localmente (sin subir datos a servidores).
+- Genera gráficos y estadísticas: resumen general, tendencias, patrones de uso, eficiencia y récords de viajes.
+- Disponible como aplicación web (SPA con React + Vite) y como app nativa para Android mediante Capacitor.
 
 ---
 
-## 📂 Cómo obtener tus datos
-Para usar esta herramienta, necesitas el archivo de base de datos de tu vehículo:
-1. Conecta un pendrive al puerto USB de tu BYD.
-2. En la carpeta **`EnergyData`** de la unidad, busca el archivo llamado **`EC_Database.db`**.
-3. Arrastra ese archivo directamente a la aplicación web.
-
-> [!IMPORTANT]
-> **Privacidad total:** Esta aplicación se ejecuta 100% en tu navegador. El archivo `.db` **no se sube a ningún servidor**. Los datos se procesan localmente mediante `sql.js` y se almacenan únicamente en el almacenamiento local de tu navegador.
-
----
-
-## 🤖 Sobre este proyecto
-Este sitio es un **experimento realizado con Inteligencia Artificial** (Gemini). Nació como un proyecto personal para explorar las capacidades de visualización de datos en React y para entender mejor el rendimiento de mi propio **BYD Seal**.
-
-* **Propósito:** Jugar, aprender y compartir una herramienta útil con la comunidad de usuarios de BYD.
-* **Tecnologías:** React, Vite, Recharts (gráficos), Tailwind CSS (diseño) y SQL.js (lectura de DB).
+## ✨ Características principales
+- Resumen de kilometraje, energía (kWh), eficiencia media y tiempo de conducción
+- Tendencias por mes/día y distribución horaria
+- Análisis de eficiencia (kWh/100km) y scatterplots de consumo vs distancia
+- Clasificación de viajes (más largos, más eficientes, mayor consumo)
+- Funciona completamente offline: procesamiento local con `sql.js` y almacenamiento en localStorage
+- App Android con mismas funcionalidades y soporte para seleccionar fichero `.db`
 
 ---
 
-## 💡 Sugerencias y Mejora
-¡Este proyecto está vivo! Si tienes ideas para nuevos gráficos, mejoras en la interfaz o has encontrado algún error, **cualquier sugerencia es más que bienvenida**. 
+## 🗂️ Cómo obtener tus datos (EC_Database.db)
+1. Introduce un pendrive en el puerto USB del vehículo BYD.
+2. Abre la carpeta `EnergyData` en la unidad USB.
+3. Copia `EC_Database.db` y arrástralo a la aplicación web (o selecciónalo desde la app Android).
 
-No soy un desarrollador experto, ¡estoy aquí para aprender! :-)
-
----
-
-## 📱 Versión Android
-
-¡Ahora disponible como app nativa para Android! Con diseño responsive optimizado para móviles y tablets.
-
-> **Última actualización:** 2025-12-30 - Build automático configurado ✅
-
-### 🚀 Obtener la APK
-
-**Opción 1: Descargar desde GitHub Actions (Recomendado)**
-
-1. Ve a la pestaña [Actions](../../actions) de este repositorio
-2. Selecciona el workflow "Manual APK Build"
-3. Haz clic en "Run workflow" → "Run workflow"
-4. Espera 5-10 minutos a que compile
-5. Descarga el archivo APK desde "Artifacts"
-
-**Opción 2: Descargar desde Releases**
-
-Si hay un tag de versión (v1.0.0, etc.), la APK estará disponible en [Releases](../../releases)
-
-**Opción 3: Compilar localmente**
-
-Consulta [ANDROID_BUILD.md](ANDROID_BUILD.md) para instrucciones detalladas
-
-### ✨ Características de la app Android
-
-- ✅ Funciona 100% offline
-- ✅ Diseño responsive para móvil y tablet
-- ✅ Todas las funcionalidades de la versión web
-- ✅ Privacidad total (datos procesados localmente)
-- ✅ Compatible con Android 5.0+
-
-Para más información, consulta [README_ANDROID.md](README_ANDROID.md)
+> **Privacidad:** Todos los datos se procesan en tu dispositivo/navegador con `sql.js`; el archivo nunca se sube a ningún servidor.
 
 ---
 
-## 🛠️ Instalación local (desarrollo)
+## 🚀 Uso rápido (desarrollo)
+Requisitos: Node.js (preferible 18+), npm
+
 ```bash
+# Clonar y ejecutar en desarrollo
 git clone https://github.com/miguelpicado/byd-stats.git
 cd byd-stats
 npm install
 npm run dev
 ```
 
-### Scripts disponibles
+- `npm run dev` → servidor de desarrollo (Vite)
+- `npm run build` → build de producción
+- `npm run preview` → preview del build
+- `npm run deploy` → desplegar con `gh-pages` (si lo configuras)
 
+---
+
+## 🤖 Android — obtener la APK
+Opciones:
+- GitHub Actions: usa el workflow "Manual APK Build" y descarga el artefacto (recomendado)
+- Releases: si existe un tag, la APK puede publicarse en Releases
+- Compilar localmente: `npm run android:build` (consulta `ANDROID_BUILD.md` para detalles)
+
+Comandos útiles:
 ```bash
-npm run dev              # Servidor de desarrollo
-npm run build            # Build para producción
 npm run android:sync     # Build + sincronizar con Android
-npm run android:open     # Abrir proyecto en Android Studio
-npm run android:build    # Build completo de APK
+npm run android:open     # Abrir el proyecto Android en Android Studio
+npm run android:build    # Build local de APK
 ```
 
 ---
-Hecho en Galicia con ❤️ y mucha curiosidad
+
+## 🧰 Tecnologías
+- React (19.x), Vite
+- Recharts (gráficos)
+- Tailwind CSS (estilos)
+- Capacitor (Android)
+- SQL.js (leer `EC_Database.db` en el navegador)
+
+---
+
+## ✅ Requisitos y compatibilidad
+- Node.js (18+ recomendado)
+- Android Studio, JDK 17+ para build Android
+- Android: API 21+ (Android 5.0+)
+
+---
+
+## 🐞 Solución de problemas
+Para problemas con la compilación de la APK y CI, revisa `TROUBLESHOOTING.md`.
+Si la app no carga correctamente en Android, asegúrate de haber ejecutado `npm run build` antes de sincronizar con Capacitor.
+
+---
+
+## 🤝 Contribuir
+1. Abre un issue para discutir tu idea.
+2. Haz un fork y crea una rama con tu feature o fix.
+3. Envía un Pull Request con una descripción clara.
+
+Por favor, incluye pasos para reproducir errores y capturas si es posible.
+
+---
+
+## 🌐 Sitio oficial
+La app dispone de un sitio oficial accesible y funcional en: **https://bydstats.com**. El sitio está pensado para ser usable desde cualquier navegador, incluso desde el navegador del propio vehículo cuando sea posible.
+
+---
+
+## 📄 Licencia y atribución
+Este proyecto se publica bajo la **Licencia MIT**. He añadido el archivo `LICENSE` en la raíz del repositorio. Por favor, conserva el aviso de copyright y la atribución a **Miguel Picado** en copias, derivados y redistribuciones.
+
+- Se permiten forks, modificaciones y redistribución siempre que se mantenga la atribución original.
+- Si necesitas una aclaración sobre uso comercial o redistribución a gran escala, contacta con el autor.
+
+---
+
+## 🙏 Agradecimientos
+Hecho en Galicia con ❤️ — Si te sirve la herramienta, ¡compártela con la comunidad BYD!
+
+---
+
+**Documentación adicional:** [README_ANDROID.md](README_ANDROID.md) · [ANDROID_BUILD.md](ANDROID_BUILD.md) · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
