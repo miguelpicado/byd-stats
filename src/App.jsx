@@ -1935,8 +1935,7 @@ export default function BYDStatsAnalyzer() {
                   <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                 </div>
                 <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Evolución Mensual</h3>
+                  <ChartCard title="Evolución Mensual">
                     <ResponsiveContainer width="100%" height={240}>
                       <AreaChart data={monthly}>
                         <defs>
@@ -1952,9 +1951,8 @@ export default function BYDStatsAnalyzer() {
                         <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                       </AreaChart>
                     </ResponsiveContainer>
-                  </div>
-                  <div className="bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50" >
-                    <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Distribución de Viajes</h3>
+                  </ChartCard>
+                  <ChartCard title="Distribución de Viajes">
                     <div className="flex flex-col items-center">
                       <ResponsiveContainer width="100%" height={200}>
                         <PieChart>
@@ -2008,7 +2006,7 @@ export default function BYDStatsAnalyzer() {
                         ))}
                       </div>
                     </div>
-                  </div>
+                  </ChartCard>
                 </div>
                 <GitHubFooter />
               </div>
