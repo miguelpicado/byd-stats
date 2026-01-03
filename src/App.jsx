@@ -41,7 +41,7 @@ const List = ({ className }) => <svg className={className} viewBox="0 0 24 24" f
 const Settings = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z"/></svg>;
 const Download = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
 const Database = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>;
-const HelpCircle = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><line x1="12" y1="17" x2="12.01" y2="17" /></svg>;
+const HelpCircle = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><circle cx="12" cy="17" r="0.5" fill="currentColor" /></svg>;
 const Mail = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>;
 const Bug = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 2v4M16 2v4M9 18h6M10 11v6M14 11v6M21 9h-3M6 9H3M21 15h-3M6 15H3M12 2a3 3 0 013 3v1a7 7 0 11-6 0V5a3 3 0 013-3z" /></svg>;
 const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.840 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>;
@@ -1401,7 +1401,7 @@ export default function BYDStatsAnalyzer() {
               </label>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-2 bg-slate-700 rounded-xl hover:bg-slate-600">Cancelar</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600">Cancelar</button>
               <button onClick={clearData} className="py-2 px-4 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30">Borrar todo</button>
             </div>
           </div>
@@ -1795,18 +1795,21 @@ export default function BYDStatsAnalyzer() {
       <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img
-                src="byd_logo.png"
-                className={`${layoutMode === 'horizontal' ? 'w-48 h-16' : 'w-12 sm:w-16 md:w-20'} h-auto object-contain`}
-                alt="BYD Logo"
-              />
-              <div>
-                <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
-                <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
+            {/* Logo y título solo en modo vertical */}
+            {layoutMode === 'vertical' && (
+              <div className="flex items-center gap-2 sm:gap-3">
+                <img
+                  src="byd_logo.png"
+                  className="w-12 sm:w-16 md:w-20 h-auto object-contain"
+                  alt="BYD Logo"
+                />
+                <div>
+                  <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
+                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
+            )}
+            <div className={`flex items-center gap-2 ${layoutMode === 'horizontal' ? 'ml-auto' : ''}`}>
               <button
                 onClick={() => setShowHelpModal(true)}
                 className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
@@ -1844,6 +1847,14 @@ export default function BYDStatsAnalyzer() {
         {/* Horizontal Layout: Sidebar with tabs */}
         {layoutMode === 'horizontal' && (
           <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
+            {/* Logo en el sidebar */}
+            <div className="p-4 pb-2 flex justify-center border-b border-slate-200 dark:border-slate-700/50">
+              <img
+                src="byd_logo.png"
+                className="w-48 h-16 object-contain"
+                alt="BYD Logo"
+              />
+            </div>
             <div className="p-4 space-y-2">
               {tabs.map((t) => (
                 <button
@@ -1868,6 +1879,13 @@ export default function BYDStatsAnalyzer() {
 
         {/* Content container */}
         <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto' : 'max-w-7xl mx-auto h-full'}>
+          {/* Título para modo horizontal */}
+          {layoutMode === 'horizontal' && (
+            <div className="sticky top-0 z-30 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50 px-6 py-4">
+              <h1 className="text-xl font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
+              <p className="text-slate-500 dark:text-slate-400 text-sm">{rawTrips.length} viajes</p>
+            </div>
+          )}
           {layoutMode === 'vertical' ? (
             // Vertical layout: sliding tabs with transitions
             <div
