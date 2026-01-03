@@ -190,6 +190,40 @@ function processData(rows) {
   };
 }
 
+// Helper functions
+const calculateScore = (efficiency, minEff, maxEff) => {
+  if (!efficiency || maxEff === minEff) return 5;
+  // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
+  // Score should be 10 when efficiency equals minEff (best)
+  // Score should be 0 when efficiency equals maxEff (worst)
+  const normalized = (maxEff - efficiency) / (maxEff - minEff);
+  return Math.max(0, Math.min(10, normalized * 10));
+};
+
+// Get color based on score (0=red, 5=orange, 10=green)
+const getScoreColor = (score) => {
+  if (score >= 5) {
+    // Green to orange (score 5-10)
+    const ratio = (score - 5) / 5;
+    const r = Math.round(255 - ratio * 155);
+    const g = Math.round(165 + ratio * 90);
+    return `rgb(${r}, ${g}, 0)`;
+  } else {
+    // Red to orange (score 0-5)
+    const ratio = score / 5;
+    const r = Math.round(234 + ratio * 21);
+    const g = Math.round(ratio * 165);
+    return `rgb(${r}, ${g}, 41)`;
+  }
+};
+
+// Format time from timestamp
+const formatTime = (timestamp) => {
+  if (!timestamp) return '';
+  const date = new Date(timestamp * 1000);
+  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+};
+
 export default function BYDStatsAnalyzer() {
   const [rawTrips, setRawTrips] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -464,6 +498,18 @@ export default function BYDStatsAnalyzer() {
 
   const data = useMemo(() => {
     return filtered.length > 0 ? processData(filtered) : null;
+  }, [filtered]);
+
+  // Memoize efficiency range calculation for scoring
+  const efficiencyRange = useMemo(() => {
+    const validTrips = filtered.filter(t => t.trip >= 1 && t.electricity !== 0);
+    if (validTrips.length === 0) return { min: 0, max: 0, validTrips: [] };
+    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+    return {
+      min: Math.min(...efficiencies),
+      max: Math.max(...efficiencies),
+      validTrips
+    };
   }, [filtered]);
 
   const processDB = useCallback(async (file, merge = false) => {
@@ -776,41 +822,67 @@ export default function BYDStatsAnalyzer() {
     return null;
   });
 
-  // Calculate efficiency score (0-10) based on consumption
-  // LOWER kWh/100km = BETTER efficiency = HIGHER score (10)
-  // HIGHER kWh/100km = WORSE efficiency = LOWER score (0)
-  const calculateScore = (efficiency, minEff, maxEff) => {
-    if (!efficiency || maxEff === minEff) return 5;
-    // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
-    // Score should be 10 when efficiency equals minEff (best)
-    // Score should be 0 when efficiency equals maxEff (worst)
-    const normalized = (maxEff - efficiency) / (maxEff - minEff);
-    return Math.max(0, Math.min(10, normalized * 10));
-  };
+  const ChartCard = React.memo(({ title, children, className = "" }) => (
+    <div className={`bg-white dark:bg-slate-800/50 rounded-2xl p-4 sm:p-6 border border-slate-200 dark:border-slate-700/50 ${className}`}>
+      {title && <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4 text-slate-900 dark:text-white">{title}</h3>}
+      {children}
+    </div>
+  ));
 
-  // Get color based on score (0=red, 5=orange, 10=green)
-  const getScoreColor = (score) => {
-    if (score >= 5) {
-      // Green to orange (score 5-10)
-      const ratio = (score - 5) / 5;
-      const r = Math.round(255 - ratio * 155);
-      const g = Math.round(165 + ratio * 90);
-      return `rgb(${r}, ${g}, 0)`;
-    } else {
-      // Red to orange (score 0-5)
-      const ratio = score / 5;
-      const r = Math.round(234 + ratio * 21);
-      const g = Math.round(ratio * 165);
-      return `rgb(${r}, ${g}, 41)`;
-    }
-  };
+  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor }) => {
+    const efficiency = useMemo(() => {
+      if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
+        return 0;
+      }
+      return (trip.electricity / trip.trip) * 100;
+    }, [trip.trip, trip.electricity]);
 
-  // Format time from timestamp
-  const formatTime = (timestamp) => {
-    if (!timestamp) return '';
-    const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-  };
+    const score = useMemo(() =>
+      calculateScore(efficiency, minEff, maxEff),
+      [efficiency, minEff, maxEff, calculateScore]
+    );
+
+    const scoreColor = useMemo(() =>
+      getScoreColor(score),
+      [score, getScoreColor]
+    );
+
+    return (
+      <div
+        onClick={() => onClick(trip)}
+        className="bg-white dark:bg-slate-800/50 rounded-xl p-3 sm:p-4 border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors"
+      >
+        <div className="text-center mb-3">
+          <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
+            {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+          </p>
+        </div>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Distancia</p>
+            <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.trip?.toFixed(1)}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Consumo</p>
+            <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{trip.electricity?.toFixed(2)}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Eficiencia</p>
+            <p className="text-slate-900 dark:text-white text-base sm:text-xl font-bold">{efficiency.toFixed(2)}</p>
+            <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
+          </div>
+          <div className="text-center">
+            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+            <p className="text-2xl sm:text-3xl font-bold" style={{ color: scoreColor }}>
+              {score.toFixed(1)}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  });
 
   // Format duration in minutes/hours
   const formatDuration = (seconds) => {
