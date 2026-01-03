@@ -47,7 +47,7 @@ const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24"
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
 
-const GitHubFooter = () => (
+const GitHubFooter = React.memo(() => (
   <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
     <a
       href="https://github.com/miguelpicado/byd-stats"
@@ -59,7 +59,7 @@ const GitHubFooter = () => (
       <span>Ver en GitHub</span>
     </a>
   </div>
-);
+));
 
 const formatMonth = (m) => {
   if (!m || m.length < 6) return m || '';
@@ -216,10 +216,8 @@ export default function BYDStatsAnalyzer() {
 
   // Settings state
   const [settings, setSettings] = useState(() => {
-    console.log('=== INITIALIZING SETTINGS STATE ===');
     try {
       const saved = localStorage.getItem('byd_settings');
-      console.log('Saved settings from localStorage:', saved);
       const parsedSettings = saved ? JSON.parse(saved) : {
         carModel: '',
         licensePlate: '',
@@ -229,8 +227,6 @@ export default function BYDStatsAnalyzer() {
         electricityPrice: 0.15,
         theme: 'dark'
       };
-      console.log('Initial settings state:', parsedSettings);
-      console.log('Initial theme:', parsedSettings.theme);
       return parsedSettings;
     } catch (e) {
       console.error('Error loading settings, using defaults:', e);
@@ -284,14 +280,8 @@ export default function BYDStatsAnalyzer() {
 
   // Save settings to localStorage
   useEffect(() => {
-    console.log('=== SAVING SETTINGS TO LOCALSTORAGE ===');
-    console.log('Settings being saved:', settings);
     try {
       localStorage.setItem('byd_settings', JSON.stringify(settings));
-      console.log('✓ Settings saved successfully');
-      // Verify it was saved
-      const saved = localStorage.getItem('byd_settings');
-      console.log('Verified saved settings:', saved);
     } catch (e) {
       console.error('Error saving settings:', e);
     }
@@ -321,40 +311,23 @@ export default function BYDStatsAnalyzer() {
 
   // Theme management - SIMPLIFIED AND FIXED
   useEffect(() => {
-    console.log('=== THEME CHANGE USEEFFECT TRIGGERED ===');
-    console.log('Current theme setting:', settings.theme);
-    console.log('Current HTML classes BEFORE:', document.documentElement.className);
-    console.log('Has dark class BEFORE:', document.documentElement.classList.contains('dark'));
-
     let isDark = false;
 
     if (settings.theme === 'dark') {
       isDark = true;
-      console.log('→ Theme is "dark", setting isDark = true');
     } else if (settings.theme === 'light') {
       isDark = false;
-      console.log('→ Theme is "light", setting isDark = false');
     } else {
       // Auto mode
       isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      console.log('→ Auto mode, system prefers:', isDark ? 'dark' : 'light');
     }
-
-    console.log('Final isDark value:', isDark);
 
     // Apply theme to document
     if (isDark) {
-      console.log('Adding "dark" class to html element...');
       document.documentElement.classList.add('dark');
-      console.log('✓ Dark class added');
     } else {
-      console.log('Removing "dark" class from html element...');
       document.documentElement.classList.remove('dark');
-      console.log('✓ Dark class removed');
     }
-
-    console.log('Current HTML classes AFTER:', document.documentElement.className);
-    console.log('Has dark class AFTER:', document.documentElement.classList.contains('dark'));
 
     // Update status bar for native apps
     if (isNative && window.StatusBar) {
@@ -366,7 +339,6 @@ export default function BYDStatsAnalyzer() {
     if (settings.theme === 'auto') {
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
       const handler = (e) => {
-        console.log('System theme changed to:', e.matches ? 'dark' : 'light');
         if (e.matches) {
           document.documentElement.classList.add('dark');
         } else {
@@ -771,7 +743,7 @@ export default function BYDStatsAnalyzer() {
     }
   };
 
-  const StatCard = ({ icon: Icon, label, value, unit, color, sub }) => (
+  const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub }) => (
     <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-slate-200 dark:border-slate-700/50">
       <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center mb-2 sm:mb-3 ${color}`} >
         <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
@@ -783,9 +755,9 @@ export default function BYDStatsAnalyzer() {
       </p>
       {sub && <p className="text-xs sm:text-sm mt-1" style={{ color: BYD_RED }}>{sub}</p>}
     </div>
-  );
+  ));
 
-  const ChartTip = ({ active, payload, label }) => {
+  const ChartTip = React.memo(({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
@@ -802,7 +774,7 @@ export default function BYDStatsAnalyzer() {
       );
     }
     return null;
-  };
+  });
 
   // Calculate efficiency score (0-10) based on consumption
   // LOWER kWh/100km = BETTER efficiency = HIGHER score (10)
@@ -1609,12 +1581,7 @@ export default function BYDStatsAnalyzer() {
                     <button
                       key={theme}
                       onClick={() => {
-                        console.log('=== THEME BUTTON CLICKED ===');
-                        console.log('Clicked theme:', theme);
-                        console.log('Current settings.theme:', settings.theme);
-                        console.log('Setting new theme to:', theme);
                         setSettings({...settings, theme});
-                        console.log('setSettings called with theme:', theme);
                       }}
                       className="flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors"
                       style={{
@@ -1787,7 +1754,7 @@ export default function BYDStatsAnalyzer() {
             <div className="flex items-center gap-2 sm:gap-3">
               <img src="byd_logo.png" className="w-12 sm:w-16 md:w-20 h-auto" alt="BYD Logo" />
               <div>
-                <h1 className="text-sm sm:text-base md:text-lg font-bold">Estadísticas BYD</h1>
+                <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">Estadísticas BYD</h1>
                 <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{rawTrips.length} viajes</p>
               </div>
             </div>
@@ -2686,27 +2653,14 @@ export default function BYDStatsAnalyzer() {
         </div>
       </div>
 
-      {/* Floating Filter Button - Only show in vertical mode */}
-      {layoutMode === 'vertical' && (
+      {/* Floating Filter Button */}
       <button
         onClick={() => setShowFilterModal(true)}
-        className="fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
+        className={`fixed ${layoutMode === 'vertical' ? 'bottom-20' : 'bottom-4'} right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
         style={{ backgroundColor: BYD_RED }}
       >
         <Filter className="w-6 h-6 text-white" />
       </button>
-      )}
-
-      {/* Floating Filter Button for Horizontal mode */}
-      {layoutMode === 'horizontal' && (
-      <button
-        onClick={() => setShowFilterModal(true)}
-        className="fixed bottom-4 right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95"
-        style={{ backgroundColor: BYD_RED }}
-      >
-        <Filter className="w-6 h-6 text-white" />
-      </button>
-      )}
 
       {/* Filter Modal */}
       {showFilterModal && (
