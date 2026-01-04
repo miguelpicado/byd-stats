@@ -125,7 +125,7 @@ jobs:
           retention-days: 90
 
       - name: Upload Release APK (Signed)
-        if: (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && secrets.KEYSTORE_BASE64 != ''
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && secrets.KEYSTORE_BASE64 != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: byd-stats-release-signed-${{ steps.date.outputs.date }}
