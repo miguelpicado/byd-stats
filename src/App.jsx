@@ -2655,8 +2655,13 @@ export default function BYDStatsAnalyzer() {
       {/* Floating Filter Button */}
       <button
         onClick={() => setShowFilterModal(true)}
-        className={`fixed ${layoutMode === 'vertical' ? 'bottom-20' : 'bottom-4'} right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
-        style={{ backgroundColor: BYD_RED }}
+        className={`fixed right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
+        style={{
+          backgroundColor: BYD_RED,
+          bottom: layoutMode === 'vertical'
+            ? 'calc(5rem + env(safe-area-inset-bottom, 0px))'
+            : 'calc(1rem + env(safe-area-inset-bottom, 0px))'
+        }}
       >
         <Filter className="w-6 h-6 text-white" />
       </button>
