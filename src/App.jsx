@@ -978,6 +978,7 @@ export default function BYDStatsAnalyzer() {
             <input
               id="fileInput"
               type="file"
+              accept="*/*"
               className="hidden"
               onChange={(e) => onFile(e, false)}
               disabled={!sqlReady}
@@ -1405,12 +1406,12 @@ export default function BYDStatsAnalyzer() {
             <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Actualizar datos</h3>
             <div className="space-y-3">
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
-                <input type="file" className="hidden" onChange={(e) => onFile(e, true)} />
+                <input type="file" accept="*/*" className="hidden" onChange={(e) => onFile(e, true)} />
                 <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
                 <p className="text-slate-900 dark:text-white">Combinar con existentes</p>
               </label>
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
-                <input type="file" className="hidden" onChange={(e) => onFile(e, false)} />
+                <input type="file" accept="*/*" className="hidden" onChange={(e) => onFile(e, false)} />
                 <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
                 <p className="text-slate-900 dark:text-white">Reemplazar todo</p>
               </label>
@@ -1673,7 +1674,7 @@ export default function BYDStatsAnalyzer() {
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <Database className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Historial de viajes</h2>
               </div>
               <button onClick={() => setShowHistoryModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
@@ -1749,7 +1750,7 @@ export default function BYDStatsAnalyzer() {
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <HelpCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Ayuda y Soporte</h2>
               </div>
               <button onClick={() => setShowHelpModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
@@ -2662,7 +2663,7 @@ export default function BYDStatsAnalyzer() {
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-red-600 dark:text-red-400" />
+                <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
               </div>
               <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
