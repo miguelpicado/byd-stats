@@ -102,9 +102,9 @@ jobs:
         id: keystore_check
         run: |
           if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
-            echo "available=true" >> $GITHUB_OUTPUT
+            echo "keystore_present=true" >> $GITHUB_OUTPUT
           else
-            echo "available=false" >> $GITHUB_OUTPUT
+            echo "keystore_present=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Build Debug APK
@@ -129,14 +129,14 @@ jobs:
           retention-days: 7
 
       - name: Decode Keystore
-        if: steps.keystore_check.outputs.available == 'true'
+        if: steps.keystore_check.outputs.keystore_present == 'true'
         run: |
           echo "🔐 Decoding keystore..."
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
           echo "✅ Keystore decoded successfully"
 
       - name: Build Release APK (Signed)
-        if: steps.keystore_check.outputs.available == 'true'
+        if: steps.keystore_check.outputs.keystore_present == 'true'
         env:
           KEYSTORE_FILE: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -149,7 +149,7 @@ jobs:
           echo "✅ Signed APK built successfully"
 
       - name: Build Release APK (Unsigned fallback)
-        if: steps.keystore_check.outputs.available == 'false'
+        if: steps.keystore_check.outputs.keystore_present == 'false'
         run: |
           cd android
           echo "⚠️ Building unsigned release APK (no keystore configured)..."
@@ -165,7 +165,7 @@ jobs:
 
       - name: Upload Release APK (Signed)
         uses: actions/upload-artifact@v4
-        if: steps.keystore_check.outputs.available == 'true' && success()
+        if: steps.keystore_check.outputs.keystore_present == 'true' && success()
         with:
           name: byd-stats-release-signed-${{ github.sha }}
           path: android/app/build/outputs/apk/release/app-release.apk
@@ -173,7 +173,7 @@ jobs:
 
       - name: Upload Release APK (Unsigned)
         uses: actions/upload-artifact@v4
-        if: steps.keystore_check.outputs.available == 'false' && success()
+        if: steps.keystore_check.outputs.keystore_present == 'false' && success()
         with:
           name: byd-stats-release-unsigned-${{ github.sha }}
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
@@ -181,7 +181,7 @@ jobs:
         continue-on-error: true
 
       - name: Create Release (with signed APK)
-        if: startsWith(github.ref, 'refs/tags/v') && steps.keystore_check.outputs.available == 'true'
+        if: startsWith(github.ref, 'refs/tags/v') && steps.keystore_check.outputs.keystore_present == 'true'
         uses: softprops/action-gh-release@v1
         with:
           files: |
@@ -194,7 +194,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release (without signed APK)
-        if: startsWith(github.ref, 'refs/tags/v') && steps.keystore_check.outputs.available == 'false'
+        if: startsWith(github.ref, 'refs/tags/v') && steps.keystore_check.outputs.keystore_present == 'false'
         uses: softprops/action-gh-release@v1
         with:
           files: |
