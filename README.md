@@ -32,6 +32,54 @@ Una herramienta (web + Android) para visualizar y analizar las estadísticas del
 
 > **Privacidad:** Todos los datos se procesan en tu dispositivo/navegador con `sql.js`; el archivo nunca se sube a ningún servidor.
 
+### 🔧 Workaround para navegadores restrictivos (Chrome 113 del BYD)
+
+Algunos navegadores integrados en vehículos BYD (específicamente Chrome 113) no permiten seleccionar archivos `.db` directamente, mostrando únicamente "Fotos y vídeos" en el selector de archivos. Si te encuentras con este problema, sigue estos pasos:
+
+#### Método del renombrado a .jpg
+
+**Paso 1: Copiar el archivo desde el pendrive**
+1. Con el pendrive conectado al vehículo, abre el explorador de archivos del navegador o sistema
+2. Navega a la carpeta `EnergyData` en el pendrive
+3. Localiza el archivo `EC_Database.db`
+4. Copia el archivo a una ubicación accesible (por ejemplo, la carpeta `Downloads` o cualquier carpeta del almacenamiento interno)
+
+**Paso 2: Renombrar el archivo**
+1. En el explorador de archivos, localiza el archivo `EC_Database.db` que acabas de copiar
+2. Mantén presionado sobre el archivo (long press) hasta que aparezca el menú contextual
+3. Selecciona los **3 puntos** (⋮) o la opción **"Renombrar"** / **"Cambiar nombre"**
+4. Cambia el nombre del archivo de `EC_Database.db` a `EC_Database.jpg`
+   - **Importante:** Solo cambia la extensión `.db` por `.jpg`, mantén el resto del nombre
+   - Ejemplo: `EC_Database.db` → `EC_Database.jpg`
+5. Confirma el cambio
+
+**Paso 3: Cargar el archivo en la aplicación**
+1. Abre la aplicación BYD Stats en el navegador del vehículo (https://bydstats.com)
+2. Haz clic en el botón **"Cargar base de datos"** o arrastra el archivo a la zona designada
+3. Selecciona el archivo `EC_Database.jpg` que acabas de renombrar
+4. La aplicación detectará automáticamente que es un archivo de base de datos y lo procesará correctamente
+
+#### ¿Por qué funciona esto?
+
+El navegador Chrome 113 del BYD restringe los tipos de archivo que se pueden seleccionar basándose en la extensión. Al renombrar el archivo `.db` a `.jpg`, el navegador lo interpreta como una imagen y permite su selección. Sin embargo, el contenido interno del archivo sigue siendo una base de datos SQLite válida, que la aplicación puede leer sin problemas independientemente de la extensión del archivo.
+
+#### Verificación
+
+Después de cargar el archivo, deberías ver:
+- Un mensaje de confirmación indicando que la base de datos se cargó correctamente
+- Las estadísticas y gráficos generados a partir de tus datos de conducción
+- El nombre del archivo cargado en la interfaz (mostrará "EC_Database.jpg")
+
+#### Solución alternativa: Usar la app Android
+
+Si el proceso anterior resulta complicado o no funciona en tu caso, puedes:
+1. Descargar la app Android desde la sección [Releases](https://github.com/miguelpicado/byd-stats/releases)
+2. Instalar la APK en tu smartphone o tablet Android
+3. Copiar el archivo `EC_Database.db` a tu dispositivo móvil
+4. Cargar el archivo directamente desde la app sin necesidad de renombrar
+
+La app nativa de Android no tiene estas restricciones del navegador y puede leer archivos `.db` directamente.
+
 ---
 
 ## 🚀 Uso rápido (desarrollo)
