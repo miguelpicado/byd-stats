@@ -172,7 +172,7 @@ jobs:
         continue-on-error: true
 
       - name: Create Release (with signed APK)
-        if: startsWith(github.ref, 'refs/tags/v') && secrets.KEYSTORE_BASE64 != ''
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && secrets.KEYSTORE_BASE64 != '' }}
         uses: softprops/action-gh-release@v1
         with:
           files: |
@@ -185,7 +185,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release (without signed APK)
-        if: startsWith(github.ref, 'refs/tags/v') && secrets.KEYSTORE_BASE64 == ''
+        if: ${{ startsWith(github.ref, 'refs/tags/v') && secrets.KEYSTORE_BASE64 == '' }}
         uses: softprops/action-gh-release@v1
         with:
           files: |
