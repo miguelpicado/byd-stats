@@ -978,7 +978,7 @@ export default function BYDStatsAnalyzer() {
             <input
               id="fileInput"
               type="file"
-              accept="application/*,.db"
+              accept="*/*"
               className="hidden"
               onChange={(e) => onFile(e, false)}
               disabled={!sqlReady}
@@ -1409,12 +1409,12 @@ export default function BYDStatsAnalyzer() {
             <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Actualizar datos</h3>
             <div className="space-y-3">
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
-                <input type="file" accept="application/*,.db" className="hidden" onChange={(e) => onFile(e, true)} />
+                <input type="file" accept="*/*" className="hidden" onChange={(e) => onFile(e, true)} />
                 <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
                 <p className="text-slate-900 dark:text-white">Combinar con existentes</p>
               </label>
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
-                <input type="file" accept="application/*,.db" className="hidden" onChange={(e) => onFile(e, false)} />
+                <input type="file" accept="*/*" className="hidden" onChange={(e) => onFile(e, false)} />
                 <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
                 <p className="text-slate-900 dark:text-white">Reemplazar todo</p>
               </label>
