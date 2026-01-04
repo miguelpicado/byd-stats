@@ -561,9 +561,10 @@ export default function BYDStatsAnalyzer() {
     setDragOver(false);
     const f = e.dataTransfer.files[0];
     if (f) {
-      // Validate that the file is a .DB file
-      if (!f.name.toLowerCase().endsWith('.db')) {
-        alert('Solo se admiten archivos *.DB disponibles en la carpeta "Energydata" del coche');
+      // Validate that the file is a .DB or image file (renamed .db to .jpg)
+      const fileName = f.name.toLowerCase();
+      if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+        alert('Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta "Energydata" del coche');
         return;
       }
       processDB(f, merge);
@@ -573,9 +574,10 @@ export default function BYDStatsAnalyzer() {
   const onFile = useCallback((e, merge) => {
     const f = e.target.files[0];
     if (f) {
-      // Validate that the file is a .DB file
-      if (!f.name.toLowerCase().endsWith('.db')) {
-        alert('Solo se admiten archivos *.DB disponibles en la carpeta "Energydata" del coche');
+      // Validate that the file is a .DB or image file (renamed .db to .jpg)
+      const fileName = f.name.toLowerCase();
+      if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+        alert('Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta "Energydata" del coche');
         e.target.value = '';
         return;
       }
@@ -978,7 +980,7 @@ export default function BYDStatsAnalyzer() {
             <input
               id="fileInput"
               type="file"
-              accept="application/*,.db"
+              accept="*/*,image/*,.db,.jpg,.jpeg"
               className="hidden"
               onChange={(e) => onFile(e, false)}
               disabled={!sqlReady}
@@ -997,7 +999,7 @@ export default function BYDStatsAnalyzer() {
               Selecciona el fichero EC_Database.db en la carpeta "EnergyData" de tu coche
             </p>
             <p className="text-slate-500 dark:text-slate-500 text-xs mt-2">
-              💡 Consejo: Si tu navegador no muestra archivos, copia EC_Database.db a la carpeta Downloads
+              💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a .jpg
             </p>
           </div>
 
@@ -1409,12 +1411,12 @@ export default function BYDStatsAnalyzer() {
             <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Actualizar datos</h3>
             <div className="space-y-3">
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
-                <input type="file" accept="application/*,.db" className="hidden" onChange={(e) => onFile(e, true)} />
+                <input type="file" accept="*/*,image/*,.db,.jpg,.jpeg" className="hidden" onChange={(e) => onFile(e, true)} />
                 <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
                 <p className="text-slate-900 dark:text-white">Combinar con existentes</p>
               </label>
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
-                <input type="file" accept="application/*,.db" className="hidden" onChange={(e) => onFile(e, false)} />
+                <input type="file" accept="*/*,image/*,.db,.jpg,.jpeg" className="hidden" onChange={(e) => onFile(e, false)} />
                 <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
                 <p className="text-slate-900 dark:text-white">Reemplazar todo</p>
               </label>
@@ -2653,8 +2655,13 @@ export default function BYDStatsAnalyzer() {
       {/* Floating Filter Button */}
       <button
         onClick={() => setShowFilterModal(true)}
-        className={`fixed ${layoutMode === 'vertical' ? 'bottom-20' : 'bottom-4'} right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
-        style={{ backgroundColor: BYD_RED }}
+        className={`fixed right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
+        style={{
+          backgroundColor: BYD_RED,
+          bottom: layoutMode === 'vertical'
+            ? 'calc(5rem + env(safe-area-inset-bottom, 0px))'
+            : 'calc(1rem + env(safe-area-inset-bottom, 0px))'
+        }}
       >
         <Filter className="w-6 h-6 text-white" />
       </button>
