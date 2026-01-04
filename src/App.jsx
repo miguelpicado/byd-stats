@@ -945,7 +945,7 @@ export default function BYDStatsAnalyzer() {
         <div className="w-full max-w-xl">
           <div className="text-center mb-8">
             <img src="byd_logo.png" className="w-32 sm:w-40 md:w-48 h-auto mx-auto mb-4 md:mb-6" alt="BYD Logo" />
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-2">Estadísticas BYD</h1>
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
             <p className="text-sm sm:text-base text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
 
@@ -978,7 +978,6 @@ export default function BYDStatsAnalyzer() {
             <input
               id="fileInput"
               type="file"
-              accept="*/*"
               className="hidden"
               onChange={(e) => onFile(e, false)}
               disabled={!sqlReady}
@@ -1406,12 +1405,12 @@ export default function BYDStatsAnalyzer() {
             <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Actualizar datos</h3>
             <div className="space-y-3">
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
-                <input type="file" accept="*/*" className="hidden" onChange={(e) => onFile(e, true)} />
+                <input type="file" className="hidden" onChange={(e) => onFile(e, true)} />
                 <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
                 <p className="text-slate-900 dark:text-white">Combinar con existentes</p>
               </label>
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
-                <input type="file" accept="*/*" className="hidden" onChange={(e) => onFile(e, false)} />
+                <input type="file" className="hidden" onChange={(e) => onFile(e, false)} />
                 <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
                 <p className="text-slate-900 dark:text-white">Reemplazar todo</p>
               </label>
