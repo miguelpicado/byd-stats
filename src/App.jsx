@@ -999,7 +999,7 @@ export default function BYDStatsAnalyzer() {
               Selecciona el fichero EC_Database.db en la carpeta "EnergyData" de tu coche
             </p>
             <p className="text-slate-500 dark:text-slate-500 text-xs mt-2">
-              💡 Si tu navegador no muestra archivos: renombra EC_Database.db a EC_Database.jpg en el coche
+              💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a .jpg
             </p>
           </div>
 
