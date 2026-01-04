@@ -560,12 +560,27 @@ export default function BYDStatsAnalyzer() {
     e.preventDefault();
     setDragOver(false);
     const f = e.dataTransfer.files[0];
-    if (f) processDB(f, merge);
+    if (f) {
+      // Validate that the file is a .DB file
+      if (!f.name.toLowerCase().endsWith('.db')) {
+        alert('Solo se admiten archivos *.DB disponibles en la carpeta "Energydata" del coche');
+        return;
+      }
+      processDB(f, merge);
+    }
   }, [processDB]);
 
   const onFile = useCallback((e, merge) => {
     const f = e.target.files[0];
-    if (f) processDB(f, merge);
+    if (f) {
+      // Validate that the file is a .DB file
+      if (!f.name.toLowerCase().endsWith('.db')) {
+        alert('Solo se admiten archivos *.DB disponibles en la carpeta "Energydata" del coche');
+        e.target.value = '';
+        return;
+      }
+      processDB(f, merge);
+    }
     e.target.value = '';
   }, [processDB]);
 
@@ -1387,7 +1402,7 @@ export default function BYDStatsAnalyzer() {
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4">Actualizar datos</h3>
+            <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Actualizar datos</h3>
             <div className="space-y-3">
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
                 <input type="file" className="hidden" onChange={(e) => onFile(e, true)} />
@@ -1658,7 +1673,7 @@ export default function BYDStatsAnalyzer() {
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <Database className="w-5 h-5" style={{ color: BYD_RED }} />
+                <Database className="w-5 h-5 text-red-600 dark:text-red-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Historial de viajes</h2>
               </div>
               <button onClick={() => setShowHistoryModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
@@ -1734,7 +1749,7 @@ export default function BYDStatsAnalyzer() {
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5" style={{ color: BYD_RED }} />
+                <HelpCircle className="w-5 h-5 text-red-600 dark:text-red-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Ayuda y Soporte</h2>
               </div>
               <button onClick={() => setShowHelpModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
@@ -2047,10 +2062,10 @@ export default function BYDStatsAnalyzer() {
                   <ChartCard title="Por Día">
                     <ResponsiveContainer width="100%" height={260}>
                       <RadarChart data={weekday}>
-                        <PolarGrid stroke="#cbd5e1" opacity={0.3} />
-                        <PolarAngleAxis dataKey="day" stroke="#cbd5e1" />
-                        <PolarRadiusAxis stroke="#cbd5e1" />
-                        <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
+                        <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
+                        <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
+                        <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
+                        <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                         <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                       </RadarChart>
                     </ResponsiveContainer>
@@ -2335,10 +2350,10 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard title="Por Día">
                           <ResponsiveContainer width="100%" height={260}>
                             <RadarChart data={weekday}>
-                              <PolarGrid stroke="#cbd5e1" opacity={0.3} />
-                              <PolarAngleAxis dataKey="day" stroke="#cbd5e1" />
-                              <PolarRadiusAxis stroke="#cbd5e1" />
-                              <Radar dataKey="trips" stroke={BYD_RED} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
+                              <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
+                              <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
+                              <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
+                              <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
                               <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                             </RadarChart>
                           </ResponsiveContainer>
@@ -2616,13 +2631,6 @@ export default function BYDStatsAnalyzer() {
                                     </div>
                                   </div>
                                 </div>
-
-                                <div className="bg-gradient-to-br from-red-500/10 to-orange-500/10 dark:from-red-500/20 dark:to-orange-500/20 rounded-xl p-4 border border-red-500/30 dark:border-red-500/30">
-                                  <p className="text-xs text-slate-600 dark:text-slate-400 mb-2 text-center">Total de viajes analizados</p>
-                                  <p className="text-4xl font-bold text-center" style={{ color: BYD_RED }}>
-                                    {last10.length}
-                                  </p>
-                                </div>
                               </div>
                             );
                           })()}
@@ -2654,7 +2662,7 @@ export default function BYDStatsAnalyzer() {
           <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5" style={{ color: BYD_RED }} />
+                <Filter className="w-5 h-5 text-red-600 dark:text-red-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
               </div>
               <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
