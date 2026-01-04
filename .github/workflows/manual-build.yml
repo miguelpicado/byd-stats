@@ -38,6 +38,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check Keystore presence
+        id: keystore_check
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "keystore_present=true" >> $GITHUB_OUTPUT
+          else
+            echo "keystore_present=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build web app
         run: npm run build
 
@@ -92,10 +101,23 @@ jobs:
           cd android
           ./gradlew assembleDebug --stacktrace
 
-      - name: Build Release APK
-        if: github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both'
+      - name: Decode Keystore
+        if: ${{ steps.keystore_check.outputs.keystore_present == 'true' }}
+        run: |
+          echo "🔐 Decoding keystore..."
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+          echo "✅ Keystore decoded successfully"
+
+      - name: Build Release APK (Signed if keystore present)
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
+        env:
+          KEYSTORE_FILE: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           cd android
+          echo "🔨 Building release APK..."
           ./gradlew assembleRelease --stacktrace
         continue-on-error: true
 
@@ -111,11 +133,19 @@ jobs:
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 90
 
-      - name: Upload Release APK
+      - name: Upload Release APK (Signed)
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: byd-stats-release-signed-${{ steps.date.outputs.date }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 90
+
+      - name: Upload Release APK (Unsigned fallback)
         if: (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both')
         uses: actions/upload-artifact@v4
         with:
-          name: byd-stats-release-${{ steps.date.outputs.date }}
+          name: byd-stats-release-unsigned-${{ steps.date.outputs.date }}
           path: android/app/build/outputs/apk/release/app-release-unsigned.apk
           retention-days: 90
         continue-on-error: true
