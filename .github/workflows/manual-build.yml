@@ -38,6 +38,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Check Keystore presence
+        id: keystore_check
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "keystore_present=true" >> $GITHUB_OUTPUT
+          else
+            echo "keystore_present=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Build web app
         run: npm run build
 
@@ -93,14 +102,14 @@ jobs:
           ./gradlew assembleDebug --stacktrace
 
       - name: Decode Keystore
-        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        if: ${{ steps.keystore_check.outputs.keystore_present == 'true' }}
         run: |
           echo "🔐 Decoding keystore..."
           echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
           echo "✅ Keystore decoded successfully"
 
       - name: Build Release APK (Signed if keystore present)
-        if: github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both'
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
         env:
           KEYSTORE_FILE: release.keystore
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -125,7 +134,7 @@ jobs:
           retention-days: 90
 
       - name: Upload Release APK (Signed)
-        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && secrets.KEYSTORE_BASE64 != '' }}
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: byd-stats-release-signed-${{ steps.date.outputs.date }}
