@@ -2390,11 +2390,11 @@ export default function BYDStatsAnalyzer() {
                     // Calculate insights
                     const avgKmPerTrip = parseFloat(summary.avgKm) || 0;
                     const longTripThreshold = avgKmPerTrip * 2;
-                    const longTrips = allTrips.filter(t => (t.trip || 0) >= longTripThreshold);
+                    const longTrips = filtered.filter(t => (t.trip || 0) >= longTripThreshold);
                     const daysPerLongTrip = longTrips.length > 0 ? Math.round(summary.totalDays / longTrips.length) : 0;
 
                     // Median efficiency
-                    const efficiencies = allTrips
+                    const efficiencies = filtered
                       .map(t => t.trip && t.trip > 0 && t.electricity != null ? (t.electricity / t.trip) * 100 : 0)
                       .filter(e => e > 0)
                       .sort((a, b) => a - b);
