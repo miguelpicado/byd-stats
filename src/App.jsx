@@ -855,16 +855,16 @@ export default function BYDStatsAnalyzer() {
   };
 
   const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub }) => (
-    <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2 sm:p-3' : 'p-3 sm:p-5'}`}>
-      <div className={`rounded-lg sm:rounded-xl flex items-center justify-center ${isCompact ? 'w-6 h-6 sm:w-8 sm:h-8 mb-1 sm:mb-2' : 'w-8 h-8 sm:w-10 sm:h-10 mb-2 sm:mb-3'} ${color}`} >
-        <Icon className={isCompact ? 'w-3 h-3 sm:w-4 sm:h-4' : 'w-4 h-4 sm:w-5 sm:h-5'} />
+    <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-1.5 sm:p-2' : 'p-3 sm:p-5'}`}>
+      <div className={`rounded-lg sm:rounded-xl flex items-center justify-center ${isCompact ? 'w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1' : 'w-8 h-8 sm:w-10 sm:h-10 mb-2 sm:mb-3'} ${color}`} >
+        <Icon className={isCompact ? 'w-2.5 h-2.5 sm:w-3.5 sm:h-3.5' : 'w-4 h-4 sm:w-5 sm:h-5'} />
       </div>
       <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{label}</p>
-      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>
+      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-lg' : 'text-xl sm:text-2xl'}`}>
         {value}
-        <span className={`text-slate-500 dark:text-slate-500 ml-1 ${isCompact ? 'text-xs sm:text-base' : 'text-sm sm:text-lg'}`}>{unit}</span>
+        <span className={`text-slate-500 dark:text-slate-500 ml-1 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-lg'}`}>{unit}</span>
       </p>
-      {sub && <p className={`mt-1 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`} style={{ color: BYD_RED }}>{sub}</p>}
+      {sub && <p className={`mt-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`} style={{ color: BYD_RED }}>{sub}</p>}
     </div>
   ));
 
@@ -888,8 +888,8 @@ export default function BYDStatsAnalyzer() {
   });
 
   const ChartCard = React.memo(({ title, children, className = "" }) => (
-    <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 ${className} ${isCompact ? 'p-3 sm:p-4' : 'p-4 sm:p-6'}`}>
-      {title && <h3 className={`font-semibold text-slate-900 dark:text-white ${isCompact ? 'text-sm sm:text-base mb-2 sm:mb-3' : 'text-base sm:text-lg mb-3 sm:mb-4'}`}>{title}</h3>}
+    <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 ${className} ${isCompact ? 'p-2 sm:p-3' : 'p-4 sm:p-6'}`}>
+      {title && <h3 className={`font-semibold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm mb-1.5 sm:mb-2' : 'text-base sm:text-lg mb-3 sm:mb-4'}`}>{title}</h3>}
       {children}
     </div>
   ));
@@ -1962,22 +1962,22 @@ export default function BYDStatsAnalyzer() {
                 <>
                   {/* Slide 1: Overview */}
                   <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className="space-y-4 sm:space-y-6">
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-2' : ''}`}>
                         <StatCard icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
                         <StatCard icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
                         <StatCard icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
                         <StatCard icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
                       </div>
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-2' : ''}`}>
                         <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                         <StatCard icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                         <StatCard icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
                         <StatCard icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
-                      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
+                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-2' : ''}`}>
                         <ChartCard title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={240}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 160 : 240}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -1995,7 +1995,7 @@ export default function BYDStatsAnalyzer() {
                         </ChartCard>
                         <ChartCard title="Distribución de Viajes">
                           <div className="flex flex-col items-center">
-                            <ResponsiveContainer width="100%" height={200}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 140 : 200}>
                               <PieChart>
                                 <Pie
                                   data={tripDist}
@@ -2055,22 +2055,22 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 2: Trends */}
                   <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className="space-y-4 sm:space-y-6">
+                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
                       <ChartCard title="Km y kWh Mensual">
-                        <ResponsiveContainer width="100%" height={280}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 180 : 280}>
                           <BarChart data={monthly}>
-                            <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
-                            <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
-                            <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
+                            <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
+                            <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
+                            <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={10} />
                             <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <Legend wrapperStyle={{ fontSize: '11px' }} />
                             <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
                             <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartCard>
                       <ChartCard title="Km recorridos en últimos 60 días">
-                        <ResponsiveContainer width="100%" height={260}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 140 : 260}>
                           <AreaChart data={daily.slice(-60)}>
                             <defs>
                               <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2079,8 +2079,8 @@ export default function BYDStatsAnalyzer() {
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                            <YAxis stroke="#64748b" fontSize={11} />
+                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={9} angle={-45} textAnchor="end" height={50} />
+                            <YAxis stroke="#64748b" fontSize={10} />
                             <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                             <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
                           </AreaChart>
@@ -2132,22 +2132,22 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 4: Efficiency */}
                   <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className="space-y-4 sm:space-y-6">
-                      <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
+                      <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-2' : ''}`}>
                         <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                         <StatCard icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
                         <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                         <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-amber-500/20 text-amber-400" />
                       </div>
                       <ChartCard title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={320}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 160 : 320}>
                           <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                             <XAxis
                               dataKey="km"
                               name="Distancia"
                               stroke="#64748b"
-                              fontSize={11}
+                              fontSize={10}
                               type="number"
                               scale="log"
                               domain={['auto', 'auto']}
@@ -2155,16 +2155,16 @@ export default function BYDStatsAnalyzer() {
                               allowDecimals={false}
                               allowDataOverflow={false}
                               tickFormatter={(value) => `${Math.round(value)}`}
-                              label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 11 }}
+                              label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 10 }}
                             />
                             <YAxis
                               dataKey="eff"
                               name="Eficiencia"
                               stroke="#64748b"
-                              fontSize={11}
+                              fontSize={10}
                               allowDecimals={false}
                               tickFormatter={(value) => Math.round(value)}
-                              label={{ value: 'kWh/100km', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 11 }}
+                              label={{ value: 'kWh/100km', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10 }}
                             />
                             <Tooltip
                               isAnimationActive={false}
@@ -2181,7 +2181,7 @@ export default function BYDStatsAnalyzer() {
                                 return null;
                               }}
                             />
-                            <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} activeShape={{ r: 8, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
+                            <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} activeShape={{ r: isCompact ? 3 : 5, fill: BYD_RED, stroke: '#fff', strokeWidth: 1 }} />
                           </ScatterChart>
                         </ResponsiveContainer>
                       </ChartCard>
@@ -2191,47 +2191,47 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 5: Records */}
                   <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className="space-y-4 sm:space-y-6">
-                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-red-500/30">
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">🏆 Más largo</p>
-                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
+                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-2' : ''}`}>
+                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-red-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>🏆 Más largo</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.maxKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>km</span></p>
                         </div>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-cyan-500/30">
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">⚡ Mayor consumo</p>
-                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">kWh</span></p>
+                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-cyan-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>⚡ Mayor consumo</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.maxKwh} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>kWh</span></p>
                         </div>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-amber-500/30">
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">⏱️ Más duración</p>
-                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">min</span></p>
+                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-amber-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>⏱️ Más duración</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.maxMin} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>min</span></p>
                         </div>
-                        <div className="bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl p-3 sm:p-5 border border-purple-500/30">
-                          <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-1">📍 Más corto</p>
-                          <p className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white">{summary.minKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
+                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-purple-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>📍 Más corto</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.minKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>km</span></p>
                         </div>
                       </div>
-                      <div className="grid md:grid-cols-3 gap-4 sm:gap-6">
+                      <div className={`grid md:grid-cols-3 gap-4 sm:gap-6 ${isCompact ? '!gap-2' : ''}`}>
                         <ChartCard title="🥇 Top Distancia">
                           {top.km.map((t, i) => (
-                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.trip?.toFixed(1)} km</span>
+                            <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
                             </div>
                           ))}
                         </ChartCard>
                         <ChartCard title="⚡ Top Consumo">
                           {top.kwh.map((t, i) => (
-                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.electricity?.toFixed(1)} kWh</span>
+                            <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
                             </div>
                           ))}
                         </ChartCard>
                         <ChartCard title="⏱️ Top Duración">
                           {top.dur.map((t, i) => (
-                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{((t.duration || 0) / 60).toFixed(0)} min</span>
+                            <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
+                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
                             </div>
                           ))}
                         </ChartCard>
