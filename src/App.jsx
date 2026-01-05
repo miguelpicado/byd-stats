@@ -2387,37 +2387,39 @@ export default function BYDStatsAnalyzer() {
                     </div>
                   )}
                   {activeTab === 'trends' && (
-                    <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
-                      <ChartCard title="Km y kWh Mensual">
-                        <ResponsiveContainer width="100%" height={isCompact ? 200 : 280}>
-                          <BarChart data={monthly}>
-                            <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
-                            <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
-                            <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
-                            <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Legend wrapperStyle={{ fontSize: '12px' }} />
-                            <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
-                            <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </ChartCard>
-                      <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                        <ResponsiveContainer width="100%" height={isCompact ? 180 : 260}>
-                          <AreaChart data={daily.slice(-60)}>
-                            <defs>
-                              <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
-                                <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                            <YAxis stroke="#64748b" fontSize={11} />
-                            <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </ChartCard>
+                    <div className={`${isCompact ? 'space-y-1' : 'space-y-4 sm:space-y-6'}`}>
+                      <div className={`${isCompact ? 'grid grid-cols-2 gap-2' : 'space-y-4 sm:space-y-6'}`}>
+                        <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 280}>
+                            <BarChart data={monthly}>
+                              <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
+                              <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
+                              <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Legend wrapperStyle={{ fontSize: '12px' }} />
+                              <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
+                              <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                        <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 260}>
+                            <AreaChart data={daily.slice(-60)}>
+                              <defs>
+                                <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
+                                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
+                              <YAxis stroke="#64748b" fontSize={11} />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
+                            </AreaChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                      </div>
                       <GitHubFooter />
                     </div>
                   )}
@@ -2461,14 +2463,14 @@ export default function BYDStatsAnalyzer() {
                   )}
                   {activeTab === 'efficiency' && (
                     <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
-                      <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? 'gap-2' : ''}`}>
-                        <StatCard icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
-                        <StatCard icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                      <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-2' : 'grid-cols-2'}`}>
+                        <StatCard isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
+                        <StatCard isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
                       <ChartCard isCompact={isCompact} title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={isCompact ? 220 : 320}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 260 : 320}>
                           <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                             <XAxis
