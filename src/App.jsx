@@ -2425,6 +2425,15 @@ export default function BYDStatsAnalyzer() {
                   )}
                   {activeTab === 'patterns' && (
                     <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
+                      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                        {weekday.map((d, i) => (
+                          <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
+                            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
+                            <p className="text-base sm:text-xl font-bold text-slate-900 dark:text-white">{d.trips}</p>
+                            <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
+                          </div>
+                        ))}
+                      </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? 'gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="Por Hora">
                           <ResponsiveContainer width="100%" height={isCompact ? 180 : 260}>
@@ -2448,15 +2457,6 @@ export default function BYDStatsAnalyzer() {
                             </RadarChart>
                           </ResponsiveContainer>
                         </ChartCard>
-                      </div>
-                      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                        {weekday.map((d, i) => (
-                          <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
-                            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
-                            <p className="text-base sm:text-xl font-bold text-slate-900 dark:text-white">{d.trips}</p>
-                            <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
-                          </div>
-                        ))}
                       </div>
                       <GitHubFooter />
                     </div>
