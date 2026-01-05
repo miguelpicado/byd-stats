@@ -306,8 +306,9 @@ export default function BYDStatsAnalyzer() {
       const w = window.innerWidth;
       const h = window.innerHeight;
       // Consider compact if width is large enough but height is restricted
-      // 1280x720 or 1280x548 falls into this category
-      const isCompactSize = w >= 1024 && h <= 600;
+      // Relaxed to <= 800 to cover 720p screens clearly
+      const isCompactSize = w >= 1024 && h <= 800;
+      console.log('checkCompact:', { w, h, isCompactSize });
       setIsCompact(isCompactSize);
 
       // Apply dense scale for compact mode
@@ -2002,11 +2003,11 @@ export default function BYDStatsAnalyzer() {
                                     data={tripDist}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={isCompact ? 35 : 55}
-                                    outerRadius={isCompact ? 55 : 85}
+                                    innerRadius={isCompact ? 30 : 55}
+                                    outerRadius={isCompact ? 50 : 85}
                                     paddingAngle={2}
                                     dataKey="count"
-                                    label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
+                                    label={isCompact ? null : ({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                                     labelLine={false}
                                     isAnimationActive={false}
                                     activeShape={{ outerRadius: isCompact ? 60 : 95, stroke: '#fff', strokeWidth: 2 }}
