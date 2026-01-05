@@ -1994,55 +1994,59 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard title="Distribución de Viajes">
-                          <div className="flex flex-col items-center">
-                            <ResponsiveContainer width="100%" height={isCompact ? 140 : 200}>
-                              <PieChart>
-                                <Pie
-                                  data={tripDist}
-                                  cx="50%"
-                                  cy="50%"
-                                  innerRadius={55}
-                                  outerRadius={85}
-                                  paddingAngle={2}
-                                  dataKey="count"
-                                  label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
-                                  labelLine={false}
-                                  isAnimationActive={false}
-                                  activeShape={{ outerRadius: 95, stroke: '#fff', strokeWidth: 2 }}
-                                >
-                                  {tripDist.map((e, i) => (
-                                    <Cell key={`cell-${i}`} fill={e.color} />
-                                  ))}
-                                </Pie>
-                                <Tooltip
-                                  content={({ active, payload }) => {
-                                    if (active && payload && payload.length) {
-                                      const data = payload[0];
-                                      const total = tripDist.reduce((s, d) => s + d.count, 0);
-                                      const percent = ((data.value / total) * 100).toFixed(1);
-                                      return (
-                                        <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl">
-                                          <div className="flex items-center gap-2 mb-2">
-                                            <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }}></div>
-                                            <p className="text-slate-900 dark:text-white font-bold">{data.payload.range} km</p>
+                          <div className={`flex items-center ${isCompact ? 'flex-row gap-4' : 'flex-col'}`}>
+                            <div className={`${isCompact ? 'w-1/2' : 'w-full'}`}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 140 : 200}>
+                                <PieChart>
+                                  <Pie
+                                    data={tripDist}
+                                    cx="50%"
+                                    cy="50%"
+                                    innerRadius={isCompact ? 40 : 55}
+                                    outerRadius={isCompact ? 60 : 85}
+                                    paddingAngle={2}
+                                    dataKey="count"
+                                    label={({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
+                                    labelLine={false}
+                                    isAnimationActive={false}
+                                    activeShape={{ outerRadius: isCompact ? 65 : 95, stroke: '#fff', strokeWidth: 2 }}
+                                  >
+                                    {tripDist.map((e, i) => (
+                                      <Cell key={`cell-${i}`} fill={e.color} />
+                                    ))}
+                                  </Pie>
+                                  <Tooltip
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        const data = payload[0];
+                                        const total = tripDist.reduce((s, d) => s + d.count, 0);
+                                        const percent = ((data.value / total) * 100).toFixed(1);
+                                        return (
+                                          <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl h-fit">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }}></div>
+                                              <p className="text-slate-900 dark:text-white font-bold">{data.payload.range} km</p>
+                                            </div>
+                                            <p className="text-sm text-slate-300">{data.value} viajes ({percent}%)</p>
                                           </div>
-                                          <p className="text-sm text-slate-300">{data.value} viajes ({percent}%)</p>
-                                        </div>
-                                      );
-                                    }
-                                    return null;
-                                  }}
-                                  isAnimationActive={false}
-                                  cursor={false}
-                                />
-                              </PieChart>
-                            </ResponsiveContainer>
-                            <div className="grid grid-cols-5 gap-2 w-full mt-4">
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                    isAnimationActive={false}
+                                    cursor={false}
+                                  />
+                                </PieChart>
+                              </ResponsiveContainer>
+                            </div>
+                            <div className={`${isCompact ? 'w-1/2 grid grid-cols-2 gap-2 text-left' : 'grid grid-cols-5 gap-2 w-full mt-4 text-center'}`}>
                               {tripDist.map((d, i) => (
-                                <div key={i} className="flex flex-col items-center">
-                                  <div className="w-3 h-3 rounded-full mb-1" style={{ backgroundColor: d.color }}></div>
-                                  <p className="text-[9px] sm:text-[10px] text-slate-600 dark:text-slate-400 text-center">{d.range}km</p>
-                                  <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">{d.count}</p>
+                                <div key={i} className={`flex ${isCompact ? 'flex-row items-center gap-2' : 'flex-col items-center'}`}>
+                                  <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
+                                  <div>
+                                    <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px]' : 'text-[9px] sm:text-[10px]'}`}>{d.range}km</p>
+                                    <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xs' : 'text-xs sm:text-sm'}`}>{d.count}</p>
+                                  </div>
                                 </div>
                               ))}
                             </div>
@@ -2055,22 +2059,22 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 2: Trends */}
                   <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
+                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-1' : ''}`}>
                       <ChartCard title="Km y kWh Mensual">
-                        <ResponsiveContainer width="100%" height={isCompact ? 180 : 280}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 160 : 280}>
                           <BarChart data={monthly}>
                             <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
                             <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
                             <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={10} />
                             <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Legend wrapperStyle={{ fontSize: '11px' }} />
+                            <Legend wrapperStyle={{ fontSize: '10px' }} />
                             <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
                             <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
                           </BarChart>
                         </ResponsiveContainer>
                       </ChartCard>
                       <ChartCard title="Km recorridos en últimos 60 días">
-                        <ResponsiveContainer width="100%" height={isCompact ? 140 : 260}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 120 : 260}>
                           <AreaChart data={daily.slice(-60)}>
                             <defs>
                               <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2079,7 +2083,7 @@ export default function BYDStatsAnalyzer() {
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={9} angle={-45} textAnchor="end" height={50} />
+                            <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={9} angle={-45} textAnchor="end" height={40} />
                             <YAxis stroke="#64748b" fontSize={10} />
                             <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
                             <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
@@ -2191,47 +2195,47 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 5: Records */}
                   <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
+                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-1' : ''}`}>
                       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-2' : ''}`}>
                         <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-red-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>🏆 Más largo</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.maxKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>km</span></p>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>🏆 Más largo</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm sm:text-base' : 'text-xl sm:text-3xl'}`}>{summary.maxKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>km</span></p>
                         </div>
                         <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-cyan-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>⚡ Mayor consumo</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.maxKwh} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>kWh</span></p>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>⚡ Mayor consumo</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm sm:text-base' : 'text-xl sm:text-3xl'}`}>{summary.maxKwh} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>kWh</span></p>
                         </div>
                         <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-amber-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>⏱️ Más duración</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.maxMin} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>min</span></p>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>⏱️ Más duración</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm sm:text-base' : 'text-xl sm:text-3xl'}`}>{summary.maxMin} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>min</span></p>
                         </div>
                         <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-purple-500/30 ${isCompact ? 'p-2' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>📍 Más corto</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-xl' : 'text-xl sm:text-3xl'}`}>{summary.minKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-sm' : 'text-sm sm:text-lg'}`}>km</span></p>
+                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>📍 Más corto</p>
+                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm sm:text-base' : 'text-xl sm:text-3xl'}`}>{summary.minKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>km</span></p>
                         </div>
                       </div>
                       <div className={`grid md:grid-cols-3 gap-4 sm:gap-6 ${isCompact ? '!gap-2' : ''}`}>
                         <ChartCard title="🥇 Top Distancia">
                           {top.km.map((t, i) => (
-                            <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
+                            <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-1' : 'py-1.5'}`}>
+                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
                             </div>
                           ))}
                         </ChartCard>
                         <ChartCard title="⚡ Top Consumo">
                           {top.kwh.map((t, i) => (
-                            <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
+                            <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-1' : 'py-1.5'}`}>
+                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
                             </div>
                           ))}
                         </ChartCard>
                         <ChartCard title="⏱️ Top Duración">
                           {top.dur.map((t, i) => (
-                            <div key={i} className="flex justify-between py-1.5 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
+                            <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-1' : 'py-1.5'}`}>
+                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
                             </div>
                           ))}
                         </ChartCard>
