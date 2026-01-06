@@ -240,17 +240,17 @@ const formatTime = (timestamp) => {
   return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 };
 
-const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub, isCompact, lowPadding, isLarger }) => (
-  <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 flex items-stretch overflow-hidden ${isCompact ? (isLarger ? 'h-20' : (lowPadding ? 'h-12' : 'h-16')) : 'min-h-[80px] sm:min-h-[100px]'}`}>
-    <div className={`flex items-center justify-center shrink-0 ${isCompact ? (isLarger ? 'w-14' : 'w-10') : 'w-14 sm:w-16'} ${color}`} >
-      <Icon className={`${isCompact ? (isLarger ? 'w-6 h-6' : 'w-5 h-5') : 'w-6 h-6 sm:w-7 sm:h-7'}`} />
+const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub, isCompact, lowPadding, isLarger, isVerticalMode }) => (
+  <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 flex items-stretch overflow-hidden ${isCompact ? (isLarger ? 'h-20' : (lowPadding ? 'h-12' : 'h-16')) : (isVerticalMode ? 'h-20' : 'min-h-[80px] sm:min-h-[100px]')}`}>
+    <div className={`flex items-center justify-center shrink-0 ${isCompact ? (isLarger ? 'w-14' : 'w-10') : (isVerticalMode ? 'w-14' : 'w-14 sm:w-16')} ${color}`} >
+      <Icon className={`${isCompact ? (isLarger ? 'w-6 h-6' : 'w-5 h-5') : (isVerticalMode ? 'w-6 h-6' : 'w-6 h-6 sm:w-7 sm:h-7')}`} />
     </div>
     <div className="flex-1 flex flex-col items-center justify-center text-center px-2 py-1 min-w-0">
-      <p className="text-slate-600 dark:text-slate-400 leading-tight uppercase tracking-wider font-semibold truncate w-full" style={{ fontSize: isCompact ? (isLarger ? '11px' : '9px') : '11px' }}>{label}</p>
-      <p className="font-black text-slate-900 dark:text-white leading-none mt-1" style={{ fontSize: isCompact ? (isLarger ? '28px' : '22px') : '28px' }}>
-        {value}<span className="text-slate-500 dark:text-slate-400 ml-1 font-bold" style={{ fontSize: isCompact ? (isLarger ? '14px' : '10px') : '14px' }}>{unit}</span>
+      <p className="text-slate-600 dark:text-slate-400 leading-tight uppercase tracking-wider font-semibold truncate w-full" style={{ fontSize: isCompact ? (isLarger ? '11px' : '9px') : (isVerticalMode ? '9px' : '11px') }}>{label}</p>
+      <p className="font-black text-slate-900 dark:text-white leading-none mt-1" style={{ fontSize: isCompact ? (isLarger ? '28px' : '22px') : (isVerticalMode ? '22px' : '28px') }}>
+        {value}<span className="text-slate-500 dark:text-slate-400 ml-1 font-bold" style={{ fontSize: isCompact ? (isLarger ? '14px' : '10px') : (isVerticalMode ? '10px' : '14px') }}>{unit}</span>
       </p>
-      {sub && <p className="leading-tight font-bold mt-1 truncate w-full" style={{ color: BYD_RED, fontSize: isCompact ? (isLarger ? '11px' : '9px') : '11px' }}>{sub}</p>}
+      {sub && <p className="leading-tight font-bold mt-1 truncate w-full" style={{ color: BYD_RED, fontSize: isCompact ? (isLarger ? '11px' : '9px') : (isVerticalMode ? '9px' : '11px') }}>{sub}</p>}
     </div>
   </div>
 ));
@@ -1996,20 +1996,20 @@ export default function BYDStatsAnalyzer() {
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
                       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
                       </div>
                       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 168}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2028,7 +2028,7 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
                             <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 250}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 175}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
@@ -2112,14 +2112,14 @@ export default function BYDStatsAnalyzer() {
                       return (
                         <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
                           <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Viaje largo cada" value={daysPerLongTrip} unit="días" color="bg-purple-500/20 text-purple-400" />
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia mediana" value={medianEfficiency.toFixed(2)} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Carga diaria" value={dailyKwh.toFixed(2)} unit="kWh/día" color="bg-cyan-500/20 text-cyan-400" />
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Viaje largo cada" value={daysPerLongTrip} unit="días" color="bg-purple-500/20 text-purple-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia mediana" value={medianEfficiency.toFixed(2)} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Carga diaria" value={dailyKwh.toFixed(2)} unit="kWh/día" color="bg-cyan-500/20 text-cyan-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 280}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 196}>
                                 <BarChart data={monthly}>
                                   <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
                                   <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
@@ -2132,7 +2132,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 260}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 182}>
                                 <AreaChart data={daily.slice(-60)}>
                                   <defs>
                                     <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
@@ -2163,14 +2163,14 @@ export default function BYDStatsAnalyzer() {
                       return (
                         <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
                           <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Día frecuente" value={dayNamesFull[topDay.day] || topDay.day} unit="" color="bg-amber-500/20 text-amber-400" />
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Hora pico" value={`${topHour.hour.toString().padStart(2, '0')}:00h`} unit="" color="bg-purple-500/20 text-purple-400" />
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Km totales" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" />
-                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Día frecuente" value={dayNamesFull[topDay.day] || topDay.day} unit="" color="bg-amber-500/20 text-amber-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Hora pico" value={`${topHour.hour.toString().padStart(2, '0')}:00h`} unit="" color="bg-purple-500/20 text-purple-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Km totales" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" />
+                            <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Por Hora">
-                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 182}>
                                 <BarChart data={hourly}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                                   <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
@@ -2181,7 +2181,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Por Día">
-                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 182}>
                                 <RadarChart data={weekday}>
                                   <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
                                   <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
@@ -2211,13 +2211,13 @@ export default function BYDStatsAnalyzer() {
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
                       <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
                       <ChartCard isCompact={isCompact} title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 300 : 224}>
                           <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                             <XAxis
@@ -2270,12 +2270,12 @@ export default function BYDStatsAnalyzer() {
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <div className={`space-y-3 sm:space-y-4 ${isCompact ? COMPACT_SPACE_Y : ''}`}>
                       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Más largo" value={summary.maxKm} unit="km" color="bg-red-500/20 text-red-500" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Mayor consumo" value={summary.maxKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-500" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Más duración" value={summary.maxMin} unit="min" color="bg-amber-500/20 text-amber-500" />
-                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Más largo" value={summary.maxKm} unit="km" color="bg-red-500/20 text-red-500" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Mayor consumo" value={summary.maxKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-500" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Más duración" value={summary.maxMin} unit="min" color="bg-amber-500/20 text-amber-500" />
+                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
                       </div>
-                      <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                      <div className={`grid ${isCompact ? 'grid-cols-3' : 'grid-cols-1'} gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="🥇 Top Distancia">
                           <div className="space-y-1">
                             {top.km.map((t, i) => (
