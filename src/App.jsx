@@ -1060,14 +1060,14 @@ export default function BYDStatsAnalyzer() {
             >
               <Upload className="w-8 h-8" style={{ color: dragOver ? 'white' : BYD_RED }} />
             </div>
-            <p className="text-slate-900 dark:text-white text-lg sm:text-xl mb-2">
+            <p className="text-white text-lg sm:text-xl mb-2">
               {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Arrastra tu archivo EC_database.db') : 'Preparando...'}
             </p>
-            {!isNative && <p className="text-slate-500 dark:text-slate-500 text-sm">o haz clic para seleccionar</p>}
-            <p className="text-slate-600 dark:text-slate-400 text-xs mt-4">
+            {!isNative && <p className="text-slate-400 text-sm">o haz clic para seleccionar</p>}
+            <p className="text-slate-400 text-xs mt-4">
               Selecciona el fichero EC_Database.db en la carpeta "EnergyData" de tu coche
             </p>
-            <p className="text-slate-500 dark:text-slate-500 text-xs mt-2">
+            <p className="text-slate-500 text-xs mt-2">
               💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a .jpg
             </p>
           </div>
