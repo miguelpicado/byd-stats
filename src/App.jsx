@@ -1015,7 +1015,7 @@ export default function BYDStatsAnalyzer() {
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-8">
-            <img src="byd_logo.png" className="w-32 sm:w-40 md:w-48 h-auto mx-auto mb-4 md:mb-6" alt="BYD Logo" />
+            <img src="app_logo.png" className="w-32 sm:w-40 md:w-48 h-auto mx-auto mb-4 md:mb-6" alt="App Logo" />
             <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
             <p className="text-sm sm:text-base text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
@@ -1884,7 +1884,7 @@ export default function BYDStatsAnalyzer() {
             {/* Logo y título */}
             <div className="flex items-center gap-2 sm:gap-3">
               <img
-                src="byd_logo.png"
+                src="app_logo.png"
                 className={`${layoutMode === 'horizontal' ? 'h-10 w-auto' : 'w-12 sm:w-16 md:w-20'} object-contain`}
                 alt="BYD Logo"
               />
