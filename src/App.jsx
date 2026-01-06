@@ -163,14 +163,14 @@ function processData(rows) {
   const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
   const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
   const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
-  const sorted = [...trips].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+  const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
 
-  // Calculate total span of days in the database
-  const firstDate = sorted[0]?.date ? new Date(sorted[0].date) : null;
-  const lastDate = sorted[sorted.length - 1]?.date ? new Date(sorted[sorted.length - 1].date) : null;
-  const totalDays = (firstDate && lastDate)
-    ? Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1)
-    : 1;
+  // Calculate total span of days in the database using timestamps
+  const firstTs = sorted[0]?.start_timestamp;
+  const lastTs = sorted[sorted.length - 1]?.start_timestamp;
+  const totalDays = (firstTs && lastTs)
+    ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
+    : daysActive;
 
   return {
     summary: {
@@ -2096,13 +2096,14 @@ export default function BYDStatsAnalyzer() {
                       const avgKmPerTrip = parseFloat(summary?.avgKm) || 0;
                       const longTripThreshold = avgKmPerTrip * 2;
                       const longTrips = tripData.filter(t => (t.trip || 0) >= longTripThreshold);
-                      const daysPerLongTrip = longTrips.length > 0 && summary?.totalDays ? Math.round(summary.totalDays / longTrips.length) : 0;
+                      const totalDays = summary?.totalDays || summary?.daysActive || 1;
+                      const daysPerLongTrip = longTrips.length > 0 ? Math.round(totalDays / longTrips.length) : 0;
                       const efficiencies = tripData
                         .map(t => t.trip && t.trip > 0 && t.electricity != null ? (t.electricity / t.trip) * 100 : 0)
                         .filter(e => e > 0)
                         .sort((a, b) => a - b);
                       const medianEfficiency = efficiencies.length > 0 ? efficiencies[Math.floor(efficiencies.length / 2)] : 0;
-                      const dailyKwh = summary?.totalDays > 0 ? (parseFloat(summary.totalKwh) / summary.totalDays) : 0;
+                      const dailyKwh = (parseFloat(summary?.totalKwh || 0) / totalDays);
                       const electricityPrice = settings?.electricityPrice || 0.15;
                       const monthlyData = monthly || [];
                       const avgMonthlyKwh = monthlyData.length > 0 ? monthlyData.reduce((sum, m) => sum + (m.kwh || 0), 0) / monthlyData.length : 0;
@@ -2470,7 +2471,8 @@ export default function BYDStatsAnalyzer() {
                     const avgKmPerTrip = parseFloat(summary?.avgKm) || 0;
                     const longTripThreshold = avgKmPerTrip * 2;
                     const longTrips = tripData.filter(t => (t.trip || 0) >= longTripThreshold);
-                    const daysPerLongTrip = longTrips.length > 0 && summary?.totalDays ? Math.round(summary.totalDays / longTrips.length) : 0;
+                    const totalDays = summary?.totalDays || summary?.daysActive || 1;
+                    const daysPerLongTrip = longTrips.length > 0 ? Math.round(totalDays / longTrips.length) : 0;
 
                     // Median efficiency
                     const efficiencies = tripData
@@ -2482,7 +2484,7 @@ export default function BYDStatsAnalyzer() {
                       : 0;
 
                     // Daily kWh average
-                    const dailyKwh = summary?.totalDays > 0 ? (parseFloat(summary.totalKwh) / summary.totalDays) : 0;
+                    const dailyKwh = (parseFloat(summary?.totalKwh || 0) / totalDays);
 
                     // Monthly cost
                     const electricityPrice = settings?.electricityPrice || 0.15;
