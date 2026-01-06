@@ -1,5 +1,6 @@
 package com.bydstats.app;
 
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -15,35 +16,42 @@ public class MainActivity extends BridgeActivity {
     private void configureStatusBar() {
         Window window = getWindow();
 
+        // Detect if system is in dark mode
+        int nightModeFlags = getResources().getConfiguration().uiMode & Configuration.UI_MODE_NIGHT_MASK;
+        boolean isDarkMode = nightModeFlags == Configuration.UI_MODE_NIGHT_YES;
+
         // Enable edge-to-edge display
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(0xFF0F172A); // #0f172a dark background
+            // Set background color matching the theme
+            window.setStatusBarColor(isDarkMode ? 0xFF0F172A : 0xFFF8FAFC);
         }
 
-        // CRITICAL: Use WindowInsetsControllerCompat for consistent behavior across Android versions
+        // CRITICAL: Use WindowInsetsControllerCompat for consistent behavior
         WindowInsetsControllerCompat insetsController = WindowCompat.getInsetsController(window, window.getDecorView());
         if (insetsController != null) {
-            // FALSE = white icons (for dark background)
-            // TRUE = dark icons (for light background)
-            insetsController.setAppearanceLightStatusBars(false);
+            // isDarkMode == true -> appearanceLightStatusBars(false) -> White icons
+            // isDarkMode == false -> appearanceLightStatusBars(true) -> Dark icons
+            insetsController.setAppearanceLightStatusBars(!isDarkMode);
         }
 
-        // Additional approach for Android M to Q (API 23-29) - deprecated but still works
+        // Additional approach for Android M to Q (API 23-29)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && Build.VERSION.SDK_INT < Build.VERSION_CODES.R) {
             View decorView = window.getDecorView();
             int flags = decorView.getSystemUiVisibility();
-            // Ensure LIGHT_STATUS_BAR flag is NOT set (makes icons white)
-            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+            if (isDarkMode) {
+                flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; // White icons
+            } else {
+                flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR; // Dark icons
+            }
             decorView.setSystemUiVisibility(flags);
         }
 
-        // Modern approach for Android R+ (API 30+) - Samsung Android 16 should use this
+        // Modern approach for Android R+ (API 30+)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            // Clear the light status bars appearance flag (0 = white icons)
             window.getInsetsController().setSystemBarsAppearance(
-                0, // value: 0 means white icons
-                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS // mask
+                isDarkMode ? 0 : android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
             );
         }
     }

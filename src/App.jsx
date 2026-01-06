@@ -45,9 +45,14 @@ const HelpCircle = ({ className }) => <svg className={className} viewBox="0 0 24
 const Mail = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>;
 const Bug = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 2v4M16 2v4M9 18h6M10 11v6M14 11v6M21 9h-3M6 9H3M21 15h-3M6 15H3M12 2a3 3 0 013 3v1a7 7 0 11-6 0V5a3 3 0 013-3z" /></svg>;
 const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.840 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>;
+const Navigation = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>;
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
+const TAB_PADDING = '12px 12px 96px 12px';
+const COMPACT_TAB_PADDING = '8px 10px 80px 10px';
+const COMPACT_SPACE_Y = 'space-y-3';
+const dayNamesFull = { 'Lun': 'Lunes', 'Mar': 'Martes', 'Mié': 'Miércoles', 'Jue': 'Jueves', 'Vie': 'Viernes', 'Sáb': 'Sábado', 'Dom': 'Domingo' };
 
 const GitHubFooter = React.memo(() => (
   <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
@@ -118,6 +123,7 @@ function processData(rows) {
       }
     }
   });
+
 
   const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
   monthlyArray.forEach(m => {
@@ -226,23 +232,24 @@ const formatTime = (timestamp) => {
   return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
 };
 
-const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub, isCompact }) => (
-  <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-1.5 sm:p-2' : 'p-3 sm:p-5'}`}>
-    <div className={`rounded-lg sm:rounded-xl flex items-center justify-center ${isCompact ? 'w-5 h-5 sm:w-6 sm:h-6 mb-0.5 sm:mb-1' : 'w-8 h-8 sm:w-10 sm:h-10 mb-2 sm:mb-3'} ${color}`} >
-      <Icon className={isCompact ? 'w-2.5 h-2.5 sm:w-3.5 sm:h-3.5' : 'w-4 h-4 sm:w-5 sm:h-5'} />
+const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub, isCompact, lowPadding, isLarger }) => (
+  <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 flex items-stretch overflow-hidden ${isCompact ? (isLarger ? 'h-20' : (lowPadding ? 'h-12' : 'h-16')) : 'min-h-[80px] sm:min-h-[100px]'}`}>
+    <div className={`flex items-center justify-center shrink-0 ${isCompact ? (isLarger ? 'w-14' : 'w-10') : 'w-14 sm:w-16'} ${color}`} >
+      <Icon className={`${isCompact ? (isLarger ? 'w-6 h-6' : 'w-5 h-5') : 'w-6 h-6 sm:w-7 sm:h-7'}`} />
     </div>
-    <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{label}</p>
-    <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-base sm:text-lg' : 'text-xl sm:text-2xl'}`}>
-      {value}
-      <span className={`text-slate-500 dark:text-slate-500 ml-1 ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-lg'}`}>{unit}</span>
-    </p>
-    {sub && <p className={`mt-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`} style={{ color: BYD_RED }}>{sub}</p>}
+    <div className="flex-1 flex flex-col items-center justify-center text-center px-2 py-1 min-w-0">
+      <p className="text-slate-600 dark:text-slate-400 leading-tight uppercase tracking-wider font-semibold truncate w-full" style={{ fontSize: isCompact ? (isLarger ? '11px' : '9px') : '11px' }}>{label}</p>
+      <p className="font-black text-slate-900 dark:text-white leading-none mt-1" style={{ fontSize: isCompact ? (isLarger ? '28px' : '22px') : '28px' }}>
+        {value}<span className="text-slate-500 dark:text-slate-400 ml-1 font-bold" style={{ fontSize: isCompact ? (isLarger ? '14px' : '10px') : '14px' }}>{unit}</span>
+      </p>
+      {sub && <p className="leading-tight font-bold mt-1 truncate w-full" style={{ color: BYD_RED, fontSize: isCompact ? (isLarger ? '11px' : '9px') : '11px' }}>{sub}</p>}
+    </div>
   </div>
 ));
 
 const ChartCard = React.memo(({ title, children, className = "", isCompact }) => (
-  <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 ${className} ${isCompact ? 'p-2 sm:p-3' : 'p-4 sm:p-6'}`}>
-    {title && <h3 className={`font-semibold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm mb-1.5 sm:mb-2' : 'text-base sm:text-lg mb-3 sm:mb-4'}`}>{title}</h3>}
+  <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 ${className} ${isCompact ? 'p-2' : 'p-4 sm:p-6'}`}>
+    {title && <h3 className={`font-semibold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm mb-1.5' : 'text-base sm:text-lg mb-3 sm:mb-4'}`}>{title}</h3>}
     {children}
   </div>
 ));
@@ -272,6 +279,7 @@ export default function BYDStatsAnalyzer() {
   const [layoutMode, setLayoutMode] = useState('vertical');
   // Compact mode for 1280x720 optimization
   const [isCompact, setIsCompact] = useState(false);
+  const isLargerCard = isCompact && layoutMode === 'horizontal';
 
   // Settings state
   const [settings, setSettings] = useState(() => {
@@ -415,7 +423,10 @@ export default function BYDStatsAnalyzer() {
 
     // Update status bar for native apps
     if (isNative && window.StatusBar) {
-      window.StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' })
+      // Inverting to match user feedback: 
+      // isDark (App) -> White/Light Icons
+      // !isDark (App) -> Dark/Black Icons
+      window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
         .catch(e => console.error('StatusBar error:', e));
     }
 
@@ -447,7 +458,7 @@ export default function BYDStatsAnalyzer() {
           if (w >= 1024 && h <= 600 && document.documentElement.requestFullscreen) {
             // Use a small timeout to allow rendering to settle
             setTimeout(() => {
-              document.documentElement.requestFullscreen().catch((e) => {
+              document.documentElement.requestFullscreen().catch(() => {
                 // Ignore errors, user gesture might be required
                 console.log("Auto-fullscreen blocked, waiting for user interaction");
               });
@@ -564,7 +575,9 @@ export default function BYDStatsAnalyzer() {
     return filtered.length > 0 ? processData(filtered) : null;
   }, [filtered]);
 
-  // Memoize efficiency range calculation for scoring
+  // Efficiency range calculation for scoring (not used directly but kept for logic reference if needed, but ESLint says it is unused)
+  // Removing it to satisfy ESLint
+  /*
   const efficiencyRange = useMemo(() => {
     const validTrips = filtered.filter(t => t.trip >= 1 && t.electricity !== 0);
     if (validTrips.length === 0) return { min: 0, max: 0, validTrips: [] };
@@ -575,6 +588,7 @@ export default function BYDStatsAnalyzer() {
       validTrips
     };
   }, [filtered]);
+  */
 
   const processDB = useCallback(async (file, merge = false) => {
     if (!window.SQL) {
@@ -769,18 +783,40 @@ export default function BYDStatsAnalyzer() {
     }
   }, []);
 
-  const tabs = [
+
+
+  const tabs = useMemo(() => [
     { id: 'overview', label: 'Resumen', icon: Activity },
     { id: 'trends', label: 'Tendencias', icon: TrendingUp },
     { id: 'patterns', label: 'Patrones', icon: Clock },
     { id: 'efficiency', label: 'Eficiencia', icon: Zap },
     { id: 'records', label: 'Récords', icon: BarChart3 },
     { id: 'history', label: 'Histórico', icon: List }
-  ];
+  ], []);
 
-  // Swipe gesture - completely rewritten with refs
   const minSwipeDistance = 30; // Distancia mínima en píxeles
   const transitionDuration = 500;
+
+  const handleTabClick = useCallback((tabId) => {
+    if (tabId === activeTab) return;
+
+    // Only use transitions in vertical layout mode
+    if (layoutMode === 'vertical') {
+      if (isTransitioning) return;
+      setIsTransitioning(true);
+      setActiveTab(tabId);
+      setTimeout(() => {
+        setIsTransitioning(false);
+      }, transitionDuration);
+    } else {
+      // In horizontal mode, just switch tabs immediately
+      setActiveTab(tabId);
+    }
+  }, [activeTab, layoutMode, isTransitioning, transitionDuration]);
+
+
+  // Swipe gesture - completely rewritten with refs
+
 
   // Swipe detection using native event listeners for better performance
   // Only enabled in vertical layout mode
@@ -821,7 +857,7 @@ export default function BYDStatsAnalyzer() {
 
       const touch = e.changedTouches[0];
       const diffX = touch.clientX - touchStartRef.current;
-      const diffY = Math.abs(touch.clientY - touchStartYRef.current);
+      // Removed unused diffY
 
       // Solo procesar si fue swipe horizontal
       if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
@@ -852,29 +888,17 @@ export default function BYDStatsAnalyzer() {
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isTransitioning, activeTab, tabs, layoutMode]);
+  }, [isTransitioning, activeTab, tabs, layoutMode, handleTabClick]);
 
-  const handleTabClick = (tabId) => {
-    if (tabId === activeTab) return;
+  // Scroll to top Effect - Reset all containers when activeTab changes
+  useEffect(() => {
+    const containers = document.querySelectorAll('.tab-content-container');
+    containers.forEach(container => {
+      container.scrollTop = 0;
+    });
+  }, [activeTab]);
 
-    // Only use transitions in vertical layout mode
-    if (layoutMode === 'vertical') {
-      if (isTransitioning) return;
-      setIsTransitioning(true);
-      setActiveTab(tabId);
 
-      // Scroll to top al cambiar de tab
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, transitionDuration);
-    } else {
-      // In horizontal mode, just switch tabs immediately
-      setActiveTab(tabId);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  };
 
 
 
@@ -920,7 +944,7 @@ export default function BYDStatsAnalyzer() {
     return (
       <div
         onClick={() => onClick(trip)}
-        className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${isCompact ? 'p-1.5 sm:p-2' : 'p-3 sm:p-4'}`}
+        className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${isCompact ? 'p-2' : 'p-3 sm:p-4'}`}
       >
         <div className={`text-center ${isCompact ? 'mb-1' : 'mb-3'}`}>
           <p className={`text-slate-900 dark:text-white font-semibold ${isCompact ? 'text-xs' : 'text-sm sm:text-base'}`}>
@@ -1935,7 +1959,7 @@ export default function BYDStatsAnalyzer() {
         )}
 
         {/* Content container */}
-        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto' : 'max-w-7xl mx-auto h-full'}>
+        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto tab-content-container' : 'max-w-7xl mx-auto h-full'}>
           {layoutMode === 'vertical' ? (
             // Vertical layout: sliding tabs with transitions
             <div
@@ -1967,23 +1991,23 @@ export default function BYDStatsAnalyzer() {
               ) : (
                 <>
                   {/* Slide 1: Overview */}
-                  <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-2' : ''}`}>
-                        <StatCard isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
-                        <StatCard isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
-                        <StatCard isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
+                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
                       </div>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-2' : ''}`}>
-                        <StatCard isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
-                        <StatCard isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
-                        <StatCard isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
-                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-2' : ''}`}>
+                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 160 : 240}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2000,22 +2024,22 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
-                          <div className={`flex items-center ${isCompact ? 'flex-row w-full' : 'flex-col'}`}>
-                            <div className={`${isCompact ? 'w-[40%]' : 'w-full'}`}>
-                              <ResponsiveContainer width="100%" height={isCompact ? 140 : 200}>
+                          <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
+                            <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 250}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={isCompact ? 30 : 55}
-                                    outerRadius={isCompact ? 50 : 85}
+                                    innerRadius={isCompact ? 45 : 55}
+                                    outerRadius={isCompact ? 75 : 85}
                                     paddingAngle={2}
                                     dataKey="count"
                                     label={isCompact ? null : ({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                                     labelLine={false}
                                     isAnimationActive={false}
-                                    activeShape={{ outerRadius: isCompact ? 60 : 95, stroke: '#fff', strokeWidth: 2 }}
+                                    activeShape={{ outerRadius: isCompact ? 85 : 95, stroke: '#fff', strokeWidth: 2 }}
                                   >
                                     {tripDist.map((e, i) => (
                                       <Cell key={`cell-${i}`} fill={e.color} />
@@ -2045,14 +2069,14 @@ export default function BYDStatsAnalyzer() {
                                 </PieChart>
                               </ResponsiveContainer>
                             </div>
-                            <div className={`${isCompact ? 'w-[60%] grid grid-cols-2 gap-x-2 gap-y-1 pl-2' : 'grid grid-cols-5 gap-2 w-full mt-4 text-center'}`}>
+                            <div className={`grid ${isCompact ? 'grid-cols-1 w-full gap-1' : 'md:grid-cols-1 md:w-1/2 grid-cols-5 w-full gap-2 mt-4'} text-center`}>
                               {tripDist.map((d, i) => (
-                                <div key={i} className={`flex ${isCompact ? 'flex-row items-center gap-1.5' : 'flex-col items-center'}`}>
-                                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
-                                  <div className="min-w-0">
-                                    <p className={`text-slate-600 dark:text-slate-400 truncate ${isCompact ? 'text-[9px]' : 'text-[9px] sm:text-[10px]'}`}>{d.range}km</p>
-                                    <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xs leading-3' : 'text-xs sm:text-sm'}`}>{d.count}</p>
+                                <div key={i} className={`flex ${isCompact ? 'flex-row items-center justify-between px-4 py-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg' : 'flex-col items-center'}`}>
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
+                                    <p className={`text-slate-600 dark:text-slate-400 truncate ${isCompact ? 'text-[11px]' : 'text-[9px] sm:text-[10px]'}`}>{d.range}km</p>
                                   </div>
+                                  <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-xs sm:text-sm'}`}>{d.count}</p>
                                 </div>
                               ))}
                             </div>
@@ -2064,95 +2088,133 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 2: Trends */}
-                  <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className={`${isCompact ? 'space-y-1' : 'space-y-3 sm:space-y-4'}`}>
-                      <div className={`${isCompact ? 'grid grid-cols-2 gap-2' : 'space-y-3 sm:space-y-4'}`}>
-                        <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 280}>
-                            <BarChart data={monthly}>
-                              <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
-                              <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
-                              <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={10} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Legend wrapperStyle={{ fontSize: '10px' }} />
-                              <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
-                              <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                        <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 260}>
-                            <AreaChart data={daily.slice(-60)}>
-                              <defs>
-                                <linearGradient id="dayGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
-                                  <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={9} angle={-45} textAnchor="end" height={40} />
-                              <YAxis stroke="#64748b" fontSize={10} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
-                            </AreaChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                      </div>
-                      <GitHubFooter />
-                    </div>
+                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    {activeTab === 'trends' && (() => {
+                      const tripData = filtered || [];
+                      const avgKmPerTrip = parseFloat(summary?.avgKm) || 0;
+                      const longTripThreshold = avgKmPerTrip * 2;
+                      const longTrips = tripData.filter(t => (t.trip || 0) >= longTripThreshold);
+                      const daysPerLongTrip = longTrips.length > 0 && summary?.totalDays ? Math.round(summary.totalDays / longTrips.length) : 0;
+                      const efficiencies = tripData
+                        .map(t => t.trip && t.trip > 0 && t.electricity != null ? (t.electricity / t.trip) * 100 : 0)
+                        .filter(e => e > 0)
+                        .sort((a, b) => a - b);
+                      const medianEfficiency = efficiencies.length > 0 ? efficiencies[Math.floor(efficiencies.length / 2)] : 0;
+                      const dailyKwh = summary?.totalDays > 0 ? (parseFloat(summary.totalKwh) / summary.totalDays) : 0;
+                      const electricityPrice = settings?.electricityPrice || 0.15;
+                      const monthlyData = monthly || [];
+                      const avgMonthlyKwh = monthlyData.length > 0 ? monthlyData.reduce((sum, m) => sum + (m.kwh || 0), 0) / monthlyData.length : 0;
+                      const monthlyCost = avgMonthlyKwh * electricityPrice;
+
+                      return (
+                        <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+                          <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Viaje largo cada" value={daysPerLongTrip} unit="días" color="bg-purple-500/20 text-purple-400" />
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia mediana" value={medianEfficiency.toFixed(2)} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Carga diaria" value={dailyKwh.toFixed(2)} unit="kWh/día" color="bg-cyan-500/20 text-cyan-400" />
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
+                          </div>
+                          <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                            <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 280}>
+                                <BarChart data={monthly}>
+                                  <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
+                                  <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
+                                  <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={10} />
+                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                                  <Legend wrapperStyle={{ fontSize: '10px' }} />
+                                  <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
+                                  <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </ChartCard>
+                            <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 260}>
+                                <AreaChart data={daily.slice(-60)}>
+                                  <defs>
+                                    <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
+                                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
+                                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
+                                    </linearGradient>
+                                  </defs>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                                  <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={9} angle={-45} textAnchor="end" height={40} />
+                                  <YAxis stroke="#64748b" fontSize={10} />
+                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                                  <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
+                                </AreaChart>
+                              </ResponsiveContainer>
+                            </ChartCard>
+                          </div>
+                          <GitHubFooter />
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Slide 3: Patterns */}
-                  <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className="space-y-4 sm:space-y-6">
-                      <div className="grid md:grid-cols-2 gap-4 sm:gap-6">
-                        <ChartCard isCompact={isCompact} title="Por Hora">
-                          <ResponsiveContainer width="100%" height={260}>
-                            <BarChart data={hourly}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
-                              <YAxis stroke="#64748b" fontSize={11} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                        <ChartCard isCompact={isCompact} title="Por Día">
-                          <ResponsiveContainer width="100%" height={260}>
-                            <RadarChart data={weekday}>
-                              <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
-                              <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
-                              <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
-                              <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            </RadarChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                      </div>
-                      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                        {weekday.map((d, i) => (
-                          <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
-                            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
-                            <p className="text-base sm:text-xl font-bold text-slate-900 dark:text-white">{d.trips}</p>
-                            <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
+                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    {(() => {
+                      const topDay = weekday.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
+                      const topHour = hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
+                      return (
+                        <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+                          <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Día frecuente" value={dayNamesFull[topDay.day] || topDay.day} unit="" color="bg-amber-500/20 text-amber-400" />
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Hora pico" value={`${topHour.hour.toString().padStart(2, '0')}:00h`} unit="" color="bg-purple-500/20 text-purple-400" />
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Km totales" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" />
+                            <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
                           </div>
-                        ))}
-                      </div>
-                      <GitHubFooter />
-                    </div>
+                          <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                            <ChartCard isCompact={isCompact} title="Por Hora">
+                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
+                                <BarChart data={hourly}>
+                                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                                  <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
+                                  <YAxis stroke="#64748b" fontSize={11} />
+                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                                  <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
+                                </BarChart>
+                              </ResponsiveContainer>
+                            </ChartCard>
+                            <ChartCard isCompact={isCompact} title="Por Día">
+                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
+                                <RadarChart data={weekday}>
+                                  <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
+                                  <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
+                                  <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
+                                  <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
+                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                                </RadarChart>
+                              </ResponsiveContainer>
+                            </ChartCard>
+                          </div>
+                          <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                            {weekday.map((d, i) => (
+                              <div key={i} className={`bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl text-center border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-1.5' : 'p-2 sm:p-3'}`}>
+                                <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
+                                <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{d.trips}</p>
+                                <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <GitHubFooter />
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   {/* Slide 4: Efficiency */}
-                  <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-2' : ''}`}>
-                      <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-2' : 'grid-cols-2'}`}>
-                        <StatCard isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
-                        <StatCard isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
+                      <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
                       <ChartCard isCompact={isCompact} title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={isCompact ? 260 : 320}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
                           <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                             <XAxis
@@ -2202,50 +2264,44 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 5: Records */}
-                  <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? '!space-y-1' : ''}`}>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-1.5' : ''}`}>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-red-500/30 ${isCompact ? 'p-1.5' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>🏆 Más largo</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-xl sm:text-3xl'}`}>{summary.maxKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>km</span></p>
-                        </div>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-cyan-500/30 ${isCompact ? 'p-1.5' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>⚡ Mayor consumo</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-xl sm:text-3xl'}`}>{summary.maxKwh} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>kWh</span></p>
-                        </div>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-amber-500/30 ${isCompact ? 'p-1.5' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>⏱️ Más duración</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-xl sm:text-3xl'}`}>{summary.maxMin} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>min</span></p>
-                        </div>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-purple-500/30 ${isCompact ? 'p-1.5' : 'p-3 sm:p-5'}`}>
-                          <p className={`text-slate-600 dark:text-slate-400 mb-0.5 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>📍 Más corto</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm' : 'text-xl sm:text-3xl'}`}>{summary.minKm} <span className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-sm sm:text-lg'}`}>km</span></p>
-                        </div>
+                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? COMPACT_SPACE_Y : ''}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Más largo" value={summary.maxKm} unit="km" color="bg-red-500/20 text-red-500" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Mayor consumo" value={summary.maxKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-500" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Más duración" value={summary.maxMin} unit="min" color="bg-amber-500/20 text-amber-500" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
                       </div>
-                      <div className={`grid md:grid-cols-3 gap-4 sm:gap-6 ${isCompact ? '!gap-1.5' : ''}`}>
+                      <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="🥇 Top Distancia">
-                          {top.km.map((t, i) => (
-                            <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-0.5' : 'py-1.5'}`}>
-                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
-                            </div>
-                          ))}
+                          <div className="space-y-1">
+                            {top.km.map((t, i) => (
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
+                              </div>
+                            ))}
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⚡ Top Consumo">
-                          {top.kwh.map((t, i) => (
-                            <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-0.5' : 'py-1.5'}`}>
-                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
-                            </div>
-                          ))}
+                          <div className="space-y-1">
+                            {top.kwh.map((t, i) => (
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
+                              </div>
+                            ))}
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⏱️ Top Duración">
-                          {top.dur.map((t, i) => (
-                            <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-0.5' : 'py-1.5'}`}>
-                              <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] sm:text-[10px]' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                              <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px] sm:text-xs' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
-                            </div>
-                          ))}
+                          <div className="space-y-1">
+                            {top.dur.map((t, i) => (
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
+                              </div>
+                            ))}
+                          </div>
                         </ChartCard>
                       </div>
                       <GitHubFooter />
@@ -2253,8 +2309,8 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 6: History */}
-                  <div style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: '16px 12px 96px 12px' }}>
-                    <div className="space-y-4 sm:space-y-6">
+                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
                       <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
                       <div className="space-y-3">
                         {(() => {
@@ -2271,7 +2327,7 @@ export default function BYDStatsAnalyzer() {
                           const minEff = Math.min(...efficiencies);
                           const maxEff = Math.max(...efficiencies);
 
-                          return allTrips.slice(0, 10).map((trip, i) => (
+                          return allTrips.slice(0, 10).map((trip) => (
                             <TripCard
                               isCompact={isCompact}
                               key={trip.date + '-' + trip.start_timestamp}
@@ -2302,7 +2358,7 @@ export default function BYDStatsAnalyzer() {
             </div>
           ) : (
             // Horizontal layout: show only active tab content
-            <div ref={swipeContainerRef} className="p-4">
+            <div ref={swipeContainerRef} className="tab-content-container" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: activeTab === 'history' ? 'auto' : 'hidden' }}>
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
@@ -2311,23 +2367,23 @@ export default function BYDStatsAnalyzer() {
               ) : (
                 <>
                   {activeTab === 'overview' && (
-                    <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
+                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
 
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-2' : ''}`}>
-                        <StatCard isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
-                        <StatCard isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
-                        <StatCard isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
                       </div>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-2' : ''}`}>
-                        <StatCard isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
-                        <StatCard isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
-                        <StatCard isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? 'gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 180 : 240}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2344,39 +2400,59 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
-                          <div className={`flex items-center ${isCompact ? 'flex-row w-full' : 'flex-col'}`}>
-                            <div className={`${isCompact ? 'w-[40%]' : 'w-full'}`}>
-                              <ResponsiveContainer width="100%" height={isCompact ? 140 : 200}>
+                          <div className="flex flex-row items-center gap-4">
+                            <div className="w-1/2">
+                              <ResponsiveContainer width="100%" height={isCompact ? 180 : 220}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
                                     cx="50%"
                                     cy="50%"
-                                    innerRadius={isCompact ? 30 : 55}
-                                    outerRadius={isCompact ? 50 : 85}
+                                    innerRadius={isCompact ? 45 : 55}
+                                    outerRadius={isCompact ? 75 : 95}
                                     paddingAngle={2}
                                     dataKey="count"
                                     label={isCompact ? null : ({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
                                     labelLine={false}
                                     isAnimationActive={false}
-                                    activeShape={{ outerRadius: isCompact ? 60 : 95, stroke: '#fff', strokeWidth: 2 }}
+                                    activeShape={{ outerRadius: isCompact ? 80 : 105, stroke: '#fff', strokeWidth: 2 }}
                                   >
                                     {tripDist.map((e, i) => (
                                       <Cell key={`cell-${i}`} fill={e.color} />
                                     ))}
                                   </Pie>
-                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                                  <Tooltip
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        const data = payload[0];
+                                        const total = tripDist.reduce((s, d) => s + d.count, 0);
+                                        const percent = ((data.value / total) * 100).toFixed(1);
+                                        return (
+                                          <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl h-fit">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }}></div>
+                                              <p className="text-slate-900 dark:text-white font-bold">{data.payload.range} km</p>
+                                            </div>
+                                            <p className="text-sm text-slate-300">{data.value} viajes ({percent}%)</p>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
+                                    }}
+                                    isAnimationActive={false}
+                                    cursor={false}
+                                  />
                                 </PieChart>
                               </ResponsiveContainer>
                             </div>
-                            <div className={`${isCompact ? 'w-[60%] grid grid-cols-2 gap-x-2 gap-y-1 pl-2' : 'grid grid-cols-5 gap-2 w-full mt-4 text-center'}`}>
+                            <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
                               {tripDist.map((d, i) => (
-                                <div key={i} className={`flex ${isCompact ? 'flex-row items-center gap-1.5' : 'flex-col items-center'}`}>
-                                  <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
-                                  <div className="min-w-0">
-                                    <p className={`text-slate-600 dark:text-slate-400 truncate ${isCompact ? 'text-[9px]' : 'text-[9px] sm:text-[10px]'}`}>{d.range}km</p>
-                                    <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xs leading-3' : 'text-xs sm:text-sm'}`}>{d.count}</p>
+                                <div key={i} className={`flex flex-row items-center justify-between px-2 py-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg`}>
+                                  <div className="flex items-center gap-2 overflow-hidden">
+                                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
+                                    <p className="text-slate-600 dark:text-slate-400 truncate text-[9px]">{d.range}km</p>
                                   </div>
+                                  <p className="font-bold text-slate-900 dark:text-white text-[11px]">{d.count}</p>
                                 </div>
                               ))}
                             </div>
@@ -2388,13 +2464,14 @@ export default function BYDStatsAnalyzer() {
                   )}
                   {activeTab === 'trends' && (() => {
                     // Calculate insights
-                    const avgKmPerTrip = parseFloat(summary.avgKm) || 0;
+                    const tripData = filtered || [];
+                    const avgKmPerTrip = parseFloat(summary?.avgKm) || 0;
                     const longTripThreshold = avgKmPerTrip * 2;
-                    const longTrips = filtered.filter(t => (t.trip || 0) >= longTripThreshold);
-                    const daysPerLongTrip = longTrips.length > 0 ? Math.round(summary.totalDays / longTrips.length) : 0;
+                    const longTrips = tripData.filter(t => (t.trip || 0) >= longTripThreshold);
+                    const daysPerLongTrip = longTrips.length > 0 && summary?.totalDays ? Math.round(summary.totalDays / longTrips.length) : 0;
 
                     // Median efficiency
-                    const efficiencies = filtered
+                    const efficiencies = tripData
                       .map(t => t.trip && t.trip > 0 && t.electricity != null ? (t.electricity / t.trip) * 100 : 0)
                       .filter(e => e > 0)
                       .sort((a, b) => a - b);
@@ -2403,26 +2480,27 @@ export default function BYDStatsAnalyzer() {
                       : 0;
 
                     // Daily kWh average
-                    const dailyKwh = summary.totalDays > 0 ? (parseFloat(summary.totalKwh) / summary.totalDays) : 0;
+                    const dailyKwh = summary?.totalDays > 0 ? (parseFloat(summary.totalKwh) / summary.totalDays) : 0;
 
-                    // Monthly cost (default 0.15 €/kWh)
-                    const electricityPrice = 0.15;
-                    const avgMonthlyKwh = monthly.length > 0
-                      ? monthly.reduce((sum, m) => sum + (m.kwh || 0), 0) / monthly.length
+                    // Monthly cost
+                    const electricityPrice = settings?.electricityPrice || 0.15;
+                    const monthlyData = monthly || [];
+                    const avgMonthlyKwh = monthlyData.length > 0
+                      ? monthlyData.reduce((sum, m) => sum + (m.kwh || 0), 0) / monthlyData.length
                       : 0;
                     const monthlyCost = avgMonthlyKwh * electricityPrice;
 
                     return (
-                      <div className={`${isCompact ? 'space-y-1' : 'space-y-4 sm:space-y-6'}`}>
-                        <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-2' : 'grid-cols-2 md:grid-cols-4'}`}>
-                          <StatCard isCompact={isCompact} icon={Navigation} label="Viaje largo cada" value={daysPerLongTrip} unit="días" color="bg-purple-500/20 text-purple-400" />
-                          <StatCard isCompact={isCompact} icon={Battery} label="Eficiencia mediana" value={medianEfficiency.toFixed(2)} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                          <StatCard isCompact={isCompact} icon={Zap} label="Carga diaria" value={dailyKwh.toFixed(2)} unit="kWh/día" color="bg-cyan-500/20 text-cyan-400" />
-                          <StatCard isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
+                      <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+                        <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Viaje largo cada" value={daysPerLongTrip} unit="días" color="bg-purple-500/20 text-purple-400" />
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia mediana" value={medianEfficiency.toFixed(2)} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Carga diaria" value={dailyKwh.toFixed(2)} unit="kWh/día" color="bg-cyan-500/20 text-cyan-400" />
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
                         </div>
-                        <div className={`${isCompact ? 'grid grid-cols-2 gap-2' : 'space-y-4 sm:space-y-6'}`}>
+                        <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                           <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                            <ResponsiveContainer width="100%" height={isCompact ? 220 : 280}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 280}>
                               <BarChart data={monthly}>
                                 <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                                 <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
@@ -2435,7 +2513,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                            <ResponsiveContainer width="100%" height={isCompact ? 220 : 260}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 260}>
                               <AreaChart data={daily.slice(-60)}>
                                 <defs>
                                   <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
@@ -2456,54 +2534,64 @@ export default function BYDStatsAnalyzer() {
                       </div>
                     );
                   })()}
-                  {activeTab === 'patterns' && (
-                    <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
-                      <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                        {weekday.map((d, i) => (
-                          <div key={i} className="bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl p-2 sm:p-3 text-center border border-slate-200 dark:border-slate-700/50">
-                            <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
-                            <p className="text-base sm:text-xl font-bold text-slate-900 dark:text-white">{d.trips}</p>
-                            <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
-                          </div>
-                        ))}
+                  {activeTab === 'patterns' && (() => {
+                    const topDay = weekday.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
+                    const topHour = hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
+                    return (
+                      <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+                        <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Día frecuente" value={dayNamesFull[topDay.day] || topDay.day} unit="" color="bg-amber-500/20 text-amber-400" />
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Hora pico" value={`${topHour.hour.toString().padStart(2, '0')}:00h`} unit="" color="bg-purple-500/20 text-purple-400" />
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Km totales" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" />
+                          <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
+                        </div>
+                        <div className={`grid md:grid-cols-2 gap-4 ${isCompact ? 'gap-3' : 'sm:gap-6'}`}>
+                          <ChartCard isCompact={isCompact} title="Por Hora">
+                            <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
+                              <BarChart data={hourly}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                                <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
+                                <YAxis stroke="#64748b" fontSize={11} />
+                                <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                                <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
+                              </BarChart>
+                            </ResponsiveContainer>
+                          </ChartCard>
+                          <ChartCard isCompact={isCompact} title="Por Día">
+                            <ResponsiveContainer width="100%" height={isCompact ? 240 : 300}>
+                              <RadarChart data={weekday}>
+                                <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
+                                <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
+                                <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
+                                <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
+                                <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              </RadarChart>
+                            </ResponsiveContainer>
+                          </ChartCard>
+                        </div>
+                        <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+                          {weekday.map((d, i) => (
+                            <div key={i} className={`bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl text-center border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-1.5' : 'p-2 sm:p-3'}`}>
+                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
+                              <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{d.trips}</p>
+                              <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)}</p>
+                            </div>
+                          ))}
+                        </div>
+                        <GitHubFooter />
                       </div>
-                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? 'gap-3' : ''}`}>
-                        <ChartCard isCompact={isCompact} title="Por Hora">
-                          <ResponsiveContainer width="100%" height={isCompact ? 180 : 260}>
-                            <BarChart data={hourly}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
-                              <YAxis stroke="#64748b" fontSize={11} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
-                            </BarChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                        <ChartCard isCompact={isCompact} title="Por Día">
-                          <ResponsiveContainer width="100%" height={isCompact ? 180 : 260}>
-                            <RadarChart data={weekday}>
-                              <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
-                              <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
-                              <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
-                              <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            </RadarChart>
-                          </ResponsiveContainer>
-                        </ChartCard>
-                      </div>
-                      <GitHubFooter />
-                    </div>
-                  )}
+                    );
+                  })()}
                   {activeTab === 'efficiency' && (
-                    <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
-                      <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-2' : 'grid-cols-2'}`}>
-                        <StatCard isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
-                        <StatCard isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                    <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+                      <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
                       <ChartCard isCompact={isCompact} title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={isCompact ? 260 : 320}>
+                        <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
                           <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                             <XAxis
@@ -2536,59 +2624,51 @@ export default function BYDStatsAnalyzer() {
                     </div>
                   )}
                   {activeTab === 'records' && (
-                    <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-2' : ''}`}>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-red-500/30 ${isCompact ? 'p-2 sm:p-3' : 'p-3 sm:p-5'}`}>
-                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">🏆 Más largo</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-l2xl' : 'text-xl sm:text-3xl'}`}>{summary.maxKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
-                        </div>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-cyan-500/30 ${isCompact ? 'p-2 sm:p-3' : 'p-3 sm:p-5'}`}>
-                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">⚡ Mayor consumo</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-2xl' : 'text-xl sm:text-3xl'}`}>{summary.maxKwh} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">kWh</span></p>
-                        </div>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-amber-500/30 ${isCompact ? 'p-2 sm:p-3' : 'p-3 sm:p-5'}`}>
-                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">⏱️ Más duración</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-2xl' : 'text-xl sm:text-3xl'}`}>{summary.maxMin} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">min</span></p>
-                        </div>
-                        <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-purple-500/30 ${isCompact ? 'p-2 sm:p-3' : 'p-3 sm:p-5'}`}>
-                          <p className="text-xs sm:text-sm mb-1 text-slate-600 dark:text-slate-400">📍 Más corto</p>
-                          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-2xl' : 'text-xl sm:text-3xl'}`}>{summary.minKm} <span className="text-sm sm:text-lg text-slate-500 dark:text-slate-400">km</span></p>
-                        </div>
+                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Más largo" value={summary.maxKm} unit="km" color="bg-red-500/20 text-red-500" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Mayor consumo" value={summary.maxKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-500" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Más duración" value={summary.maxMin} unit="min" color="bg-amber-500/20 text-amber-500" />
+                        <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
                       </div>
-                      <div className={`grid md:grid-cols-3 gap-4 sm:gap-6 ${isCompact ? 'gap-3' : ''}`}>
+                      <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="🥇 Top Distancia">
-                          {top.km.map((t, i) => (
-                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.trip?.toFixed(1)} km</span>
-                            </div>
-                          ))}
+                          <div className="space-y-1">
+                            {top.km.map((t, i) => (
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
+                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
+                              </div>
+                            ))}
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⚡ Top Consumo">
-                          {top.kwh.map((t, i) => (
-                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{t.electricity?.toFixed(1)} kWh</span>
-                            </div>
-                          ))}
+                          <div className="space-y-1">
+                            {top.kwh.map((t, i) => (
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
+                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
+                              </div>
+                            ))}
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⏱️ Top Duración">
-                          {top.dur.map((t, i) => (
-                            <div key={i} className="flex justify-between py-2 border-b border-slate-200 dark:border-slate-700/50 last:border-0">
-                              <span className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">{i + 1}. {formatDate(t.date)}</span>
-                              <span className="font-medium text-sm sm:text-base text-slate-900 dark:text-white">{((t.duration || 0) / 60).toFixed(0)} min</span>
-                            </div>
-                          ))}
+                          <div className="space-y-1">
+                            {top.dur.map((t, i) => (
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
+                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
+                              </div>
+                            ))}
+                          </div>
                         </ChartCard>
                       </div>
                       <GitHubFooter />
                     </div>
                   )}
                   {activeTab === 'history' && (
-                    <div className={`space-y-4 sm:space-y-6 ${isCompact ? 'space-y-3' : ''}`}>
-                      {/* Grid de 8 columnas en horizontal mode */}
+                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
                       <div className={`grid lg:grid-cols-8 gap-6 ${isCompact ? 'gap-4' : ''}`}>
-                        {/* Columnas 1-6: Lista de viajes en 2 columnas (75%) */}
                         <div className={`lg:col-span-6 space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
                           <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>Últimos 10 viajes</h2>
                           {(() => {
@@ -2598,7 +2678,6 @@ export default function BYDStatsAnalyzer() {
                               return (b.start_timestamp || 0) - (a.start_timestamp || 0);
                             });
 
-                            // Filter trips >= 1km for scoring calculation
                             const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
                             const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
                             const minEff = Math.min(...efficiencies);
@@ -2610,8 +2689,7 @@ export default function BYDStatsAnalyzer() {
 
                             return (
                               <div className={`grid lg:grid-cols-2 gap-4 ${isCompact ? 'gap-3' : ''}`}>
-                                {/* Primera columna de viajes */}
-                                <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
+                                <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
                                   {firstColumn.map((trip, i) => (
                                     <TripCard
                                       key={i}
@@ -2626,11 +2704,10 @@ export default function BYDStatsAnalyzer() {
                                     />
                                   ))}
                                 </div>
-                                {/* Segunda columna de viajes */}
-                                <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
-                                  {secondColumn.map((trip, i) => (
+                                <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
+                                  {secondColumn.map((trip, j) => (
                                     <TripCard
-                                      key={i + 5}
+                                      key={j + 5}
                                       trip={trip}
                                       minEff={minEff}
                                       maxEff={maxEff}
@@ -2654,7 +2731,6 @@ export default function BYDStatsAnalyzer() {
                           </button>
                         </div>
 
-                        {/* Columnas 7-8: Estadísticas promedio (25%) */}
                         <div className={`lg:col-span-2 space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
                           <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>Promedio últimos 10 viajes</h2>
                           {(() => {
@@ -2665,23 +2741,19 @@ export default function BYDStatsAnalyzer() {
                             });
                             const last10 = allTrips.slice(0, 10);
 
-                            // Calcular promedios
-                            const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length;
-                            const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length;
+                            const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length || 0;
+                            const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length || 0;
                             const avgEfficiency = last10.reduce((sum, t) => {
                               if (t.trip > 0 && t.electricity !== undefined) {
                                 return sum + ((t.electricity / t.trip) * 100);
                               }
                               return sum;
-                            }, 0) / last10.length;
-                            const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length;
-                            const avgSpeed = last10.reduce((sum, t) => {
-                              const duration = (t.duration || 0) / 3600;
-                              if (duration > 0 && t.trip > 0) {
-                                return sum + (t.trip / duration);
-                              }
-                              return sum;
-                            }, 0) / last10.filter(t => t.duration > 0 && t.trip > 0).length;
+                            }, 0) / last10.length || 0;
+                            const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length || 0;
+                            const avgSpeedFiltered = last10.filter(t => t.duration > 0 && t.trip > 0);
+                            const avgSpeed = avgSpeedFiltered.length > 0
+                              ? avgSpeedFiltered.reduce((sum, t) => sum + (t.trip / ((t.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
+                              : 0;
 
                             return (
                               <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
@@ -2765,175 +2837,170 @@ export default function BYDStatsAnalyzer() {
                 </>
               )}
             </div>
-          )
-          }
-        </div >
-      </div >
+          )}
 
-      {/* Floating Filter Button */}
-      < button
-        onClick={() => setShowFilterModal(true)}
-        className={`fixed right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
-        style={{
-          backgroundColor: BYD_RED,
-          bottom: layoutMode === 'vertical'
-            ? 'calc(5rem + env(safe-area-inset-bottom, 0px))'
-            : 'calc(1rem + env(safe-area-inset-bottom, 0px))'
-        }}
-      >
-        <Filter className="w-6 h-6 text-white" />
-      </button >
+          {/* Floating Filter Button */}
+          <button
+            onClick={() => setShowFilterModal(true)}
+            className={`fixed right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
+            style={{
+              backgroundColor: BYD_RED,
+              bottom: layoutMode === 'vertical'
+                ? 'calc(5rem + env(safe-area-inset-bottom, 0px))'
+                : 'calc(1rem + env(safe-area-inset-bottom, 0px))'
+            }}
+          >
+            <Filter className="w-6 h-6 text-white" />
+          </button>
 
-      {/* Filter Modal */}
-      {
-        showFilterModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowFilterModal(false)}>
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-            <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
-                </div>
-                <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                  <Plus className="w-6 h-6 rotate-45" />
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                {/* Filter Type Buttons */}
-                <div className="space-y-2">
-                  <label className="text-slate-600 dark:text-slate-400 text-sm">Tipo de filtro:</label>
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
-                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'all'
-                        ? 'text-white'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                        }`}
-                      style={{
-                        backgroundColor: filterType === 'all' ? BYD_RED : ''
-                      }}
-                    >
-                      📊 Todos los viajes ({rawTrips.length})
-                    </button>
-                    <button
-                      onClick={() => setFilterType('month')}
-                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'month'
-                        ? 'text-white'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                        }`}
-                      style={{
-                        backgroundColor: filterType === 'month' ? BYD_RED : ''
-                      }}
-                    >
-                      📅 Por mes
-                    </button>
-                    <button
-                      onClick={() => setFilterType('range')}
-                      className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'range'
-                        ? 'text-white'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                        }`}
-                      style={{
-                        backgroundColor: filterType === 'range' ? BYD_RED : ''
-                      }}
-                    >
-                      📆 Rango de fechas
-                    </button>
+          {/* Filter Modal */}
+          {showFilterModal && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowFilterModal(false)}>
+              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-2">
+                    <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
                   </div>
+                  <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                    <Plus className="w-6 h-6 rotate-45" />
+                  </button>
                 </div>
 
-                {/* Month Selector */}
-                {filterType === 'month' && (
+                <div className="space-y-4">
+                  {/* Filter Type Buttons */}
                   <div className="space-y-2">
-                    <label className="text-slate-600 dark:text-slate-400 text-sm">Seleccionar mes:</label>
-                    <select
-                      value={selMonth}
-                      onChange={(e) => setSelMonth(e.target.value)}
-                      className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                    >
-                      <option value="">Todos los meses</option>
-                      {months.map((m) => (
-                        <option key={m} value={m}>{formatMonth(m)}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                {/* Date Range Selector */}
-                {filterType === 'range' && (
-                  <div className="space-y-2">
-                    <label className="text-slate-600 dark:text-slate-400 text-sm">Rango de fechas:</label>
+                    <label className="text-slate-600 dark:text-slate-400 text-sm">Tipo de filtro:</label>
                     <div className="flex flex-col gap-2">
-                      <input
-                        type="date"
-                        value={dateFrom}
-                        onChange={(e) => setDateFrom(e.target.value)}
-                        className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                        placeholder="Desde"
-                      />
-                      <input
-                        type="date"
-                        value={dateTo}
-                        onChange={(e) => setDateTo(e.target.value)}
-                        className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                        placeholder="Hasta"
-                      />
+                      <button
+                        onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
+                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'all'
+                          ? 'text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                          }`}
+                        style={{
+                          backgroundColor: filterType === 'all' ? BYD_RED : ''
+                        }}
+                      >
+                        📊 Todos los viajes ({rawTrips.length})
+                      </button>
+                      <button
+                        onClick={() => setFilterType('month')}
+                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'month'
+                          ? 'text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                          }`}
+                        style={{
+                          backgroundColor: filterType === 'month' ? BYD_RED : ''
+                        }}
+                      >
+                        📅 Por mes
+                      </button>
+                      <button
+                        onClick={() => setFilterType('range')}
+                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'range'
+                          ? 'text-white'
+                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                          }`}
+                        style={{
+                          backgroundColor: filterType === 'range' ? BYD_RED : ''
+                        }}
+                      >
+                        📆 Rango de fechas
+                      </button>
                     </div>
                   </div>
-                )}
 
-                {/* Results Count */}
-                {filtered.length !== rawTrips.length && (
-                  <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                    <p className="text-center text-sm">
-                      <span className="text-slate-400">Mostrando </span>
-                      <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
-                      <span className="text-slate-400"> de {rawTrips.length} viajes</span>
-                    </p>
-                  </div>
-                )}
+                  {/* Month Selector */}
+                  {filterType === 'month' && (
+                    <div className="space-y-2">
+                      <label className="text-slate-600 dark:text-slate-400 text-sm">Seleccionar mes:</label>
+                      <select
+                        value={selMonth}
+                        onChange={(e) => setSelMonth(e.target.value)}
+                        className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
+                      >
+                        <option value="">Todos los meses</option>
+                        {months.map((m) => (
+                          <option key={m} value={m}>{formatMonth(m)}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  {/* Date Range Selector */}
+                  {filterType === 'range' && (
+                    <div className="space-y-2">
+                      <label className="text-slate-600 dark:text-slate-400 text-sm">Rango de fechas:</label>
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="date"
+                          value={dateFrom}
+                          onChange={(e) => setDateFrom(e.target.value)}
+                          className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
+                          placeholder="Desde"
+                        />
+                        <input
+                          type="date"
+                          value={dateTo}
+                          onChange={(e) => setDateTo(e.target.value)}
+                          className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
+                          placeholder="Hasta"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Results Count */}
+                  {filtered.length !== rawTrips.length && (
+                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                      <p className="text-center text-sm">
+                        <span className="text-slate-400">Mostrando </span>
+                        <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
+                        <span className="text-slate-400"> de {rawTrips.length} viajes</span>
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Apply Button */}
+                <button
+                  onClick={() => setShowFilterModal(false)}
+                  className="w-full mt-6 py-3 rounded-xl font-medium text-white"
+                  style={{ backgroundColor: BYD_RED }}
+                >
+                  Aplicar filtro
+                </button>
               </div>
-
-              {/* Apply Button */}
-              <button
-                onClick={() => setShowFilterModal(false)}
-                className="w-full mt-6 py-3 rounded-xl font-medium text-white"
-                style={{ backgroundColor: BYD_RED }}
-              >
-                Aplicar filtro
-              </button>
             </div>
-          </div>
-        )
-      }
+          )}
 
-      {/* Bottom Navigation Bar - Only show in vertical mode */}
-      {
-        layoutMode === 'vertical' && (
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-            <div className="max-w-7xl mx-auto px-2 py-2">
-              <div className="flex justify-around items-center">
-                {tabs.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => handleTabClick(t.id)}
-                    className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
-                    style={{
-                      backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
-                      color: activeTab === t.id ? BYD_RED : ''
-                    }}
-                  >
-                    <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
-                    <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
-                  </button>
-                ))}
+          {/* Bottom Navigation Bar - Only show in vertical mode */}
+          {layoutMode === 'vertical' && (
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+              <div className="max-w-7xl mx-auto px-2 py-2">
+                <div className="flex justify-around items-center">
+                  {tabs.map((t) => (
+                    <button
+                      key={t.id}
+                      onClick={() => handleTabClick(t.id)}
+                      className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
+                      style={{
+                        backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
+                        color: activeTab === t.id ? BYD_RED : ''
+                      }}
+                    >
+                      <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
+                      <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )
-      }
+          )}
+        </div>
+      </div >
     </div >
   );
 }
