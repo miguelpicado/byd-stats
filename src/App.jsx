@@ -2094,7 +2094,7 @@ export default function BYDStatsAnalyzer() {
                     {activeTab === 'trends' && (() => {
                       const tripData = filtered || [];
                       const avgKmPerTrip = parseFloat(summary?.avgKm) || 0;
-                      const longTripThreshold = avgKmPerTrip * 2;
+                      const longTripThreshold = avgKmPerTrip * 3;
                       const longTrips = tripData.filter(t => (t.trip || 0) >= longTripThreshold);
                       const totalDays = summary?.totalDays || summary?.daysActive || 1;
                       const daysPerLongTrip = longTrips.length > 0 ? Math.round(totalDays / longTrips.length) : 0;
@@ -2469,7 +2469,7 @@ export default function BYDStatsAnalyzer() {
                     // Calculate insights
                     const tripData = filtered || [];
                     const avgKmPerTrip = parseFloat(summary?.avgKm) || 0;
-                    const longTripThreshold = avgKmPerTrip * 2;
+                    const longTripThreshold = avgKmPerTrip * 3;
                     const longTrips = tripData.filter(t => (t.trip || 0) >= longTripThreshold);
                     const totalDays = summary?.totalDays || summary?.daysActive || 1;
                     const daysPerLongTrip = longTrips.length > 0 ? Math.round(totalDays / longTrips.length) : 0;
