@@ -292,7 +292,7 @@ export default function BYDStatsAnalyzer() {
         batterySize: 60.48,
         soh: 100,
         electricityPrice: 0.15,
-        theme: 'dark'
+        theme: 'auto'
       };
       return parsedSettings;
     } catch (e) {
@@ -304,7 +304,7 @@ export default function BYDStatsAnalyzer() {
         batterySize: 60.48,
         soh: 100,
         electricityPrice: 0.15,
-        theme: 'dark'
+        theme: 'auto'
       };
     }
   });
@@ -401,49 +401,41 @@ export default function BYDStatsAnalyzer() {
     };
   }, [showTripDetailModal, showSettingsModal, showAllTripsModal, isNative]);
 
-  // Theme management - SIMPLIFIED AND FIXED
+  // Theme management - UNIFIED AND ROBUST
   useEffect(() => {
-    let isDark = false;
+    const applyTheme = (isDark) => {
+      // 1. CSS Classes
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
 
-    if (settings.theme === 'dark') {
-      isDark = true;
-    } else if (settings.theme === 'light') {
-      isDark = false;
-    } else {
-      // Auto mode
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
+      // 2. Browser color-scheme (prevents BYD forced dark mode)
+      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 
-    // Apply theme to document
-    if (isDark) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.style.colorScheme = 'dark';
-    } else {
-      document.documentElement.classList.remove('dark');
-      document.documentElement.style.colorScheme = 'light';
-    }
+      // 3. Native StatusBar
+      if (isNative && window.StatusBar) {
+        window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
+          .catch(e => console.error('StatusBar error:', e));
+      }
+    };
 
-    // Update status bar for native apps
-    if (isNative && window.StatusBar) {
-      // Inverting to match user feedback: 
-      // isDark (App) -> White/Light Icons
-      // !isDark (App) -> Dark/Black Icons
-      window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-        .catch(e => console.error('StatusBar error:', e));
-    }
+    const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
 
-    // Only listen to system changes in auto mode
     if (settings.theme === 'auto') {
+      // Apply initial theme
+      applyTheme(getSystemTheme());
+
+      // Listen for system changes
       const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = (e) => {
-        if (e.matches) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-      };
+      const handler = (e) => applyTheme(e.matches);
+
       mediaQuery.addEventListener('change', handler);
       return () => mediaQuery.removeEventListener('change', handler);
+    } else {
+      // Manual theme
+      applyTheme(settings.theme === 'dark');
     }
   }, [settings.theme, isNative]);
 
