@@ -165,6 +165,13 @@ function processData(rows) {
   const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
   const sorted = [...trips].sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
+  // Calculate total span of days in the database
+  const firstDate = sorted[0]?.date ? new Date(sorted[0].date) : null;
+  const lastDate = sorted[sorted.length - 1]?.date ? new Date(sorted[sorted.length - 1].date) : null;
+  const totalDays = (firstDate && lastDate)
+    ? Math.max(1, Math.ceil((lastDate - firstDate) / (1000 * 60 * 60 * 24)) + 1)
+    : 1;
+
   return {
     summary: {
       totalTrips: trips.length,
@@ -176,6 +183,7 @@ function processData(rows) {
       avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
       avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
       daysActive,
+      totalDays,
       dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
       maxKm: sortedByKm[0]?.trip?.toFixed(1) || '0',
       minKm: sortedByKm[sortedByKm.length - 1]?.trip?.toFixed(1) || '0',
@@ -1244,18 +1252,18 @@ export default function BYDStatsAnalyzer() {
                       <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
                       <div className="space-y-2">
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-300 text-sm">Comparación con tu media</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-sm">Comparación con tu media</span>
                           <span className={`font-bold ${comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
                             {comparisonPercent > 0 ? '+' : ''}{comparisonPercent.toFixed(1)}%
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-300 text-sm">Percentil</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-sm">Percentil</span>
                           <span className="font-bold text-cyan-400">Top {percentile}%</span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-slate-300 text-sm">Coste estimado</span>
-                          <span className="font-bold" style={{ color: BYD_RED }}>{cost.toFixed(2)}€</span>
+                          <span className="text-slate-500 dark:text-slate-400 text-sm">Coste estimado</span>
+                          <span className="font-bold text-amber-500">{cost.toFixed(2)}€</span>
                         </div>
                       </div>
                     </div>
@@ -1603,18 +1611,18 @@ export default function BYDStatsAnalyzer() {
                     <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-300 text-sm">Comparación con tu media</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">Comparación con tu media</span>
                         <span className={`font-bold ${comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {comparisonPercent > 0 ? '+' : ''}{comparisonPercent.toFixed(1)}%
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-300 text-sm">Percentil</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">Percentil</span>
                         <span className="font-bold text-cyan-400">Top {percentile}%</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-300 text-sm">Coste estimado</span>
-                        <span className="font-bold" style={{ color: BYD_RED }}>{cost.toFixed(2)}€</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">Coste estimado</span>
+                        <span className="font-bold text-amber-500">{cost.toFixed(2)}€</span>
                       </div>
                     </div>
                   </div>
