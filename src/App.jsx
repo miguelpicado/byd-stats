@@ -681,12 +681,12 @@ export default function BYDStatsAnalyzer() {
     e.target.value = '';
   }, [processDB]);
 
-  const clearData = () => {
+  const clearData = useCallback(() => {
     if (window.confirm('¿Borrar todos los datos?')) {
       setRawTrips([]);
       localStorage.removeItem(STORAGE_KEY);
     }
-  };
+  }, []);
 
   // Export database to EC_Database.db format
   const exportDatabase = useCallback(async () => {
@@ -796,7 +796,23 @@ export default function BYDStatsAnalyzer() {
     }
   }, []);
 
-
+  // Memoized modal handlers to prevent unnecessary re-renders
+  const handleOpenSettingsModal = useCallback(() => setShowSettingsModal(true), []);
+  const handleCloseSettingsModal = useCallback(() => setShowSettingsModal(false), []);
+  const handleOpenFilterModal = useCallback(() => setShowFilterModal(true), []);
+  const handleCloseFilterModal = useCallback(() => setShowFilterModal(false), []);
+  const handleOpenHelpModal = useCallback(() => setShowHelpModal(true), []);
+  const handleCloseHelpModal = useCallback(() => setShowHelpModal(false), []);
+  const handleOpenModal = useCallback(() => setShowModal(true), []);
+  const handleCloseModal = useCallback(() => setShowModal(false), []);
+  const handleOpenHistoryModal = useCallback(() => setShowHistoryModal(true), []);
+  const handleCloseHistoryModal = useCallback(() => setShowHistoryModal(false), []);
+  const handleOpenAllTripsModal = useCallback(() => setShowAllTripsModal(true), []);
+  const handleCloseAllTripsModal = useCallback(() => setShowAllTripsModal(false), []);
+  const handleCloseTripDetailModal = useCallback(() => {
+    setShowTripDetailModal(false);
+    setSelectedTrip(null);
+  }, []);
 
   const tabs = useMemo(() => [
     { id: 'overview', label: 'Resumen', icon: Activity },
@@ -991,8 +1007,8 @@ export default function BYDStatsAnalyzer() {
     );
   });
 
-  // Format duration in minutes/hours
-  const formatDuration = (seconds) => {
+  // Format duration in minutes/hours - memoized
+  const formatDuration = useCallback((seconds) => {
     if (!seconds) return '0 min';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -1000,23 +1016,23 @@ export default function BYDStatsAnalyzer() {
       return `${hours}h ${minutes}min`;
     }
     return `${minutes} min`;
-  };
+  }, []);
 
-  // Calculate trip percentile
-  const calculatePercentile = (trip, allTrips) => {
+  // Calculate trip percentile - memoized
+  const calculatePercentile = useCallback((trip, allTrips) => {
     if (!trip || !allTrips || allTrips.length === 0) return 50;
     const tripEfficiency = trip.trip > 0 ? (trip.electricity / trip.trip) * 100 : 999;
     const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
     const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
     const betterCount = efficiencies.filter(e => e < tripEfficiency).length;
     return Math.round((betterCount / efficiencies.length) * 100);
-  };
+  }, []);
 
-  // Open trip detail
-  const openTripDetail = (trip) => {
+  // Open trip detail - memoized callback
+  const openTripDetail = useCallback((trip) => {
     setSelectedTrip(trip);
     setShowTripDetailModal(true);
-  };
+  }, []);
 
   if (loading) {
     return (
