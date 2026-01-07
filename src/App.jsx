@@ -2638,7 +2638,8 @@ export default function BYDStatsAnalyzer() {
                               <YAxis
                                 stroke="#64748b"
                                 fontSize={isCompact ? 10 : 12}
-                                domain={['dataMin - 1', 'dataMax + 1']}
+                                domain={[14, (dataMax) => Math.ceil(dataMax * 2) / 2]}
+                                ticks={[14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 19.5, 20, 20.5, 21]}
                                 tickFormatter={(v) => `${v.toFixed(1)}`}
                               />
                               <Tooltip content={<ChartTip />} isAnimationActive={false} />
