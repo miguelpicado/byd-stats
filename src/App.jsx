@@ -6,9 +6,19 @@ import { StatusBar, Style } from '@capacitor/status-bar';
 import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter as ScatterJS } from 'react-chartjs-2';
 
 // Import extracted utilities (code splitting for utils)
-import { formatMonth as formatMonthUtil, formatDate as formatDateUtil, formatTime as formatTimeUtil } from './utils/dateUtils';
-import { calculateScore as calculateScoreUtil, getScoreColor as getScoreColorUtil, formatDuration as formatDurationUtil, calculatePercentile as calculatePercentileUtil } from './utils/formatters';
+// Import extracted utilities (code splitting for utils)
+import { formatMonth, formatDate, formatTime, parseDate, toDateString } from './utils/dateUtils';
+import { calculateScore, getScoreColor, formatDuration, calculatePercentile, formatNumber } from './utils/formatters';
+import { BYD_RED } from './utils/constants';
 import './utils/chartSetup'; // Register Chart.js components
+
+// Components
+import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize } from './components/Icons';
+import StatCard from './components/ui/StatCard';
+import ChartCard from './components/ui/ChartCard';
+import { useDataProcessor } from './hooks/useDataProcessor';
+import useDatabase from './hooks/useDatabase';
+import { useApp } from './context/AppContext';
 
 // Lazy load modals for code splitting
 const SettingsModalLazy = lazy(() => import('./components/modals/SettingsModal'));
@@ -17,46 +27,7 @@ const TripDetailModalLazy = lazy(() => import('./components/modals/TripDetailMod
 const HistoryModalLazy = lazy(() => import('./components/modals/HistoryModal'));
 const DatabaseUploadModalLazy = lazy(() => import('./components/modals/DatabaseUploadModal'));
 
-const BYD_RED = '#EA0029';
 
-const BYDLogo = ({ className }) => (
-  <svg className={className} viewBox="0 0 200 60" fill={BYD_RED}>
-    <rect x="0" y="0" width="8" height="60" rx="2" />
-    <rect x="0" y="0" width="45" height="8" rx="2" />
-    <rect x="0" y="26" width="40" height="8" rx="2" />
-    <rect x="0" y="52" width="45" height="8" rx="2" />
-    <path d="M37 0 H45 Q55 0 55 13 Q55 26 45 26 H37 V18 H43 Q47 18 47 13 Q47 8 43 8 H37 Z" />
-    <path d="M32 26 H45 Q55 26 55 39 Q55 52 45 52 H32 V44 H43 Q47 44 47 39 Q47 34 43 34 H32 Z" />
-    <path d="M70 0 L85 25 L100 0 H110 L90 35 V60 H80 V35 L60 0 Z" />
-    <rect x="120" y="0" width="8" height="60" rx="2" />
-    <path d="M120 0 H155 Q180 0 180 30 Q180 60 155 60 H120 V52 H153 Q170 52 170 30 Q170 8 153 8 H120 Z" />
-  </svg>
-);
-
-const Battery = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="6" width="18" height="12" rx="2" /><line x1="23" y1="10" x2="23" y2="14" /></svg>;
-const Zap = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" /></svg>;
-const MapPin = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></svg>;
-const Clock = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><polyline points="12 6 12 12 16 14" /></svg>;
-const TrendingUp = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18" /><polyline points="17 6 23 6 23 12" /></svg>;
-const Calendar = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2" /><line x1="16" y1="2" x2="16" y2="6" /><line x1="8" y1="2" x2="8" y2="6" /><line x1="3" y1="10" x2="21" y2="10" /></svg>;
-const Upload = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>;
-const Car = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2" /><circle cx="6.5" cy="16.5" r="2.5" /><circle cx="16.5" cy="16.5" r="2.5" /></svg>;
-const Activity = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12" /></svg>;
-const BarChart3 = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 3v18h18" /><path d="M18 17V9" /><path d="M13 17V5" /><path d="M8 17v-3" /></svg>;
-const AlertCircle = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" /></svg>;
-const Filter = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" /></svg>;
-const Plus = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>;
-const List = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="8" y1="6" x2="21" y2="6" /><line x1="8" y1="12" x2="21" y2="12" /><line x1="8" y1="18" x2="21" y2="18" /><line x1="3" y1="6" x2="3.01" y2="6" /><line x1="3" y1="12" x2="3.01" y2="12" /><line x1="3" y1="18" x2="3.01" y2="18" /></svg>;
-const Settings = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 15a3 3 0 100-6 3 3 0 000 6z" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-2 2 2 2 0 01-2-2v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 01-2-2 2 2 0 012-2h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 012-2 2 2 0 012 2v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 012 2 2 2 0 01-2 2h-.09a1.65 1.65 0 00-1.51 1z" /></svg>;
-const Download = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>;
-const Database = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><ellipse cx="12" cy="5" rx="9" ry="3" /><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" /><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" /></svg>;
-const HelpCircle = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" /><circle cx="12" cy="17" r="0.5" fill="currentColor" /></svg>;
-const Mail = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>;
-const Bug = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 2v4M16 2v4M9 18h6M10 11v6M14 11v6M21 9h-3M6 9H3M21 15h-3M6 15H3M12 2a3 3 0 013 3v1a7 7 0 11-6 0V5a3 3 0 013-3z" /></svg>;
-const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.840 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" /></svg>;
-const Navigation = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>;
-const Maximize = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" /></svg>;
-const Minimize = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3" /><path d="M21 8h-3a2 2 0 0 1-2-2V3" /><path d="M3 16h3a2 2 0 0 1 2 2v3" /><path d="M16 21v-3a2 2 0 0 1 2-2h3" /></svg>;
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -79,205 +50,18 @@ const GitHubFooter = React.memo(() => (
   </div>
 ));
 
-const formatMonth = (m) => {
-  if (!m || m.length < 6) return m || '';
-  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
-  return months[parseInt(m.slice(4, 6), 10) - 1] + ' ' + m.slice(0, 4);
-};
-
-const formatDate = (d) => {
-  if (!d || d.length < 8) return d || '';
-  return d.slice(6, 8) + '/' + d.slice(4, 6) + '/' + d.slice(0, 4);
-};
-
-function processData(rows) {
-  if (!rows || rows.length === 0) return null;
-  const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
-  if (trips.length === 0) return null;
-
-  const totalKm = trips.reduce((s, r) => s + (r.trip || 0), 0);
-  const totalKwh = trips.reduce((s, r) => s + (r.electricity || 0), 0);
-  const totalDuration = trips.reduce((s, r) => s + (r.duration || 0), 0);
-  if (totalKm === 0) return null;
-
-  const monthlyData = {};
-  const dailyData = {};
-  const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
-  const weekdayData = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => ({ day: d, trips: 0, km: 0 }));
-
-  trips.forEach(trip => {
-    const m = trip.month || 'unknown';
-    if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
-    monthlyData[m].trips++;
-    monthlyData[m].km += trip.trip || 0;
-    monthlyData[m].kwh += trip.electricity || 0;
-
-    const d = trip.date || 'unknown';
-    if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
-    dailyData[d].trips++;
-    dailyData[d].km += trip.trip || 0;
-    dailyData[d].kwh += trip.electricity || 0;
-
-    if (trip.start_timestamp) {
-      try {
-        const dt = new Date(trip.start_timestamp * 1000);
-        const h = dt.getHours();
-        const w = dt.getDay();
-        hourlyData[h].trips++;
-        hourlyData[h].km += trip.trip || 0;
-        // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, 2 (Tue) -> 1, etc.
-        const weekdayIndex = (w + 6) % 7;
-        weekdayData[weekdayIndex].trips++;
-        weekdayData[weekdayIndex].km += trip.trip || 0;
-      } catch (e) {
-        console.error('Error processing timestamp:', e);
-      }
-    }
-  });
 
 
-  const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
-  monthlyArray.forEach(m => {
-    m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
-    m.monthLabel = formatMonth(m.month);
-  });
 
-  const dailyArray = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
-  dailyArray.forEach(d => {
-    d.efficiency = d.km > 0 ? (d.kwh / d.km * 100) : 0;
-    d.dateLabel = formatDate(d.date);
-  });
-
-  const tripDistribution = [
-    { range: '0-5', count: 0, color: '#06b6d4' },
-    { range: '5-15', count: 0, color: '#10b981' },
-    { range: '15-30', count: 0, color: '#f59e0b' },
-    { range: '30-50', count: 0, color: BYD_RED },
-    { range: '50+', count: 0, color: '#8b5cf6' }
-  ];
-  trips.forEach(t => {
-    const km = t.trip || 0;
-    if (km <= 5) tripDistribution[0].count++;
-    else if (km <= 15) tripDistribution[1].count++;
-    else if (km <= 30) tripDistribution[2].count++;
-    else if (km <= 50) tripDistribution[3].count++;
-    else tripDistribution[4].count++;
-  });
-
-  const efficiencyScatter = trips
-    .filter(t => t.trip > 0 && t.electricity > 0)
-    .map(t => ({ x: t.trip, y: (t.electricity / t.trip) * 100 }))
-    .filter(t => t.y > 0 && t.y < 50)
-    .sort((a, b) => a.x - b.x);
-
-  const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
-  const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
-  const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
-  const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
-  const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
-
-  // Calculate total span of days in the database using timestamps
-  const firstTs = sorted[0]?.start_timestamp;
-  const lastTs = sorted[sorted.length - 1]?.start_timestamp;
-  const totalDays = (firstTs && lastTs)
-    ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
-    : daysActive;
-
-  return {
-    summary: {
-      totalTrips: trips.length,
-      totalKm: totalKm.toFixed(1),
-      totalKwh: totalKwh.toFixed(1),
-      totalHours: (totalDuration / 3600).toFixed(1),
-      avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
-      avgKm: (totalKm / trips.length).toFixed(1),
-      avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
-      avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
-      daysActive,
-      totalDays,
-      dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
-      maxKm: sortedByKm[0]?.trip?.toFixed(1) || '0',
-      minKm: sortedByKm[sortedByKm.length - 1]?.trip?.toFixed(1) || '0',
-      maxKwh: sortedByKwh[0]?.electricity?.toFixed(1) || '0',
-      maxMin: ((sortedByDur[0]?.duration || 0) / 60).toFixed(0),
-      tripsDay: (trips.length / daysActive).toFixed(1),
-      kmDay: (totalKm / daysActive).toFixed(1)
-    },
-    monthly: monthlyArray,
-    daily: dailyArray,
-    hourly: hourlyData,
-    weekday: weekdayData,
-    tripDist: tripDistribution,
-    effScatter: efficiencyScatter,
-    top: {
-      km: sortedByKm.slice(0, 10),
-      kwh: sortedByKwh.slice(0, 10),
-      dur: sortedByDur.slice(0, 10)
-    }
-  };
-}
 
 // Helper functions
-const calculateScore = (efficiency, minEff, maxEff) => {
-  if (!efficiency || maxEff === minEff) return 5;
-  // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
-  // Score should be 10 when efficiency equals minEff (best)
-  // Score should be 0 when efficiency equals maxEff (worst)
-  const normalized = (maxEff - efficiency) / (maxEff - minEff);
-  return Math.max(0, Math.min(10, normalized * 10));
-};
 
-// Get color based on score (0=red, 5=orange, 10=green)
-const getScoreColor = (score) => {
-  if (score >= 5) {
-    // Green to orange (score 5-10)
-    const ratio = (score - 5) / 5;
-    const r = Math.round(255 - ratio * 155);
-    const g = Math.round(165 + ratio * 90);
-    return `rgb(${r}, ${g}, 0)`;
-  } else {
-    // Red to orange (score 0-5)
-    const ratio = score / 5;
-    const r = Math.round(234 + ratio * 21);
-    const g = Math.round(ratio * 165);
-    return `rgb(${r}, ${g}, 41)`;
-  }
-};
 
-// Format time from timestamp
-const formatTime = (timestamp) => {
-  if (!timestamp) return '';
-  const date = new Date(timestamp * 1000);
-  return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
-};
 
-const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub, isCompact, lowPadding, isLarger, isVerticalMode }) => (
-  <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 flex items-stretch overflow-hidden ${isCompact ? (isLarger ? 'h-20' : (lowPadding ? 'h-12' : 'h-16')) : (isVerticalMode ? 'h-20' : 'min-h-[80px] sm:min-h-[100px]')}`}>
-    <div className={`flex items-center justify-center shrink-0 ${isCompact ? (isLarger ? 'w-14' : 'w-10') : (isVerticalMode ? 'w-14' : 'w-14 sm:w-16')} ${color}`} >
-      <Icon className={`${isCompact ? (isLarger ? 'w-6 h-6' : 'w-5 h-5') : (isVerticalMode ? 'w-6 h-6' : 'w-6 h-6 sm:w-7 sm:h-7')}`} />
-    </div>
-    <div className="flex-1 flex flex-col items-center justify-center text-center px-2 py-1 min-w-0">
-      <p className="text-slate-600 dark:text-slate-400 leading-tight uppercase tracking-wider font-semibold truncate w-full" style={{ fontSize: isCompact ? (isLarger ? '11px' : '9px') : (isVerticalMode ? '9px' : '11px') }}>{label}</p>
-      <p className="font-black text-slate-900 dark:text-white leading-none mt-1" style={{ fontSize: isCompact ? (isLarger ? '28px' : '22px') : (isVerticalMode ? '22px' : '28px') }}>
-        {value}<span className="text-slate-500 dark:text-slate-400 ml-1 font-bold" style={{ fontSize: isCompact ? (isLarger ? '14px' : '10px') : (isVerticalMode ? '10px' : '14px') }}>{unit}</span>
-      </p>
-      {sub && <p className="leading-tight font-bold mt-1 truncate w-full" style={{ color: BYD_RED, fontSize: isCompact ? (isLarger ? '11px' : '9px') : (isVerticalMode ? '9px' : '11px') }}>{sub}</p>}
-    </div>
-  </div>
-));
-
-const ChartCard = React.memo(({ title, children, className = "", isCompact }) => (
-  <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 ${className} ${isCompact ? 'p-2' : 'p-4 sm:p-6'}`}>
-    {title && <h3 className={`font-semibold text-slate-900 dark:text-white ${isCompact ? 'text-xs sm:text-sm mb-1.5' : 'text-base sm:text-lg mb-3 sm:mb-4'}`}>{title}</h3>}
-    {children}
-  </div>
-));
 
 export default function BYDStatsAnalyzer() {
   const [rawTrips, setRawTrips] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [sqlReady, setSqlReady] = useState(false);
+  const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const [activeTab, setActiveTab] = useState('overview');
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -294,65 +78,14 @@ export default function BYDStatsAnalyzer() {
   const [dateTo, setDateTo] = useState('');
   const [tripHistory, setTripHistory] = useState([]);
 
-  // Layout mode state: 'vertical' (mobile) or 'horizontal' (tablet/desktop)
-  const [layoutMode, setLayoutMode] = useState('vertical');
-  // Compact mode for 1280x720 optimization
-  const [isCompact, setIsCompact] = useState(false);
+  // Context state
+  const { settings, updateSettings, layoutMode, isCompact } = useApp();
   const isLargerCard = isCompact && layoutMode === 'horizontal';
-
-  // Settings state
-  const [settings, setSettings] = useState(() => {
-    try {
-      const saved = localStorage.getItem('byd_settings');
-      const parsedSettings = saved ? JSON.parse(saved) : {
-        carModel: '',
-        licensePlate: '',
-        insurancePolicy: '',
-        batterySize: 60.48,
-        soh: 100,
-        electricityPrice: 0.15,
-        theme: 'auto'
-      };
-      return parsedSettings;
-    } catch (e) {
-      console.error('Error loading settings, using defaults:', e);
-      return {
-        carModel: '',
-        licensePlate: '',
-        insurancePolicy: '',
-        batterySize: 60.48,
-        soh: 100,
-        electricityPrice: 0.15,
-        theme: 'auto'
-      };
-    }
-  });
 
 
 
   // Detect compact resolution (targeting ~1280x548/720)
-  useEffect(() => {
-    const checkCompact = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      // Consider compact if width is large enough but height is restricted
-      // Relaxed to <= 800 to cover 720p screens clearly
-      const isCompactSize = w >= 1024 && h <= 800;
-      console.log('checkCompact:', { w, h, isCompactSize });
-      setIsCompact(isCompactSize);
 
-      // Apply dense scale for compact mode
-      if (isCompactSize) {
-        document.documentElement.style.fontSize = '13.5px';
-      } else {
-        document.documentElement.style.fontSize = '';
-      }
-    };
-
-    checkCompact();
-    window.addEventListener('resize', checkCompact);
-    return () => window.removeEventListener('resize', checkCompact);
-  }, []);
 
 
   // All trips view states
@@ -395,13 +128,7 @@ export default function BYDStatsAnalyzer() {
   const isNative = Capacitor.isNativePlatform();
 
   // Save settings to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('byd_settings', JSON.stringify(settings));
-    } catch (e) {
-      console.error('Error saving settings:', e);
-    }
-  }, [settings]);
+
 
   // Handle Android back button
   useEffect(() => {
@@ -426,51 +153,7 @@ export default function BYDStatsAnalyzer() {
   }, [showTripDetailModal, showSettingsModal, showAllTripsModal, isNative]);
 
   // Theme management - UNIFIED AND ROBUST
-  useEffect(() => {
-    const applyTheme = async (isDark) => {
-      // 1. CSS Classes
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
 
-      // 2. Browser color-scheme (prevents BYD forced dark mode)
-      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-
-      // 3. Native StatusBar
-      if (isNative) {
-        try {
-          // CRITICAL: Style.Light = light icons (for dark bg), Style.Dark = dark icons (for light bg)
-          await StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
-
-          // Set status bar background color
-          await StatusBar.setBackgroundColor({
-            color: isDark ? '#0F172A' : '#F8FAFC'
-          });
-        } catch (e) {
-          console.error('StatusBar error:', e);
-        }
-      }
-    };
-
-    const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (settings.theme === 'auto') {
-      // Apply initial theme
-      applyTheme(getSystemTheme());
-
-      // Listen for system changes
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = (e) => applyTheme(e.matches);
-
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
-    } else {
-      // Manual theme
-      applyTheme(settings.theme === 'dark');
-    }
-  }, [settings.theme, isNative]);
 
   useEffect(() => {
     try {
@@ -515,80 +198,17 @@ export default function BYDStatsAnalyzer() {
   }, [tripHistory]);
 
   // Detect device type and orientation for layout mode
-  useEffect(() => {
-    const updateLayoutMode = () => {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      const isLandscape = width > height;
 
-      // For both webapp and native apps, detect screen size and orientation
-      // Tablet is typically > 10 inches (600dp ~ 960px in landscape)
-      const isTablet = width >= 960 || (width >= 768 && isLandscape);
-
-      if (isTablet && isLandscape) {
-        setLayoutMode('horizontal');
-      } else {
-        setLayoutMode('vertical');
-      }
-    };
-
-    updateLayoutMode();
-    window.addEventListener('resize', updateLayoutMode);
-    window.addEventListener('orientationchange', updateLayoutMode);
-
-    return () => {
-      window.removeEventListener('resize', updateLayoutMode);
-      window.removeEventListener('orientationchange', updateLayoutMode);
-    };
-  }, []);
 
   useEffect(() => {
-    const sc = document.createElement('script');
-    sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js';
-    sc.onload = async () => {
-      try {
-        window.SQL = await window.initSqlJs({
-          locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
-        });
-        setSqlReady(true);
-      } catch (e) {
-        setError('Error cargando SQL.js');
-        console.error('SQL.js load error:', e);
-      }
-    };
-    sc.onerror = () => {
-      setError('Error cargando SQL.js');
-    };
-    document.head.appendChild(sc);
-
-    return () => {
-      if (sc.parentNode) {
-        sc.parentNode.removeChild(sc);
-      }
-    };
-  }, []);
+    initSql();
+  }, [initSql]);
 
   const months = useMemo(() => {
     return [...new Set(rawTrips.map(t => t.month).filter(Boolean))].sort();
   }, [rawTrips]);
 
-  const filtered = useMemo(() => {
-    if (rawTrips.length === 0) return [];
-    if (filterType === 'month' && selMonth) {
-      return rawTrips.filter(t => t.month === selMonth);
-    }
-    if (filterType === 'range') {
-      let r = [...rawTrips];
-      if (dateFrom) r = r.filter(t => t.date >= dateFrom.replace(/-/g, ''));
-      if (dateTo) r = r.filter(t => t.date <= dateTo.replace(/-/g, ''));
-      return r;
-    }
-    return rawTrips;
-  }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
-
-  const data = useMemo(() => {
-    return filtered.length > 0 ? processData(filtered) : null;
-  }, [filtered]);
+  const { filtered, data } = useDataProcessor(rawTrips, filterType, selMonth, dateFrom, dateTo);
 
   // Efficiency range calculation for scoring (not used directly but kept for logic reference if needed, but ESLint says it is unused)
   // Removing it to satisfy ESLint
@@ -606,46 +226,12 @@ export default function BYDStatsAnalyzer() {
   */
 
   const processDB = useCallback(async (file, merge = false) => {
-    if (!window.SQL) {
-      setError('SQL no está listo');
-      return;
+    const trips = await processDBHook(file, merge ? rawTrips : [], merge);
+    if (trips) {
+      setRawTrips(trips);
+      setShowModal(false);
     }
-    setLoading(true);
-    setError(null);
-    try {
-      const buf = await file.arrayBuffer();
-      const db = new window.SQL.Database(new Uint8Array(buf));
-      const t = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='EnergyConsumption'");
-      if (!t.length || !t[0].values.length) throw new Error('Tabla no encontrada');
-      const res = db.exec("SELECT * FROM EnergyConsumption WHERE is_deleted = 0 ORDER BY date, start_timestamp");
-      if (res.length && res[0].values.length) {
-        const cols = res[0].columns;
-        const rows = res[0].values.map(r => {
-          const o = {};
-          cols.forEach((c, i) => { o[c] = r[i]; });
-          return o;
-        });
-
-        if (merge && rawTrips.length) {
-          const map = new Map();
-          rawTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
-          rows.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
-          setRawTrips(Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || '')));
-        } else {
-          setRawTrips(rows);
-        }
-        setShowModal(false);
-      } else {
-        throw new Error('Sin datos');
-      }
-      db.close();
-    } catch (e) {
-      setError(e.message);
-      console.error('Database processing error:', e);
-    } finally {
-      setLoading(false);
-    }
-  }, [rawTrips]);
+  }, [processDBHook, rawTrips]);
 
   const onDrop = useCallback((e, merge) => {
     e.preventDefault();
@@ -686,66 +272,9 @@ export default function BYDStatsAnalyzer() {
 
   // Export database to EC_Database.db format
   const exportDatabase = useCallback(async () => {
-    if (!window.SQL || filtered.length === 0) {
-      alert('No hay datos para exportar');
-      return;
-    }
-
-    try {
-      // Create a new SQLite database
-      const db = new window.SQL.Database();
-
-      // Create EnergyConsumption table with all columns
-      db.run(`
-        CREATE TABLE IF NOT EXISTS EnergyConsumption (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          trip REAL,
-          electricity REAL,
-          duration INTEGER,
-          date TEXT,
-          start_timestamp INTEGER,
-          month TEXT,
-          is_deleted INTEGER DEFAULT 0
-        )
-      `);
-
-      // Insert all filtered trips
-      const stmt = db.prepare(`
-        INSERT INTO EnergyConsumption (trip, electricity, duration, date, start_timestamp, month, is_deleted)
-        VALUES (?, ?, ?, ?, ?, ?, 0)
-      `);
-
-      filtered.forEach(trip => {
-        stmt.run([
-          trip.trip || 0,
-          trip.electricity || 0,
-          trip.duration || 0,
-          trip.date || '',
-          trip.start_timestamp || 0,
-          trip.month || ''
-        ]);
-      });
-      stmt.free();
-
-      // Export database to file
-      const data = db.export();
-      const blob = new Blob([data], { type: 'application/x-sqlite3' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `EC_Database_${new Date().toISOString().slice(0, 10)}.db`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      db.close();
-      alert('Base de datos exportada correctamente');
-    } catch (e) {
-      console.error('Error exporting database:', e);
-      alert('Error al exportar la base de datos: ' + e.message);
-    }
-  }, [filtered]);
+    const success = await exportDBHook(filtered);
+    if (success) alert('Base de datos exportada correctamente');
+  }, [exportDBHook, filtered]);
 
   // Save current trips to history
   const saveToHistory = useCallback(() => {
@@ -957,7 +486,7 @@ export default function BYDStatsAnalyzer() {
 
 
 
-  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor, isCompact }) => {
+  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact }) => {
     const efficiency = useMemo(() => {
       if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
         return 0;
@@ -1012,26 +541,7 @@ export default function BYDStatsAnalyzer() {
     );
   });
 
-  // Format duration in minutes/hours - memoized
-  const formatDuration = useCallback((seconds) => {
-    if (!seconds) return '0 min';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    }
-    return `${minutes} min`;
-  }, []);
 
-  // Calculate trip percentile - memoized
-  const calculatePercentile = useCallback((trip, allTrips) => {
-    if (!trip || !allTrips || allTrips.length === 0) return 50;
-    const tripEfficiency = trip.trip > 0 ? (trip.electricity / trip.trip) * 100 : 999;
-    const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
-    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-    const betterCount = efficiencies.filter(e => e < tripEfficiency).length;
-    return Math.round((betterCount / efficiencies.length) * 100);
-  }, []);
 
   // Open trip detail - memoized callback
   const openTripDetail = useCallback((trip) => {
