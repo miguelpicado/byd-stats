@@ -2531,7 +2531,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                            <ResponsiveContainer width="100%" height={isCompact ? 260 : 340}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
                               <BarChart data={monthly}>
                                 <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                                 <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
@@ -2544,7 +2544,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                            <ResponsiveContainer width="100%" height={isCompact ? 260 : 340}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
                               <AreaChart data={daily.slice(-60)}>
                                 <defs>
                                   <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
@@ -2623,7 +2623,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
-                          <ResponsiveContainer width="100%" height={isCompact ? 260 : 340}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
                             <LineChart data={monthly}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
@@ -2657,7 +2657,7 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
-                          <ResponsiveContainer width="100%" height={isCompact ? 260 : 340}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
                             <ScatterChart>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
@@ -2700,7 +2700,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="🥇 Top Distancia">
-                          <div className="space-y-1">
+                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.km.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
@@ -2710,7 +2710,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⚡ Top Consumo">
-                          <div className="space-y-1">
+                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.kwh.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
@@ -2720,7 +2720,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⏱️ Top Duración">
-                          <div className="space-y-1">
+                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.dur.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
