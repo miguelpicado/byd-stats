@@ -2529,7 +2529,7 @@ export default function BYDStatsAnalyzer() {
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Carga diaria" value={dailyKwh.toFixed(2)} unit="kWh/día" color="bg-cyan-500/20 text-cyan-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
                         </div>
-                        <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                        <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
                             <ResponsiveContainer width="100%" height={isCompact ? 300 : 280}>
                               <BarChart data={monthly}>
@@ -2576,7 +2576,7 @@ export default function BYDStatsAnalyzer() {
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Km totales" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
                         </div>
-                        <div className={`grid md:grid-cols-2 gap-4 ${isCompact ? 'gap-3' : 'sm:gap-6'}`}>
+                        <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Por Hora">
                             <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
                               <BarChart data={hourly}>
@@ -2638,9 +2638,10 @@ export default function BYDStatsAnalyzer() {
                               <YAxis
                                 stroke="#64748b"
                                 fontSize={isCompact ? 10 : 12}
-                                domain={[14, (dataMax) => Math.ceil(dataMax * 2) / 2]}
-                                ticks={[14, 14.5, 15, 15.5, 16, 16.5, 17, 17.5, 18, 18.5, 19, 19.5, 20, 20.5, 21]}
+                                domain={[(dataMin) => Math.floor(dataMin) - 1, (dataMax) => Math.ceil(dataMax) + 1]}
                                 tickFormatter={(v) => `${v.toFixed(1)}`}
+                                interval={0}
+                                allowDecimals={true}
                               />
                               <Tooltip content={<ChartTip />} isAnimationActive={false} />
                               <Line
