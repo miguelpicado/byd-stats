@@ -2245,7 +2245,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
-                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 200}>
                             <LineChart data={monthly}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
@@ -2279,7 +2279,7 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
-                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 200}>
                             <ScatterChart>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
