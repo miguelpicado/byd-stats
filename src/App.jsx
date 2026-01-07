@@ -1,16 +1,13 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
-import {
-  LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area, ScatterChart, Scatter, Legend,
-  RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis
-} from 'recharts';
+
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter as ScatterJS } from 'react-chartjs-2';
 
 // Import extracted utilities (code splitting for utils)
 import { formatMonth as formatMonthUtil, formatDate as formatDateUtil, formatTime as formatTimeUtil } from './utils/dateUtils';
 import { calculateScore as calculateScoreUtil, getScoreColor as getScoreColorUtil, formatDuration as formatDurationUtil, calculatePercentile as calculatePercentileUtil } from './utils/formatters';
+import './utils/chartSetup'; // Register Chart.js components
 
 // Lazy load modals for code splitting
 const SettingsModalLazy = lazy(() => import('./components/modals/SettingsModal'));
@@ -168,9 +165,9 @@ function processData(rows) {
 
   const efficiencyScatter = trips
     .filter(t => t.trip > 0 && t.electricity > 0)
-    .map(t => ({ km: t.trip, eff: (t.electricity / t.trip) * 100 }))
-    .filter(t => t.eff > 0 && t.eff < 50)
-    .sort((a, b) => a.km - b.km);
+    .map(t => ({ x: t.trip, y: (t.electricity / t.trip) * 100 }))
+    .filter(t => t.y > 0 && t.y < 50)
+    .sort((a, b) => a.x - b.x);
 
   const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
   const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
@@ -330,25 +327,7 @@ export default function BYDStatsAnalyzer() {
     }
   });
 
-  // Add global styles to remove outlines but keep active elements visible
-  useEffect(() => {
-    const style = document.createElement('style');
-    style.textContent = `
-      .recharts-wrapper svg * {
-        outline: none !important;
-      }
-      .recharts-wrapper svg *:focus {
-        outline: none !important;
-      }
-      .recharts-surface {
-        outline: none !important;
-      }
-    `;
-    document.head.appendChild(style);
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, []);
+
 
   // Detect compact resolution (targeting ~1280x548/720)
   useEffect(() => {
@@ -1779,81 +1758,27 @@ export default function BYDStatsAnalyzer() {
         </div>
       )}
 
+      {/* Database Management Modal (Unified) */}
+      <DatabaseUploadModalLazy
+        isOpen={showHistoryModal}
+        onClose={() => setShowHistoryModal(false)}
+        sqlReady={sqlReady}
+        onFileSelect={processDB}
+        onExport={exportDatabase}
+        onClearData={() => {
+          setRawTrips([]);
+          localStorage.removeItem(STORAGE_KEY);
+        }}
+        onShowHistory={() => { }}
+        onSaveToHistory={saveToHistory}
+        onClearHistory={clearHistory}
+        hasData={rawTrips.length > 0}
+        historyCount={tripHistory.length}
+        isNative={isNative}
+      />
+
       {/* History Modal */}
-      {showHistoryModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowHistoryModal(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Historial de viajes</h2>
-              </div>
-              <button onClick={() => setShowHistoryModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                <Plus className="w-6 h-6 rotate-45" />
-              </button>
-            </div>
 
-            <div className="space-y-4">
-              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  El historial mantiene un registro permanente de todos los viajes que has cargado.
-                </p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white mt-2">
-                  {tripHistory.length} viajes guardados
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <button
-                  onClick={() => {
-                    saveToHistory();
-                    setShowHistoryModal(false);
-                  }}
-                  className="w-full py-3 rounded-xl font-medium text-white"
-                  style={{ backgroundColor: BYD_RED }}
-                >
-                  Guardar viajes actuales al historial
-                </button>
-
-                <button
-                  onClick={() => {
-                    loadFromHistory();
-                    setShowHistoryModal(false);
-                  }}
-                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                  disabled={tripHistory.length === 0}
-                >
-                  Cargar historial completo
-                </button>
-
-                <button
-                  onClick={() => {
-                    clearHistory();
-                    setShowHistoryModal(false);
-                  }}
-                  className="w-full py-3 rounded-xl font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors"
-                  disabled={tripHistory.length === 0}
-                >
-                  Borrar historial
-                </button>
-
-                <button
-                  onClick={() => {
-                    exportDatabase();
-                    setShowHistoryModal(false);
-                  }}
-                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
-                  disabled={filtered.length === 0}
-                >
-                  <Download className="w-5 h-5" />
-                  Exportar base de datos
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Help/Bug Report Modal */}
       {showHelpModal && (
@@ -1945,7 +1870,7 @@ export default function BYDStatsAnalyzer() {
               </button>
               <button
                 onClick={toggleFullscreen}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                className={`w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors ${layoutMode === 'vertical' ? 'hidden' : ''}`}
                 title={isFullscreen ? "Salir de pantalla completa" : "Pantalla completa"}
               >
                 {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
@@ -1964,12 +1889,11 @@ export default function BYDStatsAnalyzer() {
                 <Settings className="w-5 h-5" />
               </button>
               <button
-                onClick={() => setShowModal(true)}
-                className="flex items-center justify-center gap-1 sm:gap-2 w-10 h-10 sm:w-auto sm:px-4 sm:py-2 rounded-xl text-xs sm:text-sm font-medium text-white"
-                style={{ backgroundColor: BYD_RED }}
+                onClick={() => setShowFilterModal(true)}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                title="Filtros"
               >
-                <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Actualizar</span>
+                <Filter className="w-5 h-5" />
               </button>
             </div>
           </div>
@@ -2050,67 +1974,66 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                            <AreaChart data={monthly}>
-                              <defs>
-                                <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor={BYD_RED} stopOpacity={0.4} />
-                                  <stop offset="95%" stopColor={BYD_RED} stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
-                              <YAxis stroke="#64748b" fontSize={12} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
-                            </AreaChart>
-                          </ResponsiveContainer>
+                          <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                            <LineJS
+                              options={{
+                                maintainAspectRatio: false,
+                                scales: {
+                                  y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
+                                  x: { grid: { display: false } }
+                                },
+                                plugins: { legend: { display: false } },
+                                elements: { line: { tension: 0.4 } }
+                              }}
+                              data={{
+                                labels: monthly.map(m => m.monthLabel),
+                                datasets: [{
+                                  label: 'Km',
+                                  data: monthly.map(m => m.km),
+                                  borderColor: BYD_RED,
+                                  backgroundColor: 'rgba(234, 0, 41, 0.1)',
+                                  fill: true,
+                                  pointBackgroundColor: BYD_RED,
+                                  pointRadius: 3,
+                                  borderWidth: 2
+                                }]
+                              }}
+                            />
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
                             <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                                <PieChart>
-                                  <Pie
-                                    data={tripDist}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={isCompact ? 45 : 55}
-                                    outerRadius={isCompact ? 75 : 85}
-                                    paddingAngle={2}
-                                    dataKey="count"
-                                    label={isCompact ? null : ({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
-                                    labelLine={false}
-                                    isAnimationActive={false}
-                                    activeShape={{ outerRadius: isCompact ? 85 : 95, stroke: '#fff', strokeWidth: 2 }}
-                                  >
-                                    {tripDist.map((e, i) => (
-                                      <Cell key={`cell-${i}`} fill={e.color} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip
-                                    content={({ active, payload }) => {
-                                      if (active && payload && payload.length) {
-                                        const data = payload[0];
-                                        const total = tripDist.reduce((s, d) => s + d.count, 0);
-                                        const percent = ((data.value / total) * 100).toFixed(1);
-                                        return (
-                                          <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl h-fit">
-                                            <div className="flex items-center gap-2 mb-2">
-                                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }}></div>
-                                              <p className="text-slate-900 dark:text-white font-bold">{data.payload.range} km</p>
-                                            </div>
-                                            <p className="text-sm text-slate-300">{data.value} viajes ({percent}%)</p>
-                                          </div>
-                                        );
+                              <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                                <PieJS
+                                  options={{
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                      legend: { display: false },
+                                      tooltip: {
+                                        callbacks: {
+                                          label: (context) => {
+                                            const label = context.label || '';
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percent = ((value / total) * 100).toFixed(0) + '%';
+                                            return `${label}: ${context.raw} (${percent})`;
+                                          }
+                                        }
                                       }
-                                      return null;
-                                    }}
-                                    isAnimationActive={false}
-                                    cursor={false}
-                                  />
-                                </PieChart>
-                              </ResponsiveContainer>
+                                    }
+                                  }}
+                                  data={{
+                                    labels: tripDist.map(d => `${d.range} km`),
+                                    datasets: [{
+                                      data: tripDist.map(d => d.count),
+                                      backgroundColor: tripDist.map(d => d.color),
+                                      borderWidth: 0,
+                                      hoverOffset: 4
+                                    }]
+                                  }}
+                                />
+                              </div>
                             </div>
                             <div className={`grid ${isCompact ? 'grid-cols-1 w-full gap-1' : 'md:grid-cols-1 md:w-1/2 grid-cols-5 w-full gap-2 mt-4'} text-center`}>
                               {tripDist.map((d, i) => (
@@ -2160,34 +2083,54 @@ export default function BYDStatsAnalyzer() {
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                                <BarChart data={monthly}>
-                                  <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
-                                  <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
-                                  <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={10} />
-                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                                  <Legend wrapperStyle={{ fontSize: '10px' }} />
-                                  <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
-                                  <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
-                                </BarChart>
-                              </ResponsiveContainer>
+                              <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                                <BarJS
+                                  options={{
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                      y: { beginAtZero: true, position: 'left', border: { dash: [] }, ticks: { color: BYD_RED }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+                                      y1: { beginAtZero: true, position: 'right', border: { dash: [] }, ticks: { color: '#06b6d4' }, grid: { drawOnChartArea: false } },
+                                      x: { border: { dash: [] }, grid: { display: false } }
+                                    },
+                                    plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10 } } } }
+                                  }}
+                                  data={{
+                                    labels: monthly.map(m => m.monthLabel),
+                                    datasets: [
+                                      { label: 'Km', data: monthly.map(m => m.km), backgroundColor: BYD_RED, yAxisID: 'y', borderRadius: 4 },
+                                      { label: 'kWh', data: monthly.map(m => m.kwh), backgroundColor: '#06b6d4', yAxisID: 'y1', borderRadius: 4 }
+                                    ]
+                                  }}
+                                />
+                              </div>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                                <AreaChart data={daily.slice(-60)}>
-                                  <defs>
-                                    <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
-                                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
-                                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                    </linearGradient>
-                                  </defs>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                                  <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={9} angle={-45} textAnchor="end" height={40} />
-                                  <YAxis stroke="#64748b" fontSize={10} />
-                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                                  <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
-                                </AreaChart>
-                              </ResponsiveContainer>
+                              <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                                <LineJS
+                                  options={{
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                      y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+                                      x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
+                                    },
+                                    plugins: { legend: { display: false } },
+                                    elements: { line: { tension: 0.4 } }
+                                  }}
+                                  data={{
+                                    labels: daily.slice(-60).map(d => d.dateLabel),
+                                    datasets: [{
+                                      label: 'Km',
+                                      data: daily.slice(-60).map(d => d.km),
+                                      borderColor: BYD_RED,
+                                      backgroundColor: 'rgba(234, 0, 41, 0.1)',
+                                      fill: true,
+                                      pointRadius: 0,
+                                      pointHoverRadius: 4,
+                                      borderWidth: 2
+                                    }]
+                                  }}
+                                />
+                              </div>
                             </ChartCard>
                           </div>
 
@@ -2211,26 +2154,45 @@ export default function BYDStatsAnalyzer() {
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Por Hora">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                                <BarChart data={hourly}>
-                                  <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                                  <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
-                                  <YAxis stroke="#64748b" fontSize={11} />
-                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                                  <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
-                                </BarChart>
-                              </ResponsiveContainer>
+                              <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                                <BarJS
+                                  options={{
+                                    maintainAspectRatio: false,
+                                    scales: {
+                                      y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
+                                      x: { border: { dash: [] }, grid: { borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } }
+                                    },
+                                    plugins: { legend: { display: false } }
+                                  }}
+                                  data={{
+                                    labels: hourly.map(h => `${h.hour}h`),
+                                    datasets: [{ label: 'Viajes', data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
+                                  }}
+                                />
+                              </div>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Por Día">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                                <RadarChart data={weekday}>
-                                  <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
-                                  <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
-                                  <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
-                                  <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
-                                  <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                                </RadarChart>
-                              </ResponsiveContainer>
+                              <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                                <RadarJS
+                                  options={{
+                                    maintainAspectRatio: false,
+                                    scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
+                                    plugins: { legend: { display: false } }
+                                  }}
+                                  data={{
+                                    labels: weekday.map(d => d.day),
+                                    datasets: [{
+                                      label: 'Viajes',
+                                      data: weekday.map(d => d.trips),
+                                      borderColor: '#f59e0b',
+                                      backgroundColor: 'rgba(245, 158, 11, 0.3)',
+                                      borderWidth: 2,
+                                      pointBackgroundColor: '#f59e0b',
+                                      pointRadius: 3
+                                    }]
+                                  }}
+                                />
+                              </div>
                             </ChartCard>
                           </div>
                           <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
@@ -2238,7 +2200,7 @@ export default function BYDStatsAnalyzer() {
                               <div key={i} className={`bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl text-center border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-1.5' : 'p-2 sm:p-3'}`}>
                                 <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
                                 <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{d.trips}</p>
-                                <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)}</p>
+                                <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
                               </div>
                             ))}
                           </div>
@@ -2259,68 +2221,79 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                            <LineChart data={monthly}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis
-                                dataKey="monthLabel"
-                                stroke="#64748b"
-                                fontSize={isCompact ? 10 : 12}
-                                interval={0}
-                                angle={-45}
-                                textAnchor="end"
-                                height={50}
-                              />
-                              <YAxis
-                                stroke="#64748b"
-                                fontSize={isCompact ? 10 : 12}
-                                domain={[(dataMin) => Math.floor(dataMin) - 1, (dataMax) => Math.ceil(dataMax) + 1]}
-                                tickFormatter={(v) => `${v.toFixed(1)}`}
-                                interval={0}
-                                allowDecimals={true}
-                              />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} />
-                              <Line
-                                type="monotone"
-                                dataKey="efficiency"
-                                name="kWh/100km"
-                                stroke="#10b981"
-                                strokeWidth={3}
-                                dot={{ fill: '#10b981', r: 4 }}
-                                isAnimationActive={false}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
+                          <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                            <LineJS
+                              options={{
+                                maintainAspectRatio: false,
+                                scales: {
+                                  y: {
+                                    beginAtZero: false,
+                                    min: Math.floor(Math.min(...monthly.map(m => m.efficiency || 999))) - 1,
+                                    max: Math.ceil(Math.max(...monthly.map(m => m.efficiency || 0))) + 1,
+                                    border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+                                    ticks: { font: { size: 10 } }
+                                  },
+                                  x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                                },
+                                plugins: { legend: { display: false } }
+                              }}
+                              data={{
+                                labels: monthly.map(m => m.monthLabel),
+                                datasets: [{
+                                  label: 'kWh/100km',
+                                  data: monthly.map(m => m.efficiency),
+                                  borderColor: '#10b981',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                  fill: true,
+                                  pointBackgroundColor: '#10b981',
+                                  tension: 0.4,
+                                  pointRadius: 3
+                                }]
+                              }}
+                            />
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
-                            <ScatterChart>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis
-                                dataKey="km"
-                                name="Distancia"
-                                stroke="#64748b"
-                                fontSize={12}
-                                type="number"
-                                scale="log"
-                                domain={['auto', 'auto']}
-                                ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
-                                allowDecimals={false}
-                                allowDataOverflow={false}
-                                tickFormatter={(v) => `${Math.round(v)}km`}
-                              />
-                              <YAxis
-                                dataKey="eff"
-                                name="Eficiencia"
-                                stroke="#64748b"
-                                fontSize={11}
-                                domain={[0, 'dataMax + 2']}
-                                tickFormatter={(v) => `${v.toFixed(1)}`}
-                              />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
-                            </ScatterChart>
-                          </ResponsiveContainer>
+                          <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                            <ScatterJS
+                              options={{
+                                maintainAspectRatio: false,
+                                scales: {
+                                  x: {
+                                    type: 'logarithmic',
+                                    position: 'bottom',
+                                    title: { display: true, text: 'Distancia (km)', font: { size: 10 } },
+                                    border: { dash: [] }, grid: { display: true, borderDash: [3, 3], drawBorder: false },
+                                    min: 1,
+                                    max: 500,
+                                    ticks: {
+                                      font: { size: 10 },
+                                      callback: function (value) {
+                                        const allowed = [1, 2, 5, 10, 50, 200, 500];
+                                        return allowed.includes(value) ? value : '';
+                                      },
+                                      autoSkip: false,
+                                      maxRotation: 0
+                                    }
+                                  },
+                                  y: {
+                                    title: { display: true, text: 'Eficiencia', font: { size: 10 } },
+                                    border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+                                    ticks: { font: { size: 10 } }
+                                  }
+                                },
+                                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } } }
+                              }}
+                              data={{
+                                datasets: [{
+                                  label: 'Eficiencia',
+                                  data: effScatter,
+                                  backgroundColor: BYD_RED,
+                                  pointRadius: 4
+                                }]
+                              }}
+                            />
+                          </div>
                         </ChartCard>
                       </div>
 
@@ -2447,67 +2420,67 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 273 : 326}>
-                            <AreaChart data={monthly}>
-                              <defs>
-                                <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor={BYD_RED} stopOpacity={0.4} />
-                                  <stop offset="95%" stopColor={BYD_RED} stopOpacity={0} />
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={12} />
-                              <YAxis stroke="#64748b" fontSize={12} />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Area type="monotone" dataKey="km" stroke={BYD_RED} fill="url(#kmGrad)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
-                            </AreaChart>
-                          </ResponsiveContainer>
+                          <div style={{ width: '100%', height: isCompact ? 275 : 326 }}>
+                            <LineJS
+                              options={{
+                                maintainAspectRatio: false,
+                                scales: {
+                                  y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+                                  x: { border: { dash: [] }, grid: { display: false } }
+                                },
+                                plugins: { legend: { display: false } },
+                                elements: { line: { tension: 0.4 } }
+                              }}
+                              data={{
+                                labels: monthly.map(m => m.monthLabel),
+                                datasets: [{
+                                  label: 'Km',
+                                  data: monthly.map(m => m.km),
+                                  borderColor: BYD_RED,
+                                  backgroundColor: 'rgba(234, 0, 41, 0.1)',
+                                  fill: true,
+                                  pointBackgroundColor: BYD_RED,
+                                  pointRadius: 4,
+                                  pointHoverRadius: 6,
+                                  borderWidth: 2
+                                }]
+                              }}
+                            />
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className="flex flex-row items-center gap-4">
                             <div className="w-1/2">
-                              <ResponsiveContainer width="100%" height={isCompact ? 273 : 326}>
-                                <PieChart>
-                                  <Pie
-                                    data={tripDist}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={isCompact ? 45 : 55}
-                                    outerRadius={isCompact ? 75 : 95}
-                                    paddingAngle={2}
-                                    dataKey="count"
-                                    label={isCompact ? null : ({ percent }) => percent > 0 ? `${(percent * 100).toFixed(0)}%` : ''}
-                                    labelLine={false}
-                                    isAnimationActive={false}
-                                    activeShape={{ outerRadius: isCompact ? 80 : 105, stroke: '#fff', strokeWidth: 2 }}
-                                  >
-                                    {tripDist.map((e, i) => (
-                                      <Cell key={`cell-${i}`} fill={e.color} />
-                                    ))}
-                                  </Pie>
-                                  <Tooltip
-                                    content={({ active, payload }) => {
-                                      if (active && payload && payload.length) {
-                                        const data = payload[0];
-                                        const total = tripDist.reduce((s, d) => s + d.count, 0);
-                                        const percent = ((data.value / total) * 100).toFixed(1);
-                                        return (
-                                          <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3 shadow-xl h-fit">
-                                            <div className="flex items-center gap-2 mb-2">
-                                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.payload.color }}></div>
-                                              <p className="text-slate-900 dark:text-white font-bold">{data.payload.range} km</p>
-                                            </div>
-                                            <p className="text-sm text-slate-300">{data.value} viajes ({percent}%)</p>
-                                          </div>
-                                        );
+                              <div style={{ width: '100%', height: isCompact ? 273 : 326 }}>
+                                <PieJS
+                                  options={{
+                                    maintainAspectRatio: false,
+                                    plugins: {
+                                      legend: { display: false },
+                                      tooltip: {
+                                        callbacks: {
+                                          label: (context) => {
+                                            const label = context.label || '';
+                                            const value = context.parsed;
+                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                            const percent = ((value / total) * 100).toFixed(0) + '%';
+                                            return `${label}: ${context.raw} (${percent})`;
+                                          }
+                                        }
                                       }
-                                      return null;
-                                    }}
-                                    isAnimationActive={false}
-                                    cursor={false}
-                                  />
-                                </PieChart>
-                              </ResponsiveContainer>
+                                    }
+                                  }}
+                                  data={{
+                                    labels: tripDist.map(d => `${d.range} km`),
+                                    datasets: [{
+                                      data: tripDist.map(d => d.count),
+                                      backgroundColor: tripDist.map(d => d.color),
+                                      borderWidth: 0,
+                                      hoverOffset: 4
+                                    }]
+                                  }}
+                                />
+                              </div>
                             </div>
                             <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
                               {tripDist.map((d, i) => (
@@ -2565,34 +2538,54 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                            <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
-                              <BarChart data={monthly}>
-                                <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
-                                <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
-                                <YAxis yAxisId="r" orientation="right" stroke="#06b6d4" fontSize={11} />
-                                <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                                <Legend wrapperStyle={{ fontSize: '12px' }} />
-                                <Bar yAxisId="l" dataKey="km" fill={BYD_RED} name="Km" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#ff1744', stroke: '#fff', strokeWidth: 1 }} />
-                                <Bar yAxisId="r" dataKey="kwh" fill="#06b6d4" name="kWh" radius={[4, 4, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#00d4ff', stroke: '#fff', strokeWidth: 1 }} />
-                              </BarChart>
-                            </ResponsiveContainer>
+                            <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                              <BarJS
+                                options={{
+                                  maintainAspectRatio: false,
+                                  scales: {
+                                    y: { beginAtZero: true, position: 'left', border: { dash: [] }, ticks: { color: BYD_RED }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+                                    y1: { beginAtZero: true, position: 'right', border: { dash: [] }, ticks: { color: '#06b6d4' }, grid: { drawOnChartArea: false } },
+                                    x: { border: { dash: [] }, grid: { display: false } }
+                                  },
+                                  plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10 } } } }
+                                }}
+                                data={{
+                                  labels: monthly.map(m => m.monthLabel),
+                                  datasets: [
+                                    { label: 'Km', data: monthly.map(m => m.km), backgroundColor: BYD_RED, yAxisID: 'y', borderRadius: 4 },
+                                    { label: 'kWh', data: monthly.map(m => m.kwh), backgroundColor: '#06b6d4', yAxisID: 'y1', borderRadius: 4 }
+                                  ]
+                                }}
+                              />
+                            </div>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                            <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
-                              <AreaChart data={daily.slice(-60)}>
-                                <defs>
-                                  <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.5} />
-                                    <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                                  </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                                <XAxis dataKey="dateLabel" stroke="#64748b" fontSize={10} angle={-45} textAnchor="end" height={60} />
-                                <YAxis stroke="#64748b" fontSize={11} />
-                                <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                                <Area type="monotone" dataKey="km" stroke="#06b6d4" fill="url(#dayGrad2)" name="Km" isAnimationActive={false} activeDot={{ r: 6, fill: '#06b6d4', stroke: '#fff', strokeWidth: 2 }} />
-                              </AreaChart>
-                            </ResponsiveContainer>
+                            <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                              <LineJS
+                                options={{
+                                  maintainAspectRatio: false,
+                                  scales: {
+                                    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+                                    x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
+                                  },
+                                  plugins: { legend: { display: false } },
+                                  elements: { line: { tension: 0.4 } }
+                                }}
+                                data={{
+                                  labels: daily.slice(-60).map(d => d.dateLabel),
+                                  datasets: [{
+                                    label: 'Km',
+                                    data: daily.slice(-60).map(d => d.km),
+                                    borderColor: BYD_RED,
+                                    backgroundColor: 'rgba(234, 0, 41, 0.1)',
+                                    fill: true,
+                                    pointRadius: 0,
+                                    pointHoverRadius: 4,
+                                    borderWidth: 2
+                                  }]
+                                }}
+                              />
+                            </div>
                           </ChartCard>
                         </div>
 
@@ -2612,34 +2605,53 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Por Hora">
-                            <ResponsiveContainer width="100%" height={isCompact ? 284 : 340}>
-                              <BarChart data={hourly}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                                <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
-                                <YAxis stroke="#64748b" fontSize={11} />
-                                <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                                <Bar dataKey="trips" fill="#f59e0b" name="Viajes" radius={[2, 2, 0, 0]} isAnimationActive={false} activeBar={{ fill: '#fbbf24', stroke: '#fff', strokeWidth: 1 }} />
-                              </BarChart>
-                            </ResponsiveContainer>
+                            <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
+                              <BarJS
+                                options={{
+                                  maintainAspectRatio: false,
+                                  scales: {
+                                    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
+                                    x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                                  },
+                                  plugins: { legend: { display: false } }
+                                }}
+                                data={{
+                                  labels: hourly.map(h => `${h.hour}h`),
+                                  datasets: [{ label: 'Viajes', data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
+                                }}
+                              />
+                            </div>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Por Día">
-                            <ResponsiveContainer width="100%" height={isCompact ? 284 : 340}>
-                              <RadarChart data={weekday}>
-                                <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
-                                <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
-                                <PolarRadiusAxis stroke="#64748b" strokeWidth={2} />
-                                <Radar dataKey="trips" stroke={BYD_RED} strokeWidth={2.5} fill={BYD_RED} fillOpacity={0.3} name="Viajes" isAnimationActive={false} activeDot={{ r: 6, fill: BYD_RED, stroke: '#fff', strokeWidth: 2 }} />
-                                <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              </RadarChart>
-                            </ResponsiveContainer>
+                            <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
+                              <RadarJS
+                                options={{
+                                  maintainAspectRatio: false,
+                                  scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
+                                  plugins: { legend: { display: false } }
+                                }}
+                                data={{
+                                  labels: weekday.map(d => d.day),
+                                  datasets: [{
+                                    label: 'Viajes',
+                                    data: weekday.map(d => d.trips),
+                                    borderColor: '#f59e0b',
+                                    backgroundColor: 'rgba(245, 158, 11, 0.3)',
+                                    borderWidth: 2,
+                                    pointBackgroundColor: '#f59e0b',
+                                    pointRadius: 3
+                                  }]
+                                }}
+                              />
+                            </div>
                           </ChartCard>
                         </div>
                         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
                           {weekday.map((d, i) => (
                             <div key={i} className={`bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl text-center border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-1.5' : 'p-2 sm:p-3'}`}>
-                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{d.day}</p>
-                              <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{d.trips}</p>
-                              <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)}</p>
+                              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{dayNamesFull[d.day] || d.day}</p>
+                              <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{d.trips} viajes</p>
+                              <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
                             </div>
                           ))}
                         </div>
@@ -2657,68 +2669,79 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
-                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
-                            <LineChart data={monthly}>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis
-                                dataKey="monthLabel"
-                                stroke="#64748b"
-                                fontSize={isCompact ? 10 : 12}
-                                interval={0}
-                                angle={-45}
-                                textAnchor="end"
-                                height={50}
-                              />
-                              <YAxis
-                                stroke="#64748b"
-                                fontSize={isCompact ? 10 : 12}
-                                domain={[(dataMin) => Math.floor(dataMin) - 1, (dataMax) => Math.ceil(dataMax) + 1]}
-                                tickFormatter={(v) => `${v.toFixed(1)}`}
-                                interval={0}
-                                allowDecimals={true}
-                              />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} />
-                              <Line
-                                type="monotone"
-                                dataKey="efficiency"
-                                name="kWh/100km"
-                                stroke="#10b981"
-                                strokeWidth={3}
-                                dot={{ fill: '#10b981', r: 4 }}
-                                isAnimationActive={false}
-                              />
-                            </LineChart>
-                          </ResponsiveContainer>
+                          <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                            <LineJS
+                              options={{
+                                maintainAspectRatio: false,
+                                scales: {
+                                  y: {
+                                    beginAtZero: false,
+                                    min: Math.floor(Math.min(...monthly.map(m => m.efficiency || 999))) - 1,
+                                    max: Math.ceil(Math.max(...monthly.map(m => m.efficiency || 0))) + 1,
+                                    border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+                                    ticks: { font: { size: 10 } }
+                                  },
+                                  x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+                                },
+                                plugins: { legend: { display: false } }
+                              }}
+                              data={{
+                                labels: monthly.map(m => m.monthLabel),
+                                datasets: [{
+                                  label: 'kWh/100km',
+                                  data: monthly.map(m => m.efficiency),
+                                  borderColor: '#10b981',
+                                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                  fill: true,
+                                  pointBackgroundColor: '#10b981',
+                                  tension: 0.4,
+                                  pointRadius: 3
+                                }]
+                              }}
+                            />
+                          </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
-                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
-                            <ScatterChart>
-                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                              <XAxis
-                                dataKey="km"
-                                name="Distancia"
-                                stroke="#64748b"
-                                fontSize={12}
-                                type="number"
-                                scale="log"
-                                domain={['auto', 'auto']}
-                                ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
-                                allowDecimals={false}
-                                allowDataOverflow={false}
-                                tickFormatter={(v) => `${Math.round(v)}km`}
-                              />
-                              <YAxis
-                                dataKey="eff"
-                                name="Eficiencia"
-                                stroke="#64748b"
-                                fontSize={11}
-                                domain={[0, 'dataMax + 2']}
-                                tickFormatter={(v) => `${v.toFixed(1)}`}
-                              />
-                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                              <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
-                            </ScatterChart>
-                          </ResponsiveContainer>
+                          <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                            <ScatterJS
+                              options={{
+                                maintainAspectRatio: false,
+                                scales: {
+                                  x: {
+                                    type: 'logarithmic',
+                                    position: 'bottom',
+                                    title: { display: true, text: 'Distancia (km)', font: { size: 10 } },
+                                    border: { dash: [] }, grid: { display: true, borderDash: [3, 3], drawBorder: false },
+                                    min: 1,
+                                    max: 500,
+                                    ticks: {
+                                      font: { size: 10 },
+                                      callback: function (value) {
+                                        const allowed = [1, 2, 5, 10, 50, 200, 500];
+                                        return allowed.includes(value) ? value : '';
+                                      },
+                                      autoSkip: false,
+                                      maxRotation: 0
+                                    }
+                                  },
+                                  y: {
+                                    title: { display: true, text: 'Eficiencia', font: { size: 10 } },
+                                    border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+                                    ticks: { font: { size: 10 } }
+                                  }
+                                },
+                                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } } }
+                              }}
+                              data={{
+                                datasets: [{
+                                  label: 'Eficiencia',
+                                  data: effScatter,
+                                  backgroundColor: BYD_RED,
+                                  pointRadius: 4
+                                }]
+                              }}
+                            />
+                          </div>
                         </ChartCard>
                       </div>
 
@@ -2823,6 +2846,7 @@ export default function BYDStatsAnalyzer() {
                               </div>
                             );
                           })()}
+
                           <button
                             onClick={() => setShowAllTripsModal(true)}
                             className="w-full py-3 rounded-xl font-medium text-white"
@@ -2939,20 +2963,6 @@ export default function BYDStatsAnalyzer() {
               )}
             </div>
           )}
-
-          {/* Floating Filter Button */}
-          <button
-            onClick={() => setShowFilterModal(true)}
-            className={`fixed right-4 z-40 w-14 h-14 rounded-full shadow-lg flex items-center justify-center transition-transform active:scale-95`}
-            style={{
-              backgroundColor: BYD_RED,
-              bottom: layoutMode === 'vertical'
-                ? 'calc(5rem + env(safe-area-inset-bottom, 0px))'
-                : 'calc(1rem + env(safe-area-inset-bottom, 0px))'
-            }}
-          >
-            <Filter className="w-6 h-6 text-white" />
-          </button>
 
           {/* Filter Modal */}
           {showFilterModal && (

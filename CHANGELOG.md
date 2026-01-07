@@ -2,6 +2,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.0] - 2026-01-07
+### Mejoras Funcionales y UI/UX
+- **Centro de Datos Unificado**: Nuevo modal "Gestión de Datos" que consolida todas las operaciones (Cargar, Guardar, Combinar, Borrar, Exportar) en una única interfaz intuitiva.
+- **Flujo de Trabajo Simplificado**: Se han eliminado botones redundantes (+ flotante, Fullscreen vertical) para una interfaz más limpia. El filtro de viajes ahora es accesible desde la cabecera.
+- **Visualización Mejorada**:
+  - Unidades 'km' añadidas a listados clave en layout vertical.
+  - Colores de gráficos ajustados: "Km últimos 60 días" ahora en Rojo BYD, y gráficos de eficiencia con áreas sombreadas.
+  - Icono de aplicación en Android corregido a alta resolución.
+
+## [1.0.5] - 2026-01-05
+### Cambios previos (resumen)
+- Correcciones menores y ajustes de estabilidad.
+
 ## [1.0.1] - 2026-01-04
 ### Nuevas funciones
 - 4c47c39 - Mejora: mejoras en gráficos, colores y layout horizontal
