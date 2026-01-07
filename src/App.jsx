@@ -2112,7 +2112,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   </div>
 
@@ -2176,7 +2176,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                           </div>
-                          <GitHubFooter />
+
                         </div>
                       );
                     })()}
@@ -2228,7 +2228,7 @@ export default function BYDStatsAnalyzer() {
                               </div>
                             ))}
                           </div>
-                          <GitHubFooter />
+
                         </div>
                       );
                     })()}
@@ -2289,7 +2289,7 @@ export default function BYDStatsAnalyzer() {
                           </ScatterChart>
                         </ResponsiveContainer>
                       </ChartCard>
-                      <GitHubFooter />
+
                     </div>
                   </div>
 
@@ -2334,7 +2334,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   </div>
 
@@ -2380,7 +2380,7 @@ export default function BYDStatsAnalyzer() {
                       >
                         Mostrar todo
                       </button>
-                      <GitHubFooter />
+
                     </div>
                   </div>
                 </>
@@ -2413,7 +2413,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 240 : 280}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2432,7 +2432,7 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className="flex flex-row items-center gap-4">
                             <div className="w-1/2">
-                              <ResponsiveContainer width="100%" height={isCompact ? 180 : 220}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 200 : 260}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
@@ -2489,7 +2489,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   )}
                   {activeTab === 'trends' && (() => {
@@ -2531,7 +2531,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 280}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 320 : 320}>
                               <BarChart data={monthly}>
                                 <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                                 <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
@@ -2544,7 +2544,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 260}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 320 : 300}>
                               <AreaChart data={daily.slice(-60)}>
                                 <defs>
                                   <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
@@ -2561,7 +2561,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                         </div>
-                        <GitHubFooter />
+
                       </div>
                     );
                   })()}
@@ -2578,7 +2578,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Por Hora">
-                            <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 260 : 300}>
                               <BarChart data={hourly}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                                 <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
@@ -2589,7 +2589,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Por Día">
-                            <ResponsiveContainer width="100%" height={isCompact ? 240 : 300}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 260 : 340}>
                               <RadarChart data={weekday}>
                                 <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
                                 <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
@@ -2609,7 +2609,7 @@ export default function BYDStatsAnalyzer() {
                             </div>
                           ))}
                         </div>
-                        <GitHubFooter />
+
                       </div>
                     );
                   })()}
@@ -2623,7 +2623,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
-                          <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 320 : 360}>
                             <LineChart data={monthly}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
@@ -2657,7 +2657,7 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
-                          <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 320 : 360}>
                             <ScatterChart>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
@@ -2687,7 +2687,7 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   )}
                   {activeTab === 'records' && (
@@ -2730,7 +2730,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   )}
                   {activeTab === 'history' && (
@@ -2898,7 +2898,7 @@ export default function BYDStatsAnalyzer() {
                           })()}
                         </div>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   )}
                 </>
