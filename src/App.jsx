@@ -2621,36 +2621,70 @@ export default function BYDStatsAnalyzer() {
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
-                      <ChartCard isCompact={isCompact} title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
-                          <ScatterChart>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                            <XAxis
-                              dataKey="km"
-                              name="Distancia"
-                              stroke="#64748b"
-                              fontSize={12}
-                              type="number"
-                              scale="log"
-                              domain={['auto', 'auto']}
-                              ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
-                              allowDecimals={false}
-                              allowDataOverflow={false}
-                              tickFormatter={(v) => `${Math.round(v)}km`}
-                            />
-                            <YAxis
-                              dataKey="eff"
-                              name="Eficiencia"
-                              stroke="#64748b"
-                              fontSize={11}
-                              domain={[0, 'dataMax + 2']}
-                              tickFormatter={(v) => `${v.toFixed(1)}`}
-                            />
-                            <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
-                          </ScatterChart>
-                        </ResponsiveContainer>
-                      </ChartCard>
+                      <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
+                        <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
+                          <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
+                            <LineChart data={monthly}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis
+                                dataKey="monthLabel"
+                                stroke="#64748b"
+                                fontSize={isCompact ? 10 : 12}
+                                interval={0}
+                                angle={-45}
+                                textAnchor="end"
+                                height={50}
+                              />
+                              <YAxis
+                                stroke="#64748b"
+                                fontSize={isCompact ? 10 : 12}
+                                domain={['dataMin - 1', 'dataMax + 1']}
+                                tickFormatter={(v) => `${v.toFixed(1)}`}
+                              />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} />
+                              <Line
+                                type="monotone"
+                                dataKey="efficiency"
+                                name="kWh/100km"
+                                stroke="#10b981"
+                                strokeWidth={3}
+                                dot={{ fill: '#10b981', r: 4 }}
+                                isAnimationActive={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                        <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
+                          <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
+                            <ScatterChart>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis
+                                dataKey="km"
+                                name="Distancia"
+                                stroke="#64748b"
+                                fontSize={12}
+                                type="number"
+                                scale="log"
+                                domain={['auto', 'auto']}
+                                ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
+                                allowDecimals={false}
+                                allowDataOverflow={false}
+                                tickFormatter={(v) => `${Math.round(v)}km`}
+                              />
+                              <YAxis
+                                dataKey="eff"
+                                name="Eficiencia"
+                                stroke="#64748b"
+                                fontSize={11}
+                                domain={[0, 'dataMax + 2']}
+                                tickFormatter={(v) => `${v.toFixed(1)}`}
+                              />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
+                            </ScatterChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                      </div>
                       <GitHubFooter />
                     </div>
                   )}
