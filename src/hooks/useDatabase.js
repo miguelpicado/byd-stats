@@ -15,11 +15,11 @@ export function useDatabase() {
     const initSql = useCallback(async () => {
         return new Promise((resolve, reject) => {
             const sc = document.createElement('script');
-            sc.src = 'https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.min.js';
+            sc.src = '/assets/sql/sql-wasm.min.js';
             sc.onload = async () => {
                 try {
                     window.SQL = await window.initSqlJs({
-                        locateFile: f => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`
+                        locateFile: f => `/assets/sql/${f}`
                     });
                     setSqlReady(true);
                     resolve(true);
