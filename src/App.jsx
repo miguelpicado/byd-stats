@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
 import {
   LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -7,6 +7,17 @@ import {
 } from 'recharts';
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+
+// Import extracted utilities (code splitting for utils)
+import { formatMonth as formatMonthUtil, formatDate as formatDateUtil, formatTime as formatTimeUtil } from './utils/dateUtils';
+import { calculateScore as calculateScoreUtil, getScoreColor as getScoreColorUtil, formatDuration as formatDurationUtil, calculatePercentile as calculatePercentileUtil } from './utils/formatters';
+
+// Lazy load modals for code splitting
+const SettingsModalLazy = lazy(() => import('./components/modals/SettingsModal'));
+const FilterModalLazy = lazy(() => import('./components/modals/FilterModal'));
+const TripDetailModalLazy = lazy(() => import('./components/modals/TripDetailModal'));
+const HistoryModalLazy = lazy(() => import('./components/modals/HistoryModal'));
+const DatabaseUploadModalLazy = lazy(() => import('./components/modals/DatabaseUploadModal'));
 
 const BYD_RED = '#EA0029';
 
@@ -670,12 +681,12 @@ export default function BYDStatsAnalyzer() {
     e.target.value = '';
   }, [processDB]);
 
-  const clearData = () => {
+  const clearData = useCallback(() => {
     if (window.confirm('¿Borrar todos los datos?')) {
       setRawTrips([]);
       localStorage.removeItem(STORAGE_KEY);
     }
-  };
+  }, []);
 
   // Export database to EC_Database.db format
   const exportDatabase = useCallback(async () => {
@@ -785,7 +796,23 @@ export default function BYDStatsAnalyzer() {
     }
   }, []);
 
-
+  // Memoized modal handlers to prevent unnecessary re-renders
+  const handleOpenSettingsModal = useCallback(() => setShowSettingsModal(true), []);
+  const handleCloseSettingsModal = useCallback(() => setShowSettingsModal(false), []);
+  const handleOpenFilterModal = useCallback(() => setShowFilterModal(true), []);
+  const handleCloseFilterModal = useCallback(() => setShowFilterModal(false), []);
+  const handleOpenHelpModal = useCallback(() => setShowHelpModal(true), []);
+  const handleCloseHelpModal = useCallback(() => setShowHelpModal(false), []);
+  const handleOpenModal = useCallback(() => setShowModal(true), []);
+  const handleCloseModal = useCallback(() => setShowModal(false), []);
+  const handleOpenHistoryModal = useCallback(() => setShowHistoryModal(true), []);
+  const handleCloseHistoryModal = useCallback(() => setShowHistoryModal(false), []);
+  const handleOpenAllTripsModal = useCallback(() => setShowAllTripsModal(true), []);
+  const handleCloseAllTripsModal = useCallback(() => setShowAllTripsModal(false), []);
+  const handleCloseTripDetailModal = useCallback(() => {
+    setShowTripDetailModal(false);
+    setSelectedTrip(null);
+  }, []);
 
   const tabs = useMemo(() => [
     { id: 'overview', label: 'Resumen', icon: Activity },
@@ -980,8 +1007,8 @@ export default function BYDStatsAnalyzer() {
     );
   });
 
-  // Format duration in minutes/hours
-  const formatDuration = (seconds) => {
+  // Format duration in minutes/hours - memoized
+  const formatDuration = useCallback((seconds) => {
     if (!seconds) return '0 min';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -989,23 +1016,23 @@ export default function BYDStatsAnalyzer() {
       return `${hours}h ${minutes}min`;
     }
     return `${minutes} min`;
-  };
+  }, []);
 
-  // Calculate trip percentile
-  const calculatePercentile = (trip, allTrips) => {
+  // Calculate trip percentile - memoized
+  const calculatePercentile = useCallback((trip, allTrips) => {
     if (!trip || !allTrips || allTrips.length === 0) return 50;
     const tripEfficiency = trip.trip > 0 ? (trip.electricity / trip.trip) * 100 : 999;
     const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
     const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
     const betterCount = efficiencies.filter(e => e < tripEfficiency).length;
     return Math.round((betterCount / efficiencies.length) * 100);
-  };
+  }, []);
 
-  // Open trip detail
-  const openTripDetail = (trip) => {
+  // Open trip detail - memoized callback
+  const openTripDetail = useCallback((trip) => {
     setSelectedTrip(trip);
     setShowTripDetailModal(true);
-  };
+  }, []);
 
   if (loading) {
     return (
@@ -2009,7 +2036,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 168}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2028,7 +2055,7 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
                             <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 175}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
@@ -2085,7 +2112,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   </div>
 
@@ -2119,7 +2146,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 196}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <BarChart data={monthly}>
                                   <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
                                   <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
@@ -2132,7 +2159,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 182}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <AreaChart data={daily.slice(-60)}>
                                   <defs>
                                     <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
@@ -2149,7 +2176,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                           </div>
-                          <GitHubFooter />
+
                         </div>
                       );
                     })()}
@@ -2170,7 +2197,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Por Hora">
-                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 182}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <BarChart data={hourly}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                                   <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
@@ -2181,7 +2208,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Por Día">
-                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 182}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <RadarChart data={weekday}>
                                   <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
                                   <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
@@ -2201,7 +2228,7 @@ export default function BYDStatsAnalyzer() {
                               </div>
                             ))}
                           </div>
-                          <GitHubFooter />
+
                         </div>
                       );
                     })()}
@@ -2216,53 +2243,73 @@ export default function BYDStatsAnalyzer() {
                         <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                         <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
-                      <ChartCard isCompact={isCompact} title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={isCompact ? 300 : 224}>
-                          <ScatterChart>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                            <XAxis
-                              dataKey="km"
-                              name="Distancia"
-                              stroke="#64748b"
-                              fontSize={10}
-                              type="number"
-                              scale="log"
-                              domain={['auto', 'auto']}
-                              ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
-                              allowDecimals={false}
-                              allowDataOverflow={false}
-                              tickFormatter={(value) => `${Math.round(value)}`}
-                              label={{ value: 'km', position: 'insideBottomRight', offset: -5, fill: '#64748b', fontSize: 10 }}
-                            />
-                            <YAxis
-                              dataKey="eff"
-                              name="Eficiencia"
-                              stroke="#64748b"
-                              fontSize={10}
-                              allowDecimals={false}
-                              tickFormatter={(value) => Math.round(value)}
-                              label={{ value: 'kWh/100km', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10 }}
-                            />
-                            <Tooltip
-                              isAnimationActive={false}
-                              cursor={false}
-                              content={({ active, payload }) => {
-                                if (active && payload && payload.length) {
-                                  return (
-                                    <div className="bg-white dark:bg-slate-800 border border-slate-600 rounded-xl p-3">
-                                      <p className="text-slate-900 dark:text-white">{payload[0]?.value?.toFixed(1)} km</p>
-                                      <p style={{ color: BYD_RED }}>{payload[1]?.value?.toFixed(2)} kWh/100km</p>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }}
-                            />
-                            <Scatter data={effScatter} fill={BYD_RED} fillOpacity={0.6} isAnimationActive={false} activeShape={{ r: isCompact ? 3 : 5, fill: BYD_RED, stroke: '#fff', strokeWidth: 1 }} />
-                          </ScatterChart>
-                        </ResponsiveContainer>
-                      </ChartCard>
-                      <GitHubFooter />
+                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                        <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
+                            <LineChart data={monthly}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis
+                                dataKey="monthLabel"
+                                stroke="#64748b"
+                                fontSize={isCompact ? 10 : 12}
+                                interval={0}
+                                angle={-45}
+                                textAnchor="end"
+                                height={50}
+                              />
+                              <YAxis
+                                stroke="#64748b"
+                                fontSize={isCompact ? 10 : 12}
+                                domain={[(dataMin) => Math.floor(dataMin) - 1, (dataMax) => Math.ceil(dataMax) + 1]}
+                                tickFormatter={(v) => `${v.toFixed(1)}`}
+                                interval={0}
+                                allowDecimals={true}
+                              />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} />
+                              <Line
+                                type="monotone"
+                                dataKey="efficiency"
+                                name="kWh/100km"
+                                stroke="#10b981"
+                                strokeWidth={3}
+                                dot={{ fill: '#10b981', r: 4 }}
+                                isAnimationActive={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                        <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
+                            <ScatterChart>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis
+                                dataKey="km"
+                                name="Distancia"
+                                stroke="#64748b"
+                                fontSize={12}
+                                type="number"
+                                scale="log"
+                                domain={['auto', 'auto']}
+                                ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
+                                allowDecimals={false}
+                                allowDataOverflow={false}
+                                tickFormatter={(v) => `${Math.round(v)}km`}
+                              />
+                              <YAxis
+                                dataKey="eff"
+                                name="Eficiencia"
+                                stroke="#64748b"
+                                fontSize={11}
+                                domain={[0, 'dataMax + 2']}
+                                tickFormatter={(v) => `${v.toFixed(1)}`}
+                              />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
+                            </ScatterChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                      </div>
+
                     </div>
                   </div>
 
@@ -2307,7 +2354,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   </div>
 
@@ -2353,7 +2400,7 @@ export default function BYDStatsAnalyzer() {
                       >
                         Mostrar todo
                       </button>
-                      <GitHubFooter />
+
                     </div>
                   </div>
                 </>
@@ -2372,21 +2419,21 @@ export default function BYDStatsAnalyzer() {
                   {activeTab === 'overview' && (
                     <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
 
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
                       </div>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
-                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? 'gap-3' : ''}`}>
+                      <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 273 : 326}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2405,7 +2452,7 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className="flex flex-row items-center gap-4">
                             <div className="w-1/2">
-                              <ResponsiveContainer width="100%" height={isCompact ? 180 : 220}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 273 : 326}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
@@ -2462,7 +2509,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   )}
                   {activeTab === 'trends' && (() => {
@@ -2496,15 +2543,15 @@ export default function BYDStatsAnalyzer() {
 
                     return (
                       <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
-                        <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+                        <div className={`grid gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Viaje largo cada" value={daysPerLongTrip} unit="días" color="bg-purple-500/20 text-purple-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia mediana" value={medianEfficiency.toFixed(2)} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Carga diaria" value={dailyKwh.toFixed(2)} unit="kWh/día" color="bg-cyan-500/20 text-cyan-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
                         </div>
-                        <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                        <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 280}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
                               <BarChart data={monthly}>
                                 <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={11} angle={-20} textAnchor="end" height={50} />
                                 <YAxis yAxisId="l" stroke={BYD_RED} fontSize={11} />
@@ -2517,7 +2564,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 260}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
                               <AreaChart data={daily.slice(-60)}>
                                 <defs>
                                   <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
@@ -2534,7 +2581,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                         </div>
-                        <GitHubFooter />
+
                       </div>
                     );
                   })()}
@@ -2543,15 +2590,15 @@ export default function BYDStatsAnalyzer() {
                     const topHour = hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
                     return (
                       <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
-                        <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
+                        <div className={`grid gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Día frecuente" value={dayNamesFull[topDay.day] || topDay.day} unit="" color="bg-amber-500/20 text-amber-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Hora pico" value={`${topHour.hour.toString().padStart(2, '0')}:00h`} unit="" color="bg-purple-500/20 text-purple-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Km totales" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
                         </div>
-                        <div className={`grid md:grid-cols-2 gap-4 ${isCompact ? 'gap-3' : 'sm:gap-6'}`}>
+                        <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Por Hora">
-                            <ResponsiveContainer width="100%" height={isCompact ? 240 : 260}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 284 : 340}>
                               <BarChart data={hourly}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                                 <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
@@ -2562,7 +2609,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Por Día">
-                            <ResponsiveContainer width="100%" height={isCompact ? 240 : 300}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 284 : 340}>
                               <RadarChart data={weekday}>
                                 <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
                                 <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
@@ -2582,54 +2629,90 @@ export default function BYDStatsAnalyzer() {
                             </div>
                           ))}
                         </div>
-                        <GitHubFooter />
+
                       </div>
                     );
                   })()}
                   {activeTab === 'efficiency' && (
                     <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
-                      <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
+                      <div className={`grid gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
-                      <ChartCard isCompact={isCompact} title="Eficiencia vs Distancia">
-                        <ResponsiveContainer width="100%" height={isCompact ? 300 : 320}>
-                          <ScatterChart>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
-                            <XAxis
-                              dataKey="km"
-                              name="Distancia"
-                              stroke="#64748b"
-                              fontSize={12}
-                              type="number"
-                              scale="log"
-                              domain={['auto', 'auto']}
-                              ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
-                              allowDecimals={false}
-                              allowDataOverflow={false}
-                              tickFormatter={(v) => `${Math.round(v)}km`}
-                            />
-                            <YAxis
-                              dataKey="eff"
-                              name="Eficiencia"
-                              stroke="#64748b"
-                              fontSize={11}
-                              domain={[0, 'dataMax + 2']}
-                              tickFormatter={(v) => `${v.toFixed(1)}`}
-                            />
-                            <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
-                            <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
-                          </ScatterChart>
-                        </ResponsiveContainer>
-                      </ChartCard>
-                      <GitHubFooter />
+                      <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
+                        <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
+                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
+                            <LineChart data={monthly}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis
+                                dataKey="monthLabel"
+                                stroke="#64748b"
+                                fontSize={isCompact ? 10 : 12}
+                                interval={0}
+                                angle={-45}
+                                textAnchor="end"
+                                height={50}
+                              />
+                              <YAxis
+                                stroke="#64748b"
+                                fontSize={isCompact ? 10 : 12}
+                                domain={[(dataMin) => Math.floor(dataMin) - 1, (dataMax) => Math.ceil(dataMax) + 1]}
+                                tickFormatter={(v) => `${v.toFixed(1)}`}
+                                interval={0}
+                                allowDecimals={true}
+                              />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} />
+                              <Line
+                                type="monotone"
+                                dataKey="efficiency"
+                                name="kWh/100km"
+                                stroke="#10b981"
+                                strokeWidth={3}
+                                dot={{ fill: '#10b981', r: 4 }}
+                                isAnimationActive={false}
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                        <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
+                          <ResponsiveContainer width="100%" height={isCompact ? 350 : 450}>
+                            <ScatterChart>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
+                              <XAxis
+                                dataKey="km"
+                                name="Distancia"
+                                stroke="#64748b"
+                                fontSize={12}
+                                type="number"
+                                scale="log"
+                                domain={['auto', 'auto']}
+                                ticks={[1, 2, 5, 10, 20, 50, 100, 200, 500]}
+                                allowDecimals={false}
+                                allowDataOverflow={false}
+                                tickFormatter={(v) => `${Math.round(v)}km`}
+                              />
+                              <YAxis
+                                dataKey="eff"
+                                name="Eficiencia"
+                                stroke="#64748b"
+                                fontSize={11}
+                                domain={[0, 'dataMax + 2']}
+                                tickFormatter={(v) => `${v.toFixed(1)}`}
+                              />
+                              <Tooltip content={<ChartTip />} isAnimationActive={false} cursor={false} />
+                              <Scatter data={effScatter} fill={BYD_RED} isAnimationActive={false} />
+                            </ScatterChart>
+                          </ResponsiveContainer>
+                        </ChartCard>
+                      </div>
+
                     </div>
                   )}
                   {activeTab === 'records' && (
                     <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Más largo" value={summary.maxKm} unit="km" color="bg-red-500/20 text-red-500" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Mayor consumo" value={summary.maxKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-500" />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Más duración" value={summary.maxMin} unit="min" color="bg-amber-500/20 text-amber-500" />
@@ -2637,7 +2720,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="🥇 Top Distancia">
-                          <div className="space-y-1">
+                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.km.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
@@ -2647,7 +2730,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⚡ Top Consumo">
-                          <div className="space-y-1">
+                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.kwh.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
@@ -2657,7 +2740,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="⏱️ Top Duración">
-                          <div className="space-y-1">
+                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.dur.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
@@ -2667,7 +2750,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   )}
                   {activeTab === 'history' && (
@@ -2835,7 +2918,7 @@ export default function BYDStatsAnalyzer() {
                           })()}
                         </div>
                       </div>
-                      <GitHubFooter />
+
                     </div>
                   )}
                 </>
