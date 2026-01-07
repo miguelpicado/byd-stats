@@ -35,10 +35,10 @@ const StatCard = React.memo(({
         </div>
         <div className="flex-1 flex flex-col items-center justify-center text-center px-2 py-1 min-w-0">
             <p className="text-slate-600 dark:text-slate-400 leading-tight uppercase tracking-wider font-semibold truncate w-full" style={{ fontSize: isCompact ? (isLarger ? '9.5px' : '8px') : (isVerticalMode ? '9px' : '11px') }}>{label}</p>
-            <p className="font-black text-slate-900 dark:text-white leading-none mt-1" style={{ fontSize: isCompact ? (isLarger ? '24px' : '19px') : (isVerticalMode ? '22px' : '28px') }}>
-                {value}<span className="text-slate-500 dark:text-slate-400 ml-1 font-bold" style={{ fontSize: isCompact ? (isLarger ? '12px' : '8.5px') : (isVerticalMode ? '10px' : '14px') }}>{unit}</span>
+            <p className="font-black text-slate-900 dark:text-white leading-none mt-1" style={{ fontSize: isCompact ? (isLarger ? '21.5px' : '17px') : (isVerticalMode ? '22px' : '28px') }}>
+                {value}<span className="text-slate-500 dark:text-slate-400 ml-1 font-bold" style={{ fontSize: isCompact ? (isLarger ? '11px' : '7.5px') : (isVerticalMode ? '10px' : '14px') }}>{unit}</span>
             </p>
-            {sub && <p className="leading-tight font-bold mt-1 truncate w-full" style={{ color: BYD_RED, fontSize: isCompact ? (isLarger ? '9.5px' : '8px') : (isVerticalMode ? '9px' : '11px') }}>{sub}</p>}
+            {sub && <p className="leading-tight font-bold mt-1 truncate w-full" style={{ color: BYD_RED, fontSize: isCompact ? (isLarger ? '8.5px' : '7px') : (isVerticalMode ? '9px' : '11px') }}>{sub}</p>}
         </div>
     </div>
 ));
