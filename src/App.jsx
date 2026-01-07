@@ -893,17 +893,26 @@ export default function BYDStatsAnalyzer() {
       swipeDirection = null;
     };
 
-    // Agregar event listeners con opciones pasivas cuando sea posible
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    // Small delay to ensure DOM is fully ready before attaching listeners
+    // This fixes the issue where swipe doesn't work on initial app load
+    const timeoutId = setTimeout(() => {
+      if (container) {
+        // Agregar event listeners con opciones pasivas cuando sea posible
+        container.addEventListener('touchstart', handleTouchStart, { passive: true });
+        container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
+        container.addEventListener('touchend', handleTouchEnd, { passive: true });
+      }
+    }, 100); // 100ms delay to ensure render is complete
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
+      clearTimeout(timeoutId);
+      if (container) {
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+      }
     };
-  }, [isTransitioning, activeTab, tabs, layoutMode, handleTabClick]);
+  }, [isTransitioning, activeTab, tabs, layoutMode, handleTabClick, minSwipeDistance]);
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
