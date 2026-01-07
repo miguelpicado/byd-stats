@@ -24,7 +24,7 @@ export function useTheme(theme) {
 
             // 3. Native StatusBar
             if (isNative && window.StatusBar) {
-                window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
+                window.StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' })
                     .catch(e => console.error('StatusBar error:', e));
             }
         };
