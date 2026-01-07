@@ -2036,7 +2036,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 168}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2055,7 +2055,7 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
                             <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 175}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
@@ -2146,7 +2146,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Km y kWh Mensual">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 196}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <BarChart data={monthly}>
                                   <XAxis dataKey="monthLabel" stroke="#64748b" fontSize={10} angle={-20} textAnchor="end" height={40} />
                                   <YAxis yAxisId="l" stroke={BYD_RED} fontSize={10} />
@@ -2159,7 +2159,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Km recorridos en últimos 60 días">
-                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 182}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <AreaChart data={daily.slice(-60)}>
                                   <defs>
                                     <linearGradient id="dayGrad2" x1="0" y1="0" x2="0" y2="1">
@@ -2197,7 +2197,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title="Por Hora">
-                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 182}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <BarChart data={hourly}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                                   <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
@@ -2208,7 +2208,7 @@ export default function BYDStatsAnalyzer() {
                               </ResponsiveContainer>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title="Por Día">
-                              <ResponsiveContainer width="100%" height={isCompact ? 240 : 182}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                                 <RadarChart data={weekday}>
                                   <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
                                   <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
@@ -2245,7 +2245,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 200}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                             <LineChart data={monthly}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
@@ -2279,7 +2279,7 @@ export default function BYDStatsAnalyzer() {
                           </ResponsiveContainer>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
-                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 200}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                             <ScatterChart>
                               <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                               <XAxis
