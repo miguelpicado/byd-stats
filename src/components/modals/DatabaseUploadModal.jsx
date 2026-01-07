@@ -25,7 +25,10 @@ const DatabaseUploadModal = ({
     onExport,
     onClearData,
     onShowHistory,
+    onSaveToHistory,
+    onClearHistory,
     hasData,
+    historyCount,
     isNative
 }) => {
     if (!isOpen) return null;
@@ -42,7 +45,7 @@ const DatabaseUploadModal = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700"
+                className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-6">
@@ -55,84 +58,120 @@ const DatabaseUploadModal = ({
                     </button>
                 </div>
 
-                <div className="space-y-3">
-                    {/* Import new database */}
-                    <div>
-                        <input
-                            type="file"
-                            id="uploadNew"
-                            accept="*/*,image/*,.db,.jpg,.jpeg"
-                            className="hidden"
-                            onChange={(e) => handleFileChange(e, false)}
-                            disabled={!sqlReady}
-                        />
-                        <button
-                            onClick={() => document.getElementById('uploadNew')?.click()}
-                            className="w-full py-3 px-4 rounded-xl font-medium text-white flex items-center justify-center gap-2"
-                            style={{ backgroundColor: BYD_RED }}
-                            disabled={!sqlReady}
-                        >
-                            <Upload className="w-5 h-5" />
-                            Cargar nueva base de datos
-                        </button>
+                <div className="space-y-4">
+                    {/* Section 1: History Management */}
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
+                            Historial ({historyCount} viajes)
+                        </h3>
+                        <div className="space-y-2">
+                            <button
+                                onClick={() => { onSaveToHistory(); onClose(); }}
+                                className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors"
+                                style={{ backgroundColor: BYD_RED }}
+                                disabled={!hasData}
+                            >
+                                Guardar viajes actuales al historial
+                            </button>
+                            <button
+                                onClick={() => { onShowHistory(); onClose(); }}
+                                className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors"
+                            >
+                                Ver / Cargar historial
+                            </button>
+                            {historyCount > 0 && (
+                                <div className="grid grid-cols-2 gap-2">
+                                    <button
+                                        onClick={() => { onExport(); onClose(); }}
+                                        className="py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <Download className="w-4 h-4" /> Exportar
+                                    </button>
+                                    <button
+                                        onClick={() => { onClearHistory(); onClose(); }}
+                                        className="py-2.5 px-4 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                                    >
+                                        Borrar historial
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Merge databases */}
-                    {hasData && (
-                        <div>
-                            <input
-                                type="file"
-                                id="uploadMerge"
-                                accept="*/*,image/*,.db,.jpg,.jpeg"
-                                className="hidden"
-                                onChange={(e) => handleFileChange(e, true)}
-                                disabled={!sqlReady}
-                            />
-                            <button
-                                onClick={() => document.getElementById('uploadMerge')?.click()}
-                                className="w-full py-3 px-4 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
-                                disabled={!sqlReady}
-                            >
-                                <Database className="w-5 h-5" />
-                                Combinar con datos actuales
-                            </button>
+                    {/* Section 2: File Operations */}
+                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
+                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+                            Archivos / Base de Datos BYD
+                        </h3>
+                        <div className="space-y-2">
+                            <div>
+                                <input
+                                    type="file"
+                                    id="uploadNew"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg"
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange(e, false)}
+                                    disabled={!sqlReady}
+                                />
+                                <button
+                                    onClick={() => document.getElementById('uploadNew')?.click()}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                    disabled={!sqlReady}
+                                >
+                                    <Upload className="w-4 h-4" />
+                                    Cargar nuevos viajes (Reemplazar)
+                                </button>
+                            </div>
+
+                            {hasData && (
+                                <div>
+                                    <input
+                                        type="file"
+                                        id="uploadMerge"
+                                        accept="*/*,image/*,.db,.jpg,.jpeg"
+                                        className="hidden"
+                                        onChange={(e) => handleFileChange(e, true)}
+                                        disabled={!sqlReady}
+                                    />
+                                    <button
+                                        onClick={() => document.getElementById('uploadMerge')?.click()}
+                                        className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                        disabled={!sqlReady}
+                                    >
+                                        <Database className="w-4 h-4" />
+                                        Cargar sólo viajes nuevos (Combinar)
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Clear current view only */}
+                            {hasData && (
+                                <button
+                                    onClick={() => { onClearData(); onClose(); }}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                                >
+                                    Limpiar vista actual (No borra historial)
+                                </button>
+                            )}
+
+                            {hasData && (
+                                <button
+                                    onClick={() => { onExport(); onClose(); }}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <Download className="w-4 h-4" />
+                                    Exportar viajes
+                                </button>
+                            )}
                         </div>
-                    )}
-
-                    {/* Export database */}
-                    {hasData && (
-                        <button
-                            onClick={() => { onExport(); onClose(); }}
-                            className="w-full py-3 px-4 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
-                        >
-                            <Download className="w-5 h-5" />
-                            Exportar base de datos
-                        </button>
-                    )}
-
-                    {/* History */}
-                    <button
-                        onClick={() => { onShowHistory(); onClose(); }}
-                        className="w-full py-3 px-4 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
-                    >
-                        <Database className="w-5 h-5" />
-                        Historial de viajes
-                    </button>
-
-                    {/* Clear data */}
-                    {hasData && (
-                        <button
-                            onClick={() => { onClearData(); onClose(); }}
-                            className="w-full py-3 px-4 rounded-xl font-medium text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors"
-                        >
-                            Borrar todos los datos
-                        </button>
-                    )}
+                    </div>
                 </div>
 
                 {!isNative && (
-                    <p className="text-slate-500 dark:text-slate-400 text-xs text-center mt-4">
-                        💡 Si tu navegador no muestra archivos .db, renómbralo a .jpg
+                    <p className="text-slate-400 dark:text-slate-500 text-[10px] text-center mt-4">
+                        Consejo: Si el archivo .db no aparece, prueba a renombrarlo a .jpg
                     </p>
                 )}
             </div>
