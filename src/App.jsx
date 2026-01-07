@@ -2,6 +2,7 @@ import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, laz
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter as ScatterJS } from 'react-chartjs-2';
 
 // Import extracted utilities (code splitting for utils)
@@ -426,7 +427,7 @@ export default function BYDStatsAnalyzer() {
 
   // Theme management - UNIFIED AND ROBUST
   useEffect(() => {
-    const applyTheme = (isDark) => {
+    const applyTheme = async (isDark) => {
       // 1. CSS Classes
       if (isDark) {
         document.documentElement.classList.add('dark');
@@ -438,9 +439,18 @@ export default function BYDStatsAnalyzer() {
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 
       // 3. Native StatusBar
-      if (isNative && window.StatusBar) {
-        window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-          .catch(e => console.error('StatusBar error:', e));
+      if (isNative) {
+        try {
+          // CRITICAL: Style.Light = light icons (for dark bg), Style.Dark = dark icons (for light bg)
+          await StatusBar.setStyle({ style: isDark ? Style.Light : Style.Dark });
+
+          // Set status bar background color
+          await StatusBar.setBackgroundColor({
+            color: isDark ? '#0F172A' : '#F8FAFC'
+          });
+        } catch (e) {
+          console.error('StatusBar error:', e);
+        }
       }
     };
 
