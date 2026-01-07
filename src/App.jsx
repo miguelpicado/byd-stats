@@ -2413,7 +2413,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <ResponsiveContainer width="100%" height={isCompact ? 290 : 320}>
+                          <ResponsiveContainer width="100%" height={isCompact ? 280 : 330}>
                             <AreaChart data={monthly}>
                               <defs>
                                 <linearGradient id="kmGrad" x1="0" y1="0" x2="0" y2="1">
@@ -2432,7 +2432,7 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard isCompact={isCompact} title="Distribución de Viajes">
                           <div className="flex flex-row items-center gap-4">
                             <div className="w-1/2">
-                              <ResponsiveContainer width="100%" height={isCompact ? 290 : 320}>
+                              <ResponsiveContainer width="100%" height={isCompact ? 280 : 330}>
                                 <PieChart>
                                   <Pie
                                     data={tripDist}
@@ -2578,7 +2578,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title="Por Hora">
-                            <ResponsiveContainer width="100%" height={isCompact ? 310 : 340}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 340}>
                               <BarChart data={hourly}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="#cbd5e1" opacity={0.3} />
                                 <XAxis dataKey="hour" stroke="#64748b" tickFormatter={(h) => `${h}h`} fontSize={11} />
@@ -2589,7 +2589,7 @@ export default function BYDStatsAnalyzer() {
                             </ResponsiveContainer>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title="Por Día">
-                            <ResponsiveContainer width="100%" height={isCompact ? 310 : 340}>
+                            <ResponsiveContainer width="100%" height={isCompact ? 300 : 340}>
                               <RadarChart data={weekday}>
                                 <PolarGrid stroke="#94a3b8" strokeWidth={1.5} opacity={0.5} />
                                 <PolarAngleAxis dataKey="day" stroke="#64748b" strokeWidth={2} />
