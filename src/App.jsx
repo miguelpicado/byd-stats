@@ -2411,7 +2411,7 @@ export default function BYDStatsAnalyzer() {
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
-                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? 'gap-3' : ''}`}>
+                      <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
                           <ResponsiveContainer width="100%" height={isCompact ? 220 : 240}>
                             <AreaChart data={monthly}>
