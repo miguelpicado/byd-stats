@@ -11,13 +11,13 @@ import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud } from './components/Icons';
+import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, X, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
 
 import useDatabase from './hooks/useDatabase';
 import { useApp } from './context/AppContext';
-import { BYD_RED } from './components/Icons';
+
 
 // Lazy load modals for code splitting
 const SettingsModalLazy = lazy(() => import('./components/modals/SettingsModal'));
@@ -1440,7 +1440,7 @@ export default function BYDStatsAnalyzer() {
           isOpen={showSettingsModal}
           onClose={() => setShowSettingsModal(false)}
           settings={settings}
-          onSettingsChange={setSettings}
+          onSettingsChange={updateSettings}
           googleSync={googleSync}
         />
       </Suspense>
