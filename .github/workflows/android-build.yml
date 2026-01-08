@@ -178,12 +178,14 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
 
-      - name: Upload Release APK (Unsigned)
+      - name: Upload Release APK (Generic)
         uses: actions/upload-artifact@v4
-        if: steps.keystore_check.outputs.keystore_present == 'false' && success()
+        if: steps.keystore_check.outputs.keystore_present == 'false'
         with:
           name: byd-stats-release-unsigned-${{ github.sha }}
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: |
+            android/app/build/outputs/apk/release/app-release-unsigned.apk
+            android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
         continue-on-error: true
 
