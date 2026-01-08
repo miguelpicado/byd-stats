@@ -8,6 +8,7 @@ import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter a
 import { formatMonth as formatMonthUtil, formatDate as formatDateUtil, formatTime as formatTimeUtil } from './utils/dateUtils';
 import { calculateScore as calculateScoreUtil, getScoreColor as getScoreColorUtil, formatDuration as formatDurationUtil, calculatePercentile as calculatePercentileUtil } from './utils/formatters';
 import './utils/chartSetup'; // Register Chart.js components
+import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Lazy load modals for code splitting
 const SettingsModalLazy = lazy(() => import('./components/modals/SettingsModal'));
@@ -56,6 +57,7 @@ const GitHub = ({ className }) => <svg className={className} viewBox="0 0 24 24"
 const Navigation = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11" /></svg>;
 const Maximize = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3" /><path d="M21 8V5a2 2 0 0 0-2-2h-3" /><path d="M3 16v3a2 2 0 0 0 2 2h3" /><path d="M16 21h3a2 2 0 0 0 2-2v-3" /></svg>;
 const Minimize = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v3a2 2 0 0 1-2 2H3" /><path d="M21 8h-3a2 2 0 0 1-2-2V3" /><path d="M3 16h3a2 2 0 0 1 2 2v3" /><path d="M16 21v-3a2 2 0 0 1 2-2h3" /></svg>;
+const Cloud = ({ className }) => <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" /></svg>;
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -293,6 +295,8 @@ export default function BYDStatsAnalyzer() {
   const [dateTo, setDateTo] = useState('');
   const [tripHistory, setTripHistory] = useState([]);
 
+
+
   // Layout mode state: 'vertical' (mobile) or 'horizontal' (tablet/desktop)
   const [layoutMode, setLayoutMode] = useState('vertical');
   // Compact mode for 1280x720 optimization
@@ -327,6 +331,8 @@ export default function BYDStatsAnalyzer() {
     }
   });
 
+  // Google Sync Hook
+  const googleSync = useGoogleSync(rawTrips, setRawTrips, settings, setSettings);
 
 
   // Detect compact resolution (targeting ~1280x548/720)
@@ -616,14 +622,24 @@ export default function BYDStatsAnalyzer() {
           return o;
         });
 
+        let newTrips = [];
         if (merge && rawTrips.length) {
           const map = new Map();
           rawTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
           rows.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
-          setRawTrips(Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+          newTrips = Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+          setRawTrips(newTrips);
         } else {
-          setRawTrips(rows);
+          newTrips = rows;
+          setRawTrips(newTrips);
         }
+
+        // Auto-sync if connected
+        if (googleSync.isAuthenticated) {
+          console.log("Auto-syncing new data to cloud...");
+          googleSync.syncNow(newTrips);
+        }
+
         setShowModal(false);
       } else {
         throw new Error('Sin datos');
@@ -635,7 +651,7 @@ export default function BYDStatsAnalyzer() {
     } finally {
       setLoading(false);
     }
-  }, [rawTrips]);
+  }, [rawTrips, googleSync]);
 
   const onDrop = useCallback((e, merge) => {
     e.preventDefault();
@@ -1035,10 +1051,10 @@ export default function BYDStatsAnalyzer() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
-          <div className="text-center mb-8">
-            <img src="app_logo.png" className="w-32 sm:w-40 md:w-48 h-auto mx-auto mb-4 md:mb-6" alt="App Logo" />
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
-            <p className="text-sm sm:text-base text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
+          <div className="text-center mb-6">
+            <img src="app_logo.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
+            <h1 className={`${isCompact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold text-white mb-1`}>Estadísticas BYD</h1>
+            <p className="text-xs sm:text-sm text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
 
           {!sqlReady && !error && (
@@ -1057,7 +1073,7 @@ export default function BYDStatsAnalyzer() {
           )}
 
           <div
-            className="border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer"
+            className={`border-2 border-dashed rounded-3xl text-center transition-all cursor-pointer ${isCompact ? 'p-6' : 'p-8 sm:p-12'}`}
             style={{
               borderColor: dragOver ? BYD_RED : '#475569',
               backgroundColor: dragOver ? 'rgba(234,0,41,0.1)' : 'transparent'
@@ -1076,28 +1092,69 @@ export default function BYDStatsAnalyzer() {
               disabled={!sqlReady}
             />
             <div
-              className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center"
+              className={`${isCompact ? 'w-12 h-12 mb-4' : 'w-16 h-16 mb-6'} rounded-2xl mx-auto flex items-center justify-center`}
               style={{ backgroundColor: dragOver ? BYD_RED : '#334155' }}
             >
-              <Upload className="w-8 h-8" style={{ color: dragOver ? 'white' : BYD_RED }} />
+              <Upload className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'}`} style={{ color: dragOver ? 'white' : BYD_RED }} />
             </div>
-            <p className="text-white text-lg sm:text-xl mb-2">
-              {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Arrastra tu archivo EC_database.db') : 'Preparando...'}
+            <p className={`text-white mb-2 ${isCompact ? 'text-base' : 'text-lg sm:text-xl'}`}>
+              {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Haz clic para seleccionar tu archivo EC_Database.db') : 'Preparando...'}
             </p>
-            {!isNative && <p className="text-slate-400 text-sm">o haz clic para seleccionar</p>}
             <p className="text-slate-400 text-xs mt-4">
               Selecciona el fichero EC_Database.db en la carpeta "EnergyData" de tu coche
             </p>
             <p className="text-slate-500 text-xs mt-2">
-              💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a .jpg
+              💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a EC_Database.jpg
             </p>
           </div>
 
-          {sqlReady && (
-            <p className="text-center mt-4 text-sm" style={{ color: BYD_RED }}>
-              ✓ Listo para cargar datos
-            </p>
-          )}
+          {/* Divider */}
+          <div className="flex items-center w-full my-6">
+            <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
+            <span className="px-4 text-slate-500 text-sm font-medium">O</span>
+            <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
+          </div>
+
+          {/* Compact Cloud Sync Section */}
+          <div className="flex justify-center">
+            {googleSync.isAuthenticated ? (
+              <button
+                onClick={() => googleSync.syncNow()}
+                disabled={googleSync.isSyncing}
+                className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-all text-white shadow-lg"
+              >
+                <div className="relative">
+                  {googleSync.userProfile?.imageUrl ? (
+                    <img src={googleSync.userProfile.imageUrl} className="w-6 h-6 rounded-full" alt="User" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold">
+                      {googleSync.userProfile?.name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  {googleSync.isSyncing && (
+                    <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-slate-800 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 border-[1.5px] border-white/30 border-t-white rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-slate-400 leading-none mb-0.5">Nube conectada</p>
+                  <p className="text-sm font-medium leading-none">{googleSync.isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}</p>
+                </div>
+                {!googleSync.isSyncing && <Cloud className="w-4 h-4 text-slate-400 ml-1" />}
+              </button>
+            ) : (
+              <button
+                onClick={() => googleSync.login()}
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-800 px-4 py-2 rounded-xl text-sm"
+              >
+                <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full">
+                  <img src="https://www.google.com/favicon.ico" alt="G" className="w-3 h-3" />
+                </span>
+                Inicia sesión para sincronizar
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1647,116 +1704,15 @@ export default function BYDStatsAnalyzer() {
       )}
 
       {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowSettingsModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-              <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
-              Configuración
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Modelo del coche</label>
-                <input
-                  type="text"
-                  value={settings.carModel}
-                  onChange={(e) => setSettings({ ...settings, carModel: e.target.value })}
-                  placeholder="BYD Seal"
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Matrícula</label>
-                <input
-                  type="text"
-                  value={settings.licensePlate}
-                  onChange={(e) => setSettings({ ...settings, licensePlate: e.target.value.toUpperCase() })}
-                  placeholder="1234ABC"
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Nº Póliza del seguro</label>
-                <input
-                  type="text"
-                  value={settings.insurancePolicy}
-                  onChange={(e) => setSettings({ ...settings, insurancePolicy: e.target.value })}
-                  placeholder="123456789"
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tamaño de la batería (kWh)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.batterySize}
-                  onChange={(e) => setSettings({ ...settings, batterySize: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">State of Health - SoH (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={settings.soh}
-                  onChange={(e) => setSettings({ ...settings, soh: parseInt(e.target.value) || 100 })}
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Precio de electricidad (€/kWh)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.electricityPrice}
-                  onChange={(e) => setSettings({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tema</label>
-                <div className="flex gap-2">
-                  {['auto', 'light', 'dark'].map(theme => (
-                    <button
-                      key={theme}
-                      onClick={() => {
-                        setSettings({ ...settings, theme });
-                      }}
-                      className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${settings.theme === theme
-                        ? 'text-white'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                        }`}
-                      style={{
-                        backgroundColor: settings.theme === theme ? BYD_RED : ''
-                      }}
-                    >
-                      {theme === 'auto' ? 'Automático' : theme === 'light' ? 'Claro' : 'Oscuro'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowSettingsModal(false)}
-              className="w-full mt-6 py-3 rounded-xl font-medium text-white"
-              style={{ backgroundColor: BYD_RED }}
-            >
-              Guardar
-            </button>
-          </div>
-        </div>
-      )}
+      <Suspense fallback={null}>
+        <SettingsModalLazy
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          settings={settings}
+          onSettingsChange={setSettings}
+          googleSync={googleSync}
+        />
+      </Suspense>
 
       {/* Database Management Modal (Unified) */}
       <DatabaseUploadModalLazy
