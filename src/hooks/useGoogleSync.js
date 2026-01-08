@@ -46,9 +46,19 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     // Initial auth check (restore session)
     useEffect(() => {
         console.log("useGoogleSync: MOUNTED");
+
+        // Initialize Native SocialLogin immediately if native
+        if (Capacitor.isNativePlatform()) {
+            SocialLogin.initialize({
+                google: {
+                    webClientId: 'REDACTED_GOOGLE_CLIENT_ID'
+                }
+            }).catch(err => console.error("Failed to init SocialLogin on mount:", err));
+        }
+
         const restoreSession = async () => {
             try {
-                // Initialize service (no-op now but good for consistency)
+                // Initialize service (Fetch mode)
                 await googleDriveService.initClient();
 
                 const savedToken = localStorage.getItem('google_access_token');
@@ -193,13 +203,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         if (isNative) {
             // Native Android/iOS - use Capacitor SocialLogin
             try {
-                console.log("SocialLogin: Initializing...");
-                await SocialLogin.initialize({
-                    google: {
-                        webClientId: 'REDACTED_GOOGLE_CLIENT_ID'
-                    }
-                });
-                console.log("SocialLogin: Initialized successfully");
+                // SocialLogin is already initialized in useEffect
 
                 const result = await SocialLogin.login({
                     provider: 'google',
