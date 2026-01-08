@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "689099974608",
+    "project_id": "byd-stats-c8dbf",
+    "storage_bucket": "byd-stats-c8dbf.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:689099974608:android:66d517330b40cffcf53bd5",
+        "android_client_info": {
+          "package_name": "com.bydstats.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfJrF9lx8qLK58WZ0IxqtzuHn2lMtob-Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
