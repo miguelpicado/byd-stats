@@ -899,7 +899,7 @@ export default function BYDStatsAnalyzer() {
               <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
               Privacidad y Legal
             </button>
-            <p className="text-[10px] text-slate-600">BYD Stats v1.0.3</p>
+            <p className="text-[10px] text-slate-600">BYD Stats v1.1.0</p>
           </div>
         </div>
       </div>
@@ -1555,7 +1555,7 @@ export default function BYDStatsAnalyzer() {
               </div>
 
               <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
-                <p>BYD Stats Analyzer v1.0</p>
+                <p>BYD Stats Analyzer v1.1.0</p>
                 <p className="mt-1">Hecho con ❤️ para la comunidad BYD</p>
               </div>
             </div>
