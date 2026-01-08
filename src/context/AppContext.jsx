@@ -81,8 +81,26 @@ export const AppProvider = ({ children }) => {
         setSettings(prev => {
             // Handle both functional updates and direct values
             const updated = typeof newSettings === 'function' ? newSettings(prev) : newSettings;
-            localStorage.setItem('byd_settings', JSON.stringify(updated));
-            return updated;
+
+            // Defensive: Ensure updated is a valid settings object
+            if (!updated || typeof updated !== 'object' || Array.isArray(updated)) {
+                console.warn('updateSettings received invalid settings, ignoring:', updated);
+                return prev; // Keep previous valid settings
+            }
+
+            // Merge with defaults to ensure all fields exist
+            const validated = {
+                carModel: updated.carModel ?? prev.carModel ?? '',
+                licensePlate: updated.licensePlate ?? prev.licensePlate ?? '',
+                insurancePolicy: updated.insurancePolicy ?? prev.insurancePolicy ?? '',
+                batterySize: updated.batterySize ?? prev.batterySize ?? 60.48,
+                soh: updated.soh ?? prev.soh ?? 100,
+                electricityPrice: updated.electricityPrice ?? prev.electricityPrice ?? 0.15,
+                theme: updated.theme ?? prev.theme ?? 'auto'
+            };
+
+            localStorage.setItem('byd_settings', JSON.stringify(validated));
+            return validated;
         });
     };
 
