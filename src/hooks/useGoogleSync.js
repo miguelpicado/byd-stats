@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { googleDriveService } from '../services/googleDrive';
 import { Capacitor } from '@capacitor/core';
-import { GoogleAuth } from '@codetrix-studio/capacitor-google-auth';
+import { SocialLogin } from '@capgo/capacitor-social-login';
 
 export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -180,25 +180,29 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         console.log("Login attempt. Platform:", isNative ? "Native" : "Web");
 
         if (isNative) {
-            // Native Android/iOS - use Capacitor GoogleAuth
+            // Native Android/iOS - use Capacitor SocialLogin
             try {
-                // Initialize GoogleAuth if not already done
-                await GoogleAuth.initialize({
-                    clientId: '407339918856-6vmd7ijqjgk435hp0a6jnc9bphhogljf.apps.googleusercontent.com',
-                    scopes: ['profile', 'email', 'https://www.googleapis.com/auth/drive.appdata'],
-                    grantOfflineAccess: true
+                // Initialize SocialLogin for Google if not already done
+                await SocialLogin.initialize({
+                    google: {
+                        webClientId: '407339918856-6vmd7ijqjgk435hp0a6jnc9bphhogljf.apps.googleusercontent.com'
+                    }
                 });
 
-                const result = await GoogleAuth.signIn();
+                const result = await SocialLogin.login({
+                    provider: 'google',
+                    options: {
+                        scopes: ['profile', 'email', 'https://www.googleapis.com/auth/drive.appdata']
+                    }
+                });
                 console.log("Native Login Success:", result);
 
                 // Get access token from authentication
-                const accessToken = result.authentication?.accessToken;
+                const accessToken = result.result?.accessToken?.token;
                 if (accessToken) {
                     await handleLoginSuccess(accessToken);
                 } else {
-                    // If no access token, we need to exchange the serverAuthCode
-                    console.warn("No direct accessToken, serverAuthCode:", result.serverAuthCode);
+                    console.warn("No direct accessToken in result:", result);
                     setError("Authentication incomplete. Please try again.");
                 }
             } catch (e) {

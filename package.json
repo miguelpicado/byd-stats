@@ -21,7 +21,7 @@
     "@capacitor/core": "^8.0.0",
     "@capacitor/filesystem": "^8.0.0",
     "@capacitor/status-bar": "^8.0.0",
-    "@codetrix-studio/capacitor-google-auth": "^3.4.0-rc.4",
+    "@capgo/capacitor-social-login": "^8.2.11",
     "@react-oauth/google": "^0.13.4",
     "chart.js": "^4.5.1",
     "gapi-script": "^1.2.0",
