@@ -11,7 +11,7 @@ import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, X, BYD_RED } from './components/Icons.jsx';
+import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, Shield, X, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
 
