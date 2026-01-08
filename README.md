@@ -119,7 +119,7 @@ npm run android:build    # Build local de APK
 
 ## 🧰 Tecnologías
 - React (19.x), Vite
-- Recharts (gráficos)
+- Chart.js (gráficos interactivos)
 - Tailwind CSS (estilos)
 - Capacitor (Android)
 - SQL.js (leer `EC_Database.db` en el navegador)
