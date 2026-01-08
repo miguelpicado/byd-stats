@@ -2,7 +2,17 @@ name: Deploy Webapp to Pages
 
 on:
   push:
-    branches: ["main"]  # O "Android-APP" si no la renombraste
+    branches: ["main"]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'index.html'
+      - 'vite.config.js'
+      - 'package.json'
+      - '.github/workflows/deploy.yml'
+    paths-ignore:
+      - 'android/**'
+      - '*.md'
   workflow_dispatch:
 
 permissions:
