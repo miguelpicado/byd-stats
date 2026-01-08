@@ -156,6 +156,22 @@ jobs:
           ./gradlew assembleRelease --stacktrace
         continue-on-error: true
 
+      - name: Print APK Fingerprints (for Google Auth)
+        run: |
+          echo "🔍 Extracting SHA-1 fingerprints for Google Cloud Console..."
+          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
+            echo "--- DEBUG APK ---"
+            keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk | grep SHA1
+          fi
+          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+            echo "--- RELEASE APK (Signed) ---"
+            keytool -printcert -jarfile android/app/build/outputs/apk/release/app-release.apk | grep SHA1
+          fi
+          if [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+            echo "--- RELEASE APK (Unsigned) ---"
+            keytool -printcert -jarfile android/app/build/outputs/apk/release/app-release-unsigned.apk | grep SHA1
+          fi
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
