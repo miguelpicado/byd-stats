@@ -182,32 +182,48 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         if (isNative) {
             // Native Android/iOS - use Capacitor SocialLogin
             try {
+                console.log("SocialLogin: Initializing...");
                 // Initialize SocialLogin for Google if not already done
                 await SocialLogin.initialize({
                     google: {
                         webClientId: '407339918856-6vmd7ijqjgk435hp0a6jnc9bphhogljf.apps.googleusercontent.com'
                     }
                 });
+                console.log("SocialLogin: Initialized successfully");
 
+                console.log("SocialLogin: Calling login...");
                 const result = await SocialLogin.login({
                     provider: 'google',
                     options: {
-                        scopes: ['profile', 'email', 'https://www.googleapis.com/auth/drive.appdata']
+                        scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata']
                     }
                 });
-                console.log("Native Login Success:", result);
+                console.log("Native Login Success:", JSON.stringify(result));
 
-                // Get access token from authentication
-                const accessToken = result.result?.accessToken?.token;
+                // Get access token from authentication - try multiple paths
+                const accessToken = result.result?.accessToken?.token
+                    || result.result?.accessToken
+                    || result.accessToken?.token
+                    || result.accessToken;
+
                 if (accessToken) {
+                    console.log("Access token found, handling success...");
                     await handleLoginSuccess(accessToken);
                 } else {
-                    console.warn("No direct accessToken in result:", result);
-                    setError("Authentication incomplete. Please try again.");
+                    console.warn("No accessToken found. Full result:", JSON.stringify(result, null, 2));
+                    // Check if we got an idToken instead (some configurations return this)
+                    const idToken = result.result?.idToken || result.idToken;
+                    if (idToken) {
+                        console.log("Found idToken, trying to use it...");
+                        await handleLoginSuccess(idToken);
+                    } else {
+                        setError("No se pudo obtener el token de acceso. Revisa la configuración de Google Cloud Console.");
+                    }
                 }
             } catch (e) {
                 console.error("Native Login Failed:", e);
-                setError(e.message || "Login failed");
+                console.error("Error details:", JSON.stringify(e, Object.getOwnPropertyNames(e)));
+                setError(e.message || "Error al iniciar sesión con Google");
             }
         } else {
             // Web - use @react-oauth/google
