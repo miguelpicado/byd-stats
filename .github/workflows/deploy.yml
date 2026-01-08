@@ -10,9 +10,7 @@ on:
       - 'vite.config.js'
       - 'package.json'
       - '.github/workflows/deploy.yml'
-    paths-ignore:
-      - 'android/**'
-      - '*.md'
+
   workflow_dispatch:
 
 permissions:
