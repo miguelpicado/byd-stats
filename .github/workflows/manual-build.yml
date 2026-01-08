@@ -132,32 +132,46 @@ jobs:
         id: date
         run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
 
+      - name: Rename Debug APK
+        if: github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/BYD-Stats-debug.apk
+
       - name: Upload Debug APK
         if: github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
         uses: actions/upload-artifact@v4
         with:
-          name: byd-stats-debug-${{ steps.date.outputs.date }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: BYD-Stats-debug
+          path: android/app/build/outputs/apk/debug/BYD-Stats-debug.apk
           retention-days: 90
+
+      - name: Rename Release APK (Signed)
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
+        run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/BYD-Stats-release.apk
 
       - name: Upload Release APK (Signed)
         if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: byd-stats-release-signed-${{ steps.date.outputs.date }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: BYD-Stats-release
+          path: android/app/build/outputs/apk/release/BYD-Stats-release.apk
           retention-days: 90
 
+      - name: Rename Release APK (Generic)
+        if: (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'false'
+        run: |
+           if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+             mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/BYD-Stats-release.apk
+           elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+             mv android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/BYD-Stats-release.apk
+           fi
+
       - name: Upload Release APK (Generic)
-        if: (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both')
+        if: (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'false'
         uses: actions/upload-artifact@v4
         with:
-          name: byd-stats-release-unsigned-${{ steps.date.outputs.date }}
-          path: |
-             android/app/build/outputs/apk/release/app-release-unsigned.apk
-             android/app/build/outputs/apk/release/app-release.apk
+          name: BYD-Stats-release
+          path: android/app/build/outputs/apk/release/BYD-Stats-release.apk
           retention-days: 90
-        continue-on-error: true
 
       - name: Summary
         run: |
