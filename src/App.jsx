@@ -936,6 +936,20 @@ export default function BYDStatsAnalyzer() {
           </div>
           <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.1.0</p>
         </div>
+
+        {/* GitHub link in bottom-right - Fixed positioning */}
+        <div className="absolute right-6 bottom-6 z-10 flex flex-col gap-1.5 items-end">
+          <a
+            href="https://github.com/miguelpicado/byd-stats"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
+          >
+            <span>GitHub</span>
+            <GitHub className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
+          </a>
+          <p className="text-[10px] text-slate-600 pr-1">Open Source Project</p>
+        </div>
       </div>
     );
   }
