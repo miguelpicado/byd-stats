@@ -123,19 +123,9 @@ jobs:
 
       - name: Print APK Fingerprints (for Google Auth)
         run: |
-          echo "🔍 Extracting SHA-1 fingerprints for Google Cloud Console..."
-          if [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-            echo "--- DEBUG APK ---"
-            keytool -printcert -jarfile android/app/build/outputs/apk/debug/app-debug.apk | grep -i "SHA1" || echo "SHA1 not found in output"
-          fi
-          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
-            echo "--- RELEASE APK (Signed) ---"
-            keytool -printcert -jarfile android/app/build/outputs/apk/release/app-release.apk | grep -i "SHA1" || echo "SHA1 not found in output"
-          fi
-          if [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            echo "--- RELEASE APK (Unsigned) ---"
-            keytool -printcert -jarfile android/app/build/outputs/apk/release/app-release-unsigned.apk | grep -i "SHA1" || echo "SHA1 not found in output"
-          fi
+          cd android
+          echo "🔍 Running signingReport to extract SHA-1 fingerprints..."
+          ./gradlew signingReport | grep -A 5 "Variant:" || echo "❌ Could not run signingReport"
         continue-on-error: true
 
       - name: Get current date
