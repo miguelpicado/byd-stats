@@ -1573,16 +1573,8 @@ export default function BYDStatsAnalyzer() {
                   className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
                 >
                   <Shield className="w-5 h-5" />
-                  Información Legal (Modal)
+                  Información Legal
                 </button>
-
-                <a
-                  href="/legal"
-                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
-                >
-                  <FileText className="w-5 h-5" />
-                  Ver Versión Web
-                </a>
               </div>
 
               <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
