@@ -148,12 +148,14 @@ jobs:
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 90
 
-      - name: Upload Release APK (Unsigned fallback)
+      - name: Upload Release APK (Generic)
         if: (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both')
         uses: actions/upload-artifact@v4
         with:
           name: byd-stats-release-unsigned-${{ steps.date.outputs.date }}
-          path: android/app/build/outputs/apk/release/app-release-unsigned.apk
+          path: |
+             android/app/build/outputs/apk/release/app-release-unsigned.apk
+             android/app/build/outputs/apk/release/app-release.apk
           retention-days: 90
         continue-on-error: true
 
