@@ -181,21 +181,23 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         if (isNative) {
             // Native Android/iOS - use Capacitor SocialLogin
             try {
-                // DEBUG: Alert start
-                alert("Iniciando sesión nativa...");
+                const CLIENT_ID = '689099974608-b4q9jhdglhlqfmr7lo44rgqtehor4o33.apps.googleusercontent.com';
+
+                alert(`Iniciando sesión nativa...\nClientID: ${CLIENT_ID.substring(0, 15)}...`);
 
                 console.log("SocialLogin: Initializing...");
                 await SocialLogin.initialize({
                     google: {
-                        webClientId: '689099974608-b4q9jhdglhlqfmr7lo44rgqtehor4o33.apps.googleusercontent.com'
+                        webClientId: CLIENT_ID
                     }
                 });
-                alert("Init OK. Abriendo popup...");
+                alert("Init OK. Scopes: email, profile (TEST MODE)");
 
                 const result = await SocialLogin.login({
                     provider: 'google',
                     options: {
-                        scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata']
+                        // TEST MODE: Removed drive.appdata to rule out scope issues
+                        scopes: ['email', 'profile']
                     }
                 });
 
