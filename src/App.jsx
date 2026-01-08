@@ -2,23 +2,22 @@ import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, laz
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { StatusBar, Style } from '@capacitor/status-bar';
 import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter as ScatterJS } from 'react-chartjs-2';
 
 // Import extracted utilities (code splitting for utils)
-// Import extracted utilities (code splitting for utils)
-import { formatMonth, formatDate, formatTime, parseDate, toDateString } from './utils/dateUtils';
-import { calculateScore, getScoreColor, formatDuration, calculatePercentile, formatNumber } from './utils/formatters';
-import { BYD_RED } from './utils/constants';
+import { formatMonth, formatDate, formatTime } from './utils/dateUtils';
+import { calculateScore as calculateScoreUtil, getScoreColor as getScoreColorUtil, formatDuration as formatDurationUtil, calculatePercentile as calculatePercentileUtil } from './utils/formatters';
 import './utils/chartSetup'; // Register Chart.js components
+import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize } from './components/Icons';
+import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud } from './components/Icons';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
-import { useDataProcessor } from './hooks/useDataProcessor';
+
 import useDatabase from './hooks/useDatabase';
 import { useApp } from './context/AppContext';
+import { BYD_RED } from './components/Icons';
 
 // Lazy load modals for code splitting
 const SettingsModalLazy = lazy(() => import('./components/modals/SettingsModal'));
@@ -26,8 +25,6 @@ const FilterModalLazy = lazy(() => import('./components/modals/FilterModal'));
 const TripDetailModalLazy = lazy(() => import('./components/modals/TripDetailModal'));
 const HistoryModalLazy = lazy(() => import('./components/modals/HistoryModal'));
 const DatabaseUploadModalLazy = lazy(() => import('./components/modals/DatabaseUploadModal'));
-
-
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -52,10 +49,159 @@ const GitHubFooter = React.memo(() => (
 
 
 
+function processData(rows) {
+  if (!rows || rows.length === 0) return null;
+  const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
+  if (trips.length === 0) return null;
 
+  const totalKm = trips.reduce((s, r) => s + (r.trip || 0), 0);
+  const totalKwh = trips.reduce((s, r) => s + (r.electricity || 0), 0);
+  const totalDuration = trips.reduce((s, r) => s + (r.duration || 0), 0);
+  if (totalKm === 0) return null;
+
+  const monthlyData = {};
+  const dailyData = {};
+  const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
+  const weekdayData = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => ({ day: d, trips: 0, km: 0 }));
+
+  trips.forEach(trip => {
+    const m = trip.month || 'unknown';
+    if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
+    monthlyData[m].trips++;
+    monthlyData[m].km += trip.trip || 0;
+    monthlyData[m].kwh += trip.electricity || 0;
+
+    const d = trip.date || 'unknown';
+    if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
+    dailyData[d].trips++;
+    dailyData[d].km += trip.trip || 0;
+    dailyData[d].kwh += trip.electricity || 0;
+
+    if (trip.start_timestamp) {
+      try {
+        const dt = new Date(trip.start_timestamp * 1000);
+        const h = dt.getHours();
+        const w = dt.getDay();
+        hourlyData[h].trips++;
+        hourlyData[h].km += trip.trip || 0;
+        // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, 2 (Tue) -> 1, etc.
+        const weekdayIndex = (w + 6) % 7;
+        weekdayData[weekdayIndex].trips++;
+        weekdayData[weekdayIndex].km += trip.trip || 0;
+      } catch (e) {
+        console.error('Error processing timestamp:', e);
+      }
+    }
+  });
+
+
+  const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
+  monthlyArray.forEach(m => {
+    m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
+    m.monthLabel = formatMonth(m.month);
+  });
+
+  const dailyArray = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+  dailyArray.forEach(d => {
+    d.efficiency = d.km > 0 ? (d.kwh / d.km * 100) : 0;
+    d.dateLabel = formatDate(d.date);
+  });
+
+  const tripDistribution = [
+    { range: '0-5', count: 0, color: '#06b6d4' },
+    { range: '5-15', count: 0, color: '#10b981' },
+    { range: '15-30', count: 0, color: '#f59e0b' },
+    { range: '30-50', count: 0, color: BYD_RED },
+    { range: '50+', count: 0, color: '#8b5cf6' }
+  ];
+  trips.forEach(t => {
+    const km = t.trip || 0;
+    if (km <= 5) tripDistribution[0].count++;
+    else if (km <= 15) tripDistribution[1].count++;
+    else if (km <= 30) tripDistribution[2].count++;
+    else if (km <= 50) tripDistribution[3].count++;
+    else tripDistribution[4].count++;
+  });
+
+  const efficiencyScatter = trips
+    .filter(t => t.trip > 0 && t.electricity > 0)
+    .map(t => ({ x: t.trip, y: (t.electricity / t.trip) * 100 }))
+    .filter(t => t.y > 0 && t.y < 50)
+    .sort((a, b) => a.x - b.x);
+
+  const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
+  const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
+  const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
+  const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
+  const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+
+  // Calculate total span of days in the database using timestamps
+  const firstTs = sorted[0]?.start_timestamp;
+  const lastTs = sorted[sorted.length - 1]?.start_timestamp;
+  const totalDays = (firstTs && lastTs)
+    ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
+    : daysActive;
+
+  return {
+    summary: {
+      totalTrips: trips.length,
+      totalKm: totalKm.toFixed(1),
+      totalKwh: totalKwh.toFixed(1),
+      totalHours: (totalDuration / 3600).toFixed(1),
+      avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
+      avgKm: (totalKm / trips.length).toFixed(1),
+      avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
+      avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
+      daysActive,
+      totalDays,
+      dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
+      maxKm: sortedByKm[0]?.trip?.toFixed(1) || '0',
+      minKm: sortedByKm[sortedByKm.length - 1]?.trip?.toFixed(1) || '0',
+      maxKwh: sortedByKwh[0]?.electricity?.toFixed(1) || '0',
+      maxMin: ((sortedByDur[0]?.duration || 0) / 60).toFixed(0),
+      tripsDay: (trips.length / daysActive).toFixed(1),
+      kmDay: (totalKm / daysActive).toFixed(1)
+    },
+    monthly: monthlyArray,
+    daily: dailyArray,
+    hourly: hourlyData,
+    weekday: weekdayData,
+    tripDist: tripDistribution,
+    effScatter: efficiencyScatter,
+    top: {
+      km: sortedByKm.slice(0, 10),
+      kwh: sortedByKwh.slice(0, 10),
+      dur: sortedByDur.slice(0, 10)
+    }
+  };
+}
 
 // Helper functions
+const calculateScore = (efficiency, minEff, maxEff) => {
+  if (!efficiency || maxEff === minEff) return 5;
+  // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
+  // Score should be 10 when efficiency equals minEff (best)
+  // Score should be 0 when efficiency equals maxEff (worst)
+  const normalized = (maxEff - efficiency) / (maxEff - minEff);
+  return Math.max(0, Math.min(10, normalized * 10));
+};
 
+// Get color based on score (0=red, 5=orange, 10=green)
+const getScoreColor = (score) => {
+  if (score >= 5) {
+    // Green to orange (score 5-10)
+    const ratio = (score - 5) / 5;
+    const r = Math.round(255 - ratio * 155);
+    const g = Math.round(165 + ratio * 90);
+    return `rgb(${r}, ${g}, 0)`;
+  } else {
+    // Red to orange (score 0-5)
+    const ratio = score / 5;
+    const r = Math.round(234 + ratio * 21);
+    const g = Math.round(ratio * 165);
+    return `rgb(${r}, ${g}, 41)`;
+  }
+};
 
 
 
@@ -78,14 +224,15 @@ export default function BYDStatsAnalyzer() {
   const [dateTo, setDateTo] = useState('');
   const [tripHistory, setTripHistory] = useState([]);
 
+
+
   // Context state
   const { settings, updateSettings, layoutMode, isCompact } = useApp();
   const isLargerCard = isCompact && layoutMode === 'horizontal';
 
-
-
-  // Detect compact resolution (targeting ~1280x548/720)
-
+  // Google Sync Hook - Connect to Context Settings
+  // Note: googleSync expects setSettings. updateSettings is compatible.
+  const googleSync = useGoogleSync(rawTrips, setRawTrips, settings, updateSettings);
 
 
   // All trips view states
@@ -128,7 +275,13 @@ export default function BYDStatsAnalyzer() {
   const isNative = Capacitor.isNativePlatform();
 
   // Save settings to localStorage
-
+  useEffect(() => {
+    try {
+      localStorage.setItem('byd_settings', JSON.stringify(settings));
+    } catch (e) {
+      console.error('Error saving settings:', e);
+    }
+  }, [settings]);
 
   // Handle Android back button
   useEffect(() => {
@@ -153,7 +306,42 @@ export default function BYDStatsAnalyzer() {
   }, [showTripDetailModal, showSettingsModal, showAllTripsModal, isNative]);
 
   // Theme management - UNIFIED AND ROBUST
+  useEffect(() => {
+    const applyTheme = (isDark) => {
+      // 1. CSS Classes
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
 
+      // 2. Browser color-scheme (prevents BYD forced dark mode)
+      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+      // 3. Native StatusBar
+      if (isNative && window.StatusBar) {
+        window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
+          .catch(e => console.error('StatusBar error:', e));
+      }
+    };
+
+    const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+    if (settings.theme === 'auto') {
+      // Apply initial theme
+      applyTheme(getSystemTheme());
+
+      // Listen for system changes
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      const handler = (e) => applyTheme(e.matches);
+
+      mediaQuery.addEventListener('change', handler);
+      return () => mediaQuery.removeEventListener('change', handler);
+    } else {
+      // Manual theme
+      applyTheme(settings.theme === 'dark');
+    }
+  }, [settings.theme, isNative]);
 
   useEffect(() => {
     try {
@@ -197,7 +385,6 @@ export default function BYDStatsAnalyzer() {
     }
   }, [tripHistory]);
 
-  // Detect device type and orientation for layout mode
 
 
   useEffect(() => {
@@ -208,7 +395,23 @@ export default function BYDStatsAnalyzer() {
     return [...new Set(rawTrips.map(t => t.month).filter(Boolean))].sort();
   }, [rawTrips]);
 
-  const { filtered, data } = useDataProcessor(rawTrips, filterType, selMonth, dateFrom, dateTo);
+  const filtered = useMemo(() => {
+    if (rawTrips.length === 0) return [];
+    if (filterType === 'month' && selMonth) {
+      return rawTrips.filter(t => t.month === selMonth);
+    }
+    if (filterType === 'range') {
+      let r = [...rawTrips];
+      if (dateFrom) r = r.filter(t => t.date >= dateFrom.replace(/-/g, ''));
+      if (dateTo) r = r.filter(t => t.date <= dateTo.replace(/-/g, ''));
+      return r;
+    }
+    return rawTrips;
+  }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
+
+  const data = useMemo(() => {
+    return filtered.length > 0 ? processData(filtered) : null;
+  }, [filtered]);
 
   // Efficiency range calculation for scoring (not used directly but kept for logic reference if needed, but ESLint says it is unused)
   // Removing it to satisfy ESLint
@@ -229,9 +432,14 @@ export default function BYDStatsAnalyzer() {
     const trips = await processDBHook(file, merge ? rawTrips : [], merge);
     if (trips) {
       setRawTrips(trips);
+      // Auto-sync if connected
+      if (googleSync.isAuthenticated) {
+        console.log("Auto-syncing new data to cloud...");
+        googleSync.syncNow(trips);
+      }
       setShowModal(false);
     }
-  }, [processDBHook, rawTrips]);
+  }, [processDBHook, rawTrips, googleSync]);
 
   const onDrop = useCallback((e, merge) => {
     e.preventDefault();
@@ -432,26 +640,17 @@ export default function BYDStatsAnalyzer() {
       swipeDirection = null;
     };
 
-    // Small delay to ensure DOM is fully ready before attaching listeners
-    // This fixes the issue where swipe doesn't work on initial app load
-    const timeoutId = setTimeout(() => {
-      if (container) {
-        // Agregar event listeners con opciones pasivas cuando sea posible
-        container.addEventListener('touchstart', handleTouchStart, { passive: true });
-        container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
-        container.addEventListener('touchend', handleTouchEnd, { passive: true });
-      }
-    }, 100); // 100ms delay to ensure render is complete
+    // Agregar event listeners con opciones pasivas cuando sea posible
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
-      clearTimeout(timeoutId);
-      if (container) {
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
-      }
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isTransitioning, activeTab, tabs, layoutMode, handleTabClick, minSwipeDistance]);
+  }, [isTransitioning, activeTab, tabs, layoutMode, handleTabClick]);
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
@@ -486,7 +685,7 @@ export default function BYDStatsAnalyzer() {
 
 
 
-  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact }) => {
+  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor, isCompact }) => {
     const efficiency = useMemo(() => {
       if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
         return 0;
@@ -541,7 +740,26 @@ export default function BYDStatsAnalyzer() {
     );
   });
 
+  // Format duration in minutes/hours - memoized
+  const formatDuration = useCallback((seconds) => {
+    if (!seconds) return '0 min';
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) {
+      return `${hours}h ${minutes}min`;
+    }
+    return `${minutes} min`;
+  }, []);
 
+  // Calculate trip percentile - memoized
+  const calculatePercentile = useCallback((trip, allTrips) => {
+    if (!trip || !allTrips || allTrips.length === 0) return 50;
+    const tripEfficiency = trip.trip > 0 ? (trip.electricity / trip.trip) * 100 : 999;
+    const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+    const betterCount = efficiencies.filter(e => e < tripEfficiency).length;
+    return Math.round((betterCount / efficiencies.length) * 100);
+  }, []);
 
   // Open trip detail - memoized callback
   const openTripDetail = useCallback((trip) => {
@@ -564,10 +782,10 @@ export default function BYDStatsAnalyzer() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
-          <div className="text-center mb-8">
-            <img src="app_logo.png" className="w-32 sm:w-40 md:w-48 h-auto mx-auto mb-4 md:mb-6" alt="App Logo" />
-            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-2">Estadísticas BYD</h1>
-            <p className="text-sm sm:text-base text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
+          <div className="text-center mb-6">
+            <img src="app_logo.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
+            <h1 className={`${isCompact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold text-white mb-1`}>Estadísticas BYD</h1>
+            <p className="text-xs sm:text-sm text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
 
           {!sqlReady && !error && (
@@ -586,7 +804,7 @@ export default function BYDStatsAnalyzer() {
           )}
 
           <div
-            className="border-2 border-dashed rounded-3xl p-8 sm:p-12 text-center transition-all cursor-pointer"
+            className={`border-2 border-dashed rounded-3xl text-center transition-all cursor-pointer ${isCompact ? 'p-6' : 'p-8 sm:p-12'}`}
             style={{
               borderColor: dragOver ? BYD_RED : '#475569',
               backgroundColor: dragOver ? 'rgba(234,0,41,0.1)' : 'transparent'
@@ -605,28 +823,69 @@ export default function BYDStatsAnalyzer() {
               disabled={!sqlReady}
             />
             <div
-              className="w-16 h-16 rounded-2xl mx-auto mb-6 flex items-center justify-center"
+              className={`${isCompact ? 'w-12 h-12 mb-4' : 'w-16 h-16 mb-6'} rounded-2xl mx-auto flex items-center justify-center`}
               style={{ backgroundColor: dragOver ? BYD_RED : '#334155' }}
             >
-              <Upload className="w-8 h-8" style={{ color: dragOver ? 'white' : BYD_RED }} />
+              <Upload className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'}`} style={{ color: dragOver ? 'white' : BYD_RED }} />
             </div>
-            <p className="text-white text-lg sm:text-xl mb-2">
-              {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Arrastra tu archivo EC_database.db') : 'Preparando...'}
+            <p className={`text-white mb-2 ${isCompact ? 'text-base' : 'text-lg sm:text-xl'}`}>
+              {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Haz clic para seleccionar tu archivo EC_Database.db') : 'Preparando...'}
             </p>
-            {!isNative && <p className="text-slate-400 text-sm">o haz clic para seleccionar</p>}
             <p className="text-slate-400 text-xs mt-4">
               Selecciona el fichero EC_Database.db en la carpeta "EnergyData" de tu coche
             </p>
             <p className="text-slate-500 text-xs mt-2">
-              💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a .jpg
+              💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a EC_Database.jpg
             </p>
           </div>
 
-          {sqlReady && (
-            <p className="text-center mt-4 text-sm" style={{ color: BYD_RED }}>
-              ✓ Listo para cargar datos
-            </p>
-          )}
+          {/* Divider */}
+          <div className="flex items-center w-full my-6">
+            <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
+            <span className="px-4 text-slate-500 text-sm font-medium">O</span>
+            <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
+          </div>
+
+          {/* Compact Cloud Sync Section */}
+          <div className="flex justify-center">
+            {googleSync.isAuthenticated ? (
+              <button
+                onClick={() => googleSync.syncNow()}
+                disabled={googleSync.isSyncing}
+                className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-all text-white shadow-lg"
+              >
+                <div className="relative">
+                  {googleSync.userProfile?.imageUrl ? (
+                    <img src={googleSync.userProfile.imageUrl} className="w-6 h-6 rounded-full" alt="User" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold">
+                      {googleSync.userProfile?.name?.charAt(0) || 'U'}
+                    </div>
+                  )}
+                  {googleSync.isSyncing && (
+                    <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-slate-800 rounded-full flex items-center justify-center">
+                      <div className="w-2 h-2 border-[1.5px] border-white/30 border-t-white rounded-full animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <div className="text-left">
+                  <p className="text-xs text-slate-400 leading-none mb-0.5">Nube conectada</p>
+                  <p className="text-sm font-medium leading-none">{googleSync.isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}</p>
+                </div>
+                {!googleSync.isSyncing && <Cloud className="w-4 h-4 text-slate-400 ml-1" />}
+              </button>
+            ) : (
+              <button
+                onClick={() => googleSync.login()}
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-800 px-4 py-2 rounded-xl text-sm"
+              >
+                <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full">
+                  <img src="https://www.google.com/favicon.ico" alt="G" className="w-3 h-3" />
+                </span>
+                Inicia sesión para sincronizar
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -1176,116 +1435,15 @@ export default function BYDStatsAnalyzer() {
       )}
 
       {/* Settings Modal */}
-      {showSettingsModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowSettingsModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-              <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
-              Configuración
-            </h3>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Modelo del coche</label>
-                <input
-                  type="text"
-                  value={settings.carModel}
-                  onChange={(e) => setSettings({ ...settings, carModel: e.target.value })}
-                  placeholder="BYD Seal"
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Matrícula</label>
-                <input
-                  type="text"
-                  value={settings.licensePlate}
-                  onChange={(e) => setSettings({ ...settings, licensePlate: e.target.value.toUpperCase() })}
-                  placeholder="1234ABC"
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 uppercase"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Nº Póliza del seguro</label>
-                <input
-                  type="text"
-                  value={settings.insurancePolicy}
-                  onChange={(e) => setSettings({ ...settings, insurancePolicy: e.target.value })}
-                  placeholder="123456789"
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tamaño de la batería (kWh)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.batterySize}
-                  onChange={(e) => setSettings({ ...settings, batterySize: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">State of Health - SoH (%)</label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  value={settings.soh}
-                  onChange={(e) => setSettings({ ...settings, soh: parseInt(e.target.value) || 100 })}
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Precio de electricidad (€/kWh)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={settings.electricityPrice}
-                  onChange={(e) => setSettings({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
-                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tema</label>
-                <div className="flex gap-2">
-                  {['auto', 'light', 'dark'].map(theme => (
-                    <button
-                      key={theme}
-                      onClick={() => {
-                        setSettings({ ...settings, theme });
-                      }}
-                      className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${settings.theme === theme
-                        ? 'text-white'
-                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                        }`}
-                      style={{
-                        backgroundColor: settings.theme === theme ? BYD_RED : ''
-                      }}
-                    >
-                      {theme === 'auto' ? 'Automático' : theme === 'light' ? 'Claro' : 'Oscuro'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowSettingsModal(false)}
-              className="w-full mt-6 py-3 rounded-xl font-medium text-white"
-              style={{ backgroundColor: BYD_RED }}
-            >
-              Guardar
-            </button>
-          </div>
-        </div>
-      )}
+      <Suspense fallback={null}>
+        <SettingsModalLazy
+          isOpen={showSettingsModal}
+          onClose={() => setShowSettingsModal(false)}
+          settings={settings}
+          onSettingsChange={setSettings}
+          googleSync={googleSync}
+        />
+      </Suspense>
 
       {/* Database Management Modal (Unified) */}
       <DatabaseUploadModalLazy
