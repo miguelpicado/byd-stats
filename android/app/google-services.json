@@ -7,9 +7,28 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:689099974608:android:66d517330b40cffcf53bd5",
+        "mobilesdk_app_id": "1:689099974608:android:26c2f0d05127b05af53bd5",
         "android_client_info": {
           "package_name": "com.bydstats.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCfJrF9lx8qLK58WZ0IxqtzuHn2lMtob-Q"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:689099974608:android:66d517330b40cffcf53bd5",
+        "android_client_info": {
+          "package_name": "com.bydstats.com"
         }
       },
       "oauth_client": [],
