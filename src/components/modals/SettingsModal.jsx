@@ -123,7 +123,10 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
 
                             {!googleSync.isAuthenticated ? (
                                 <button
-                                    onClick={googleSync.login}
+                                    onClick={() => {
+                                        alert('Login button clicked! Platform: ' + (window.Capacitor?.isNativePlatform ? 'Native' : 'Web'));
+                                        googleSync.login();
+                                    }}
                                     className="w-full flex items-center justify-center gap-2 bg-white dark:bg-slate-700 text-slate-700 dark:text-white border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600 font-medium rounded-xl px-4 py-2.5 transition-colors"
                                 >
                                     <svg className="w-5 h-5" viewBox="0 0 24 24">
