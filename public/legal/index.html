@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacidad y Aviso Legal - BYD Stats Analyzer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f8fafc;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        .prose h3 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-top: 2rem;
+            color: white;
+        }
+
+        .prose h4 {
+            font-size: 0.875rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-top: 1.5rem;
+            color: #94a3b8;
+        }
+
+        .prose p {
+            margin-top: 0.75rem;
+            line-height: 1.6;
+            color: #cbd5e1;
+        }
+
+        .prose ul {
+            list-style-type: disc;
+            padding-left: 1.25rem;
+            margin-top: 0.75rem;
+            color: #cbd5e1;
+        }
+
+        .prose code {
+            background-color: #1e293b;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+    </style>
+</head>
+
+<body class="p-6 md:p-12 lg:p-24">
+    <div class="max-w-3xl mx-auto">
+        <div class="flex items-center gap-4 mb-12 border-b border-slate-800 pb-8">
+            <div style="background-color: #EA0029"
+                class="w-12 h-12 rounded-xl flex items-center justify-center font-bold text-white text-2xl">B</div>
+            <div>
+                <h1 class="text-2xl font-bold">BYD Stats Analyzer</h1>
+                <p class="text-slate-500 uppercase tracking-widest text-xs font-bold">Documentación Legal</p>
+            </div>
+        </div>
+
+        <div class="prose">
+            <h3>Política de Privacidad</h3>
+            <p><strong>Resumen:</strong> Tus datos son tuyos. BYD Stats funciona localmente y no vende ni envía tu
+                información a servidores externos de forma automática.</p>
+
+            <h4>1. Recopilación de Datos</h4>
+            <p>La aplicación procesa exclusivamente los datos contenidos en el archivo <code>EC_Database.db</code>
+                generado por tu vehículo BYD. Estos datos incluyen registros de viajes, eficiencia, consumos y
+                ubicaciones (coordenadas GPS de inicio/fin si las guardas).</p>
+
+            <h4>2. Uso de la Información</h4>
+            <p>La información se utiliza únicamente para generar las estadísticas, gráficas y reportes que ves en la
+                pantalla. No realizamos seguimiento de usuario ni profiling publicitario.</p>
+
+            <h4>3. Almacenamiento y Seguridad</h4>
+            <ul>
+                <li><strong>Local:</strong> Los datos se guardan en el almacenamiento local de tu navegador o
+                    dispositivo (IndexedDB/LocalStorage).</li>
+                <li><strong>Nube (Opcional):</strong> Si activas la Sincronización con Google Drive, los datos se
+                    subirán a tu cuenta privada de Google Drive (en la carpeta de "application data"). Solo tú tienes
+                    acceso a esos archivos.</li>
+            </ul>
+
+            <h4>4. Servicios de Terceros</h4>
+            <p>Utilizamos las APIs de Google solo para la función de sincronización opcional. Puedes consultar la
+                política de privacidad de Google para saber cómo manejan ellos tu cuenta de Google.</p>
+
+            <div style="margin-top: 4rem; padding-top: 2rem; border-top: 1px solid #1e293b;">
+                <h3>Aviso Legal</h3>
+                <h4>Sobre el proyecto</h4>
+                <p>BYD Stats Analyzer es una herramienta de código abierto (Open Source) desarrollada por la comunidad y
+                    para la comunidad. No tenemos ninguna relación oficial con BYD Auto Co., Ltd. ni con sus filiales.
+                </p>
+
+                <h4>Limitación de responsabilidad</h4>
+                <p>La aplicación se ofrece "tal cual" (as is), sin garantías de ningún tipo. No nos hacemos responsables
+                    de cualquier pérdida de datos, inexactitud en los cálculos o mal uso de la información obtenida.</p>
+            </div>
+        </div>
+
+        <footer class="mt-24 text-center text-slate-600 text-sm">
+            <p>© 2026 BYD Stats Community. <a href="/" class="text-red-500 hover:underline">Volver a la App →</a></p>
+        </footer>
+    </div>
+</body>
+
+</html>

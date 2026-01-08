@@ -11,7 +11,7 @@ import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, Shield, X, BYD_RED } from './components/Icons.jsx';
+import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
 
@@ -26,6 +26,7 @@ const TripDetailModalLazy = lazy(() => import('./components/modals/TripDetailMod
 const HistoryModalLazy = lazy(() => import('./components/modals/HistoryModal'));
 const DatabaseUploadModalLazy = lazy(() => import('./components/modals/DatabaseUploadModal'));
 const LegalModalLazy = lazy(() => import('./components/modals/LegalModal'));
+const LegalPageLazy = lazy(() => import('./pages/LegalPage'));
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -220,6 +221,18 @@ export default function BYDStatsAnalyzer() {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalInitialSection, setLegalInitialSection] = useState('privacy');
+
+  // Detect paths like /legal
+  const isLegalPath = window.location.pathname === '/legal' || window.location.pathname === '/legal/';
+
+  if (isLegalPath) {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Cargando...</div>}>
+        <LegalPageLazy />
+      </Suspense>
+    );
+  }
+
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [selMonth, setSelMonth] = useState('');
@@ -903,13 +916,13 @@ export default function BYDStatsAnalyzer() {
 
         {/* Privacy & Legal link in bottom-left - Fixed positioning */}
         <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1 items-start">
-          <button
-            onClick={() => { setLegalInitialSection('privacy'); setShowLegalModal(true); }}
+          <a
+            href="/legal/"
             className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
           >
             <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
             <span>Privacidad y Legal</span>
-          </button>
+          </a>
           <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.1.0</p>
         </div>
       </div>
@@ -1560,8 +1573,16 @@ export default function BYDStatsAnalyzer() {
                   className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
                 >
                   <Shield className="w-5 h-5" />
-                  Información Legal
+                  Información Legal (Modal)
                 </button>
+
+                <a
+                  href="/legal"
+                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800/50 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors flex items-center justify-center gap-2 border border-slate-200 dark:border-slate-700"
+                >
+                  <FileText className="w-5 h-5" />
+                  Ver Versión Web
+                </a>
               </div>
 
               <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
