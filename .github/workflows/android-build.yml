@@ -7,6 +7,11 @@ on:
       - master
       - develop
       - 'claude/**'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.github/ISSUE_TEMPLATE/**'
+      - 'LICENSE'
     tags:
       - 'v*'
   pull_request:
@@ -14,6 +19,9 @@ on:
       - main
       - master
       - 'claude/**'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
   workflow_dispatch:
 
 jobs:
@@ -156,12 +164,7 @@ jobs:
           ./gradlew assembleRelease --stacktrace
         continue-on-error: true
 
-      - name: Print APK Fingerprints (for Google Auth)
-        run: |
-          cd android
-          echo "🔍 Running signingReport to extract SHA-1 fingerprints..."
-          ./gradlew signingReport | grep -A 5 "Variant:" || echo "❌ Could not run signingReport"
-        continue-on-error: true
+
 
       - name: Rename Debug APK
         run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/BYD-Stats-debug.apk
