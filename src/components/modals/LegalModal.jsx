@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Shield, FileText, AlertCircle, HelpCircle } from '../Icons';
+import { X, Shield, FileText, AlertCircle, HelpCircle } from '../Icons.jsx';
 
 const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
     const [activeSection, setActiveSection] = React.useState(initialSection);
@@ -48,8 +48,8 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
                             key={s.id}
                             onClick={() => setActiveSection(s.id)}
                             className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-all border-b-2 ${activeSection === s.id
-                                    ? 'border-red-600 text-red-600 bg-red-50/10'
-                                    : 'border-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                ? 'border-red-600 text-red-600 bg-red-50/10'
+                                : 'border-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50'
                                 }`}
                         >
                             <s.icon className="w-4 h-4" />
