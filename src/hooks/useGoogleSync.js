@@ -43,15 +43,14 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         }
     }, []); // No dependencies needed for this specific implementation
 
-    // Initial load of GAPI client and Auth check
+    // Initial auth check (restore session)
     useEffect(() => {
         console.log("useGoogleSync: MOUNTED");
-        const loadGapi = async () => {
+        const restoreSession = async () => {
             try {
+                // Initialize service (no-op now but good for consistency)
                 await googleDriveService.initClient();
-                console.log("useGoogleSync: GAPI Initialized");
 
-                // Check for persisted token
                 const savedToken = localStorage.getItem('google_access_token');
                 if (savedToken) {
                     console.log("Restoring session from token");
@@ -60,12 +59,12 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                     fetchUserProfile(savedToken);
                 }
             } catch (e) {
-                console.error("Failed to init Google Drive Client", e);
+                console.error("Failed to restore session", e);
             }
         };
-        loadGapi();
+        restoreSession();
         return () => console.log("useGoogleSync: UNMOUNTED");
-    }, [fetchUserProfile]); // Add fetchUserProfile as a dependency
+    }, [fetchUserProfile]);
 
     useEffect(() => {
         console.log("useGoogleSync: isAuthenticated changed to:", isAuthenticated);

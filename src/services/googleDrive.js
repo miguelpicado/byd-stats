@@ -1,53 +1,52 @@
-import { gapi } from 'gapi-script';
-
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-const SCOPES = "https://www.googleapis.com/auth/drive.appdata";
+const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
+const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
 const DB_FILENAME = 'byd_stats_data.json';
 const FOLDER_ID = 'appDataFolder';
 
+let accessToken = null;
+
 export const googleDriveService = {
-  isInited: false,
+  // Flag to indicate if service is ready (always true now as we use fetch)
+  isInited: true,
 
   /**
-   * Initialize the GAPI client (only for Drive API calls, auth is handled by @react-oauth/google)
+   * Initialize - No-op for fetch implementation, kept for compatibility
    */
   initClient: async () => {
-    return new Promise((resolve, reject) => {
-      gapi.load('client', () => {
-        gapi.client.init({
-          discoveryDocs: DISCOVERY_DOCS,
-        }).then(() => {
-          googleDriveService.isInited = true;
-          resolve(true);
-        }).catch(err => {
-          console.error("Error initializing GAPI client", err);
-          reject(err);
-        });
-      });
-    });
+    console.log("googleDriveService: Init (Fetch mode) - Ready");
+    return Promise.resolve(true);
   },
 
   /**
-   * Set the access token for GAPI calls
+   * Set the access token for API calls
    */
   setAccessToken: (token) => {
-    if (!token) return;
-    gapi.client.setToken({ access_token: token });
+    accessToken = token;
   },
 
   /**
    * Check if the user is signed in (checks if token is present)
    */
   isSignedIn: () => {
-    const token = gapi.client.getToken();
-    return !!token && !!token.access_token;
+    return !!accessToken;
   },
 
   /**
    * Sign out (Clear token)
    */
   signOut: async () => {
-    gapi.client.setToken(null);
+    accessToken = null;
+  },
+
+  /**
+   * Helper for fetch headers
+   */
+  _getHeaders: () => {
+    if (!accessToken) throw new Error("No access token set");
+    return {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json'
+    };
   },
 
   /**
@@ -55,13 +54,19 @@ export const googleDriveService = {
    */
   listFiles: async () => {
     try {
-      const response = await gapi.client.drive.files.list({
-        spaces: 'appDataFolder',
-        fields: 'nextPageToken, files(id, name, modifiedTime)',
-        pageSize: 10,
-        q: `name = '${DB_FILENAME}'`
+      const query = `name = '${DB_FILENAME}'`;
+      const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime)&pageSize=10&q=${encodeURIComponent(query)}`;
+      
+      const response = await fetch(url, {
+        headers: googleDriveService._getHeaders()
       });
-      return response.result.files;
+
+      if (!response.ok) {
+        throw new Error(`Error listing files: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.files;
     } catch (error) {
       console.error("Error listing files", error);
       throw error;
@@ -73,25 +78,20 @@ export const googleDriveService = {
    */
   downloadFile: async (fileId) => {
     try {
-      const response = await gapi.client.drive.files.get({
-        fileId: fileId,
-        alt: 'media'
+      const url = `${DRIVER_API_URL}/files/${fileId}?alt=media`;
+      const response = await fetch(url, {
+        headers: googleDriveService._getHeaders()
       });
-      console.log("Download response:", response);
-      let result = response.result;
 
-      // Ensure result is an object/array. GAPI might return string if not auto-parsed.
-      if (typeof result === 'string') {
-        try {
-          result = JSON.parse(result);
-        } catch (e) {
-          console.warn("Could not parse download result as JSON", e);
-        }
+      if (!response.ok) {
+        throw new Error(`Error downloading file: ${response.status} ${response.statusText}`);
       }
+
+      const result = await response.json();
+      console.log("Download successful");
 
       // Normalize to { trips: [], settings: {} }
       if (Array.isArray(result)) {
-        // Legacy format (just array of trips)
         console.log("Migrating legacy array format to object...");
         return { trips: result, settings: {} };
       }
@@ -112,15 +112,10 @@ export const googleDriveService = {
 
   /**
    * Upload (Create or Update) the database file
-   * Method: 2-step to avoid manual multipart framing issues.
-   * 1. If new, create metadata (to put in appDataFolder).
-   * 2. Upload content via uploadType=media.
    */
   uploadFile: async (data, existingFileId = null) => {
     try {
       const fileContent = JSON.stringify(data);
-      const accessToken = gapi.client.getToken().access_token;
-
       let fileId = existingFileId;
 
       // Step 1: If no existing file, create metadata first
@@ -131,12 +126,9 @@ export const googleDriveService = {
           parents: [FOLDER_ID]
         };
 
-        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        const createRes = await fetch(`${DRIVER_API_URL}/files`, {
           method: 'POST',
-          headers: {
-            'Authorization': 'Bearer ' + accessToken,
-            'Content-Type': 'application/json'
-          },
+          headers: googleDriveService._getHeaders(),
           body: JSON.stringify(metadata)
         });
 
@@ -150,14 +142,11 @@ export const googleDriveService = {
 
       // Step 2: Upload Content (Simple Upload)
       // Use uploadType=media
-      const updateUrl = `https://www.googleapis.com/upload/drive/v3/files/${fileId}?uploadType=media`;
+      const updateUrl = `${UPLOAD_API_URL}/files/${fileId}?uploadType=media`;
 
       const updateRes = await fetch(updateUrl, {
         method: 'PATCH',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'application/json'
-        },
+        headers: googleDriveService._getHeaders(),
         body: fileContent
       });
 
@@ -195,7 +184,6 @@ export const googleDriveService = {
 
     // 2. Merge Settings
     // Strategy: Remote settings overlay local settings if they exist.
-    // This allows syncing settings FROM cloud to this device.
     const mergedSettings = { ...localData.settings, ...remoteData.settings };
 
     return {
