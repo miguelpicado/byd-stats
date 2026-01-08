@@ -20,6 +20,8 @@ Una herramienta (web + Android) para visualizar y analizar las estadísticas del
 - Tendencias por mes/día y distribución horaria
 - Análisis de eficiencia (kWh/100km) y scatterplots de consumo vs distancia
 - Clasificación de viajes (más largos, más eficientes, mayor consumo)
+- **NOVEDAD v1.1.0:** Sincronización opcional en la nube con **Google Drive** (tus datos siguen siendo tuyos)
+- Páginas dedicadas de Privacidad y Aviso Legal para cumplimiento normativo
 - Funciona completamente offline: procesamiento local con `sql.js` y almacenamiento en localStorage
 - App Android con mismas funcionalidades y soporte para seleccionar fichero `.db`
 
@@ -30,7 +32,7 @@ Una herramienta (web + Android) para visualizar y analizar las estadísticas del
 2. Abre la carpeta `EnergyData` en la unidad USB.
 3. Copia `EC_Database.db` y arrástralo a la aplicación web (o selecciónalo desde la app Android).
 
-> **Privacidad:** Todos los datos se procesan en tu dispositivo/navegador con `sql.js`; el archivo nunca se sube a ningún servidor.
+> **Privacidad:** Por defecto, todos los datos se procesan en tu dispositivo con `sql.js`. La sincronización con **Google Drive** es completamente opcional y utiliza tu propia cuenta personal; nosotros no tenemos acceso a tus datos.
 
 ### 🔧 Workaround para navegadores restrictivos (Chrome 113 del BYD)
 
@@ -161,6 +163,9 @@ Este proyecto se publica bajo la **Licencia MIT**. He añadido el archivo `LICEN
 
 ## 🙏 Agradecimientos
 Hecho en Galicia con ❤️ — Si te sirve la herramienta, ¡compártela con la comunidad BYD!
+
+**Diseño de logotipo e identidad visual:**
+Ana Picado ([bravamundana.com](https://bravamundana.com))
 
 ---
 
