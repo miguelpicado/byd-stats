@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import { BYD_RED, dayNamesFull } from '../../utils/constants';
 import { formatDate, formatTime } from '../../utils/dateUtils';
 import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '../../utils/formatters';
-import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../icons';
+import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons.jsx';
 
 /**
  * Trip detail modal showing full trip information

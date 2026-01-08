@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BYD_RED } from '../../utils/constants';
-import { Upload, Database, Download, Plus } from '../icons';
+import { Upload, Database, Download, Plus } from '../Icons.jsx';
 
 /**
  * Database upload/management modal

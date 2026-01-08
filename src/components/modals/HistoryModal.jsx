@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BYD_RED } from '../../utils/constants';
-import { Database, Plus } from '../icons';
+import { Database, Plus } from '../Icons.jsx';
 
 /**
  * History modal for trip history management
