@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BYD_RED } from '../../utils/constants';
-import { Settings } from '../icons';
+import { Settings } from '../Icons.jsx';
 
 /**
  * Settings modal for app configuration

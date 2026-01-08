@@ -3,7 +3,7 @@
 import React from 'react';
 import { BYD_RED } from '../../utils/constants';
 import { formatMonth } from '../../utils/dateUtils';
-import { Filter, Plus } from '../icons';
+import { Filter, Plus } from '../Icons.jsx';
 
 /**
  * Filter modal for trip filtering
@@ -64,8 +64,8 @@ const FilterModal = ({
                             <button
                                 onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
                                 className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'all'
-                                        ? 'text-white'
-                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                    ? 'text-white'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
                                     }`}
                                 style={{ backgroundColor: filterType === 'all' ? BYD_RED : '' }}
                             >
@@ -74,8 +74,8 @@ const FilterModal = ({
                             <button
                                 onClick={() => setFilterType('month')}
                                 className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'month'
-                                        ? 'text-white'
-                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                    ? 'text-white'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
                                     }`}
                                 style={{ backgroundColor: filterType === 'month' ? BYD_RED : '' }}
                             >
@@ -84,8 +84,8 @@ const FilterModal = ({
                             <button
                                 onClick={() => setFilterType('range')}
                                 className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'range'
-                                        ? 'text-white'
-                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                    ? 'text-white'
+                                    : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
                                     }`}
                                 style={{ backgroundColor: filterType === 'range' ? BYD_RED : '' }}
                             >
