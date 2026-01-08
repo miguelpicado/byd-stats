@@ -221,15 +221,27 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
 
                 // DEBUG: Inspect the result structure exactly
                 const hasAccess = !!(result.result?.accessToken?.token || result.result?.accessToken || result.accessToken?.token || result.accessToken);
-                const hasId = !!(result.result?.idToken || result.idToken);
-                alert(`Debug Token:\nAccess: ${hasAccess}\nID: ${hasId}`);
+                // alert(`Debug Token:\nAccess: ${hasAccess}\nID: ${!!(result.result?.idToken || result.idToken)}`);
 
                 if (accessToken) {
+                    // DIAGNOSTIC: Check Token Scopes
+                    try {
+                        const infoRes = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`);
+                        const infoData = await infoRes.json();
+                        alert(`TOKEN INFO:\nScopes: ${infoData.scope}\nAud: ${infoData.audience}\nErr: ${infoData.error}`);
+                    } catch (err) {
+                        alert("Token Check Failed: " + err.message);
+                    }
+
                     console.log("Access token found, handling success...");
                     await handleLoginSuccess(accessToken);
                 } else {
                     console.error("No accessToken found. Result:", JSON.stringify(result));
-                    setError("Error crítico: Google no devolvió Token de Acceso (solo ID). Reporta esto.");
+                    // setError("Error crítico: Google no devolvió Token de Acceso (solo ID). Reporta esto.");
+
+                    // Fallback attempt (sometimes plugins put it elsewhere) or try ID token as last resort if needed
+                    // But for now, error out to be safe.
+                    setError("Error: No Access Token received.");
                 }
             } catch (e) {
                 console.error("Native Login Failed:", e);
