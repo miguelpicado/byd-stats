@@ -76,6 +76,16 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     const logout = useCallback(async () => {
         try {
             await googleDriveService.signOut();
+
+            if (Capacitor.isNativePlatform()) {
+                try {
+                    await SocialLogin.logout({ provider: 'google' });
+                    console.log("Native SocialLogin logout completed");
+                } catch (nativeErr) {
+                    console.warn("Native logout error (ignoring):", nativeErr);
+                }
+            }
+
             localStorage.removeItem('google_access_token'); // Clear Token
             setIsAuthenticated(false);
             setUserProfile(null);
