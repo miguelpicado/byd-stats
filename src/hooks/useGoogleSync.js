@@ -195,7 +195,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 const result = await SocialLogin.login({
                     provider: 'google',
                     options: {
-                        scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata']
+                        // Note: Custom scopes like drive.appdata require MainActivity modifications
+                        // For now, using default scopes (email, profile) which work without modifications
                     }
                 });
                 console.log("Native Login Success:", JSON.stringify(result));
