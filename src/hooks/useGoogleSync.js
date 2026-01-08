@@ -114,6 +114,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         setIsSyncing(true);
         setError(null);
         try {
+            alert("DEBUG: performSync STARTED");
             // 1. Find or Create File
             const files = await googleDriveService.listFiles();
             let fileId = null;
@@ -162,6 +163,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
 
         } catch (e) {
             console.error("Sync failed:", e);
+            alert(`DEBUG: performSync CAUGHT ERROR:\n${e.message}`);
+
             if (e.status === 401 || e.status === 403 ||
                 (e.result && e.result.error && (e.result.error.code === 401 || e.result.error.code === 403))) {
                 console.warn("Auth error (401/403), logging out...");
