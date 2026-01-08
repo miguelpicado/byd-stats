@@ -1,0 +1,81 @@
+import React from 'react';
+import { X, Shield, FileText } from '../Icons.jsx';
+import LegalContent from '../LegalContent.jsx';
+
+const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
+    const [activeSection, setActiveSection] = React.useState(initialSection);
+
+    if (!isOpen) return null;
+
+    const sections = [
+        { id: 'privacy', label: 'Privacidad', icon: Shield },
+        { id: 'legal', label: 'Aviso Legal', icon: FileText },
+    ];
+
+    return (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <div
+                className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                onClick={onClose}
+            ></div>
+
+            <div
+                className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl h-[80vh] flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden"
+                onClick={(e) => e.stopPropagation()}
+            >
+                {/* Header */}
+                <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/50">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800 flex items-center justify-center">
+                            <Shield className="w-6 h-6 text-slate-600 dark:text-slate-400" />
+                        </div>
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Documentación Legal</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">BYD Stats Analyzer</p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-500"
+                    >
+                        <X className="w-6 h-6" />
+                    </button>
+                </div>
+
+                {/* Tabs */}
+                <div className="flex border-b border-slate-200 dark:border-slate-800">
+                    {sections.map((s) => (
+                        <button
+                            key={s.id}
+                            onClick={() => setActiveSection(s.id)}
+                            className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-all border-b-2 ${activeSection === s.id
+                                ? 'border-red-600 text-red-600 bg-red-50/10'
+                                : 'border-transparent text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800/50'
+                                }`}
+                        >
+                            <s.icon className="w-4 h-4" />
+                            {s.label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                    <LegalContent section={activeSection} />
+                </div>
+
+                {/* Footer */}
+                <div className="p-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 text-center">
+                    <button
+                        onClick={onClose}
+                        className="px-6 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl text-sm font-bold transition-all"
+                    >
+                        Entendido
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+};
+
+export default LegalModal;
