@@ -163,39 +163,52 @@ jobs:
           ./gradlew signingReport | grep -A 5 "Variant:" || echo "❌ Could not run signingReport"
         continue-on-error: true
 
+      - name: Rename Debug APK
+        run: mv android/app/build/outputs/apk/debug/app-debug.apk android/app/build/outputs/apk/debug/BYD-Stats-debug.apk
+
       - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: byd-stats-debug-${{ github.sha }}
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          name: BYD-Stats-debug
+          path: android/app/build/outputs/apk/debug/BYD-Stats-debug.apk
           retention-days: 30
+
+      - name: Rename Release APK
+        if: steps.keystore_check.outputs.keystore_present == 'true' && success()
+        run: mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/BYD-Stats-release.apk
 
       - name: Upload Release APK (Signed)
         uses: actions/upload-artifact@v4
         if: steps.keystore_check.outputs.keystore_present == 'true' && success()
         with:
-          name: byd-stats-release-signed-${{ github.sha }}
-          path: android/app/build/outputs/apk/release/app-release.apk
+          name: BYD-Stats-release
+          path: android/app/build/outputs/apk/release/BYD-Stats-release.apk
           retention-days: 30
+
+      - name: Rename Release APK (Unsigned)
+        if: steps.keystore_check.outputs.keystore_present == 'false'
+        run: |
+           if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
+             mv android/app/build/outputs/apk/release/app-release.apk android/app/build/outputs/apk/release/BYD-Stats-release.apk
+           elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
+             mv android/app/build/outputs/apk/release/app-release-unsigned.apk android/app/build/outputs/apk/release/BYD-Stats-release.apk
+           fi
 
       - name: Upload Release APK (Generic)
         uses: actions/upload-artifact@v4
         if: steps.keystore_check.outputs.keystore_present == 'false'
         with:
-          name: byd-stats-release-unsigned-${{ github.sha }}
-          path: |
-            android/app/build/outputs/apk/release/app-release-unsigned.apk
-            android/app/build/outputs/apk/release/app-release.apk
+          name: BYD-Stats-release
+          path: android/app/build/outputs/apk/release/BYD-Stats-release.apk
           retention-days: 30
-        continue-on-error: true
 
       - name: Create Release (with signed APK)
         if: startsWith(github.ref, 'refs/tags/v') && steps.keystore_check.outputs.keystore_present == 'true'
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/apk/release/app-release.apk
+            android/app/build/outputs/apk/debug/BYD-Stats-debug.apk
+            android/app/build/outputs/apk/release/BYD-Stats-release.apk
           draft: false
           prerelease: false
           generate_release_notes: true
@@ -207,8 +220,8 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            android/app/build/outputs/apk/debug/app-debug.apk
-            android/app/build/outputs/apk/release/app-release-unsigned.apk
+            android/app/build/outputs/apk/debug/BYD-Stats-debug.apk
+            android/app/build/outputs/apk/release/BYD-Stats-release.apk
           draft: false
           prerelease: false
           generate_release_notes: true
