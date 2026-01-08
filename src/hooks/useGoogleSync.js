@@ -142,8 +142,10 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
 
         } catch (e) {
             console.error("Sync failed:", e);
-            if (e.status === 401 || (e.result && e.result.error && e.result.error.code === 401)) {
-                logout(); // Auto logout on auth error
+            if (e.status === 401 || e.status === 403 ||
+                (e.result && e.result.error && (e.result.error.code === 401 || e.result.error.code === 403))) {
+                console.warn("Auth error (401/403), logging out...");
+                logout(); // Auto logout on auth error or permission denied
             }
             setError(e.message || "Error de sincronización");
         } finally {
