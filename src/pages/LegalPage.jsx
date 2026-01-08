@@ -2,8 +2,8 @@ import React from 'react';
 import { Shield, FileText, ChevronLeft } from '../components/Icons.jsx';
 import LegalContent from '../components/LegalContent.jsx';
 
-const LegalPage = () => {
-    const [activeTab, setActiveTab] = React.useState('privacy');
+const LegalPage = ({ forcedTab }) => {
+    const [activeTab, setActiveTab] = React.useState(forcedTab || 'privacy');
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col pt-[env(safe-area-inset-top,24px)]">
@@ -38,8 +38,8 @@ const LegalPage = () => {
                             <button
                                 onClick={() => setActiveTab('privacy')}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${activeTab === 'privacy'
-                                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                                    : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                                     }`}
                             >
                                 <Shield className="w-5 h-5 flex-shrink-0" />
@@ -48,8 +48,8 @@ const LegalPage = () => {
                             <button
                                 onClick={() => setActiveTab('legal')}
                                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-sm ${activeTab === 'legal'
-                                        ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
-                                        : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                    ? 'bg-red-600 text-white shadow-lg shadow-red-600/20'
+                                    : 'text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800'
                                     }`}
                             >
                                 <FileText className="w-5 h-5 flex-shrink-0" />

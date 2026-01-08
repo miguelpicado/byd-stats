@@ -222,13 +222,14 @@ export default function BYDStatsAnalyzer() {
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalInitialSection, setLegalInitialSection] = useState('privacy');
 
-  // Detect paths like /legal
-  const isLegalPath = window.location.pathname === '/legal' || window.location.pathname === '/legal/';
+  // Detect paths like /legal or /privacidad
+  const isLegalPath = window.location.pathname.startsWith('/legal');
+  const isPrivacyPath = window.location.pathname.startsWith('/privacidad');
 
-  if (isLegalPath) {
+  if (isLegalPath || isPrivacyPath) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Cargando...</div>}>
-        <LegalPageLazy />
+        <LegalPageLazy forcedTab={isPrivacyPath ? 'privacy' : 'legal'} />
       </Suspense>
     );
   }
@@ -914,15 +915,25 @@ export default function BYDStatsAnalyzer() {
           />
         </Suspense>
 
-        {/* Privacy & Legal link in bottom-left - Fixed positioning */}
-        <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1 items-start">
-          <a
-            href="/legal/"
-            className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
-          >
-            <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
-            <span>Privacidad y Legal</span>
-          </a>
+        {/* Privacy & Legal links in bottom-left - Fixed positioning */}
+        <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1.5 items-start">
+          <div className="flex items-center gap-3">
+            <a
+              href="/privacidad/"
+              className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
+            >
+              <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
+              <span>Privacidad</span>
+            </a>
+            <div className="w-px h-3 bg-slate-800"></div>
+            <a
+              href="/legal/"
+              className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
+            >
+              <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
+              <span>Legal</span>
+            </a>
+          </div>
           <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.1.0</p>
         </div>
       </div>
