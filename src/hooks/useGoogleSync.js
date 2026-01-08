@@ -181,30 +181,21 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         if (isNative) {
             // Native Android/iOS - use Capacitor SocialLogin
             try {
-                const CLIENT_ID = '689099974608-b4q9jhdglhlqfmr7lo44rgqtehor4o33.apps.googleusercontent.com';
-
-                alert(`Iniciando sesión nativa...\nClientID: ${CLIENT_ID.substring(0, 15)}...`);
-
                 console.log("SocialLogin: Initializing...");
                 await SocialLogin.initialize({
                     google: {
-                        webClientId: CLIENT_ID
+                        webClientId: '689099974608-b4q9jhdglhlqfmr7lo44rgqtehor4o33.apps.googleusercontent.com'
                     }
                 });
-                alert("Init OK. Scopes: email, profile (TEST MODE)");
+                console.log("SocialLogin: Initialized successfully");
 
                 const result = await SocialLogin.login({
                     provider: 'google',
                     options: {
-                        // TEST MODE: Removed drive.appdata to rule out scope issues
-                        scopes: ['email', 'profile']
+                        scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata']
                     }
                 });
-
-                // DEBUG: Show partial result
-                const resStr = JSON.stringify(result);
-                console.log("Native Login Success:", resStr);
-                alert("Login OK. Result keys: " + Object.keys(result || {}).join(", "));
+                console.log("Native Login Success:", JSON.stringify(result));
 
                 // Get access token from authentication - try multiple paths
                 const accessToken = result.result?.accessToken?.token
@@ -213,15 +204,14 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                     || result.accessToken;
 
                 if (accessToken) {
-                    alert("Token encontrado. Largo: " + accessToken.length);
+                    console.log("Access token found, handling success...");
                     await handleLoginSuccess(accessToken);
                 } else {
-                    alert("⚠️ NO se encontró token de acceso.\nResult: " + resStr.substring(0, 100));
-
+                    console.warn("No accessToken found. Full result:", JSON.stringify(result, null, 2));
                     // Check if we got an idToken instead
                     const idToken = result.result?.idToken || result.idToken;
                     if (idToken) {
-                        alert("Pero SI hay idToken. Intentando usarlo...");
+                        console.log("Found idToken, trying to use it...");
                         await handleLoginSuccess(idToken);
                     } else {
                         setError("No se pudo obtener el token de acceso. Revisa la configuración.");
@@ -229,7 +219,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 }
             } catch (e) {
                 console.error("Native Login Failed:", e);
-                alert("❌ Error Login: " + (e.message || JSON.stringify(e)));
                 setError(e.message || "Error al iniciar sesión con Google");
             }
         } else {
