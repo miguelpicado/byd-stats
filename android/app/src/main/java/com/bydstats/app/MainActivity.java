@@ -10,8 +10,11 @@ import android.webkit.WebView;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
 
-public class MainActivity extends BridgeActivity {
+
+public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
+
 
     private void configureStatusBar() {
         Window window = getWindow();
@@ -73,4 +76,8 @@ public class MainActivity extends BridgeActivity {
         // Re-apply status bar configuration in case something overrode it
         configureStatusBar();
     }
+
+    @Override
+    public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {}
 }
+
