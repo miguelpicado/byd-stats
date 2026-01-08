@@ -36,7 +36,7 @@ android {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (System.getenv('KEYSTORE_FILE')) {
+            if (System.getenv('KEYSTORE_FILE') || file("release.keystore").exists()) {
                 signingConfig signingConfigs.release
             } else {
                 signingConfig signingConfigs.debug
