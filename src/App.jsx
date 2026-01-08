@@ -25,6 +25,7 @@ const FilterModalLazy = lazy(() => import('./components/modals/FilterModal'));
 const TripDetailModalLazy = lazy(() => import('./components/modals/TripDetailModal'));
 const HistoryModalLazy = lazy(() => import('./components/modals/HistoryModal'));
 const DatabaseUploadModalLazy = lazy(() => import('./components/modals/DatabaseUploadModal'));
+const LegalModalLazy = lazy(() => import('./components/modals/LegalModal'));
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -217,6 +218,8 @@ export default function BYDStatsAnalyzer() {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [showLegalModal, setShowLegalModal] = useState(false);
+  const [legalInitialSection, setLegalInitialSection] = useState('privacy');
   const [selectedTrip, setSelectedTrip] = useState(null);
   const [filterType, setFilterType] = useState('all');
   const [selMonth, setSelMonth] = useState('');
@@ -886,6 +889,18 @@ export default function BYDStatsAnalyzer() {
               </button>
             )}
           </div>
+
+          {/* Privacy & Legal link in bottom-left */}
+          <div className="absolute left-6 bottom-6 flex flex-col gap-1 items-start">
+            <button
+              onClick={() => { setLegalInitialSection('privacy'); setShowLegalModal(true); }}
+              className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5"
+            >
+              <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+              Privacidad y Legal
+            </button>
+            <p className="text-[10px] text-slate-600">BYD Stats v1.0.3</p>
+          </div>
         </div>
       </div>
     );
@@ -1467,6 +1482,14 @@ export default function BYDStatsAnalyzer() {
       {/* History Modal */}
 
 
+      <Suspense fallback={null}>
+        <LegalModalLazy
+          isOpen={showLegalModal}
+          onClose={() => setShowLegalModal(false)}
+          initialSection={legalInitialSection}
+        />
+      </Suspense>
+
       {/* Help/Bug Report Modal */}
       {showHelpModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowHelpModal(false)}>
@@ -1521,6 +1544,14 @@ export default function BYDStatsAnalyzer() {
                   <Mail className="w-5 h-5" />
                   Enviar Email
                 </a>
+
+                <button
+                  onClick={() => { setLegalInitialSection('privacy'); setShowLegalModal(true); }}
+                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Shield className="w-5 h-5" />
+                  Información Legal
+                </button>
               </div>
 
               <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
