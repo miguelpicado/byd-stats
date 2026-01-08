@@ -783,7 +783,7 @@ export default function BYDStatsAnalyzer() {
 
   if (rawTrips.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-6">
             <img src="app_logo.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
@@ -890,17 +890,27 @@ export default function BYDStatsAnalyzer() {
             )}
           </div>
 
-          {/* Privacy & Legal link in bottom-left */}
-          <div className="absolute left-6 bottom-6 flex flex-col gap-1 items-start">
-            <button
-              onClick={() => { setLegalInitialSection('privacy'); setShowLegalModal(true); }}
-              className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5"
-            >
-              <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-              Privacidad y Legal
-            </button>
-            <p className="text-[10px] text-slate-600">BYD Stats v1.1.0</p>
-          </div>
+        </div>
+
+        {/* Legal Modal available on Landing Page */}
+        <Suspense fallback={null}>
+          <LegalModalLazy
+            isOpen={showLegalModal}
+            onClose={() => setShowLegalModal(false)}
+            initialSection={legalInitialSection}
+          />
+        </Suspense>
+
+        {/* Privacy & Legal link in bottom-left - Fixed positioning */}
+        <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1 items-start">
+          <button
+            onClick={() => { setLegalInitialSection('privacy'); setShowLegalModal(true); }}
+            className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
+          >
+            <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
+            <span>Privacidad y Legal</span>
+          </button>
+          <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.1.0</p>
         </div>
       </div>
     );
