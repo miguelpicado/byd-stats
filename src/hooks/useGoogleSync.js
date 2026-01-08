@@ -187,7 +187,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 console.log("SocialLogin: Initializing...");
                 await SocialLogin.initialize({
                     google: {
-                        webClientId: '407339918856-6vmd7ijqjgk435hp0a6jnc9bphhogljf.apps.googleusercontent.com'
+                        webClientId: 'REDACTED_GOOGLE_CLIENT_ID'
                     }
                 });
                 alert("Init OK. Abriendo popup...");
