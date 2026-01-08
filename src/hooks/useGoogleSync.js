@@ -219,19 +219,17 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                     || result.accessToken?.token
                     || result.accessToken;
 
+                // DEBUG: Inspect the result structure exactly
+                const hasAccess = !!(result.result?.accessToken?.token || result.result?.accessToken || result.accessToken?.token || result.accessToken);
+                const hasId = !!(result.result?.idToken || result.idToken);
+                alert(`Debug Token:\nAccess: ${hasAccess}\nID: ${hasId}`);
+
                 if (accessToken) {
                     console.log("Access token found, handling success...");
                     await handleLoginSuccess(accessToken);
                 } else {
-                    console.warn("No accessToken found. Full result:", JSON.stringify(result, null, 2));
-                    // Check if we got an idToken instead
-                    const idToken = result.result?.idToken || result.idToken;
-                    if (idToken) {
-                        console.log("Found idToken, trying to use it...");
-                        await handleLoginSuccess(idToken);
-                    } else {
-                        setError("No se pudo obtener el token de acceso. Revisa la configuración.");
-                    }
+                    console.error("No accessToken found. Result:", JSON.stringify(result));
+                    setError("Error crítico: Google no devolvió Token de Acceso (solo ID). Reporta esto.");
                 }
             } catch (e) {
                 console.error("Native Login Failed:", e);
