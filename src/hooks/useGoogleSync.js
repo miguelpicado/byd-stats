@@ -145,8 +145,9 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 const currentTrips = newTripsData || localTrips;
 
                 // Merge Data (Services handles Trips Union and Settings Overlay)
+                const tripsToMerge = Array.isArray(currentTrips) ? currentTrips : [];
                 const merged = googleDriveService.mergeData(
-                    { trips: currentTrips, settings: settings },
+                    { trips: tripsToMerge, settings: settings },
                     remoteData
                 );
 
@@ -162,7 +163,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
 
         } catch (e) {
             console.error("Sync failed:", e);
-            alert(`DEBUG: performSync CAUGHT ERROR:\n${e.message}`);
 
             if (e.status === 401 || e.status === 403 ||
                 (e.result && e.result.error && (e.result.error.code === 401 || e.result.error.code === 403))) {
@@ -223,18 +223,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
 
                 // DEBUG: Inspect the result structure exactly
                 const hasAccess = !!(result.result?.accessToken?.token || result.result?.accessToken || result.accessToken?.token || result.accessToken);
-                // alert(`Debug Token:\nAccess: ${hasAccess}\nID: ${!!(result.result?.idToken || result.idToken)}`);
 
                 if (accessToken) {
-                    // DIAGNOSTIC: Check Token Scopes
-                    try {
-                        const infoRes = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`);
-                        const infoData = await infoRes.json();
-                        alert(`TOKEN INFO:\nScopes: ${infoData.scope}\nAud: ${infoData.audience}\nErr: ${infoData.error}`);
-                    } catch (err) {
-                        alert("Token Check Failed: " + err.message);
-                    }
-
                     console.log("Access token found, handling success...");
                     await handleLoginSuccess(accessToken);
                 } else {

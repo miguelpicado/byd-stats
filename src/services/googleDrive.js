@@ -172,8 +172,8 @@ export const googleDriveService = {
    */
   mergeData: (localData, remoteData) => {
     // 1. Merge Trips (Union by date-timestamp)
-    const localTrips = localData.trips || [];
-    const remoteTrips = remoteData.trips || [];
+    const localTrips = (localData && Array.isArray(localData.trips)) ? localData.trips : [];
+    const remoteTrips = (remoteData && Array.isArray(remoteData.trips)) ? remoteData.trips : [];
 
     const map = new Map();
     localTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
