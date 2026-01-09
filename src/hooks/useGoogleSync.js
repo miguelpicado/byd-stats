@@ -114,7 +114,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         setIsSyncing(true);
         setError(null);
         try {
-            alert("DEBUG: performSync STARTED");
             // 1. Find or Create File
             const files = await googleDriveService.listFiles();
             let fileId = null;
