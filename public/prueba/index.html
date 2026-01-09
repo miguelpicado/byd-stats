@@ -4,539 +4,710 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug v2 - BYD Stats</title>
-    <!-- PWA Manifest for Share Target -->
+    <title>Debug FULL - BYD Stats</title>
     <link rel="manifest" href="/prueba/manifest.json">
+    <meta name="theme-color" content="#ea0029">
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
-            padding: 0;
+            padding: 0
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            font-family: system-ui, sans-serif;
             background: #0f172a;
-            color: white;
-            min-height: 100vh;
-            padding: 10px;
-            font-size: 13px;
+            color: #fff;
+            padding: 8px;
+            font-size: 12px
         }
 
         h1 {
             color: #ea0029;
             text-align: center;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            font-size: 1rem;
+            margin: 8px 0
         }
 
         h2 {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #94a3b8;
-            margin-bottom: 6px;
+            margin: 4px 0
         }
 
-        .card {
-            background: rgba(30, 41, 59, 0.95);
-            border-radius: 10px;
-            padding: 10px;
-            margin: 6px 0;
-            border: 1px solid #334155;
+        .c {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 4px 0;
+            border: 1px solid #334155
         }
 
         .btn {
             width: 100%;
-            padding: 12px;
-            font-size: 0.9rem;
+            padding: 10px;
+            font-size: 0.8rem;
             font-weight: 600;
             border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            margin: 4px 0;
-        }
-
-        .btn-primary {
-            background: #ea0029;
-            color: white;
-        }
-
-        .btn-secondary {
-            background: #334155;
-            color: white;
-        }
-
-        .btn-success {
-            background: #059669;
-            color: white;
-        }
-
-        .btn-warning {
-            background: #d97706;
-            color: white;
-        }
-
-        .btn-info {
-            background: #0284c7;
-            color: white;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        .log-container {
-            background: #0f172a;
             border-radius: 6px;
+            cursor: pointer;
+            margin: 3px 0;
+            color: #fff
+        }
+
+        .r {
+            background: #ea0029
+        }
+
+        .g {
+            background: #059669
+        }
+
+        .y {
+            background: #d97706
+        }
+
+        .b {
+            background: #0284c7
+        }
+
+        .gr {
+            background: #475569
+        }
+
+        .sm {
+            padding: 6px 10px;
+            width: auto;
+            font-size: 0.7rem
+        }
+
+        input[type=file] {
+            display: none
+        }
+
+        input[type=text] {
+            width: 100%;
             padding: 8px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #fff;
+            border-radius: 4px;
+            margin: 4px 0;
+            font-size: 11px
+        }
+
+        .log {
+            background: #0f172a;
+            border-radius: 4px;
+            padding: 6px;
             font-family: monospace;
-            font-size: 10px;
-            max-height: 250px;
+            font-size: 9px;
+            max-height: 180px;
             overflow-y: auto;
             white-space: pre-wrap;
-            word-break: break-all;
+            word-break: break-all
         }
 
-        .log-entry {
-            margin: 1px 0;
+        .log-i {
+            color: #60a5fa
         }
 
-        .log-info {
-            color: #60a5fa;
+        .log-s {
+            color: #4ade80
         }
 
-        .log-success {
-            color: #4ade80;
+        .log-e {
+            color: #f87171
         }
 
-        .log-error {
-            color: #f87171;
+        .log-w {
+            color: #fbbf24
         }
 
-        .log-warning {
-            color: #fbbf24;
-        }
-
-        .result-box {
-            background: #1e293b;
-            border: 2px solid #334155;
+        .drop {
+            border: 2px dashed #475569;
             border-radius: 8px;
-            padding: 12px;
-            margin: 8px 0;
+            padding: 20px;
             text-align: center;
+            margin: 4px 0
         }
 
-        .result-success {
+        .drop.active {
             border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1)
         }
 
-        .result-error {
-            border-color: #f87171;
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4px
         }
 
-        .drop-zone {
-            border: 3px dashed #475569;
-            border-radius: 12px;
-            padding: 30px;
+        .result {
+            background: #0f172a;
+            border: 2px solid #334155;
+            border-radius: 6px;
+            padding: 10px;
             text-align: center;
-            transition: all 0.3s;
+            margin: 6px 0
         }
 
-        .drop-zone.active {
-            border-color: #4ade80;
-            background: rgba(74, 222, 128, 0.1);
+        .result.ok {
+            border-color: #4ade80
         }
 
-        .section-title {
+        .result.err {
+            border-color: #f87171
+        }
+
+        .info {
+            font-size: 0.7rem;
+            color: #64748b;
+            margin: 2px 0
+        }
+
+        .flex {
             display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 6px;
+            gap: 4px;
+            flex-wrap: wrap
         }
 
-        .button-row {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
+        .tag {
+            background: #334155;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            margin: 1px
         }
 
-        .btn-small {
-            padding: 6px 10px;
-            font-size: 0.75rem;
-            width: auto;
+        .tag.ok {
+            background: #059669
         }
 
-        .info-text {
-            font-size: 0.75rem;
-            color: #94a3b8;
-            margin: 4px 0;
+        .tag.no {
+            background: #dc2626
         }
     </style>
 </head>
 
 <body>
-    <h1>🔬 Debug v2 - Alternativas</h1>
+    <h1>🔬 Debug COMPLETO - Todas las opciones</h1>
 
-    <!-- Share Target Test -->
-    <div class="card">
-        <h2>📤 Test 1: Share Target API</h2>
-        <p class="info-text">Si la webapp está instalada como PWA, puede recibir archivos "compartidos" desde otras apps
-        </p>
-        <button class="btn btn-info" onclick="checkShareTarget()">Verificar Share Target</button>
-        <button class="btn btn-secondary" onclick="installPWA()">Instalar como PWA</button>
-        <div id="shareTargetResult"></div>
+    <!-- MÉTODO 1: PWA Share Target -->
+    <div class="c">
+        <h2>1️⃣ PWA Share Target</h2>
+        <p class="info">Instala como PWA, luego comparte desde explorador de archivos</p>
+        <button class="btn b" onclick="installPWA()">📲 Instalar como PWA</button>
+        <button class="btn gr" onclick="checkPWA()">🔍 Verificar estado PWA</button>
+        <div id="pwa-result"></div>
     </div>
 
-    <!-- Drag and Drop Zone -->
-    <div class="card">
-        <h2>🎯 Test 2: Drag and Drop</h2>
-        <p class="info-text">Arrastra EC_Database.db desde otra app/ventana aquí</p>
-        <div id="dropZone" class="drop-zone">
-            📁 Arrastra el archivo aquí
+    <!-- MÉTODO 2: Drag & Drop -->
+    <div class="c">
+        <h2>2️⃣ Drag & Drop</h2>
+        <div id="drop" class="drop">📁 Arrastra archivo aquí</div>
+    </div>
+
+    <!-- MÉTODO 3: Input File Variants -->
+    <div class="c">
+        <h2>3️⃣ Input File (variantes)</h2>
+        <div class="grid">
+            <button class="btn gr sm" onclick="$('f1').click()">*/*</button>
+            <button class="btn gr sm" onclick="$('f2').click()">sin accept</button>
+            <button class="btn gr sm" onclick="$('f3').click()">.db,.sqlite</button>
+            <button class="btn gr sm" onclick="$('f4').click()">octet-stream</button>
+            <button class="btn gr sm" onclick="$('f5').click()">capture=env</button>
+            <button class="btn gr sm" onclick="$('f6').click()">webkitdir</button>
         </div>
-        <div id="dropResult"></div>
+        <input type="file" id="f1" accept="*/*" onchange="onFile(this,'*/*')">
+        <input type="file" id="f2" onchange="onFile(this,'sin accept')">
+        <input type="file" id="f3" accept=".db,.sqlite,.sqlite3,application/x-sqlite3" onchange="onFile(this,'.db')">
+        <input type="file" id="f4" accept="application/octet-stream" onchange="onFile(this,'octet-stream')">
+        <input type="file" id="f5" capture="environment" onchange="onFile(this,'capture')">
+        <input type="file" id="f6" webkitdirectory onchange="onFile(this,'webkitdir')">
     </div>
 
-    <!-- URL Parameter Test -->
-    <div class="card">
-        <h2>🔗 Test 3: URL con archivo</h2>
-        <p class="info-text">Probar si acepta file:// o content:// URIs</p>
-        <button class="btn btn-secondary" onclick="testFileURL()">Probar file:// URL</button>
-        <button class="btn btn-secondary" onclick="testContentURL()">Probar content:// URL</button>
-        <input type="text" id="customURL" placeholder="Pega una URL aquí"
-            style="width:100%; padding:8px; margin-top:8px; background:#1e293b; border:1px solid #475569; color:white; border-radius:6px;">
-        <button class="btn btn-warning" onclick="testCustomURL()">Probar URL personalizada</button>
+    <!-- MÉTODO 4: URL Schemes -->
+    <div class="c">
+        <h2>4️⃣ URL Schemes</h2>
+        <button class="btn gr" onclick="tryURL('file:///storage/emulated/0/energydata/EC_Database.db')">file://
+            energydata</button>
+        <button class="btn gr" onclick="tryURL('file:///sdcard/energydata/EC_Database.db')">file:// sdcard</button>
+        <button class="btn gr" onclick="tryURL('file:///data/energydata/EC_Database.db')">file:// data</button>
+        <input type="text" id="customUrl" placeholder="URL personalizada (file://, content://, http://)">
+        <button class="btn y" onclick="tryURL($('customUrl').value)">🔗 Probar URL</button>
     </div>
 
-    <!-- Fetch from local network -->
-    <div class="card">
-        <h2>📡 Test 4: Red local (móvil como servidor)</h2>
-        <p class="info-text">Si tienes el archivo en un servidor HTTP local (móvil o PC)</p>
-        <input type="text" id="localURL" placeholder="http://192.168.1.x:8080/EC_Database.db"
-            style="width:100%; padding:8px; background:#1e293b; border:1px solid #475569; color:white; border-radius:6px;">
-        <button class="btn btn-success" onclick="fetchFromNetwork()">Descargar desde red</button>
-        <div id="networkResult"></div>
+    <!-- MÉTODO 5: Network Fetch -->
+    <div class="c">
+        <h2>5️⃣ Red Local (HTTP)</h2>
+        <p class="info">Si tienes servidor HTTP en la red local</p>
+        <input type="text" id="netUrl" placeholder="http://192.168.1.100:8080/EC_Database.db">
+        <button class="btn g" onclick="fetchNet()">📡 Descargar de red</button>
     </div>
 
-    <!-- Clipboard paste -->
-    <div class="card">
-        <h2>📋 Test 5: Pegar desde portapapeles</h2>
-        <p class="info-text">Copia el archivo en otra app y pégalo aquí</p>
-        <button class="btn btn-warning" onclick="pasteFromClipboard()">Pegar archivo</button>
-        <div id="clipboardResult"></div>
+    <!-- MÉTODO 6: Clipboard -->
+    <div class="c">
+        <h2>6️⃣ Clipboard</h2>
+        <button class="btn y" onclick="readClipboard()">📋 Leer portapapeles</button>
+        <button class="btn gr" onclick="readClipboardFiles()">📎 Leer archivos del clipboard</button>
     </div>
 
-    <!-- Accept any file type -->
-    <div class="card">
-        <h2>📄 Test 6: Input sin restricciones</h2>
-        <p class="info-text">Diferentes configuraciones de input file</p>
-        <button class="btn btn-secondary" onclick="document.getElementById('input1').click()">accept="*/*"</button>
-        <input type="file" id="input1" accept="*/*" onchange="handleFile(this, 'accept=*/*')">
-
-        <button class="btn btn-secondary" onclick="document.getElementById('input2').click()">accept="" (vacío)</button>
-        <input type="file" id="input2" accept="" onchange="handleFile(this, 'accept vacío')">
-
-        <button class="btn btn-secondary" onclick="document.getElementById('input3').click()">Sin accept</button>
-        <input type="file" id="input3" onchange="handleFile(this, 'sin accept')">
-
-        <button class="btn btn-secondary"
-            onclick="document.getElementById('input4').click()">accept="application/octet-stream"</button>
-        <input type="file" id="input4" accept="application/octet-stream" onchange="handleFile(this, 'octet-stream')">
-
-        <button class="btn btn-secondary"
-            onclick="document.getElementById('input5').click()">capture="environment"</button>
-        <input type="file" id="input5" capture="environment" onchange="handleFile(this, 'capture')">
+    <!-- MÉTODO 7: Intent URL -->
+    <div class="c">
+        <h2>7️⃣ Intent URL (Android)</h2>
+        <p class="info">Abrir con intent:// scheme</p>
+        <button class="btn gr" onclick="tryIntent()">🤖 Probar intent://</button>
     </div>
 
-    <!-- Export Options -->
-    <div class="card">
-        <div class="section-title">
-            <h2>📤 Exportar Log</h2>
+    <!-- MÉTODO 8: iframe file:// -->
+    <div class="c">
+        <h2>8️⃣ iframe file://</h2>
+        <button class="btn gr" onclick="tryIframe()">📄 Cargar en iframe</button>
+        <iframe id="fileFrame"
+            style="width:100%;height:50px;background:#0f172a;border:1px solid #475569;display:none"></iframe>
+    </div>
+
+    <!-- MÉTODO 9: XMLHttpRequest file:// -->
+    <div class="c">
+        <h2>9️⃣ XMLHttpRequest file://</h2>
+        <button class="btn gr" onclick="tryXHR()">📄 XHR a file://</button>
+    </div>
+
+    <!-- MÉTODO 10: window.open file:// -->
+    <div class="c">
+        <h2>🔟 window.open file://</h2>
+        <button class="btn gr" onclick="tryWindowOpen()">🪟 Abrir file:// en nueva ventana</button>
+    </div>
+
+    <!-- MÉTODO 11: location.href file:// -->
+    <div class="c">
+        <h2>1️⃣1️⃣ Navegar a file://</h2>
+        <button class="btn gr" onclick="tryNavigate()">🧭 Navegar a file:// (cuidado!)</button>
+    </div>
+
+    <!-- MÉTODO 12: BroadcastChannel -->
+    <div class="c">
+        <h2>1️⃣2️⃣ BroadcastChannel</h2>
+        <p class="info">Recibir datos de otra pestaña</p>
+        <button class="btn gr" onclick="setupBroadcast()">📢 Escuchar BroadcastChannel</button>
+        <div id="broadcast-status"></div>
+    </div>
+
+    <!-- MÉTODO 13: postMessage -->
+    <div class="c">
+        <h2>1️⃣3️⃣ postMessage</h2>
+        <p class="info">Si otra ventana/app puede enviar mensajes</p>
+        <button class="btn gr" onclick="setupPostMessage()">💬 Escuchar postMessage</button>
+    </div>
+
+    <!-- MÉTODO 14: WebSocket local -->
+    <div class="c">
+        <h2>1️⃣4️⃣ WebSocket Local</h2>
+        <input type="text" id="wsUrl" placeholder="ws://192.168.1.100:8080">
+        <button class="btn gr" onclick="tryWebSocket()">🔌 Conectar WebSocket</button>
+    </div>
+
+    <!-- MÉTODO 15: Check for file managers -->
+    <div class="c">
+        <h2>1️⃣5️⃣ Detectar Apps</h2>
+        <button class="btn b" onclick="detectApps()">🔍 Detectar apps/intents disponibles</button>
+    </div>
+
+    <!-- APIs disponibles -->
+    <div class="c">
+        <h2>📊 APIs Detectadas</h2>
+        <div id="apis" class="flex"></div>
+    </div>
+
+    <!-- Export -->
+    <div class="c">
+        <h2>📤 Exportar</h2>
+        <div class="flex">
+            <button class="btn sm r" onclick="toGH()">🐙 GitHub</button>
+            <button class="btn sm g" onclick="share()">📤 Share</button>
+            <button class="btn sm y" onclick="copy()">📋 Copy</button>
         </div>
-        <div class="button-row">
-            <button class="btn btn-small btn-primary" onclick="saveToGitHub()">🐙 GitHub Issue</button>
-            <button class="btn btn-small btn-success" onclick="shareLog()">📤 Compartir</button>
-            <button class="btn btn-small btn-warning" onclick="copyLog()">📋 Copiar</button>
-        </div>
     </div>
 
-    <!-- Debug Log -->
-    <div class="card">
+    <!-- Log -->
+    <div class="c">
         <h2>📋 Log</h2>
-        <div id="debugLog" class="log-container"></div>
+        <div id="log" class="log"></div>
     </div>
+
+    <!-- Result display -->
+    <div id="mainResult" class="result" style="display:none"></div>
 
     <script>
-        // Logging
-        const logEntries = [];
-        const logContainer = document.getElementById('debugLog');
+        const $ = id => document.getElementById(id);
+        const logs = [];
+        const logEl = $('log');
 
-        function log(msg, type = 'info') {
-            const ts = new Date().toLocaleTimeString('es-ES', { hour12: false });
-            logEntries.push({ ts, msg, type });
-            const div = document.createElement('div');
-            div.className = `log-entry log-${type}`;
-            div.textContent = `[${ts}] ${msg}`;
-            logContainer.appendChild(div);
-            logContainer.scrollTop = logContainer.scrollHeight;
-            console.log(`[${type}] ${msg}`);
+        function log(m, t = 'i') {
+            const ts = new Date().toLocaleTimeString('es', { hour12: 0 });
+            logs.push({ ts, m, t });
+            const d = document.createElement('div');
+            d.className = 'log-' + t;
+            d.textContent = `[${ts}] ${m}`;
+            logEl.appendChild(d);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`[${t}]`, m);
         }
 
-        // Check URL parameters (for Share Target)
-        function checkURLParams() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('shared') || params.has('file')) {
-                log('¡Archivo recibido via URL params!', 'success');
-                log('Params: ' + window.location.search, 'info');
-            }
+        function showResult(msg, ok) {
+            const r = $('mainResult');
+            r.style.display = 'block';
+            r.className = 'result ' + (ok ? 'ok' : 'err');
+            r.innerHTML = msg;
+            setTimeout(() => r.scrollIntoView({ behavior: 'smooth' }), 100);
         }
 
-        // Share Target check
-        function checkShareTarget() {
-            log('Verificando Share Target...', 'info');
-
-            if ('share' in navigator) {
-                log('Share API disponible', 'success');
-            }
-
-            if ('serviceWorker' in navigator) {
-                log('Service Worker disponible', 'success');
-                navigator.serviceWorker.getRegistration().then(reg => {
-                    if (reg) {
-                        log('PWA registrada: ' + reg.scope, 'success');
-                    } else {
-                        log('PWA no registrada', 'warning');
-                    }
-                });
-            }
-
-            // Check if running as PWA
-            if (window.matchMedia('(display-mode: standalone)').matches) {
-                log('Ejecutando como PWA instalada', 'success');
-            } else {
-                log('Ejecutando en navegador normal', 'info');
-            }
-        }
-
-        // Install PWA
+        // 1. PWA
         let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            log('PWA instalable detectada', 'success');
-        });
+        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; log('PWA instalable!', 's') });
 
         function installPWA() {
             if (deferredPrompt) {
                 deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(result => {
-                    log('Resultado instalación: ' + result.outcome, result.outcome === 'accepted' ? 'success' : 'warning');
-                });
+                deferredPrompt.userChoice.then(r => log('Instalación: ' + r.outcome, r.outcome === 'accepted' ? 's' : 'w'));
             } else {
-                log('No hay prompt de instalación disponible', 'warning');
-                log('Intenta: Menu Chrome → "Añadir a pantalla inicio"', 'info');
+                log('No hay prompt. Usa menú Chrome → Añadir a inicio', 'w');
             }
         }
 
-        // Drag and Drop
-        const dropZone = document.getElementById('dropZone');
+        function checkPWA() {
+            log('Verificando PWA...', 'i');
+            const standalone = window.matchMedia('(display-mode:standalone)').matches;
+            log('Standalone: ' + standalone, standalone ? 's' : 'w');
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(r => {
+                    log('SW registrado: ' + (r ? r.scope : 'NO'), r ? 's' : 'w');
+                });
+            }
+            $('pwa-result').innerHTML = '<div class="tag ' + (standalone ? 'ok' : 'no') + '">' + (standalone ? '✅ PWA activa' : '❌ No es PWA') + '</div>';
+        }
 
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(event => {
-            dropZone.addEventListener(event, e => {
-                e.preventDefault();
-                e.stopPropagation();
-            });
-        });
-
-        ['dragenter', 'dragover'].forEach(event => {
-            dropZone.addEventListener(event, () => {
-                dropZone.classList.add('active');
-                log('Archivo detectado sobre la zona', 'info');
-            });
-        });
-
-        ['dragleave', 'drop'].forEach(event => {
-            dropZone.addEventListener(event, () => {
-                dropZone.classList.remove('active');
-            });
-        });
-
-        dropZone.addEventListener('drop', e => {
-            log('=== DROP EVENT ===', 'info');
+        // 2. Drag & Drop
+        const drop = $('drop');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation() }));
+        ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, () => { drop.classList.add('active'); log('Drag detectado', 'i') }));
+        ['dragleave', 'drop'].forEach(e => drop.addEventListener(e, () => drop.classList.remove('active')));
+        drop.addEventListener('drop', e => {
+            log('Drop event!', 'i');
             const dt = e.dataTransfer;
-
-            log('Tipos: ' + Array.from(dt.types).join(', '), 'info');
-
-            if (dt.files.length > 0) {
-                const file = dt.files[0];
-                log(`Archivo: ${file.name}, ${file.size} bytes, tipo: ${file.type}`, 'success');
-                processFile(file);
+            log('Tipos: ' + [...dt.types].join(', '), 'i');
+            if (dt.files.length) {
+                const f = dt.files[0];
+                log(`Archivo: ${f.name}, ${f.size}b, ${f.type}`, 's');
+                processFile(f);
             } else {
-                log('No se detectaron archivos en el drop', 'warning');
-
-                // Check for other data types
-                dt.types.forEach(type => {
-                    const data = dt.getData(type);
-                    log(`Tipo ${type}: ${data.substring(0, 100)}...`, 'info');
-                });
+                log('No hay archivos en drop', 'w');
             }
         });
 
-        // File URL tests
-        function testFileURL() {
-            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
-            log('Probando: ' + url, 'info');
-
-            fetch(url)
-                .then(r => {
-                    log('Fetch exitoso!', 'success');
-                    return r.blob();
-                })
-                .then(blob => log('Blob: ' + blob.size + ' bytes', 'success'))
-                .catch(e => log('Error: ' + e.message, 'error'));
-        }
-
-        function testContentURL() {
-            log('content:// requiere ser pasado desde otra app', 'warning');
-            log('No se puede construir manualmente', 'info');
-        }
-
-        function testCustomURL() {
-            const url = document.getElementById('customURL').value;
-            if (!url) {
-                log('Ingresa una URL primero', 'warning');
-                return;
+        // 3. File inputs
+        function onFile(inp, src) {
+            if (inp.files.length) {
+                const f = inp.files[0];
+                log(`[${src}] ${f.name}, ${f.size}b, ${f.type || 'sin tipo'}`, 's');
+                processFile(f);
             }
-
-            log('Probando: ' + url, 'info');
-            fetch(url)
-                .then(r => r.blob())
-                .then(blob => {
-                    log('Éxito! ' + blob.size + ' bytes', 'success');
-                    processBlob(blob, 'custom-file');
-                })
-                .catch(e => log('Error: ' + e.message, 'error'));
+            inp.value = '';
         }
 
-        // Network fetch
-        function fetchFromNetwork() {
-            const url = document.getElementById('localURL').value;
-            if (!url) {
-                log('Ingresa la URL del servidor', 'warning');
-                return;
-            }
-
-            log('Conectando a: ' + url, 'info');
-
-            fetch(url, { mode: 'cors' })
-                .then(r => {
-                    if (!r.ok) throw new Error('HTTP ' + r.status);
-                    return r.blob();
-                })
-                .then(blob => {
-                    log('¡Descargado! ' + blob.size + ' bytes', 'success');
-                    processBlob(blob, 'network-file.db');
-                    document.getElementById('networkResult').innerHTML =
-                        '<div class="result-box result-success">✅ Archivo descargado: ' + blob.size + ' bytes</div>';
-                })
-                .catch(e => {
-                    log('Error de red: ' + e.message, 'error');
-                    document.getElementById('networkResult').innerHTML =
-                        '<div class="result-box result-error">❌ ' + e.message + '</div>';
-                });
-        }
-
-        // Clipboard paste
-        async function pasteFromClipboard() {
-            log('Intentando leer clipboard...', 'info');
-
+        // 4-11. URL/fetch methods
+        async function tryURL(url) {
+            if (!url) { log('URL vacía', 'w'); return }
+            log('Probando: ' + url, 'i');
             try {
-                // Try clipboard API
-                if (navigator.clipboard && navigator.clipboard.read) {
-                    const items = await navigator.clipboard.read();
-                    log('Items en clipboard: ' + items.length, 'info');
-
-                    for (const item of items) {
-                        log('Tipos: ' + item.types.join(', '), 'info');
-                        for (const type of item.types) {
-                            const blob = await item.getType(type);
-                            log(`${type}: ${blob.size} bytes`, 'success');
-                            if (blob.size > 1000) {
-                                processBlob(blob, 'clipboard-file');
-                            }
-                        }
-                    }
-                } else {
-                    log('Clipboard.read() no disponible', 'warning');
-                }
+                const r = await fetch(url);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const b = await r.blob();
+                log('Éxito! ' + b.size + ' bytes', 's');
+                processBlob(b, 'fetched.db');
+                showResult('✅ URL funcionó: ' + b.size + ' bytes', true);
             } catch (e) {
-                log('Error clipboard: ' + e.message, 'error');
+                log('Error: ' + e.message, 'e');
+                showResult('❌ ' + e.message, false);
             }
         }
 
-        // Handle file input
-        function handleFile(input, source) {
-            const file = input.files[0];
-            if (file) {
-                log(`[${source}] ${file.name}, ${file.size} bytes, tipo: ${file.type || 'sin tipo'}`, 'success');
-                processFile(file);
+        async function fetchNet() {
+            const url = $('netUrl').value;
+            if (!url) { log('Ingresa URL', 'w'); return }
+            log('Conectando a ' + url, 'i');
+            try {
+                const r = await fetch(url, { mode: 'cors' });
+                const b = await r.blob();
+                log('Descargado: ' + b.size + ' bytes', 's');
+                processBlob(b, 'network.db');
+                showResult('✅ Red funcionó: ' + b.size + ' bytes', true);
+            } catch (e) {
+                log('Error red: ' + e.message, 'e');
+                showResult('❌ Red: ' + e.message, false);
             }
-            input.value = '';
+        }
+
+        // 6. Clipboard
+        async function readClipboard() {
+            log('Leyendo clipboard...', 'i');
+            try {
+                const t = await navigator.clipboard.readText();
+                log('Texto: ' + t.substring(0, 100) + '...', 's');
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        async function readClipboardFiles() {
+            log('Leyendo archivos clipboard...', 'i');
+            try {
+                if (!navigator.clipboard.read) { log('clipboard.read() no disponible', 'e'); return }
+                const items = await navigator.clipboard.read();
+                log('Items: ' + items.length, 'i');
+                for (const item of items) {
+                    log('Tipos: ' + item.types.join(', '), 'i');
+                    for (const type of item.types) {
+                        const blob = await item.getType(type);
+                        log(`${type}: ${blob.size}b`, 's');
+                        if (blob.size > 1000) processBlob(blob, 'clipboard');
+                    }
+                }
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        // 7. Intent
+        function tryIntent() {
+            const url = 'intent://energydata/EC_Database.db#Intent;scheme=file;end';
+            log('Probando: ' + url, 'i');
+            try {
+                window.location.href = url;
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        // 8. iframe
+        function tryIframe() {
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('Cargando en iframe: ' + url, 'i');
+            const f = $('fileFrame');
+            f.style.display = 'block';
+            f.src = url;
+            f.onload = () => log('iframe cargado', 's');
+            f.onerror = () => log('iframe error', 'e');
+        }
+
+        // 9. XHR
+        function tryXHR() {
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('XHR a: ' + url, 'i');
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url);
+            xhr.responseType = 'blob';
+            xhr.onload = () => { log('XHR éxito: ' + xhr.response.size + 'b', 's'); processBlob(xhr.response, 'xhr.db') };
+            xhr.onerror = () => log('XHR error', 'e');
+            try { xhr.send() } catch (e) { log('XHR exception: ' + e.message, 'e') }
+        }
+
+        // 10. window.open
+        function tryWindowOpen() {
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('window.open: ' + url, 'i');
+            try {
+                const w = window.open(url, '_blank');
+                log(w ? 'Ventana abierta' : 'Bloqueado', w ? 's' : 'e');
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        // 11. Navigate
+        function tryNavigate() {
+            if (!confirm('Esto navegará fuera de la página. ¿Continuar?')) return;
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('Navegando a: ' + url, 'i');
+            window.location.href = url;
+        }
+
+        // 12. BroadcastChannel
+        function setupBroadcast() {
+            log('Configurando BroadcastChannel...', 'i');
+            if (!('BroadcastChannel' in window)) { log('No disponible', 'e'); return }
+            const bc = new BroadcastChannel('bydstats');
+            bc.onmessage = e => {
+                log('Mensaje recibido!', 's');
+                log(JSON.stringify(e.data).substring(0, 200), 'i');
+            };
+            log('Escuchando en canal "bydstats"', 's');
+            $('broadcast-status').innerHTML = '<div class="tag ok">✅ Escuchando</div>';
+        }
+
+        // 13. postMessage
+        function setupPostMessage() {
+            log('Configurando postMessage...', 'i');
+            window.addEventListener('message', e => {
+                log('postMessage recibido de ' + e.origin, 's');
+                log(JSON.stringify(e.data).substring(0, 200), 'i');
+            });
+            log('Escuchando postMessage', 's');
+        }
+
+        // 14. WebSocket
+        function tryWebSocket() {
+            const url = $('wsUrl').value;
+            if (!url) { log('Ingresa URL WS', 'w'); return }
+            log('Conectando WS: ' + url, 'i');
+            try {
+                const ws = new WebSocket(url);
+                ws.onopen = () => log('WS conectado!', 's');
+                ws.onmessage = e => log('WS mensaje: ' + e.data.substring(0, 100), 's');
+                ws.onerror = () => log('WS error', 'e');
+                ws.onclose = () => log('WS cerrado', 'w');
+            } catch (e) { log('WS exception: ' + e.message, 'e') }
+        }
+
+        // 15. Detect apps
+        function detectApps() {
+            log('Detectando capacidades...', 'i');
+            const tests = [
+                ['canShare', navigator.canShare?.({ files: [new File([''], 't.txt')] })],
+                ['registerProtocolHandler', 'registerProtocolHandler' in navigator],
+                ['getInstalledRelatedApps', 'getInstalledRelatedApps' in navigator],
+            ];
+            tests.forEach(([n, v]) => log(`${n}: ${v}`, 'i'));
+
+            if ('getInstalledRelatedApps' in navigator) {
+                navigator.getInstalledRelatedApps().then(apps => {
+                    log('Apps relacionadas: ' + apps.length, 'i');
+                    apps.forEach(a => log(' - ' + a.platform + ': ' + a.url, 'i'));
+                }).catch(e => log('Error: ' + e.message, 'e'));
+            }
         }
 
         // Process file
-        function processFile(file) {
-            log('Procesando archivo...', 'info');
-
-            const reader = new FileReader();
-            reader.onload = () => {
-                const arr = new Uint8Array(reader.result.slice(0, 16));
-                const header = String.fromCharCode.apply(null, arr);
-
-                if (header.includes('SQLite')) {
-                    log('✅ ¡Es una base de datos SQLite válida!', 'success');
+        function processFile(f) {
+            log('Procesando ' + f.name + '...', 'i');
+            const r = new FileReader();
+            r.onload = () => {
+                const arr = new Uint8Array(r.result.slice(0, 16));
+                const hdr = String.fromCharCode(...arr);
+                if (hdr.includes('SQLite')) {
+                    log('✅ ¡SQLite válido!', 's');
+                    showResult('✅ ¡Archivo SQLite válido! ' + f.size + ' bytes', true);
                 } else {
-                    log('Header: ' + header, 'warning');
-                    log('No parece ser SQLite, pero podría funcionar', 'warning');
+                    log('Header: ' + hdr, 'w');
+                    showResult('⚠️ No parece SQLite, pero recibido: ' + f.size + ' bytes', false);
                 }
             };
-            reader.readAsArrayBuffer(file);
+            r.readAsArrayBuffer(f);
         }
 
-        function processBlob(blob, name) {
-            const file = new File([blob], name);
-            processFile(file);
+        function processBlob(b, name) { processFile(new File([b], name)) }
+
+        // Detect APIs
+        function detectAPIs() {
+            const apis = [
+                ['showDirectoryPicker', 'showDirectoryPicker' in window],
+                ['showOpenFilePicker', 'showOpenFilePicker' in window],
+                ['webkitdirectory', 'webkitdirectory' in document.createElement('input')],
+                ['FileReader', 'FileReader' in window],
+                ['Blob', 'Blob' in window],
+                ['IndexedDB', 'indexedDB' in window],
+                ['localStorage', 'localStorage' in window],
+                ['Clipboard', 'clipboard' in navigator],
+                ['Share', 'share' in navigator],
+                ['BroadcastChannel', 'BroadcastChannel' in window],
+                ['WebSocket', 'WebSocket' in window],
+                ['ServiceWorker', 'serviceWorker' in navigator],
+            ];
+            $('apis').innerHTML = apis.map(([n, ok]) => {
+                log(`API ${n}: ${ok ? 'SÍ' : 'NO'}`, ok ? 's' : 'w');
+                return `<span class="tag ${ok ? 'ok' : 'no'}">${ok ? '✅' : '❌'} ${n}</span>`;
+            }).join('');
         }
 
-        // Export functions
-        function getFullLog() {
-            return logEntries.map(e => `[${e.ts}] [${e.type}] ${e.msg}`).join('\n');
+        // Export
+        function getLog() { return logs.map(l => `[${l.ts}][${l.t}] ${l.m}`).join('\n') }
+        function toGH() {
+            const b = encodeURIComponent('```\n' + getLog() + '\n```');
+            const t = encodeURIComponent('[Debug FULL] ' + new Date().toISOString());
+            window.open(`https://github.com/miguelpicado/byd-stats/issues/new?title=${t}&body=${b}&labels=debug`, '_blank');
         }
+        function share() { navigator.share?.({ title: 'Debug', text: getLog() }) || log('Share no disponible', 'e') }
+        function copy() { navigator.clipboard.writeText(getLog()).then(() => log('Copiado', 's')).catch(e => log(e.message, 'e')) }
 
-        function saveToGitHub() {
-            const body = encodeURIComponent(`## Debug v2 Log\n\n\`\`\`\n${getFullLog()}\n\`\`\``);
-            const title = encodeURIComponent('[Debug v2] ' + new Date().toISOString());
-            window.open(`https://github.com/miguelpicado/byd-stats/issues/new?title=${title}&body=${body}&labels=debug`, '_blank');
-        }
+        // Check URL params for share target
+        function checkShareTarget() {
+            const p = new URLSearchParams(location.search);
+            if (p.has('file') || p.has('shared') || p.has('text') || p.has('filename')) {
+                log('¡Datos recibidos via Share Target!', 's');
+                log('Params: ' + location.search, 'i');
 
-        function shareLog() {
-            if (navigator.share) {
-                navigator.share({ title: 'Debug Log', text: getFullLog() });
-            } else {
-                log('Share API no disponible', 'error');
+                // Check IndexedDB for shared file
+                checkIndexedDBForFile();
             }
         }
 
-        function copyLog() {
-            navigator.clipboard.writeText(getFullLog())
-                .then(() => log('Log copiado', 'success'))
-                .catch(e => log('Error: ' + e.message, 'error'));
+        // Check IndexedDB for files from Service Worker
+        async function checkIndexedDBForFile() {
+            log('Buscando archivo en IndexedDB...', 'i');
+            try {
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('byd-debug', 1);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('files')) {
+                            db.createObjectStore('files', { keyPath: 'id' });
+                        }
+                    };
+                });
+
+                const tx = db.transaction('files', 'readonly');
+                const store = tx.objectStore('files');
+                const file = await new Promise((resolve, reject) => {
+                    const request = store.get('shared-file');
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+
+                if (file) {
+                    log('¡Archivo encontrado en IndexedDB!', 's');
+                    log(`Nombre: ${file.name}, Tamaño: ${file.size}b`, 's');
+
+                    // Process the file
+                    const blob = new Blob([file.data]);
+                    processBlob(blob, file.name);
+
+                    showResult('✅ ¡Archivo recibido via Share! ' + file.name + ' (' + file.size + ' bytes)', true);
+                } else {
+                    log('No hay archivo en IndexedDB', 'w');
+                }
+            } catch (e) {
+                log('Error IndexedDB: ' + e.message, 'e');
+            }
+        }
+
+        // Register Service Worker
+        async function registerSW() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const reg = await navigator.serviceWorker.register('/prueba/sw.js', { scope: '/prueba/' });
+                    log('Service Worker registrado: ' + reg.scope, 's');
+                } catch (e) {
+                    log('Error registrando SW: ' + e.message, 'e');
+                }
+            } else {
+                log('ServiceWorker no disponible', 'w');
+            }
         }
 
         // Init
-        log('Debug v2 iniciado', 'info');
-        log('UA: ' + navigator.userAgent, 'info');
-        checkURLParams();
+        log('Debug FULL iniciado', 'i');
+        log('UA: ' + navigator.userAgent, 'i');
+        log('Secure: ' + window.isSecureContext, 'i');
+        registerSW();
+        detectAPIs();
         checkShareTarget();
+        checkPWA();
+        setupPostMessage();
     </script>
 </body>
 
