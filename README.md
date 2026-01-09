@@ -27,6 +27,30 @@ Una herramienta (web + Android) para visualizar y analizar las estadísticas del
 
 ---
 
+## 📸 Capturas de pantalla
+
+### Panel de Resumen
+Vista general con estadísticas clave: distancia total, consumo de energía, eficiencia media y número de viajes.
+
+![Panel de Resumen](docs/screenshots/resumen.png)
+
+### Análisis de Patrones
+Visualización de patrones de conducción por hora del día y distribución de viajes a lo largo de la semana.
+
+![Análisis de Patrones](docs/screenshots/patrones.png)
+
+### Histórico de Viajes
+Listado detallado de los últimos 10 viajes con métricas completas de cada trayecto.
+
+![Histórico de Viajes](docs/screenshots/historico.png)
+
+### Análisis de Eficiencia
+Gráficos de evolución de eficiencia mensual y diagrama de dispersión de eficiencia vs distancia.
+
+![Análisis de Eficiencia](docs/screenshots/eficiencia.png)
+
+---
+
 ## 🗂️ Cómo obtener tus datos (EC_Database.db)
 1. Introduce un pendrive en el puerto USB del vehículo BYD.
 2. Abre la carpeta `EnergyData` en la unidad USB.
