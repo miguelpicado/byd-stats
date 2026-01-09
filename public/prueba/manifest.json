@@ -1,0 +1,34 @@
+{
+    "name": "BYD Stats Debug",
+    "short_name": "BYD Debug",
+    "description": "Debug tool for BYD Stats file access",
+    "start_url": "/prueba/",
+    "display": "standalone",
+    "background_color": "#0f172a",
+    "theme_color": "#ea0029",
+    "icons": [
+        {
+            "src": "/favicon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ],
+    "share_target": {
+        "action": "/prueba/",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "files": [
+                {
+                    "name": "file",
+                    "accept": [
+                        "*/*",
+                        ".db",
+                        "application/x-sqlite3",
+                        "application/octet-stream"
+                    ]
+                }
+            ]
+        }
+    }
+}
