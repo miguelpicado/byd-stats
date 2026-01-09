@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Selector de Carpeta - BYD Stats</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: #ea0029;
+            text-align: center;
+            font-size: 1.5rem;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 16px;
+            padding: 24px;
+            margin: 20px 0;
+            border: 1px solid #334155;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 16px 24px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            margin: 8px 0;
+        }
+
+        .btn-primary {
+            background: #ea0029;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: white;
+        }
+
+        .result {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 16px;
+            font-family: monospace;
+            font-size: 0.85rem;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .success {
+            color: #4ade80;
+        }
+
+        .error {
+            color: #f87171;
+        }
+
+        .info {
+            color: #60a5fa;
+        }
+
+        .warning {
+            color: #fbbf24;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .instructions {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            line-height: 1.6;
+        }
+
+        .instructions ol {
+            padding-left: 20px;
+        }
+
+        .highlight {
+            color: #ea0029;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>🔬 Prueba Selector de Carpeta</h1>
+
+        <div class="card">
+            <p class="instructions">
+                <strong>Objetivo:</strong> Verificar si el selector de carpetas puede acceder a archivos <span
+                    class="highlight">.db</span> sin la restricción de "solo imágenes".
+            </p>
+            <ol class="instructions">
+                <li>Pulsa "Seleccionar carpeta"</li>
+                <li>Navega hasta la carpeta <span class="highlight">energydata</span></li>
+                <li>Selecciónala</li>
+                <li>Veremos qué archivos detecta</li>
+            </ol>
+        </div>
+
+        <div class="card">
+            <button class="btn btn-primary" onclick="selectFolderModern()">
+                � Selector Moderno (puede recordar carpeta)
+            </button>
+
+            <button class="btn btn-secondary" onclick="selectFolder()">
+                📁 webkitdirectory (alternativa)
+            </button>
+            <input type="file" id="folderInput" webkitdirectory multiple />
+
+            <button class="btn btn-secondary" onclick="selectFile()">
+                📄 Selector normal (comparar)
+            </button>
+            <input type="file" id="fileInput" accept="*/*" />
+
+            <div id="result" class="result" style="display: none;"></div>
+        </div>
+
+        <div class="card">
+            <h3 style="margin-top: 0;">📊 APIs Disponibles</h3>
+            <div id="apis" class="result"></div>
+        </div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+        const apisDiv = document.getElementById('apis');
+
+        // Check available APIs
+        const apis = [];
+        if ('showDirectoryPicker' in window) apis.push('✅ showDirectoryPicker (File System Access API)');
+        else apis.push('❌ showDirectoryPicker NO disponible');
+
+        if ('webkitdirectory' in document.createElement('input')) apis.push('✅ webkitdirectory attribute');
+        else apis.push('❌ webkitdirectory NO disponible');
+
+        apis.push('');
+        apis.push('📱 User Agent:');
+        apis.push(navigator.userAgent);
+
+        apisDiv.innerHTML = apis.join('\n');
+
+        // Folder selector
+        document.getElementById('folderInput').addEventListener('change', function (e) {
+            const files = Array.from(e.target.files);
+            showResults(files, 'CARPETA');
+        });
+
+        // File selector
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            const files = Array.from(e.target.files);
+            showResults(files, 'ARCHIVO');
+        });
+
+        function selectFolder() {
+            document.getElementById('folderInput').click();
+        }
+
+        function selectFile() {
+            document.getElementById('fileInput').click();
+        }
+
+        // Modern File System Access API - can remember folder!
+        async function selectFolderModern() {
+            if (!('showDirectoryPicker' in window)) {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<span class="error">❌ showDirectoryPicker NO disponible en este navegador</span>\n' +
+                    '<span class="info">Prueba con el botón "webkitdirectory" en su lugar.</span>';
+                return;
+            }
+
+            try {
+                resultDiv.style.display = 'block';
+                resultDiv.innerHTML = '<span class="info">⏳ Abriendo selector de carpeta...</span>';
+
+                const dirHandle = await window.showDirectoryPicker({
+                    mode: 'read',
+                    startIn: 'documents' // Hint to start near common locations
+                });
+
+                resultDiv.innerHTML = '<span class="info">📂 Escaneando carpeta...</span>';
+
+                const files = [];
+                for await (const entry of dirHandle.values()) {
+                    if (entry.kind === 'file') {
+                        try {
+                            const file = await entry.getFile();
+                            file.relativePath = entry.name;
+                            files.push(file);
+                        } catch (e) {
+                            console.error('Error reading file:', entry.name, e);
+                        }
+                    }
+                }
+
+                showResultsModern(files, dirHandle.name);
+
+            } catch (err) {
+                if (err.name === 'AbortError') {
+                    resultDiv.innerHTML = '<span class="warning">⚠️ Selección cancelada por el usuario</span>';
+                } else {
+                    resultDiv.innerHTML = `<span class="error">❌ Error: ${err.message}</span>\n` +
+                        `<span class="info">Nombre: ${err.name}</span>`;
+                }
+            }
+        }
+
+        function showResultsModern(files, folderName) {
+            let html = `<span class="success">📂 Carpeta: ${folderName}</span>\n`;
+            html += `<span class="info">📊 Archivos encontrados: ${files.length}</span>\n\n`;
+
+            const ecDatabase = files.find(f => f.name.toLowerCase() === 'ec_database.db');
+            const dbFiles = files.filter(f => f.name.toLowerCase().endsWith('.db'));
+
+            if (ecDatabase) {
+                html += `<span class="success">🎉 ¡ENCONTRADO! EC_Database.db</span>\n`;
+                html += `<span class="success">   Tamaño: ${(ecDatabase.size / 1024).toFixed(1)} KB</span>\n\n`;
+                html += `<span class="success">✅ ¡Selector moderno funciona! Se puede implementar sincronización mejorada.</span>\n`;
+            } else if (dbFiles.length > 0) {
+                html += `<span class="warning">⚠️ Archivos .db encontrados:</span>\n`;
+                dbFiles.forEach(f => html += `   - ${f.name} (${(f.size / 1024).toFixed(1)} KB)\n`);
+            } else {
+                html += `<span class="error">❌ No se encontraron archivos .db</span>\n`;
+            }
+
+            html += `\n<span class="info">📋 Todos los archivos:</span>\n`;
+            files.forEach(f => {
+                const isDb = f.name.toLowerCase().endsWith('.db');
+                html += `<span class="${isDb ? 'success' : ''}">${f.name} (${(f.size / 1024).toFixed(1)} KB)</span>\n`;
+            });
+
+            resultDiv.innerHTML = html;
+        }
+
+        function showResults(files, mode) {
+            resultDiv.style.display = 'block';
+
+            if (files.length === 0) {
+                resultDiv.innerHTML = '<span class="error">❌ No se seleccionaron archivos</span>';
+                return;
+            }
+
+            let html = `<span class="info">📂 Modo: ${mode}</span>\n`;
+            html += `<span class="info">📊 Total archivos: ${files.length}</span>\n\n`;
+
+            // Look for EC_Database.db
+            const dbFiles = files.filter(f => f.name.toLowerCase().endsWith('.db'));
+            const ecDatabase = files.find(f => f.name.toLowerCase() === 'ec_database.db');
+
+            if (ecDatabase) {
+                html += `<span class="success">🎉 ¡ENCONTRADO! EC_Database.db</span>\n`;
+                html += `<span class="success">   Tamaño: ${(ecDatabase.size / 1024).toFixed(1)} KB</span>\n`;
+                html += `<span class="success">   Ruta: ${ecDatabase.webkitRelativePath || ecDatabase.name}</span>\n\n`;
+            } else if (dbFiles.length > 0) {
+                html += `<span class="warning">⚠️ Archivos .db encontrados (pero no EC_Database.db):</span>\n`;
+                dbFiles.forEach(f => {
+                    html += `   - ${f.webkitRelativePath || f.name} (${(f.size / 1024).toFixed(1)} KB)\n`;
+                });
+                html += '\n';
+            } else {
+                html += `<span class="error">❌ No se encontraron archivos .db</span>\n\n`;
+            }
+
+            html += `<span class="info">📋 Todos los archivos:</span>\n`;
+            files.slice(0, 50).forEach(f => {
+                const ext = f.name.split('.').pop().toLowerCase();
+                const isDb = ext === 'db';
+                const color = isDb ? 'success' : '';
+                html += `<span class="${color}">   ${f.webkitRelativePath || f.name} (${(f.size / 1024).toFixed(1)} KB)</span>\n`;
+            });
+
+            if (files.length > 50) {
+                html += `\n... y ${files.length - 50} archivos más`;
+            }
+
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+
+</html>
