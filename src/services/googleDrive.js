@@ -57,12 +57,8 @@ export const googleDriveService = {
       const query = `name = '${DB_FILENAME}'`;
       const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime)&pageSize=10&q=${encodeURIComponent(query)}`;
 
-      const headers = googleDriveService._getHeaders();
-      const tokenPreview = headers.Authorization.substring(7, 25); // Skip 'Bearer '
-      alert(`DEBUG: Fetching...\nToken Prefix: ${tokenPreview}\nIs JWT (ID Token)? ${tokenPreview.startsWith('eyJ')}`);
-
       const response = await fetch(url, {
-        headers: headers
+        headers: googleDriveService._getHeaders()
       });
 
       if (!response.ok) {
