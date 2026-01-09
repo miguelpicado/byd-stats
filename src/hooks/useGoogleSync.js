@@ -221,8 +221,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                     || result.accessToken?.token
                     || result.accessToken;
 
-                // DEBUG: Inspect the result structure exactly
-                const hasAccess = !!(result.result?.accessToken?.token || result.result?.accessToken || result.accessToken?.token || result.accessToken);
+                // Get access token from authentication - try multiple paths
 
                 if (accessToken) {
                     console.log("Access token found, handling success...");
