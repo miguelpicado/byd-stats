@@ -4,619 +4,710 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug - BYD Stats</title>
+    <title>Debug FULL - BYD Stats</title>
+    <link rel="manifest" href="/prueba/manifest.json">
+    <meta name="theme-color" content="#ea0029">
     <style>
         * {
             box-sizing: border-box;
             margin: 0;
-            padding: 0;
+            padding: 0
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            font-family: system-ui, sans-serif;
             background: #0f172a;
-            color: white;
-            min-height: 100vh;
-            padding: 10px;
-            font-size: 13px;
+            color: #fff;
+            padding: 8px;
+            font-size: 12px
         }
 
         h1 {
             color: #ea0029;
             text-align: center;
-            font-size: 1.1rem;
-            margin-bottom: 10px;
+            font-size: 1rem;
+            margin: 8px 0
         }
 
         h2 {
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             color: #94a3b8;
-            margin-bottom: 6px;
+            margin: 4px 0
         }
 
-        .card {
-            background: rgba(30, 41, 59, 0.95);
-            border-radius: 10px;
-            padding: 10px;
-            margin: 6px 0;
-            border: 1px solid #334155;
+        .c {
+            background: #1e293b;
+            border-radius: 8px;
+            padding: 8px;
+            margin: 4px 0;
+            border: 1px solid #334155
         }
 
         .btn {
             width: 100%;
-            padding: 12px;
-            font-size: 0.9rem;
+            padding: 10px;
+            font-size: 0.8rem;
             font-weight: 600;
             border: none;
-            border-radius: 8px;
+            border-radius: 6px;
             cursor: pointer;
-            margin: 4px 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
+            margin: 3px 0;
+            color: #fff
         }
 
-        .btn-primary {
-            background: #ea0029;
-            color: white;
+        .r {
+            background: #ea0029
         }
 
-        .btn-secondary {
-            background: #334155;
-            color: white;
+        .g {
+            background: #059669
         }
 
-        .btn-success {
-            background: #059669;
-            color: white;
+        .y {
+            background: #d97706
         }
 
-        .btn-warning {
-            background: #d97706;
-            color: white;
+        .b {
+            background: #0284c7
         }
 
-        .btn-small {
+        .gr {
+            background: #475569
+        }
+
+        .sm {
             padding: 6px 10px;
-            font-size: 0.75rem;
             width: auto;
+            font-size: 0.7rem
         }
 
-        .grid-2 {
+        input[type=file] {
+            display: none
+        }
+
+        input[type=text] {
+            width: 100%;
+            padding: 8px;
+            background: #0f172a;
+            border: 1px solid #475569;
+            color: #fff;
+            border-radius: 4px;
+            margin: 4px 0;
+            font-size: 11px
+        }
+
+        .log {
+            background: #0f172a;
+            border-radius: 4px;
+            padding: 6px;
+            font-family: monospace;
+            font-size: 9px;
+            max-height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all
+        }
+
+        .log-i {
+            color: #60a5fa
+        }
+
+        .log-s {
+            color: #4ade80
+        }
+
+        .log-e {
+            color: #f87171
+        }
+
+        .log-w {
+            color: #fbbf24
+        }
+
+        .drop {
+            border: 2px dashed #475569;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            margin: 4px 0
+        }
+
+        .drop.active {
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1)
+        }
+
+        .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 6px;
+            gap: 4px
         }
 
-        .grid-4 {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr 1fr;
-            gap: 4px;
-        }
-
-        .stat {
-            background: #1e293b;
-            padding: 6px;
+        .result {
+            background: #0f172a;
+            border: 2px solid #334155;
             border-radius: 6px;
+            padding: 10px;
             text-align: center;
+            margin: 6px 0
         }
 
-        .stat-value {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #4ade80;
+        .result.ok {
+            border-color: #4ade80
         }
 
-        .stat-label {
-            font-size: 0.65rem;
+        .result.err {
+            border-color: #f87171
+        }
+
+        .info {
+            font-size: 0.7rem;
             color: #64748b;
+            margin: 2px 0
         }
 
-        .badge {
-            display: inline-block;
+        .flex {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap
+        }
+
+        .tag {
+            background: #334155;
             padding: 2px 6px;
             border-radius: 4px;
             font-size: 0.65rem;
-            margin: 2px;
+            margin: 1px
         }
 
-        .badge-yes {
-            background: #059669;
+        .tag.ok {
+            background: #059669
         }
 
-        .badge-no {
-            background: #dc2626;
-        }
-
-        input[type="file"] {
-            display: none;
-        }
-
-        /* GIANT SUMMARY - Easy to photograph */
-        .giant-summary {
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            border: 3px solid #ea0029;
-            border-radius: 16px;
-            padding: 16px;
-            margin: 10px 0;
-            text-align: center;
-        }
-
-        .giant-title {
-            font-size: 1.4rem;
-            font-weight: bold;
-            margin-bottom: 12px;
-        }
-
-        .giant-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin: 12px 0;
-        }
-
-        .giant-item {
-            background: #0f172a;
-            padding: 12px;
-            border-radius: 10px;
-            border: 2px solid #334155;
-        }
-
-        .giant-label {
-            font-size: 0.8rem;
-            color: #94a3b8;
-            margin-bottom: 4px;
-        }
-
-        .giant-value {
-            font-size: 1.6rem;
-            font-weight: bold;
-        }
-
-        .giant-yes {
-            color: #4ade80;
-        }
-
-        .giant-no {
-            color: #f87171;
-        }
-
-        .giant-info {
-            color: #60a5fa;
-        }
-
-        .giant-ua {
-            font-size: 0.7rem;
-            color: #64748b;
-            word-break: break-all;
-            text-align: left;
-            background: #0f172a;
-            padding: 8px;
-            border-radius: 6px;
-            margin-top: 10px;
-        }
-
-        /* Log styles */
-        .log-container {
-            background: #0f172a;
-            border-radius: 6px;
-            padding: 8px;
-            font-family: monospace;
-            font-size: 10px;
-            max-height: 200px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-        }
-
-        .log-entry {
-            margin: 1px 0;
-            padding: 1px 0;
-            border-bottom: 1px solid #1e293b;
-        }
-
-        .log-info {
-            color: #60a5fa;
-        }
-
-        .log-success {
-            color: #4ade80;
-        }
-
-        .log-error {
-            color: #f87171;
-        }
-
-        .log-warning {
-            color: #fbbf24;
-        }
-
-        .log-debug {
-            color: #a78bfa;
-        }
-
-        .log-time {
-            color: #64748b;
-        }
-
-        /* Textarea for manual copy */
-        .copy-area {
-            width: 100%;
-            height: 100px;
-            background: #0f172a;
-            color: #94a3b8;
-            border: 1px solid #334155;
-            border-radius: 6px;
-            padding: 8px;
-            font-family: monospace;
-            font-size: 9px;
-            resize: none;
-        }
-
-        .section-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 6px;
-        }
-
-        .button-row {
-            display: flex;
-            gap: 6px;
-            flex-wrap: wrap;
+        .tag.no {
+            background: #dc2626
         }
     </style>
 </head>
 
 <body>
-    <h1>🔬 Debug BYD Stats</h1>
+    <h1>🔬 Debug COMPLETO - Todas las opciones</h1>
 
-    <!-- GIANT PHOTO-FRIENDLY SUMMARY -->
-    <div class="giant-summary" id="giantSummary">
-        <div class="giant-title">📊 RESUMEN RÁPIDO</div>
-        <div class="giant-grid">
-            <div class="giant-item">
-                <div class="giant-label">Navegador</div>
-                <div class="giant-value giant-info" id="gBrowser">-</div>
-            </div>
-            <div class="giant-item">
-                <div class="giant-label">Sistema</div>
-                <div class="giant-value giant-info" id="gOS">-</div>
-            </div>
-            <div class="giant-item">
-                <div class="giant-label">showDirectoryPicker</div>
-                <div class="giant-value" id="gDirPicker">-</div>
-            </div>
-            <div class="giant-item">
-                <div class="giant-label">webkitdirectory</div>
-                <div class="giant-value" id="gWebkit">-</div>
-            </div>
+    <!-- MÉTODO 1: PWA Share Target -->
+    <div class="c">
+        <h2>1️⃣ PWA Share Target</h2>
+        <p class="info">Instala como PWA, luego comparte desde explorador de archivos</p>
+        <button class="btn b" onclick="installPWA()">📲 Instalar como PWA</button>
+        <button class="btn gr" onclick="checkPWA()">🔍 Verificar estado PWA</button>
+        <div id="pwa-result"></div>
+    </div>
+
+    <!-- MÉTODO 2: Drag & Drop -->
+    <div class="c">
+        <h2>2️⃣ Drag & Drop</h2>
+        <div id="drop" class="drop">📁 Arrastra archivo aquí</div>
+    </div>
+
+    <!-- MÉTODO 3: Input File Variants -->
+    <div class="c">
+        <h2>3️⃣ Input File (variantes)</h2>
+        <div class="grid">
+            <button class="btn gr sm" onclick="$('f1').click()">*/*</button>
+            <button class="btn gr sm" onclick="$('f2').click()">sin accept</button>
+            <button class="btn gr sm" onclick="$('f3').click()">.db,.sqlite</button>
+            <button class="btn gr sm" onclick="$('f4').click()">octet-stream</button>
+            <button class="btn gr sm" onclick="$('f5').click()">capture=env</button>
+            <button class="btn gr sm" onclick="$('f6').click()">webkitdir</button>
         </div>
-        <div class="giant-ua" id="gUA">User Agent: cargando...</div>
+        <input type="file" id="f1" accept="*/*" onchange="onFile(this,'*/*')">
+        <input type="file" id="f2" onchange="onFile(this,'sin accept')">
+        <input type="file" id="f3" accept=".db,.sqlite,.sqlite3,application/x-sqlite3" onchange="onFile(this,'.db')">
+        <input type="file" id="f4" accept="application/octet-stream" onchange="onFile(this,'octet-stream')">
+        <input type="file" id="f5" capture="environment" onchange="onFile(this,'capture')">
+        <input type="file" id="f6" webkitdirectory onchange="onFile(this,'webkitdir')">
     </div>
 
-    <!-- Test Buttons -->
-    <div class="card">
-        <h2>🧪 Pruebas</h2>
-        <button class="btn btn-primary" onclick="testShowDirectoryPicker()">🚀 showDirectoryPicker</button>
-        <button class="btn btn-secondary" onclick="testWebkitDirectory()">📁 webkitdirectory</button>
-        <input type="file" id="folderInput" webkitdirectory multiple />
-        <button class="btn btn-secondary" onclick="testFileInput()">📄 Selector archivos</button>
-        <input type="file" id="fileInput" accept="*/*" />
+    <!-- MÉTODO 4: URL Schemes -->
+    <div class="c">
+        <h2>4️⃣ URL Schemes</h2>
+        <button class="btn gr" onclick="tryURL('file:///storage/emulated/0/energydata/EC_Database.db')">file://
+            energydata</button>
+        <button class="btn gr" onclick="tryURL('file:///sdcard/energydata/EC_Database.db')">file:// sdcard</button>
+        <button class="btn gr" onclick="tryURL('file:///data/energydata/EC_Database.db')">file:// data</button>
+        <input type="text" id="customUrl" placeholder="URL personalizada (file://, content://, http://)">
+        <button class="btn y" onclick="tryURL($('customUrl').value)">🔗 Probar URL</button>
     </div>
 
-    <!-- Test Results - Giant display -->
-    <div class="giant-summary" id="testResults" style="display:none; border-color: #4ade80;">
-        <div class="giant-title" id="resultTitle">📁 RESULTADO</div>
-        <div class="giant-grid">
-            <div class="giant-item">
-                <div class="giant-label">Archivos</div>
-                <div class="giant-value giant-info" id="rFiles">0</div>
-            </div>
-            <div class="giant-item">
-                <div class="giant-label">Archivos .db</div>
-                <div class="giant-value" id="rDB">0</div>
-            </div>
+    <!-- MÉTODO 5: Network Fetch -->
+    <div class="c">
+        <h2>5️⃣ Red Local (HTTP)</h2>
+        <p class="info">Si tienes servidor HTTP en la red local</p>
+        <input type="text" id="netUrl" placeholder="http://192.168.1.100:8080/EC_Database.db">
+        <button class="btn g" onclick="fetchNet()">📡 Descargar de red</button>
+    </div>
+
+    <!-- MÉTODO 6: Clipboard -->
+    <div class="c">
+        <h2>6️⃣ Clipboard</h2>
+        <button class="btn y" onclick="readClipboard()">📋 Leer portapapeles</button>
+        <button class="btn gr" onclick="readClipboardFiles()">📎 Leer archivos del clipboard</button>
+    </div>
+
+    <!-- MÉTODO 7: Intent URL -->
+    <div class="c">
+        <h2>7️⃣ Intent URL (Android)</h2>
+        <p class="info">Abrir con intent:// scheme</p>
+        <button class="btn gr" onclick="tryIntent()">🤖 Probar intent://</button>
+    </div>
+
+    <!-- MÉTODO 8: iframe file:// -->
+    <div class="c">
+        <h2>8️⃣ iframe file://</h2>
+        <button class="btn gr" onclick="tryIframe()">📄 Cargar en iframe</button>
+        <iframe id="fileFrame"
+            style="width:100%;height:50px;background:#0f172a;border:1px solid #475569;display:none"></iframe>
+    </div>
+
+    <!-- MÉTODO 9: XMLHttpRequest file:// -->
+    <div class="c">
+        <h2>9️⃣ XMLHttpRequest file://</h2>
+        <button class="btn gr" onclick="tryXHR()">📄 XHR a file://</button>
+    </div>
+
+    <!-- MÉTODO 10: window.open file:// -->
+    <div class="c">
+        <h2>🔟 window.open file://</h2>
+        <button class="btn gr" onclick="tryWindowOpen()">🪟 Abrir file:// en nueva ventana</button>
+    </div>
+
+    <!-- MÉTODO 11: location.href file:// -->
+    <div class="c">
+        <h2>1️⃣1️⃣ Navegar a file://</h2>
+        <button class="btn gr" onclick="tryNavigate()">🧭 Navegar a file:// (cuidado!)</button>
+    </div>
+
+    <!-- MÉTODO 12: BroadcastChannel -->
+    <div class="c">
+        <h2>1️⃣2️⃣ BroadcastChannel</h2>
+        <p class="info">Recibir datos de otra pestaña</p>
+        <button class="btn gr" onclick="setupBroadcast()">📢 Escuchar BroadcastChannel</button>
+        <div id="broadcast-status"></div>
+    </div>
+
+    <!-- MÉTODO 13: postMessage -->
+    <div class="c">
+        <h2>1️⃣3️⃣ postMessage</h2>
+        <p class="info">Si otra ventana/app puede enviar mensajes</p>
+        <button class="btn gr" onclick="setupPostMessage()">💬 Escuchar postMessage</button>
+    </div>
+
+    <!-- MÉTODO 14: WebSocket local -->
+    <div class="c">
+        <h2>1️⃣4️⃣ WebSocket Local</h2>
+        <input type="text" id="wsUrl" placeholder="ws://192.168.1.100:8080">
+        <button class="btn gr" onclick="tryWebSocket()">🔌 Conectar WebSocket</button>
+    </div>
+
+    <!-- MÉTODO 15: Check for file managers -->
+    <div class="c">
+        <h2>1️⃣5️⃣ Detectar Apps</h2>
+        <button class="btn b" onclick="detectApps()">🔍 Detectar apps/intents disponibles</button>
+    </div>
+
+    <!-- APIs disponibles -->
+    <div class="c">
+        <h2>📊 APIs Detectadas</h2>
+        <div id="apis" class="flex"></div>
+    </div>
+
+    <!-- Export -->
+    <div class="c">
+        <h2>📤 Exportar</h2>
+        <div class="flex">
+            <button class="btn sm r" onclick="toGH()">🐙 GitHub</button>
+            <button class="btn sm g" onclick="share()">📤 Share</button>
+            <button class="btn sm y" onclick="copy()">📋 Copy</button>
         </div>
-        <div class="giant-item" style="margin-top: 10px;">
-            <div class="giant-label">EC_Database.db</div>
-            <div class="giant-value" id="rEC" style="font-size: 2rem;">-</div>
-        </div>
-        <div id="rFileList"
-            style="text-align: left; font-size: 0.8rem; margin-top: 10px; max-height: 150px; overflow-y: auto;"></div>
     </div>
 
-    <!-- Export Options -->
-    <div class="card">
-        <div class="section-title">
-            <h2>📤 Exportar Log</h2>
-        </div>
-        <div class="button-row">
-            <button class="btn btn-small btn-primary" onclick="saveToGitHub()">� Guardar en GitHub</button>
-            <button class="btn btn-small btn-success" onclick="shareLog()">� Compartir</button>
-            <button class="btn btn-small btn-warning" onclick="showTextArea()">� Ver texto</button>
-        </div>
-        <textarea id="copyArea" class="copy-area" style="display:none;" readonly onclick="this.select()"></textarea>
+    <!-- Log -->
+    <div class="c">
+        <h2>📋 Log</h2>
+        <div id="log" class="log"></div>
     </div>
 
-    <!-- APIs Card -->
-    <div class="card">
-        <h2>🔧 APIs</h2>
-        <div id="apiSupport"></div>
-    </div>
-
-    <!-- Debug Log -->
-    <div class="card">
-        <h2>📋 Log Detallado</h2>
-        <div id="debugLog" class="log-container"></div>
-    </div>
+    <!-- Result display -->
+    <div id="mainResult" class="result" style="display:none"></div>
 
     <script>
-        // ========== LOGGING ==========
-        const logEntries = [];
-        const logContainer = document.getElementById('debugLog');
+        const $ = id => document.getElementById(id);
+        const logs = [];
+        const logEl = $('log');
 
-        function log(msg, type = 'info') {
-            const ts = new Date().toLocaleTimeString('es-ES', { hour12: false }) + '.' + Date.now().toString().slice(-3);
-            logEntries.push({ ts, msg, type });
-            const div = document.createElement('div');
-            div.className = `log-entry log-${type}`;
-            div.innerHTML = `<span class="log-time">[${ts}]</span> ${msg}`;
-            logContainer.appendChild(div);
-            logContainer.scrollTop = logContainer.scrollHeight;
-            console.log(`[${type}] ${msg}`);
+        function log(m, t = 'i') {
+            const ts = new Date().toLocaleTimeString('es', { hour12: 0 });
+            logs.push({ ts, m, t });
+            const d = document.createElement('div');
+            d.className = 'log-' + t;
+            d.textContent = `[${ts}] ${m}`;
+            logEl.appendChild(d);
+            logEl.scrollTop = logEl.scrollHeight;
+            console.log(`[${t}]`, m);
         }
 
-        function getFullLog() {
-            const ua = navigator.userAgent;
-            const apis = {
-                showDirectoryPicker: 'showDirectoryPicker' in window,
-                webkitdirectory: 'webkitdirectory' in document.createElement('input'),
-                Share: 'share' in navigator
-            };
-            let text = `=== BYD Stats Debug ===\n`;
-            text += `Fecha: ${new Date().toISOString()}\n`;
-            text += `UA: ${ua}\n`;
-            text += `APIs: ${JSON.stringify(apis)}\n`;
-            text += `Screen: ${screen.width}x${screen.height}\n`;
-            text += `Viewport: ${innerWidth}x${innerHeight}\n\n`;
-            text += `=== LOG ===\n`;
-            text += logEntries.map(e => `[${e.ts}] [${e.type}] ${e.msg}`).join('\n');
-            return text;
+        function showResult(msg, ok) {
+            const r = $('mainResult');
+            r.style.display = 'block';
+            r.className = 'result ' + (ok ? 'ok' : 'err');
+            r.innerHTML = msg;
+            setTimeout(() => r.scrollIntoView({ behavior: 'smooth' }), 100);
         }
 
-        function shareLog() {
-            log('Intentando compartir...', 'info');
-            if (!navigator.share) {
-                log('Share API no disponible', 'error');
-                alert('Share API no disponible en este navegador');
-                return;
+        // 1. PWA
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; log('PWA instalable!', 's') });
+
+        function installPWA() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(r => log('Instalación: ' + r.outcome, r.outcome === 'accepted' ? 's' : 'w'));
+            } else {
+                log('No hay prompt. Usa menú Chrome → Añadir a inicio', 'w');
             }
-            navigator.share({
-                title: 'BYD Stats Debug Log',
-                text: getFullLog()
-            }).then(() => log('Compartido OK', 'success'))
-                .catch(e => log('Error share: ' + e.message, 'error'));
         }
 
-        function saveToGitHub() {
-            log('Preparando para guardar en GitHub...', 'info');
-
-            const logContent = getFullLog();
-            const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const title = encodeURIComponent(`[Debug Log] Car test - ${timestamp}`);
-
-            // Format body for GitHub issue
-            const body = encodeURIComponent(
-                `## Debug Log from Car\n\n` +
-                `**Date:** ${new Date().toLocaleString()}\n\n` +
-                `### System Info\n` +
-                `- Browser: ${document.getElementById('gBrowser').textContent}\n` +
-                `- OS: ${document.getElementById('gOS').textContent}\n` +
-                `- showDirectoryPicker: ${document.getElementById('gDirPicker').textContent}\n` +
-                `- webkitdirectory: ${document.getElementById('gWebkit').textContent}\n\n` +
-                `### Full Log\n\`\`\`\n${logContent}\n\`\`\`\n`
-            );
-
-            const url = `https://github.com/miguelpicado/byd-stats/issues/new?title=${title}&body=${body}&labels=debug`;
-
-            log('Abriendo GitHub...', 'info');
-            window.open(url, '_blank');
-            log('GitHub abierto en nueva pestaña', 'success');
+        function checkPWA() {
+            log('Verificando PWA...', 'i');
+            const standalone = window.matchMedia('(display-mode:standalone)').matches;
+            log('Standalone: ' + standalone, standalone ? 's' : 'w');
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistration().then(r => {
+                    log('SW registrado: ' + (r ? r.scope : 'NO'), r ? 's' : 'w');
+                });
+            }
+            $('pwa-result').innerHTML = '<div class="tag ' + (standalone ? 'ok' : 'no') + '">' + (standalone ? '✅ PWA activa' : '❌ No es PWA') + '</div>';
         }
 
-        function showTextArea() {
-            const ta = document.getElementById('copyArea');
-            ta.style.display = ta.style.display === 'none' ? 'block' : 'none';
-            ta.value = getFullLog();
-            log('Texto mostrado - selecciona y copia manualmente', 'info');
+        // 2. Drag & Drop
+        const drop = $('drop');
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation() }));
+        ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, () => { drop.classList.add('active'); log('Drag detectado', 'i') }));
+        ['dragleave', 'drop'].forEach(e => drop.addEventListener(e, () => drop.classList.remove('active')));
+        drop.addEventListener('drop', e => {
+            log('Drop event!', 'i');
+            const dt = e.dataTransfer;
+            log('Tipos: ' + [...dt.types].join(', '), 'i');
+            if (dt.files.length) {
+                const f = dt.files[0];
+                log(`Archivo: ${f.name}, ${f.size}b, ${f.type}`, 's');
+                processFile(f);
+            } else {
+                log('No hay archivos en drop', 'w');
+            }
+        });
+
+        // 3. File inputs
+        function onFile(inp, src) {
+            if (inp.files.length) {
+                const f = inp.files[0];
+                log(`[${src}] ${f.name}, ${f.size}b, ${f.type || 'sin tipo'}`, 's');
+                processFile(f);
+            }
+            inp.value = '';
         }
 
-        function downloadLog() {
-            log('Intentando descargar...', 'info');
+        // 4-11. URL/fetch methods
+        async function tryURL(url) {
+            if (!url) { log('URL vacía', 'w'); return }
+            log('Probando: ' + url, 'i');
             try {
-                const blob = new Blob([getFullLog()], { type: 'text/plain' });
-                const a = document.createElement('a');
-                a.href = URL.createObjectURL(blob);
-                a.download = 'byd-debug.txt';
-                a.click();
-                log('Descarga iniciada', 'success');
+                const r = await fetch(url);
+                if (!r.ok) throw new Error('HTTP ' + r.status);
+                const b = await r.blob();
+                log('Éxito! ' + b.size + ' bytes', 's');
+                processBlob(b, 'fetched.db');
+                showResult('✅ URL funcionó: ' + b.size + ' bytes', true);
             } catch (e) {
-                log('Error descarga: ' + e.message, 'error');
+                log('Error: ' + e.message, 'e');
+                showResult('❌ ' + e.message, false);
             }
         }
 
-        // ========== SYSTEM DETECTION ==========
-        function detectSystem() {
-            const ua = navigator.userAgent;
-            let browser = 'Unknown', bv = '?', os = 'Unknown', ov = '?';
-
-            if (ua.includes('Chrome/')) { browser = 'Chrome'; bv = (ua.match(/Chrome\/([\d]+)/) || [])[1] || '?'; }
-            else if (ua.includes('Firefox/')) { browser = 'Firefox'; bv = (ua.match(/Firefox\/([\d]+)/) || [])[1] || '?'; }
-            else if (ua.includes('Safari/')) { browser = 'Safari'; bv = (ua.match(/Version\/([\d]+)/) || [])[1] || '?'; }
-
-            if (ua.includes('Android')) { os = 'Android'; ov = (ua.match(/Android ([\d.]+)/) || [])[1] || '?'; }
-            else if (ua.includes('Windows')) { os = 'Windows'; }
-            else if (ua.includes('Mac OS')) { os = 'macOS'; }
-            else if (ua.includes('Linux')) { os = 'Linux'; }
-
-            document.getElementById('gBrowser').textContent = browser + ' ' + bv;
-            document.getElementById('gOS').textContent = os + ' ' + ov;
-            document.getElementById('gUA').textContent = 'UA: ' + ua;
-
-            log(`Sistema: ${os} ${ov}, ${browser} ${bv}`, 'info');
-            log(`UA: ${ua}`, 'debug');
+        async function fetchNet() {
+            const url = $('netUrl').value;
+            if (!url) { log('Ingresa URL', 'w'); return }
+            log('Conectando a ' + url, 'i');
+            try {
+                const r = await fetch(url, { mode: 'cors' });
+                const b = await r.blob();
+                log('Descargado: ' + b.size + ' bytes', 's');
+                processBlob(b, 'network.db');
+                showResult('✅ Red funcionó: ' + b.size + ' bytes', true);
+            } catch (e) {
+                log('Error red: ' + e.message, 'e');
+                showResult('❌ Red: ' + e.message, false);
+            }
         }
 
+        // 6. Clipboard
+        async function readClipboard() {
+            log('Leyendo clipboard...', 'i');
+            try {
+                const t = await navigator.clipboard.readText();
+                log('Texto: ' + t.substring(0, 100) + '...', 's');
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        async function readClipboardFiles() {
+            log('Leyendo archivos clipboard...', 'i');
+            try {
+                if (!navigator.clipboard.read) { log('clipboard.read() no disponible', 'e'); return }
+                const items = await navigator.clipboard.read();
+                log('Items: ' + items.length, 'i');
+                for (const item of items) {
+                    log('Tipos: ' + item.types.join(', '), 'i');
+                    for (const type of item.types) {
+                        const blob = await item.getType(type);
+                        log(`${type}: ${blob.size}b`, 's');
+                        if (blob.size > 1000) processBlob(blob, 'clipboard');
+                    }
+                }
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        // 7. Intent
+        function tryIntent() {
+            const url = 'intent://energydata/EC_Database.db#Intent;scheme=file;end';
+            log('Probando: ' + url, 'i');
+            try {
+                window.location.href = url;
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        // 8. iframe
+        function tryIframe() {
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('Cargando en iframe: ' + url, 'i');
+            const f = $('fileFrame');
+            f.style.display = 'block';
+            f.src = url;
+            f.onload = () => log('iframe cargado', 's');
+            f.onerror = () => log('iframe error', 'e');
+        }
+
+        // 9. XHR
+        function tryXHR() {
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('XHR a: ' + url, 'i');
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', url);
+            xhr.responseType = 'blob';
+            xhr.onload = () => { log('XHR éxito: ' + xhr.response.size + 'b', 's'); processBlob(xhr.response, 'xhr.db') };
+            xhr.onerror = () => log('XHR error', 'e');
+            try { xhr.send() } catch (e) { log('XHR exception: ' + e.message, 'e') }
+        }
+
+        // 10. window.open
+        function tryWindowOpen() {
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('window.open: ' + url, 'i');
+            try {
+                const w = window.open(url, '_blank');
+                log(w ? 'Ventana abierta' : 'Bloqueado', w ? 's' : 'e');
+            } catch (e) { log('Error: ' + e.message, 'e') }
+        }
+
+        // 11. Navigate
+        function tryNavigate() {
+            if (!confirm('Esto navegará fuera de la página. ¿Continuar?')) return;
+            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            log('Navegando a: ' + url, 'i');
+            window.location.href = url;
+        }
+
+        // 12. BroadcastChannel
+        function setupBroadcast() {
+            log('Configurando BroadcastChannel...', 'i');
+            if (!('BroadcastChannel' in window)) { log('No disponible', 'e'); return }
+            const bc = new BroadcastChannel('bydstats');
+            bc.onmessage = e => {
+                log('Mensaje recibido!', 's');
+                log(JSON.stringify(e.data).substring(0, 200), 'i');
+            };
+            log('Escuchando en canal "bydstats"', 's');
+            $('broadcast-status').innerHTML = '<div class="tag ok">✅ Escuchando</div>';
+        }
+
+        // 13. postMessage
+        function setupPostMessage() {
+            log('Configurando postMessage...', 'i');
+            window.addEventListener('message', e => {
+                log('postMessage recibido de ' + e.origin, 's');
+                log(JSON.stringify(e.data).substring(0, 200), 'i');
+            });
+            log('Escuchando postMessage', 's');
+        }
+
+        // 14. WebSocket
+        function tryWebSocket() {
+            const url = $('wsUrl').value;
+            if (!url) { log('Ingresa URL WS', 'w'); return }
+            log('Conectando WS: ' + url, 'i');
+            try {
+                const ws = new WebSocket(url);
+                ws.onopen = () => log('WS conectado!', 's');
+                ws.onmessage = e => log('WS mensaje: ' + e.data.substring(0, 100), 's');
+                ws.onerror = () => log('WS error', 'e');
+                ws.onclose = () => log('WS cerrado', 'w');
+            } catch (e) { log('WS exception: ' + e.message, 'e') }
+        }
+
+        // 15. Detect apps
+        function detectApps() {
+            log('Detectando capacidades...', 'i');
+            const tests = [
+                ['canShare', navigator.canShare?.({ files: [new File([''], 't.txt')] })],
+                ['registerProtocolHandler', 'registerProtocolHandler' in navigator],
+                ['getInstalledRelatedApps', 'getInstalledRelatedApps' in navigator],
+            ];
+            tests.forEach(([n, v]) => log(`${n}: ${v}`, 'i'));
+
+            if ('getInstalledRelatedApps' in navigator) {
+                navigator.getInstalledRelatedApps().then(apps => {
+                    log('Apps relacionadas: ' + apps.length, 'i');
+                    apps.forEach(a => log(' - ' + a.platform + ': ' + a.url, 'i'));
+                }).catch(e => log('Error: ' + e.message, 'e'));
+            }
+        }
+
+        // Process file
+        function processFile(f) {
+            log('Procesando ' + f.name + '...', 'i');
+            const r = new FileReader();
+            r.onload = () => {
+                const arr = new Uint8Array(r.result.slice(0, 16));
+                const hdr = String.fromCharCode(...arr);
+                if (hdr.includes('SQLite')) {
+                    log('✅ ¡SQLite válido!', 's');
+                    showResult('✅ ¡Archivo SQLite válido! ' + f.size + ' bytes', true);
+                } else {
+                    log('Header: ' + hdr, 'w');
+                    showResult('⚠️ No parece SQLite, pero recibido: ' + f.size + ' bytes', false);
+                }
+            };
+            r.readAsArrayBuffer(f);
+        }
+
+        function processBlob(b, name) { processFile(new File([b], name)) }
+
+        // Detect APIs
         function detectAPIs() {
             const apis = [
                 ['showDirectoryPicker', 'showDirectoryPicker' in window],
                 ['showOpenFilePicker', 'showOpenFilePicker' in window],
                 ['webkitdirectory', 'webkitdirectory' in document.createElement('input')],
                 ['FileReader', 'FileReader' in window],
+                ['Blob', 'Blob' in window],
                 ['IndexedDB', 'indexedDB' in window],
+                ['localStorage', 'localStorage' in window],
                 ['Clipboard', 'clipboard' in navigator],
                 ['Share', 'share' in navigator],
+                ['BroadcastChannel', 'BroadcastChannel' in window],
+                ['WebSocket', 'WebSocket' in window],
+                ['ServiceWorker', 'serviceWorker' in navigator],
             ];
-
-            // Update giant summary
-            const dirPicker = 'showDirectoryPicker' in window;
-            const webkit = 'webkitdirectory' in document.createElement('input');
-
-            const gDirPicker = document.getElementById('gDirPicker');
-            gDirPicker.textContent = dirPicker ? '✅ SÍ' : '❌ NO';
-            gDirPicker.className = 'giant-value ' + (dirPicker ? 'giant-yes' : 'giant-no');
-
-            const gWebkit = document.getElementById('gWebkit');
-            gWebkit.textContent = webkit ? '✅ SÍ' : '❌ NO';
-            gWebkit.className = 'giant-value ' + (webkit ? 'giant-yes' : 'giant-no');
-
-            // API badges
-            document.getElementById('apiSupport').innerHTML = apis.map(([name, ok]) => {
-                log(`API ${name}: ${ok ? 'SÍ' : 'NO'}`, ok ? 'success' : 'warning');
-                return `<span class="badge ${ok ? 'badge-yes' : 'badge-no'}">${ok ? '✅' : '❌'} ${name}</span>`;
+            $('apis').innerHTML = apis.map(([n, ok]) => {
+                log(`API ${n}: ${ok ? 'SÍ' : 'NO'}`, ok ? 's' : 'w');
+                return `<span class="tag ${ok ? 'ok' : 'no'}">${ok ? '✅' : '❌'} ${n}</span>`;
             }).join('');
         }
 
-        // ========== TEST FUNCTIONS ==========
-        async function testShowDirectoryPicker() {
-            log('=== TEST: showDirectoryPicker ===', 'info');
+        // Export
+        function getLog() { return logs.map(l => `[${l.ts}][${l.t}] ${l.m}`).join('\n') }
+        function toGH() {
+            const b = encodeURIComponent('```\n' + getLog() + '\n```');
+            const t = encodeURIComponent('[Debug FULL] ' + new Date().toISOString());
+            window.open(`https://github.com/miguelpicado/byd-stats/issues/new?title=${t}&body=${b}&labels=debug`, '_blank');
+        }
+        function share() { navigator.share?.({ title: 'Debug', text: getLog() }) || log('Share no disponible', 'e') }
+        function copy() { navigator.clipboard.writeText(getLog()).then(() => log('Copiado', 's')).catch(e => log(e.message, 'e')) }
 
-            if (!('showDirectoryPicker' in window)) {
-                log('❌ showDirectoryPicker NO disponible', 'error');
-                showResult('ERROR', 0, 0, false, 'showDirectoryPicker no disponible');
-                return;
+        // Check URL params for share target
+        function checkShareTarget() {
+            const p = new URLSearchParams(location.search);
+            if (p.has('file') || p.has('shared') || p.has('text') || p.has('filename')) {
+                log('¡Datos recibidos via Share Target!', 's');
+                log('Params: ' + location.search, 'i');
+
+                // Check IndexedDB for shared file
+                checkIndexedDBForFile();
             }
+        }
 
+        // Check IndexedDB for files from Service Worker
+        async function checkIndexedDBForFile() {
+            log('Buscando archivo en IndexedDB...', 'i');
             try {
-                log('Abriendo selector de carpeta...', 'info');
-                const handle = await window.showDirectoryPicker({ mode: 'read' });
-                log(`Carpeta: "${handle.name}"`, 'success');
+                const db = await new Promise((resolve, reject) => {
+                    const request = indexedDB.open('byd-debug', 1);
+                    request.onerror = () => reject(request.error);
+                    request.onsuccess = () => resolve(request.result);
+                    request.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('files')) {
+                            db.createObjectStore('files', { keyPath: 'id' });
+                        }
+                    };
+                });
 
-                const files = [];
-                for await (const entry of handle.values()) {
-                    if (entry.kind === 'file') {
-                        try {
-                            const f = await entry.getFile();
-                            files.push({ name: f.name, size: f.size });
-                            log(`  📄 ${f.name} (${(f.size / 1024).toFixed(1)}KB)`, 'debug');
-                        } catch (e) { log(`  ❌ Error: ${entry.name}`, 'error'); }
-                    }
+                const tx = db.transaction('files', 'readonly');
+                const store = tx.objectStore('files');
+                const file = await new Promise((resolve, reject) => {
+                    const request = store.get('shared-file');
+                    request.onsuccess = () => resolve(request.result);
+                    request.onerror = () => reject(request.error);
+                });
+
+                if (file) {
+                    log('¡Archivo encontrado en IndexedDB!', 's');
+                    log(`Nombre: ${file.name}, Tamaño: ${file.size}b`, 's');
+
+                    // Process the file
+                    const blob = new Blob([file.data]);
+                    processBlob(blob, file.name);
+
+                    showResult('✅ ¡Archivo recibido via Share! ' + file.name + ' (' + file.size + ' bytes)', true);
+                } else {
+                    log('No hay archivo en IndexedDB', 'w');
                 }
-
-                const dbs = files.filter(f => f.name.toLowerCase().endsWith('.db'));
-                const ec = files.find(f => f.name.toLowerCase() === 'ec_database.db');
-
-                showResult(handle.name, files.length, dbs.length, !!ec, '', files);
-                log(`Total: ${files.length} archivos, ${dbs.length} .db, EC_Database: ${ec ? 'SÍ' : 'NO'}`, ec ? 'success' : 'warning');
-
             } catch (e) {
-                log(`Error: ${e.name} - ${e.message}`, 'error');
-                if (e.name === 'AbortError') log('Usuario canceló', 'warning');
+                log('Error IndexedDB: ' + e.message, 'e');
             }
         }
 
-        function testWebkitDirectory() {
-            log('=== TEST: webkitdirectory ===', 'info');
-            document.getElementById('folderInput').click();
-        }
-
-        function testFileInput() {
-            log('=== TEST: File Input ===', 'info');
-            document.getElementById('fileInput').click();
-        }
-
-        document.getElementById('folderInput').addEventListener('change', function (e) {
-            const files = Array.from(e.target.files).map(f => ({
-                name: f.name,
-                path: f.webkitRelativePath,
-                size: f.size
-            }));
-
-            log(`webkitdirectory: ${files.length} archivos`, 'success');
-            files.slice(0, 20).forEach(f => log(`  📄 ${f.path || f.name}`, 'debug'));
-
-            const dbs = files.filter(f => f.name.toLowerCase().endsWith('.db'));
-            const ec = files.find(f => f.name.toLowerCase() === 'ec_database.db');
-
-            showResult('webkitdirectory', files.length, dbs.length, !!ec, '', files);
-            log(`Total: ${files.length}, .db: ${dbs.length}, EC: ${ec ? 'SÍ' : 'NO'}`, ec ? 'success' : 'warning');
-            e.target.value = '';
-        });
-
-        document.getElementById('fileInput').addEventListener('change', function (e) {
-            const files = Array.from(e.target.files);
-            log(`File input: ${files.length} archivos`, 'success');
-            files.forEach(f => log(`  📄 ${f.name} (${(f.size / 1024).toFixed(1)}KB, tipo: ${f.type || 'sin tipo'})`, 'debug'));
-
-            const dbs = files.filter(f => f.name.toLowerCase().endsWith('.db'));
-            const ec = files.find(f => f.name.toLowerCase() === 'ec_database.db');
-
-            showResult('fileInput', files.length, dbs.length, !!ec, '', files.map(f => ({ name: f.name, size: f.size })));
-            e.target.value = '';
-        });
-
-        function showResult(title, total, dbs, hasEC, error, files = []) {
-            const container = document.getElementById('testResults');
-            container.style.display = 'block';
-            container.style.borderColor = hasEC ? '#4ade80' : (error ? '#f87171' : '#fbbf24');
-
-            document.getElementById('resultTitle').textContent = error ? '❌ ' + error : '📁 ' + title;
-            document.getElementById('rFiles').textContent = total;
-
-            const rDB = document.getElementById('rDB');
-            rDB.textContent = dbs;
-            rDB.className = 'giant-value ' + (dbs > 0 ? 'giant-yes' : 'giant-no');
-
-            const rEC = document.getElementById('rEC');
-            rEC.textContent = hasEC ? '✅ ENCONTRADO' : '❌ NO';
-            rEC.className = 'giant-value ' + (hasEC ? 'giant-yes' : 'giant-no');
-
-            // File list
-            const listEl = document.getElementById('rFileList');
-            if (files.length > 0) {
-                listEl.innerHTML = '<strong>Archivos:</strong><br>' +
-                    files.slice(0, 30).map(f => {
-                        const isDb = f.name.toLowerCase().endsWith('.db');
-                        const isEC = f.name.toLowerCase() === 'ec_database.db';
-                        return `<span style="color: ${isEC ? '#4ade80' : (isDb ? '#fbbf24' : '#94a3b8')}">${isEC ? '🎯 ' : ''}${f.path || f.name}</span>`;
-                    }).join('<br>') + (files.length > 30 ? `<br>... y ${files.length - 30} más` : '');
+        // Register Service Worker
+        async function registerSW() {
+            if ('serviceWorker' in navigator) {
+                try {
+                    const reg = await navigator.serviceWorker.register('/prueba/sw.js', { scope: '/prueba/' });
+                    log('Service Worker registrado: ' + reg.scope, 's');
+                } catch (e) {
+                    log('Error registrando SW: ' + e.message, 'e');
+                }
             } else {
-                listEl.innerHTML = '';
+                log('ServiceWorker no disponible', 'w');
             }
         }
 
-        // ========== INIT ==========
-        log('=== Debug iniciado ===', 'info');
-        log(`Fecha: ${new Date().toISOString()}`, 'info');
-        log(`URL: ${location.href}`, 'debug');
-        log(`Seguro: ${window.isSecureContext}`, window.isSecureContext ? 'success' : 'warning');
-
-        detectSystem();
+        // Init
+        log('Debug FULL iniciado', 'i');
+        log('UA: ' + navigator.userAgent, 'i');
+        log('Secure: ' + window.isSecureContext, 'i');
+        registerSW();
         detectAPIs();
-
-        log('Listo para pruebas', 'success');
+        checkShareTarget();
+        checkPWA();
+        setupPostMessage();
     </script>
 </body>
 
