@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug - Selector de Carpeta - BYD Stats</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, monospace;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: white;
+            min-height: 100vh;
+            padding: 12px;
+            font-size: 14px;
+        }
+
+        h1 {
+            color: #ea0029;
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 12px;
+        }
+
+        h2 {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            margin-bottom: 8px;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.9);
+            border-radius: 12px;
+            padding: 12px;
+            margin: 8px 0;
+            border: 1px solid #334155;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            margin: 6px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: #ea0029;
+            color: white;
+        }
+
+        .btn-secondary {
+            background: #334155;
+            color: white;
+        }
+
+        .btn-success {
+            background: #059669;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #d97706;
+            color: white;
+        }
+
+        .btn-small {
+            padding: 8px 12px;
+            font-size: 0.8rem;
+            width: auto;
+        }
+
+        .log-container {
+            background: #0f172a;
+            border-radius: 8px;
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 11px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+
+        .log-entry {
+            margin: 2px 0;
+            padding: 2px 0;
+            border-bottom: 1px solid #1e293b;
+        }
+
+        .log-info {
+            color: #60a5fa;
+        }
+
+        .log-success {
+            color: #4ade80;
+        }
+
+        .log-error {
+            color: #f87171;
+        }
+
+        .log-warning {
+            color: #fbbf24;
+        }
+
+        .log-debug {
+            color: #a78bfa;
+        }
+
+        .log-time {
+            color: #64748b;
+            font-size: 10px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .stat {
+            background: #1e293b;
+            padding: 8px;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #4ade80;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #64748b;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin: 2px;
+        }
+
+        .badge-yes {
+            background: #059669;
+        }
+
+        .badge-no {
+            background: #dc2626;
+        }
+
+        .badge-unknown {
+            background: #64748b;
+        }
+
+        .files-list {
+            max-height: 200px;
+            overflow-y: auto;
+            background: #0f172a;
+            border-radius: 6px;
+            padding: 8px;
+            font-size: 11px;
+        }
+
+        .file-item {
+            padding: 4px 0;
+            border-bottom: 1px solid #1e293b;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .file-db {
+            color: #4ade80;
+            font-weight: bold;
+        }
+
+        .section-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>🔬 Debug: Selector de Carpeta</h1>
+
+    <!-- System Info Card -->
+    <div class="card">
+        <h2>📱 Información del Sistema</h2>
+        <div id="systemInfo"></div>
+    </div>
+
+    <!-- API Support Card -->
+    <div class="card">
+        <h2>🔧 APIs Disponibles</h2>
+        <div id="apiSupport"></div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="card">
+        <h2>🧪 Pruebas</h2>
+
+        <button class="btn btn-primary" onclick="testShowDirectoryPicker()">
+            🚀 showDirectoryPicker (Moderno)
+        </button>
+
+        <button class="btn btn-secondary" onclick="testWebkitDirectory()">
+            📁 webkitdirectory (Alternativo)
+        </button>
+        <input type="file" id="folderInput" webkitdirectory multiple />
+
+        <button class="btn btn-secondary" onclick="testFileInput()">
+            📄 Input File Normal
+        </button>
+        <input type="file" id="fileInput" accept="*/*" />
+
+        <button class="btn btn-secondary" onclick="testFileInputDB()">
+            📄 Input File (.db only)
+        </button>
+        <input type="file" id="fileInputDB" accept=".db,application/x-sqlite3,application/vnd.sqlite3" />
+    </div>
+
+    <!-- Results Card -->
+    <div class="card">
+        <div class="section-title">
+            <h2>📊 Resultados</h2>
+            <button class="btn btn-small btn-secondary" onclick="clearResults()">Limpiar</button>
+        </div>
+        <div id="resultsStats" class="grid-2" style="display:none; margin-bottom: 10px;"></div>
+        <div id="filesList" class="files-list" style="display:none;"></div>
+    </div>
+
+    <!-- Debug Log Card -->
+    <div class="card">
+        <div class="section-title">
+            <h2>📋 Log de Debug</h2>
+            <div>
+                <button class="btn btn-small btn-success" onclick="downloadLog()">💾 Descargar</button>
+                <button class="btn btn-small btn-warning" onclick="copyLog()">📋 Copiar</button>
+            </div>
+        </div>
+        <div id="debugLog" class="log-container"></div>
+    </div>
+
+    <script>
+        // ========== LOGGING SYSTEM ==========
+        const logEntries = [];
+        const logContainer = document.getElementById('debugLog');
+
+        function log(message, type = 'info') {
+            const now = new Date();
+            const timestamp = now.toLocaleTimeString('es-ES', { hour12: false }) + '.' + now.getMilliseconds().toString().padStart(3, '0');
+            const entry = { timestamp, message, type };
+            logEntries.push(entry);
+
+            const div = document.createElement('div');
+            div.className = `log-entry log-${type}`;
+            div.innerHTML = `<span class="log-time">[${timestamp}]</span> ${escapeHtml(message)}`;
+            logContainer.appendChild(div);
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            // Also log to console
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function downloadLog() {
+            const logText = logEntries.map(e => `[${e.timestamp}] [${e.type.toUpperCase()}] ${e.message}`).join('\n');
+            const systemInfo = getSystemInfoText();
+            const fullLog = `=== BYD Stats - Debug Log ===\nFecha: ${new Date().toISOString()}\n\n${systemInfo}\n\n=== LOG ===\n${logText}`;
+
+            const blob = new Blob([fullLog], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `byd-debug-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            log('Log descargado como archivo', 'success');
+        }
+
+        function copyLog() {
+            const logText = logEntries.map(e => `[${e.timestamp}] [${e.type.toUpperCase()}] ${e.message}`).join('\n');
+            navigator.clipboard.writeText(logText).then(() => {
+                log('Log copiado al portapapeles', 'success');
+            }).catch(err => {
+                log('Error al copiar: ' + err.message, 'error');
+            });
+        }
+
+        function clearResults() {
+            document.getElementById('resultsStats').style.display = 'none';
+            document.getElementById('filesList').style.display = 'none';
+            log('Resultados limpiados', 'info');
+        }
+
+        // ========== SYSTEM INFO ==========
+        function getSystemInfoText() {
+            return `User Agent: ${navigator.userAgent}
+Platform: ${navigator.platform}
+Language: ${navigator.language}
+Online: ${navigator.onLine}
+Cookies Enabled: ${navigator.cookieEnabled}
+Screen: ${screen.width}x${screen.height} (${screen.colorDepth}bit)
+Viewport: ${window.innerWidth}x${window.innerHeight}
+Device Pixel Ratio: ${window.devicePixelRatio}
+Touch Points: ${navigator.maxTouchPoints}
+Memory: ${navigator.deviceMemory || 'N/A'} GB`;
+        }
+
+        function detectSystemInfo() {
+            const container = document.getElementById('systemInfo');
+            const ua = navigator.userAgent;
+
+            // Parse user agent
+            let browser = 'Unknown';
+            let browserVersion = '';
+            let os = 'Unknown';
+            let osVersion = '';
+
+            if (ua.includes('Chrome/')) {
+                browser = 'Chrome';
+                browserVersion = ua.match(/Chrome\/([\d.]+)/)?.[1] || '';
+            } else if (ua.includes('Firefox/')) {
+                browser = 'Firefox';
+                browserVersion = ua.match(/Firefox\/([\d.]+)/)?.[1] || '';
+            } else if (ua.includes('Safari/') && !ua.includes('Chrome')) {
+                browser = 'Safari';
+                browserVersion = ua.match(/Version\/([\d.]+)/)?.[1] || '';
+            }
+
+            if (ua.includes('Android')) {
+                os = 'Android';
+                osVersion = ua.match(/Android ([\d.]+)/)?.[1] || '';
+            } else if (ua.includes('Windows')) {
+                os = 'Windows';
+            } else if (ua.includes('Mac OS')) {
+                os = 'macOS';
+            } else if (ua.includes('Linux')) {
+                os = 'Linux';
+            }
+
+            container.innerHTML = `
+        <div class="grid-2">
+          <div class="stat">
+            <div class="stat-value">${browser}</div>
+            <div class="stat-label">Navegador</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${browserVersion.split('.')[0] || '?'}</div>
+            <div class="stat-label">Versión</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${os}</div>
+            <div class="stat-label">Sistema</div>
+          </div>
+          <div class="stat">
+            <div class="stat-value">${osVersion || '?'}</div>
+            <div class="stat-label">Versión OS</div>
+          </div>
+        </div>
+        <div style="margin-top: 8px; font-size: 10px; color: #64748b; word-break: break-all;">
+          <strong>UA:</strong> ${ua}
+        </div>
+      `;
+
+            log(`Sistema detectado: ${os} ${osVersion}, ${browser} ${browserVersion}`, 'info');
+            log(`User Agent completo: ${ua}`, 'debug');
+            log(`Pantalla: ${screen.width}x${screen.height}, Viewport: ${window.innerWidth}x${window.innerHeight}`, 'debug');
+            log(`Touch points: ${navigator.maxTouchPoints}`, 'debug');
+        }
+
+        // ========== API DETECTION ==========
+        function detectAPIs() {
+            const container = document.getElementById('apiSupport');
+            const apis = [
+                { name: 'showDirectoryPicker', supported: 'showDirectoryPicker' in window },
+                { name: 'showOpenFilePicker', supported: 'showOpenFilePicker' in window },
+                { name: 'showSaveFilePicker', supported: 'showSaveFilePicker' in window },
+                { name: 'webkitdirectory', supported: 'webkitdirectory' in document.createElement('input') },
+                { name: 'FileReader', supported: 'FileReader' in window },
+                { name: 'Blob', supported: 'Blob' in window },
+                { name: 'IndexedDB', supported: 'indexedDB' in window },
+                { name: 'localStorage', supported: 'localStorage' in window },
+                { name: 'Clipboard API', supported: 'clipboard' in navigator },
+                { name: 'Share API', supported: 'share' in navigator },
+            ];
+
+            container.innerHTML = apis.map(api => {
+                const badgeClass = api.supported ? 'badge-yes' : 'badge-no';
+                const icon = api.supported ? '✅' : '❌';
+                log(`API ${api.name}: ${api.supported ? 'DISPONIBLE' : 'NO DISPONIBLE'}`, api.supported ? 'success' : 'warning');
+                return `<span class="badge ${badgeClass}">${icon} ${api.name}</span>`;
+            }).join('');
+        }
+
+        // ========== TEST FUNCTIONS ==========
+
+        async function testShowDirectoryPicker() {
+            log('=== Iniciando prueba: showDirectoryPicker ===', 'info');
+
+            if (!('showDirectoryPicker' in window)) {
+                log('showDirectoryPicker NO está disponible en este navegador', 'error');
+                showError('showDirectoryPicker no está disponible. Prueba con webkitdirectory.');
+                return;
+            }
+
+            log('showDirectoryPicker está disponible, intentando abrir selector...', 'info');
+
+            try {
+                log('Llamando a window.showDirectoryPicker()...', 'debug');
+                const startTime = performance.now();
+
+                const dirHandle = await window.showDirectoryPicker({
+                    mode: 'read',
+                    startIn: 'downloads'
+                });
+
+                const elapsed = (performance.now() - startTime).toFixed(0);
+                log(`Selector abierto en ${elapsed}ms`, 'debug');
+                log(`Carpeta seleccionada: "${dirHandle.name}"`, 'success');
+                log(`Tipo de handle: ${dirHandle.kind}`, 'debug');
+
+                // Try to get permissions info
+                try {
+                    const permission = await dirHandle.queryPermission({ mode: 'read' });
+                    log(`Permiso de lectura: ${permission}`, 'info');
+                } catch (e) {
+                    log(`No se pudo consultar permisos: ${e.message}`, 'warning');
+                }
+
+                log('Escaneando archivos en la carpeta...', 'info');
+                const files = [];
+                let fileCount = 0;
+                let dirCount = 0;
+
+                for await (const entry of dirHandle.values()) {
+                    log(`  Encontrado: ${entry.name} (${entry.kind})`, 'debug');
+                    if (entry.kind === 'file') {
+                        fileCount++;
+                        try {
+                            const file = await entry.getFile();
+                            files.push({
+                                name: file.name,
+                                size: file.size,
+                                type: file.type || 'unknown',
+                                lastModified: file.lastModified
+                            });
+                            log(`    Archivo: ${file.name}, ${file.size} bytes, tipo: ${file.type || 'sin tipo'}`, 'debug');
+                        } catch (e) {
+                            log(`    Error leyendo archivo ${entry.name}: ${e.message}`, 'error');
+                        }
+                    } else if (entry.kind === 'directory') {
+                        dirCount++;
+                    }
+                }
+
+                log(`Escaneo completo: ${fileCount} archivos, ${dirCount} subdirectorios`, 'success');
+                displayResults(files, dirHandle.name, 'showDirectoryPicker');
+
+            } catch (err) {
+                log(`Error: ${err.name} - ${err.message}`, 'error');
+                log(`Stack: ${err.stack || 'no disponible'}`, 'debug');
+
+                if (err.name === 'AbortError') {
+                    log('El usuario canceló la selección', 'warning');
+                } else if (err.name === 'SecurityError') {
+                    log('Error de seguridad - puede requerir HTTPS o contexto seguro', 'error');
+                } else if (err.name === 'NotAllowedError') {
+                    log('Acceso denegado - se requiere gesto del usuario', 'error');
+                }
+            }
+        }
+
+        function testWebkitDirectory() {
+            log('=== Iniciando prueba: webkitdirectory ===', 'info');
+
+            const input = document.getElementById('folderInput');
+            if (!('webkitdirectory' in input)) {
+                log('webkitdirectory NO está soportado', 'error');
+                showError('webkitdirectory no está soportado en este navegador.');
+                return;
+            }
+
+            log('webkitdirectory está soportado, abriendo selector...', 'info');
+            input.click();
+        }
+
+        function testFileInput() {
+            log('=== Iniciando prueba: Input File Normal ===', 'info');
+            document.getElementById('fileInput').click();
+        }
+
+        function testFileInputDB() {
+            log('=== Iniciando prueba: Input File (.db only) ===', 'info');
+            log('Accept attribute: .db,application/x-sqlite3,application/vnd.sqlite3', 'debug');
+            document.getElementById('fileInputDB').click();
+        }
+
+        // Event listeners for file inputs
+        document.getElementById('folderInput').addEventListener('change', function (e) {
+            const startTime = performance.now();
+            log('Evento change disparado en folderInput', 'debug');
+
+            const files = Array.from(e.target.files);
+            const elapsed = (performance.now() - startTime).toFixed(0);
+
+            log(`Recibidos ${files.length} archivos en ${elapsed}ms`, 'success');
+
+            const fileData = files.map(f => {
+                log(`  Archivo: ${f.webkitRelativePath || f.name}, ${f.size} bytes, tipo: ${f.type || 'sin tipo'}`, 'debug');
+                return {
+                    name: f.name,
+                    path: f.webkitRelativePath,
+                    size: f.size,
+                    type: f.type || 'unknown',
+                    lastModified: f.lastModified
+                };
+            });
+
+            displayResults(fileData, 'webkitdirectory', 'webkitdirectory');
+            e.target.value = '';
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function (e) {
+            log('Evento change disparado en fileInput', 'debug');
+            const files = Array.from(e.target.files);
+            log(`Archivos seleccionados: ${files.length}`, 'info');
+
+            files.forEach(f => {
+                log(`  Archivo: ${f.name}, ${f.size} bytes, tipo: ${f.type || 'sin tipo'}`, 'success');
+            });
+
+            if (files.length > 0) {
+                displayResults(files.map(f => ({
+                    name: f.name,
+                    size: f.size,
+                    type: f.type || 'unknown',
+                    lastModified: f.lastModified
+                })), 'fileInput', 'fileInput');
+            }
+            e.target.value = '';
+        });
+
+        document.getElementById('fileInputDB').addEventListener('change', function (e) {
+            log('Evento change disparado en fileInputDB (solo .db)', 'debug');
+            const files = Array.from(e.target.files);
+            log(`Archivos .db seleccionados: ${files.length}`, 'info');
+
+            files.forEach(f => {
+                log(`  Archivo DB: ${f.name}, ${f.size} bytes, tipo: ${f.type || 'sin tipo'}`, 'success');
+            });
+
+            if (files.length > 0) {
+                displayResults(files.map(f => ({
+                    name: f.name,
+                    size: f.size,
+                    type: f.type || 'unknown',
+                    lastModified: f.lastModified
+                })), 'fileInputDB', 'fileInputDB');
+            }
+            e.target.value = '';
+        });
+
+        // ========== DISPLAY RESULTS ==========
+        function displayResults(files, source, method) {
+            const statsContainer = document.getElementById('resultsStats');
+            const filesContainer = document.getElementById('filesList');
+
+            // Find EC_Database.db
+            const ecDb = files.find(f => f.name.toLowerCase() === 'ec_database.db');
+            const dbFiles = files.filter(f => f.name.toLowerCase().endsWith('.db'));
+            const totalSize = files.reduce((sum, f) => sum + f.size, 0);
+
+            if (ecDb) {
+                log(`🎉 ¡EC_Database.db ENCONTRADO! Tamaño: ${(ecDb.size / 1024).toFixed(1)} KB`, 'success');
+                log(`✅ El método "${method}" FUNCIONA para acceder a archivos .db`, 'success');
+            } else if (dbFiles.length > 0) {
+                log(`⚠️ Se encontraron ${dbFiles.length} archivos .db, pero ninguno es EC_Database.db`, 'warning');
+                dbFiles.forEach(f => log(`   - ${f.name} (${(f.size / 1024).toFixed(1)} KB)`, 'debug'));
+            } else {
+                log(`❌ No se encontraron archivos .db en la selección`, 'error');
+            }
+
+            // Stats
+            statsContainer.style.display = 'grid';
+            statsContainer.innerHTML = `
+        <div class="stat">
+          <div class="stat-value">${files.length}</div>
+          <div class="stat-label">Archivos</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${dbFiles.length}</div>
+          <div class="stat-label">Archivos .db</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" style="color: ${ecDb ? '#4ade80' : '#f87171'}">${ecDb ? '✅' : '❌'}</div>
+          <div class="stat-label">EC_Database.db</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value">${(totalSize / 1024).toFixed(0)}</div>
+          <div class="stat-label">KB Total</div>
+        </div>
+      `;
+
+            // Files list
+            filesContainer.style.display = 'block';
+            filesContainer.innerHTML = files.slice(0, 100).map(f => {
+                const isDb = f.name.toLowerCase().endsWith('.db');
+                const isTarget = f.name.toLowerCase() === 'ec_database.db';
+                return `
+          <div class="file-item ${isDb ? 'file-db' : ''}">
+            <span>${isTarget ? '🎯 ' : ''}${f.path || f.name}</span>
+            <span>${(f.size / 1024).toFixed(1)} KB</span>
+          </div>
+        `;
+            }).join('') + (files.length > 100 ? `<div class="file-item">... y ${files.length - 100} más</div>` : '');
+        }
+
+        function showError(message) {
+            const statsContainer = document.getElementById('resultsStats');
+            statsContainer.style.display = 'grid';
+            statsContainer.innerHTML = `
+        <div class="stat" style="grid-column: span 2; background: #7f1d1d;">
+          <div class="stat-value" style="color: #fca5a5;">❌</div>
+          <div class="stat-label" style="color: #fca5a5;">${message}</div>
+        </div>
+      `;
+        }
+
+        // ========== INITIALIZATION ==========
+        log('=== Debug iniciado ===', 'info');
+        log(`Fecha/Hora: ${new Date().toISOString()}`, 'info');
+        log(`URL: ${window.location.href}`, 'debug');
+        log(`Protocolo: ${window.location.protocol}`, 'debug');
+        log(`Contexto seguro: ${window.isSecureContext}`, window.isSecureContext ? 'success' : 'warning');
+
+        detectSystemInfo();
+        detectAPIs();
+
+        log('Sistema listo para pruebas', 'success');
+    </script>
+</body>
+
+</html>
