@@ -1,0 +1,169 @@
+name: Manual APK Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_type:
+        description: 'Tipo de build'
+        required: true
+        default: 'debug'
+        type: choice
+        options:
+          - debug
+          - release
+          - both
+
+jobs:
+  build:
+    name: Build APK (${{ github.event.inputs.build_type }})
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'gradle'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Keystore presence
+        id: keystore_check
+        run: |
+          if [ -n "${{ secrets.KEYSTORE_BASE64 }}" ]; then
+            echo "keystore_present=true" >> $GITHUB_OUTPUT
+          else
+            echo "keystore_present=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build web app
+        run: npm run build
+
+      - name: Verify dist folder
+        run: |
+          echo "📁 Checking dist folder..."
+          ls -la dist/ || echo "❌ dist folder not found!"
+          echo "Files in dist:"
+          find dist -type f | head -20
+          echo "✅ Dist folder verified"
+
+      - name: Debug - Check Capacitor config
+        run: |
+          echo "📝 Checking capacitor.config.json..."
+          cat capacitor.config.json
+          echo ""
+          echo "📦 Checking package.json Capacitor deps..."
+          cat package.json | grep -A 5 "@capacitor"
+
+      - name: Debug - Check Android folder
+        run: |
+          echo "📂 Android folder structure before sync:"
+          ls -la android/
+          echo ""
+          echo "📂 app folder:"
+          ls -la android/app/ || echo "app folder missing"
+
+      - name: Sync Capacitor
+        run: |
+          echo "🔄 Starting Capacitor sync..."
+          npx cap sync android
+          echo "✅ Capacitor sync completed"
+
+      - name: Verify Android project
+        run: |
+          echo "🔍 Verifying sync results..."
+          ls -la android/
+          echo ""
+          echo "📂 Assets folder:"
+          ls -la android/app/src/main/assets/ || echo "assets folder missing"
+          echo ""
+          echo "📂 Public folder:"
+          ls -la android/app/src/main/assets/public/ || echo "public folder missing"
+          echo "✅ Android project ready"
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Debug APK
+        if: github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
+        run: |
+          cd android
+          ./gradlew assembleDebug --stacktrace
+
+      - name: Decode Keystore
+        if: ${{ steps.keystore_check.outputs.keystore_present == 'true' }}
+        run: |
+          echo "🔐 Decoding keystore..."
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/release.keystore
+          echo "✅ Keystore decoded successfully"
+
+      - name: Build Release APK (Signed if keystore present)
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
+        env:
+          KEYSTORE_FILE: release.keystore
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        run: |
+          cd android
+          echo "🔨 Building release APK..."
+          ./gradlew assembleRelease --stacktrace
+        continue-on-error: true
+
+      - name: Print APK Fingerprints (for Google Auth)
+        run: |
+          cd android
+          echo "🔍 Running signingReport to extract SHA-1 fingerprints..."
+          ./gradlew signingReport | grep -A 5 "Variant:" || echo "❌ Could not run signingReport"
+        continue-on-error: true
+
+      - name: Get current date
+        id: date
+        run: echo "date=$(date +'%Y-%m-%d-%H%M')" >> $GITHUB_OUTPUT
+
+      - name: Upload Debug APK
+        if: github.event.inputs.build_type == 'debug' || github.event.inputs.build_type == 'both'
+        uses: actions/upload-artifact@v4
+        with:
+          name: byd-stats-debug-${{ steps.date.outputs.date }}
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 90
+
+      - name: Upload Release APK (Signed)
+        if: ${{ (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both') && steps.keystore_check.outputs.keystore_present == 'true' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: byd-stats-release-signed-${{ steps.date.outputs.date }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 90
+
+      - name: Upload Release APK (Generic)
+        if: (github.event.inputs.build_type == 'release' || github.event.inputs.build_type == 'both')
+        uses: actions/upload-artifact@v4
+        with:
+          name: byd-stats-release-unsigned-${{ steps.date.outputs.date }}
+          path: |
+             android/app/build/outputs/apk/release/app-release-unsigned.apk
+             android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 90
+        continue-on-error: true
+
+      - name: Summary
+        run: |
+          echo "### ✅ Build completado!" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Tipo de build:** ${{ github.event.inputs.build_type }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Fecha:** ${{ steps.date.outputs.date }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📱 Descarga tu APK desde la pestaña **Actions** → **Artifacts**" >> $GITHUB_STEP_SUMMARY
