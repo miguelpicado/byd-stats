@@ -43,6 +43,11 @@ ChartJS.defaults.plugins.tooltip.borderColor = '#e2e8f0';
 ChartJS.defaults.plugins.tooltip.borderWidth = 1;
 ChartJS.defaults.plugins.tooltip.padding = 10;
 ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
+ChartJS.defaults.interaction.mode = 'nearest';
+ChartJS.defaults.interaction.axis = 'x';
+ChartJS.defaults.interaction.intersect = false;
+ChartJS.defaults.elements.point.hitRadius = 20; // Increase touch target
+ChartJS.defaults.elements.point.hoverRadius = 8; // Visual feedback
 ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
 ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
 // Dark mode defaults will be handled by updating ChartJS.defaults dynamically or using CSS variables if possible,
