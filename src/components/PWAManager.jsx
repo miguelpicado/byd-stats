@@ -21,14 +21,18 @@ const RefreshCw = ({ className }) => (
 /**
  * PWA Manager Component
  * Handles PWA installation prompt, exit button, and update notifications
+ * @param {string} layoutMode - 'horizontal' or 'vertical' from parent
  */
-export default function PWAManager() {
+export default function PWAManager({ layoutMode = 'vertical' }) {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [showUpdateBanner, setShowUpdateBanner] = useState(false);
     const [waitingWorker, setWaitingWorker] = useState(null);
+
+    // Exit button only shows in horizontal + standalone mode
+    const showExitButton = isStandalone && layoutMode === 'horizontal';
 
     // Check if running as PWA
     useEffect(() => {
@@ -211,8 +215,8 @@ export default function PWAManager() {
                 </div>
             )}
 
-            {/* Exit Button - Only show when running as PWA */}
-            {isStandalone && (
+            {/* Exit Button - Only show when running as PWA in horizontal mode */}
+            {showExitButton && (
                 <button
                     onClick={handleExit}
                     className="fixed bottom-4 right-4 z-[9999] flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full shadow-lg hover:from-red-700 hover:to-red-800 transition-all"
