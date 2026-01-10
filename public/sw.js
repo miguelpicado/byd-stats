@@ -1,10 +1,11 @@
 // BYD Stats Service Worker
-const CACHE_NAME = 'byd-stats-v2';
+const CACHE_NAME = 'byd-stats-v1.1.1';
 
 // Install event - don't skip waiting automatically
 self.addEventListener('install', (event) => {
     console.log('[SW] Install - new version ready');
-    // Don't call skipWaiting() here - let the app control when to update
+    // Force skipWaiting for this version to ensure update
+    self.skipWaiting();
 });
 
 // Activate event
