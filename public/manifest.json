@@ -3,10 +3,18 @@
     "short_name": "BYD Stats",
     "description": "Analiza las estadísticas de tu vehículo BYD de forma local y privada",
     "start_url": "/",
-    "display": "standalone",
+    "scope": "/",
+    "display": "fullscreen",
+    "display_override": [
+        "fullscreen",
+        "standalone"
+    ],
     "background_color": "#0f172a",
     "theme_color": "#0f172a",
-    "orientation": "portrait",
+    "orientation": "any",
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
     "icons": [
         {
             "src": "/app_logo.png",
@@ -20,5 +28,46 @@
             "type": "image/png",
             "purpose": "any maskable"
         }
-    ]
+    ],
+    "share_target": {
+        "action": "/",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url",
+            "files": [
+                {
+                    "name": "file",
+                    "accept": [
+                        "*/*",
+                        ".db",
+                        ".sqlite",
+                        ".sqlite3",
+                        "application/x-sqlite3",
+                        "application/vnd.sqlite3",
+                        "application/octet-stream"
+                    ]
+                }
+            ]
+        }
+    },
+    "file_handlers": [
+        {
+            "action": "/",
+            "accept": {
+                "application/x-sqlite3": [
+                    ".db",
+                    ".sqlite",
+                    ".sqlite3"
+                ],
+                "application/octet-stream": [
+                    ".db"
+                ]
+            }
+        }
+    ],
+    "related_applications": [],
+    "prefer_related_applications": false
 }

@@ -14,6 +14,7 @@ import { useGoogleSync } from './hooks/useGoogleSync';
 import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
+import PWAManager from './components/PWAManager';
 
 import useDatabase from './hooks/useDatabase';
 import { useApp } from './context/AppContext';
@@ -2878,6 +2879,7 @@ export default function BYDStatsAnalyzer() {
           )}
         </div>
       </div >
+      <PWAManager />
     </div >
   );
 }
