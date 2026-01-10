@@ -598,8 +598,19 @@ export default function BYDStatsAnalyzer() {
   // Swipe gesture - completely rewritten with refs
 
 
+  // Refs to hold latest values for swipe handlers (avoid re-registering listeners)
+  const activeTabRef = useRef(activeTab);
+  const isTransitioningRef = useRef(isTransitioning);
+  const handleTabClickRef = useRef(handleTabClick);
+
+  // Keep refs updated
+  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
+  useEffect(() => { isTransitioningRef.current = isTransitioning; }, [isTransitioning]);
+  useEffect(() => { handleTabClickRef.current = handleTabClick; }, [handleTabClick]);
+
   // Swipe detection using native event listeners for better performance
   // Only enabled in vertical layout mode
+  // Uses refs to avoid re-registering listeners on every state change
   useEffect(() => {
     const container = swipeContainerRef.current;
     if (!container || layoutMode === 'horizontal') return;
@@ -607,7 +618,7 @@ export default function BYDStatsAnalyzer() {
     let swipeDirection = null;
 
     const handleTouchStart = (e) => {
-      if (isTransitioning) return;
+      if (isTransitioningRef.current) return;
       const touch = e.touches[0];
       touchStartRef.current = touch.clientX;
       touchStartYRef.current = touch.clientY;
@@ -615,7 +626,7 @@ export default function BYDStatsAnalyzer() {
     };
 
     const handleTouchMove = (e) => {
-      if (!touchStartRef.current || isTransitioning) return;
+      if (!touchStartRef.current || isTransitioningRef.current) return;
 
       const touch = e.touches[0];
       const diffX = Math.abs(touch.clientX - touchStartRef.current);
@@ -637,18 +648,17 @@ export default function BYDStatsAnalyzer() {
 
       const touch = e.changedTouches[0];
       const diffX = touch.clientX - touchStartRef.current;
-      // Removed unused diffY
 
       // Solo procesar si fue swipe horizontal
       if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
-        const currentIndex = tabs.findIndex(t => t.id === activeTab);
+        const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
 
         if (diffX < 0 && currentIndex < tabs.length - 1) {
           // Swipe left - siguiente tab
-          handleTabClick(tabs[currentIndex + 1].id);
+          handleTabClickRef.current(tabs[currentIndex + 1].id);
         } else if (diffX > 0 && currentIndex > 0) {
           // Swipe right - tab anterior
-          handleTabClick(tabs[currentIndex - 1].id);
+          handleTabClickRef.current(tabs[currentIndex - 1].id);
         }
       }
 
@@ -668,7 +678,7 @@ export default function BYDStatsAnalyzer() {
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isTransitioning, activeTab, tabs, layoutMode, handleTabClick]);
+  }, [layoutMode, tabs, minSwipeDistance]); // Only re-register when layout or tabs change
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
