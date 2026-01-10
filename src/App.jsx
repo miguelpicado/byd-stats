@@ -1759,7 +1759,9 @@ export default function BYDStatsAnalyzer() {
                 WebkitPerspective: 1000,
                 transformStyle: 'preserve-3d',
                 WebkitTransformStyle: 'preserve-3d',
-                userSelect: 'none'
+                userSelect: 'none',
+                touchAction: 'pan-y',
+                overscrollBehavior: 'none'
               }}
             >
               {!data ? (
