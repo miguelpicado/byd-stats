@@ -612,71 +612,101 @@ export default function BYDStatsAnalyzer() {
   // Only enabled in vertical layout mode
   // Uses refs to avoid re-registering listeners on every state change
   useEffect(() => {
-    const container = swipeContainerRef.current;
-    if (!container || layoutMode === 'horizontal') return;
+    // Only enable swipe in vertical mode
+    if (layoutMode === 'horizontal') return;
 
-    let swipeDirection = null;
+    let mounted = true;
+    let retryCount = 0;
+    const maxRetries = 10;
 
-    const handleTouchStart = (e) => {
-      if (isTransitioningRef.current) return;
-      const touch = e.touches[0];
-      touchStartRef.current = touch.clientX;
-      touchStartYRef.current = touch.clientY;
-      swipeDirection = null;
-    };
+    const setupSwipeHandlers = () => {
+      const container = swipeContainerRef.current;
 
-    const handleTouchMove = (e) => {
-      if (!touchStartRef.current || isTransitioningRef.current) return;
-
-      const touch = e.touches[0];
-      const diffX = Math.abs(touch.clientX - touchStartRef.current);
-      const diffY = Math.abs(touch.clientY - touchStartYRef.current);
-
-      // Detectar dirección solo una vez
-      if (!swipeDirection) {
-        swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
-      }
-
-      // Si es swipe horizontal, prevenir scroll vertical
-      if (swipeDirection === 'horizontal' && diffX > 10) {
-        e.preventDefault();
-      }
-    };
-
-    const handleTouchEnd = (e) => {
-      if (!touchStartRef.current) return;
-
-      const touch = e.changedTouches[0];
-      const diffX = touch.clientX - touchStartRef.current;
-
-      // Solo procesar si fue swipe horizontal
-      if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
-        const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
-
-        if (diffX < 0 && currentIndex < tabs.length - 1) {
-          // Swipe left - siguiente tab
-          handleTabClickRef.current(tabs[currentIndex + 1].id);
-        } else if (diffX > 0 && currentIndex > 0) {
-          // Swipe right - tab anterior
-          handleTabClickRef.current(tabs[currentIndex - 1].id);
+      // If container not ready yet, retry after a short delay
+      if (!container) {
+        if (retryCount < maxRetries && mounted) {
+          retryCount++;
+          requestAnimationFrame(setupSwipeHandlers);
         }
+        return null;
       }
 
-      // Reset
-      touchStartRef.current = null;
-      touchStartYRef.current = null;
-      swipeDirection = null;
+      let swipeDirection = null;
+
+      const handleTouchStart = (e) => {
+        if (isTransitioningRef.current) return;
+        const touch = e.touches[0];
+        touchStartRef.current = touch.clientX;
+        touchStartYRef.current = touch.clientY;
+        swipeDirection = null;
+      };
+
+      const handleTouchMove = (e) => {
+        if (!touchStartRef.current || isTransitioningRef.current) return;
+
+        const touch = e.touches[0];
+        const diffX = Math.abs(touch.clientX - touchStartRef.current);
+        const diffY = Math.abs(touch.clientY - touchStartYRef.current);
+
+        // Detectar dirección solo una vez
+        if (!swipeDirection) {
+          swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
+        }
+
+        // Si es swipe horizontal, prevenir scroll vertical
+        if (swipeDirection === 'horizontal' && diffX > 10) {
+          e.preventDefault();
+        }
+      };
+
+      const handleTouchEnd = (e) => {
+        if (!touchStartRef.current) return;
+
+        const touch = e.changedTouches[0];
+        const diffX = touch.clientX - touchStartRef.current;
+
+        // Solo procesar si fue swipe horizontal
+        if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
+          const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
+
+          if (diffX < 0 && currentIndex < tabs.length - 1) {
+            // Swipe left - siguiente tab
+            handleTabClickRef.current(tabs[currentIndex + 1].id);
+          } else if (diffX > 0 && currentIndex > 0) {
+            // Swipe right - tab anterior
+            handleTabClickRef.current(tabs[currentIndex - 1].id);
+          }
+        }
+
+        // Reset
+        touchStartRef.current = null;
+        touchStartYRef.current = null;
+        swipeDirection = null;
+      };
+
+      // Agregar event listeners con opciones pasivas cuando sea posible
+      container.addEventListener('touchstart', handleTouchStart, { passive: true });
+      container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
+      container.addEventListener('touchend', handleTouchEnd, { passive: true });
+
+      return () => {
+        container.removeEventListener('touchstart', handleTouchStart);
+        container.removeEventListener('touchmove', handleTouchMove);
+        container.removeEventListener('touchend', handleTouchEnd);
+      };
     };
 
-    // Agregar event listeners con opciones pasivas cuando sea posible
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
+    // Start setup with requestAnimationFrame to ensure DOM is ready
+    let cleanup = null;
+    requestAnimationFrame(() => {
+      if (mounted) {
+        cleanup = setupSwipeHandlers();
+      }
+    });
 
     return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
+      mounted = false;
+      if (cleanup) cleanup();
     };
   }, [layoutMode, tabs, minSwipeDistance]); // Only re-register when layout or tabs change
 
@@ -2889,7 +2919,7 @@ export default function BYDStatsAnalyzer() {
           )}
         </div>
       </div >
-      <PWAManager />
+      <PWAManager layoutMode={layoutMode} />
     </div >
   );
 }
