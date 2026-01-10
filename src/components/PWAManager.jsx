@@ -1,15 +1,17 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { X, Download, LogOut } from 'lucide-react';
+import { X, Download, LogOut, RefreshCw } from 'lucide-react';
 
 /**
  * PWA Manager Component
- * Handles PWA installation prompt and exit button for fullscreen mode
+ * Handles PWA installation prompt, exit button, and update notifications
  */
 export default function PWAManager() {
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [showUpdateBanner, setShowUpdateBanner] = useState(false);
+    const [waitingWorker, setWaitingWorker] = useState(null);
 
     // Check if running as PWA
     useEffect(() => {
@@ -27,6 +29,58 @@ export default function PWAManager() {
         mediaQuery.addEventListener('change', checkStandalone);
 
         return () => mediaQuery.removeEventListener('change', checkStandalone);
+    }, []);
+
+    // Listen for Service Worker updates
+    useEffect(() => {
+        if (!('serviceWorker' in navigator)) return;
+
+        const handleUpdate = async () => {
+            try {
+                const registration = await navigator.serviceWorker.getRegistration();
+                if (!registration) return;
+
+                // Check for waiting worker (update ready)
+                if (registration.waiting) {
+                    setWaitingWorker(registration.waiting);
+                    setShowUpdateBanner(true);
+                }
+
+                // Listen for new updates
+                registration.addEventListener('updatefound', () => {
+                    const newWorker = registration.installing;
+                    if (!newWorker) return;
+
+                    newWorker.addEventListener('statechange', () => {
+                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                            // New version available
+                            setWaitingWorker(newWorker);
+                            setShowUpdateBanner(true);
+                        }
+                    });
+                });
+
+                // Listen for controller change (update applied)
+                navigator.serviceWorker.addEventListener('controllerchange', () => {
+                    // Reload to apply new version
+                    window.location.reload();
+                });
+
+            } catch (e) {
+                console.error('[PWA] Update check error:', e);
+            }
+        };
+
+        handleUpdate();
+
+        // Check for updates periodically (every 5 minutes)
+        const interval = setInterval(() => {
+            navigator.serviceWorker.getRegistration().then(reg => {
+                if (reg) reg.update();
+            });
+        }, 5 * 60 * 1000);
+
+        return () => clearInterval(interval);
     }, []);
 
     // Listen for install prompt
@@ -54,6 +108,19 @@ export default function PWAManager() {
         setDeferredPrompt(null);
     }, [deferredPrompt]);
 
+    // Apply update
+    const handleUpdate = useCallback(() => {
+        if (!waitingWorker) {
+            // No waiting worker, just reload
+            window.location.reload();
+            return;
+        }
+
+        // Tell the waiting worker to skip waiting
+        waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+        setShowUpdateBanner(false);
+    }, [waitingWorker]);
+
     // Exit app
     const handleExit = useCallback(() => {
         setShowExitConfirm(true);
@@ -67,13 +134,39 @@ export default function PWAManager() {
         }, 100);
     }, []);
 
-    // Don't render anything if not needed
-    if (!showInstallBanner && !isStandalone) return null;
-
     return (
         <>
-            {/* Install Banner - Only show when not installed */}
-            {showInstallBanner && !isStandalone && (
+            {/* Update Banner - Shows when new version is available */}
+            {showUpdateBanner && (
+                <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-green-600 to-emerald-600 text-white p-3 shadow-lg animate-slide-down">
+                    <div className="flex items-center justify-between max-w-screen-xl mx-auto">
+                        <div className="flex items-center gap-3">
+                            <RefreshCw className="w-5 h-5 animate-spin-slow" />
+                            <div>
+                                <p className="font-semibold text-sm">Nueva versión disponible</p>
+                                <p className="text-xs opacity-90">Pulsa actualizar para obtener las últimas mejoras</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleUpdate}
+                                className="px-4 py-1.5 bg-white text-green-600 rounded-full text-sm font-bold hover:bg-gray-100 transition-colors"
+                            >
+                                Actualizar
+                            </button>
+                            <button
+                                onClick={() => setShowUpdateBanner(false)}
+                                className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Install Banner - Only show when not installed and no update banner */}
+            {showInstallBanner && !isStandalone && !showUpdateBanner && (
                 <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-red-600 to-red-700 text-white p-3 shadow-lg animate-slide-down">
                     <div className="flex items-center justify-between max-w-screen-xl mx-auto">
                         <div className="flex items-center gap-3">
@@ -140,14 +233,21 @@ export default function PWAManager() {
             )}
 
             <style>{`
-        @keyframes slide-down {
-          from { transform: translateY(-100%); }
-          to { transform: translateY(0); }
-        }
-        .animate-slide-down {
-          animation: slide-down 0.3s ease-out;
-        }
-      `}</style>
+                @keyframes slide-down {
+                    from { transform: translateY(-100%); }
+                    to { transform: translateY(0); }
+                }
+                .animate-slide-down {
+                    animation: slide-down 0.3s ease-out;
+                }
+                @keyframes spin-slow {
+                    from { transform: rotate(0deg); }
+                    to { transform: rotate(360deg); }
+                }
+                .animate-spin-slow {
+                    animation: spin-slow 2s linear infinite;
+                }
+            `}</style>
         </>
     );
 }

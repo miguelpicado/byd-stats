@@ -1,10 +1,10 @@
 // BYD Stats Service Worker
 const CACHE_NAME = 'byd-stats-v1';
 
-// Install event
+// Install event - don't skip waiting automatically
 self.addEventListener('install', (event) => {
-    console.log('[SW] Install');
-    self.skipWaiting();
+    console.log('[SW] Install - new version ready');
+    // Don't call skipWaiting() here - let the app control when to update
 });
 
 // Activate event
@@ -13,14 +13,22 @@ self.addEventListener('activate', (event) => {
     event.waitUntil(clients.claim());
 });
 
+// Listen for skip waiting message from the app
+self.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SKIP_WAITING') {
+        console.log('[SW] Skip waiting requested');
+        self.skipWaiting();
+    }
+});
+
 // Fetch event - network first, fallback to cache
 self.addEventListener('fetch', (event) => {
     // Skip non-GET requests
     if (event.request.method !== 'GET') return;
-    
+
     // Skip chrome-extension and other non-http requests
     if (!event.request.url.startsWith('http')) return;
-    
+
     event.respondWith(
         fetch(event.request)
             .then(response => {
@@ -43,7 +51,7 @@ self.addEventListener('fetch', (event) => {
 // Handle Share Target POST requests
 self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'POST') return;
-    
+
     const url = new URL(event.request.url);
     if (url.pathname === '/' || url.pathname === '/index.html') {
         event.respondWith(handleShareTarget(event.request));
@@ -54,12 +62,12 @@ async function handleShareTarget(request) {
     try {
         const formData = await request.formData();
         const files = formData.getAll('file');
-        
+
         if (files.length > 0) {
             // Store the file in IndexedDB for the app to pick up
             const file = files[0];
             const buffer = await file.arrayBuffer();
-            
+
             // Store in IndexedDB
             const db = await openDB();
             const tx = db.transaction('shared-files', 'readwrite');
@@ -72,10 +80,10 @@ async function handleShareTarget(request) {
                 data: buffer,
                 timestamp: Date.now()
             });
-            
+
             console.log('[SW] File stored:', file.name, file.size);
         }
-        
+
         // Redirect to the app with a flag
         return Response.redirect('/?shared=true', 303);
     } catch (e) {
