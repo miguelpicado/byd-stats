@@ -1,5 +1,5 @@
 // BYD Stats Service Worker
-const CACHE_NAME = 'byd-stats-v1';
+const CACHE_NAME = 'byd-stats-v2';
 
 // Install event - don't skip waiting automatically
 self.addEventListener('install', (event) => {
