@@ -4,10 +4,17 @@
     "description": "Debug tool for BYD Stats - receives shared files",
     "start_url": "/prueba/",
     "scope": "/prueba/",
-    "display": "standalone",
+    "display": "fullscreen",
+    "display_override": [
+        "fullscreen",
+        "standalone"
+    ],
     "background_color": "#0f172a",
     "theme_color": "#ea0029",
     "orientation": "any",
+    "launch_handler": {
+        "client_mode": "navigate-existing"
+    },
     "icons": [
         {
             "src": "/favicon.png",
@@ -37,6 +44,9 @@
                         ".db",
                         ".sqlite",
                         ".sqlite3",
+                        ".jpg",
+                        ".png",
+                        "image/*",
                         "application/x-sqlite3",
                         "application/vnd.sqlite3",
                         "application/octet-stream",
@@ -56,7 +66,12 @@
                     ".sqlite3"
                 ],
                 "application/octet-stream": [
-                    ".db"
+                    ".db",
+                    ".bin"
+                ],
+                "image/*": [
+                    ".jpg",
+                    ".png"
                 ]
             }
         }
