@@ -211,30 +211,47 @@
     <!-- MÉTODO 3: Input File Variants -->
     <div class="c">
         <h2>3️⃣ Input File (variantes)</h2>
+        <p class="info">🎯 El truco es añadir text/plain para forzar selector completo</p>
         <div class="grid">
+            <button class="btn g sm" onclick="$('f0').click()">🎯 TRUCO</button>
             <button class="btn gr sm" onclick="$('f1').click()">*/*</button>
             <button class="btn gr sm" onclick="$('f2').click()">sin accept</button>
             <button class="btn gr sm" onclick="$('f3').click()">.db,.sqlite</button>
             <button class="btn gr sm" onclick="$('f4').click()">octet-stream</button>
-            <button class="btn gr sm" onclick="$('f5').click()">capture=env</button>
-            <button class="btn gr sm" onclick="$('f6').click()">webkitdir</button>
+            <button class="btn gr sm" onclick="$('f5').click()">webkitdir</button>
+            <button class="btn y sm" onclick="$('f6').click()">img+text</button>
+            <button class="btn y sm" onclick="$('f7').click()">all mixed</button>
         </div>
+        <!-- TRUCO: image/* + text/plain puede abrir selector completo -->
+        <input type="file" id="f0" accept="image/*,text/plain,application/octet-stream"
+            onchange="onFile(this,'🎯 TRUCO')">
         <input type="file" id="f1" accept="*/*" onchange="onFile(this,'*/*')">
         <input type="file" id="f2" onchange="onFile(this,'sin accept')">
-        <input type="file" id="f3" accept=".db,.sqlite,.sqlite3,application/x-sqlite3" onchange="onFile(this,'.db')">
-        <input type="file" id="f4" accept="application/octet-stream" onchange="onFile(this,'octet-stream')">
-        <input type="file" id="f5" capture="environment" onchange="onFile(this,'capture')">
-        <input type="file" id="f6" webkitdirectory onchange="onFile(this,'webkitdir')">
+        <input type="file" id="f3" accept=".db,.sqlite,.sqlite3,application/x-sqlite3,application/vnd.sqlite3"
+            onchange="onFile(this,'.db')">
+        <input type="file" id="f4" accept="application/octet-stream,application/binary,.bin,.db"
+            onchange="onFile(this,'octet-stream')">
+        <input type="file" id="f5" webkitdirectory onchange="onFile(this,'webkitdir')">
+        <input type="file" id="f6" accept="image/*,text/*" onchange="onFile(this,'img+text')">
+        <input type="file" id="f7" accept="image/*,text/plain,video/*,audio/*,.db,.sqlite,application/octet-stream,*/*"
+            onchange="onFile(this,'all mixed')">
     </div>
 
-    <!-- MÉTODO 4: URL Schemes -->
+    <!-- MÉTODO 4: URL Schemes - Ruta correcta: /Local/energydata/ -->
     <div class="c">
         <h2>4️⃣ URL Schemes</h2>
-        <button class="btn gr" onclick="tryURL('file:///storage/emulated/0/energydata/EC_Database.db')">file://
-            energydata</button>
-        <button class="btn gr" onclick="tryURL('file:///sdcard/energydata/EC_Database.db')">file:// sdcard</button>
-        <button class="btn gr" onclick="tryURL('file:///data/energydata/EC_Database.db')">file:// data</button>
-        <input type="text" id="customUrl" placeholder="URL personalizada (file://, content://, http://)">
+        <p class="info">Ruta correcta: /Local/energydata/EC_Database.db</p>
+        <button class="btn g" onclick="tryURL('file:///Local/energydata/EC_Database.db')">🎯 file:///Local/</button>
+        <button class="btn gr" onclick="tryURL('file://Local/energydata/EC_Database.db')">file://Local/</button>
+        <button class="btn gr" onclick="tryURL('file:///local/energydata/EC_Database.db')">file:///local/
+            (minús)</button>
+        <button class="btn gr"
+            onclick="tryURL('file:///storage/emulated/0/energydata/EC_Database.db')">file:///storage/</button>
+        <button class="btn gr"
+            onclick="tryURL('content://com.android.externalstorage.documents/document/primary%3Aenergydata%2FEC_Database.db')">content://
+            storage</button>
+        <input type="text" id="customUrl" placeholder="URL personalizada"
+            value="file:///Local/energydata/EC_Database.db">
         <button class="btn y" onclick="tryURL($('customUrl').value)">🔗 Probar URL</button>
     </div>
 
@@ -486,7 +503,7 @@
 
         // 8. iframe
         function tryIframe() {
-            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            const url = 'file:///Local/energydata/EC_Database.db';
             log('Cargando en iframe: ' + url, 'i');
             const f = $('fileFrame');
             f.style.display = 'block';
@@ -497,7 +514,7 @@
 
         // 9. XHR
         function tryXHR() {
-            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            const url = 'file:///Local/energydata/EC_Database.db';
             log('XHR a: ' + url, 'i');
             const xhr = new XMLHttpRequest();
             xhr.open('GET', url);
@@ -509,7 +526,7 @@
 
         // 10. window.open
         function tryWindowOpen() {
-            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            const url = 'file:///Local/energydata/EC_Database.db';
             log('window.open: ' + url, 'i');
             try {
                 const w = window.open(url, '_blank');
@@ -520,7 +537,7 @@
         // 11. Navigate
         function tryNavigate() {
             if (!confirm('Esto navegará fuera de la página. ¿Continuar?')) return;
-            const url = 'file:///storage/emulated/0/energydata/EC_Database.db';
+            const url = 'file:///Local/energydata/EC_Database.db';
             log('Navegando a: ' + url, 'i');
             window.location.href = url;
         }
