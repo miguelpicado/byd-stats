@@ -251,27 +251,14 @@
         <input type="file" id="fdir" webkitdirectory onchange="onDir(this)">
     </div>
 
-    <!-- MÉTODO 3: Red Local -->
+    <!-- MÉTODO 3: Navegación directa -->
     <div class="c">
-        <h2>📡 MÉTODO 3: Red Local (HTTP)</h2>
-        <p class="info">Si tienes el archivo en un servidor HTTP en la misma WiFi (ej: móvil con servidor web)</p>
-        <input type="text" id="netUrl" placeholder="http://192.168.X.X:8080/EC_Database.db">
-        <button class="btn g" onclick="fetchNet()">📡 Descargar de red</button>
-    </div>
-
-    <!-- MÉTODO 4: WebSocket -->
-    <div class="c">
-        <h2>🔌 MÉTODO 4: WebSocket Local</h2>
-        <p class="info">Conectar a un servidor WebSocket en la red local</p>
-        <input type="text" id="wsUrl" placeholder="ws://192.168.X.X:8080">
-        <button class="btn b" onclick="tryWebSocket()">🔌 Conectar WebSocket</button>
-    </div>
-
-    <!-- MÉTODO 5: Navegación directa -->
-    <div class="c">
-        <h2>🧭 MÉTODO 5: Navegación a file://</h2>
-        <p class="info">Navega directamente a la ruta del archivo (saldrás de esta página)</p>
-        <button class="btn y" onclick="tryNavigate()">🧭 Navegar a file:///Local/energydata/</button>
+        <h2>🧭 MÉTODO 3: Navegar a file://</h2>
+        <p class="info">Prueba navegar directamente a la ruta del archivo o carpeta (saldrás de esta página)</p>
+        <button class="btn y" onclick="tryNavigate('file:///Local/energydata/')">🧭 Ir a /Local/energydata/</button>
+        <button class="btn gr" onclick="tryNavigate('file:///Local/')">📂 Ir a /Local/</button>
+        <button class="btn gr" onclick="tryNavigate('file:///Local/energydata/EC_Database.db')">📄 Ir al
+            archivo</button>
     </div>
 
     <!-- APIs disponibles -->
@@ -359,45 +346,9 @@
             }
         }
 
-        // 3. Network Fetch
-        async function fetchNet() {
-            const url = $('netUrl').value;
-            if (!url) { log('Ingresa URL de red', 'w'); return }
-            log('Descargando: ' + url, 'i');
-            try {
-                const r = await fetch(url);
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                const b = await r.blob();
-                log('Descargado: ' + b.size + ' bytes', 's');
-                processBlob(b, 'network.db');
-                showResult('✅ Red funcionó: ' + b.size + ' bytes', true);
-            } catch (e) {
-                log('Error red: ' + e.message, 'e');
-                showResult('❌ Red: ' + e.message, false);
-            }
-        }
-
-        // 4. WebSocket
-        function tryWebSocket() {
-            const url = $('wsUrl').value;
-            if (!url) { log('Ingresa URL WebSocket', 'w'); return }
-            log('Conectando WS: ' + url, 'i');
-            try {
-                const ws = new WebSocket(url);
-                ws.onopen = () => log('WS conectado', 's');
-                ws.onmessage = e => {
-                    log('WS mensaje: ' + (typeof e.data === 'string' ? e.data.substring(0, 100) : e.data.size + 'b'), 's');
-                    if (e.data instanceof Blob) processBlob(e.data, 'ws.db');
-                };
-                ws.onerror = () => log('WS error', 'e');
-                ws.onclose = () => log('WS cerrado', 'i');
-            } catch (e) { log('WS exception: ' + e.message, 'e') }
-        }
-
-        // 5. Navigate
-        function tryNavigate() {
+        // 3. Navigate to file://
+        function tryNavigate(url) {
             if (!confirm('Saldrás de esta página. ¿Continuar?')) return;
-            const url = 'file:///Local/energydata/';
             log('Navegando a: ' + url, 'i');
             window.location.href = url;
         }
