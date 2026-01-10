@@ -2105,7 +2105,8 @@ export default function BYDStatsAnalyzer() {
                                       ticks: { font: { size: 10 } }
                                     }
                                   },
-                                  plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } } }
+                                  plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } } },
+                                  interaction: { mode: 'nearest', axis: 'xy', intersect: true }
                                 }}
                                 data={{
                                   datasets: [{
