@@ -1869,6 +1869,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
 
                       </div>
+                    )}
                   </div>
 
                   {/* Slide 2: Trends */}
@@ -2117,6 +2118,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
 
                       </div>
+                    )}
                   </div>
 
                   {/* Slide 5: Records */}
@@ -2163,6 +2165,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
 
                       </div>
+                    )}
                   </div>
 
                   {/* Slide 6: History */}
