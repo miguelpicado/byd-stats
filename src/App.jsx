@@ -983,7 +983,7 @@ export default function BYDStatsAnalyzer() {
               <span>Legal</span>
             </a>
           </div>
-          <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.1.0</p>
+          <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.1.1</p>
         </div>
 
         {/* GitHub link in bottom-right - Fixed positioning */}
@@ -1652,7 +1652,7 @@ export default function BYDStatsAnalyzer() {
               </div>
 
               <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
-                <p>BYD Stats Analyzer v1.1.0</p>
+                <p>BYD Stats Analyzer v1.1.1</p>
                 <p className="mt-1">Hecho con ❤️ para la comunidad BYD</p>
               </div>
             </div>
@@ -1776,98 +1776,99 @@ export default function BYDStatsAnalyzer() {
                 <>
                   {/* Slide 1: Overview */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
-                      </div>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
-                      </div>
-                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                        <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
-                          <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                            <LineJS
-                              options={{
-                                maintainAspectRatio: false,
-                                scales: {
-                                  y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
-                                  x: { grid: { display: false } }
-                                },
-                                plugins: { legend: { display: false } },
-                                elements: { line: { tension: 0.4 } }
-                              }}
-                              data={{
-                                labels: monthly.map(m => m.monthLabel),
-                                datasets: [{
-                                  label: 'Km',
-                                  data: monthly.map(m => m.km),
-                                  borderColor: BYD_RED,
-                                  backgroundColor: 'rgba(234, 0, 41, 0.1)',
-                                  fill: true,
-                                  pointBackgroundColor: BYD_RED,
-                                  pointRadius: 3,
-                                  borderWidth: 2
-                                }]
-                              }}
-                            />
-                          </div>
-                        </ChartCard>
-                        <ChartCard isCompact={isCompact} title="Distribución de Viajes">
-                          <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
-                            <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
-                              <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                                <PieJS
-                                  options={{
-                                    maintainAspectRatio: false,
-                                    plugins: {
-                                      legend: { display: false },
-                                      tooltip: {
-                                        callbacks: {
-                                          label: (context) => {
-                                            const label = context.label || '';
-                                            const value = context.parsed;
-                                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                                            const percent = ((value / total) * 100).toFixed(0) + '%';
-                                            return `${label}: ${context.raw} (${percent})`;
+                    {activeTab === 'overview' && (
+                      <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
+                        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia" value={summary.totalKm} unit="km" color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} km/día`} />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Energía" value={summary.totalKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Car} label="Viajes" value={summary.totalTrips} unit="" color="bg-amber-500/20 text-amber-400" sub={`${summary.tripsDay}/día`} />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Tiempo" value={summary.totalHours} unit="h" color="bg-purple-500/20 text-purple-400" />
+                        </div>
+                        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Viaje medio" value={summary.avgKm} unit="km" color="bg-orange-500/20 text-orange-400" sub={`${summary.avgMin} min`} />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
+                        </div>
+                        <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                          <ChartCard isCompact={isCompact} title="Evolución mensual (distancia)">
+                            <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                              <LineJS
+                                options={{
+                                  maintainAspectRatio: false,
+                                  scales: {
+                                    y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
+                                    x: { grid: { display: false } }
+                                  },
+                                  plugins: { legend: { display: false } },
+                                  elements: { line: { tension: 0.4 } }
+                                }}
+                                data={{
+                                  labels: monthly.map(m => m.monthLabel),
+                                  datasets: [{
+                                    label: 'Km',
+                                    data: monthly.map(m => m.km),
+                                    borderColor: BYD_RED,
+                                    backgroundColor: 'rgba(234, 0, 41, 0.1)',
+                                    fill: true,
+                                    pointBackgroundColor: BYD_RED,
+                                    pointRadius: 3,
+                                    borderWidth: 2
+                                  }]
+                                }}
+                              />
+                            </div>
+                          </ChartCard>
+                          <ChartCard isCompact={isCompact} title="Distribución de Viajes">
+                            <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
+                              <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
+                                <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                                  <PieJS
+                                    options={{
+                                      maintainAspectRatio: false,
+                                      plugins: {
+                                        legend: { display: false },
+                                        tooltip: {
+                                          callbacks: {
+                                            label: (context) => {
+                                              const label = context.label || '';
+                                              const value = context.parsed;
+                                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                              const percent = ((value / total) * 100).toFixed(0) + '%';
+                                              return `${label}: ${context.raw} (${percent})`;
+                                            }
                                           }
                                         }
                                       }
-                                    }
-                                  }}
-                                  data={{
-                                    labels: tripDist.map(d => `${d.range} km`),
-                                    datasets: [{
-                                      data: tripDist.map(d => d.count),
-                                      backgroundColor: tripDist.map(d => d.color),
-                                      borderWidth: 0,
-                                      hoverOffset: 4
-                                    }]
-                                  }}
-                                />
+                                    }}
+                                    data={{
+                                      labels: tripDist.map(d => `${d.range} km`),
+                                      datasets: [{
+                                        data: tripDist.map(d => d.count),
+                                        backgroundColor: tripDist.map(d => d.color),
+                                        borderWidth: 0,
+                                        hoverOffset: 4
+                                      }]
+                                    }}
+                                  />
+                                </div>
+                              </div>
+                              <div className={`grid ${isCompact ? 'grid-cols-1 w-full gap-1' : 'md:grid-cols-1 md:w-1/2 grid-cols-5 w-full gap-2 mt-4'} text-center`}>
+                                {tripDist.map((d, i) => (
+                                  <div key={i} className={`flex ${isCompact ? 'flex-row items-center justify-between px-4 py-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg' : 'flex-col items-center'}`}>
+                                    <div className="flex items-center gap-2">
+                                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
+                                      <p className={`text-slate-600 dark:text-slate-400 truncate ${isCompact ? 'text-[11px]' : 'text-[9px] sm:text-[10px]'}`}>{d.range}km</p>
+                                    </div>
+                                    <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-xs sm:text-sm'}`}>{d.count}</p>
+                                  </div>
+                                ))}
                               </div>
                             </div>
-                            <div className={`grid ${isCompact ? 'grid-cols-1 w-full gap-1' : 'md:grid-cols-1 md:w-1/2 grid-cols-5 w-full gap-2 mt-4'} text-center`}>
-                              {tripDist.map((d, i) => (
-                                <div key={i} className={`flex ${isCompact ? 'flex-row items-center justify-between px-4 py-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg' : 'flex-col items-center'}`}>
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
-                                    <p className={`text-slate-600 dark:text-slate-400 truncate ${isCompact ? 'text-[11px]' : 'text-[9px] sm:text-[10px]'}`}>{d.range}km</p>
-                                  </div>
-                                  <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-xs sm:text-sm'}`}>{d.count}</p>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        </ChartCard>
-                      </div>
+                          </ChartCard>
+                        </div>
 
-                    </div>
+                      </div>
                   </div>
 
                   {/* Slide 2: Trends */}
@@ -1958,7 +1959,7 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 3: Patterns */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    {(() => {
+                    {activeTab === 'patterns' && (() => {
                       const topDay = weekday.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
                       const topHour = hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
                       return (
@@ -2029,137 +2030,139 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 4: Efficiency */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
-                      <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
-                      </div>
-                      <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                        <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
-                          <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                            <LineJS
-                              options={{
-                                maintainAspectRatio: false,
-                                scales: {
-                                  y: {
-                                    beginAtZero: false,
-                                    min: Math.floor(Math.min(...monthly.map(m => m.efficiency || 999))) - 1,
-                                    max: Math.ceil(Math.max(...monthly.map(m => m.efficiency || 0))) + 1,
-                                    border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
-                                    ticks: { font: { size: 10 } }
+                    {activeTab === 'efficiency' && (
+                      <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
+                        <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Battery} label="Eficiencia" value={summary.avgEff} unit="kWh/100km" color="bg-green-500/20 text-green-400" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Consumo/viaje" value={(parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2)} unit="kWh" color="bg-cyan-500/20 text-cyan-400" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Distancia media" value={summary.avgKm} unit="km" color="bg-purple-500/20 text-purple-400" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
+                        </div>
+                        <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                          <ChartCard isCompact={isCompact} title="📈 Evolución Eficiencia Mensual">
+                            <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                              <LineJS
+                                options={{
+                                  maintainAspectRatio: false,
+                                  scales: {
+                                    y: {
+                                      beginAtZero: false,
+                                      min: Math.floor(Math.min(...monthly.map(m => m.efficiency || 999))) - 1,
+                                      max: Math.ceil(Math.max(...monthly.map(m => m.efficiency || 0))) + 1,
+                                      border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+                                      ticks: { font: { size: 10 } }
+                                    },
+                                    x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
                                   },
-                                  x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
-                                },
-                                plugins: { legend: { display: false } }
-                              }}
-                              data={{
-                                labels: monthly.map(m => m.monthLabel),
-                                datasets: [{
-                                  label: 'kWh/100km',
-                                  data: monthly.map(m => m.efficiency),
-                                  borderColor: '#10b981',
-                                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                                  fill: true,
-                                  pointBackgroundColor: '#10b981',
-                                  tension: 0.4,
-                                  pointRadius: 3
-                                }]
-                              }}
-                            />
-                          </div>
-                        </ChartCard>
-                        <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
-                          <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                            <ScatterJS
-                              options={{
-                                maintainAspectRatio: false,
-                                scales: {
-                                  x: {
-                                    type: 'logarithmic',
-                                    position: 'bottom',
-                                    title: { display: true, text: 'Distancia (km)', font: { size: 10 } },
-                                    border: { dash: [] }, grid: { display: true, borderDash: [3, 3], drawBorder: false },
-                                    min: 1,
-                                    max: 500,
-                                    ticks: {
-                                      font: { size: 10 },
-                                      callback: function (value) {
-                                        const allowed = [1, 2, 5, 10, 50, 200, 500];
-                                        return allowed.includes(value) ? value : '';
-                                      },
-                                      autoSkip: false,
-                                      maxRotation: 0
+                                  plugins: { legend: { display: false } }
+                                }}
+                                data={{
+                                  labels: monthly.map(m => m.monthLabel),
+                                  datasets: [{
+                                    label: 'kWh/100km',
+                                    data: monthly.map(m => m.efficiency),
+                                    borderColor: '#10b981',
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    fill: true,
+                                    pointBackgroundColor: '#10b981',
+                                    tension: 0.4,
+                                    pointRadius: 3
+                                  }]
+                                }}
+                              />
+                            </div>
+                          </ChartCard>
+                          <ChartCard isCompact={isCompact} title="📍 Eficiencia vs Distancia">
+                            <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
+                              <ScatterJS
+                                options={{
+                                  maintainAspectRatio: false,
+                                  scales: {
+                                    x: {
+                                      type: 'logarithmic',
+                                      position: 'bottom',
+                                      title: { display: true, text: 'Distancia (km)', font: { size: 10 } },
+                                      border: { dash: [] }, grid: { display: true, borderDash: [3, 3], drawBorder: false },
+                                      min: 1,
+                                      max: 500,
+                                      ticks: {
+                                        font: { size: 10 },
+                                        callback: function (value) {
+                                          const allowed = [1, 2, 5, 10, 50, 200, 500];
+                                          return allowed.includes(value) ? value : '';
+                                        },
+                                        autoSkip: false,
+                                        maxRotation: 0
+                                      }
+                                    },
+                                    y: {
+                                      title: { display: true, text: 'Eficiencia', font: { size: 10 } },
+                                      border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+                                      ticks: { font: { size: 10 } }
                                     }
                                   },
-                                  y: {
-                                    title: { display: true, text: 'Eficiencia', font: { size: 10 } },
-                                    border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
-                                    ticks: { font: { size: 10 } }
-                                  }
-                                },
-                                plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } } }
-                              }}
-                              data={{
-                                datasets: [{
-                                  label: 'Eficiencia',
-                                  data: effScatter,
-                                  backgroundColor: BYD_RED,
-                                  pointRadius: 4
-                                }]
-                              }}
-                            />
-                          </div>
-                        </ChartCard>
-                      </div>
+                                  plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } } }
+                                }}
+                                data={{
+                                  datasets: [{
+                                    label: 'Eficiencia',
+                                    data: effScatter,
+                                    backgroundColor: BYD_RED,
+                                    pointRadius: 4
+                                  }]
+                                }}
+                              />
+                            </div>
+                          </ChartCard>
+                        </div>
 
-                    </div>
+                      </div>
                   </div>
 
                   {/* Slide 5: Records */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <div className={`space-y-3 sm:space-y-4 ${isCompact ? COMPACT_SPACE_Y : ''}`}>
-                      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Más largo" value={summary.maxKm} unit="km" color="bg-red-500/20 text-red-500" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Mayor consumo" value={summary.maxKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-500" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Más duración" value={summary.maxMin} unit="min" color="bg-amber-500/20 text-amber-500" />
-                        <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
-                      </div>
-                      <div className={`grid ${isCompact ? 'grid-cols-3' : 'grid-cols-1'} gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                        <ChartCard isCompact={isCompact} title="🥇 Top Distancia">
-                          <div className="space-y-1">
-                            {top.km.map((t, i) => (
-                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
-                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
-                              </div>
-                            ))}
-                          </div>
-                        </ChartCard>
-                        <ChartCard isCompact={isCompact} title="⚡ Top Consumo">
-                          <div className="space-y-1">
-                            {top.kwh.map((t, i) => (
-                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
-                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
-                              </div>
-                            ))}
-                          </div>
-                        </ChartCard>
-                        <ChartCard isCompact={isCompact} title="⏱️ Top Duración">
-                          <div className="space-y-1">
-                            {top.dur.map((t, i) => (
-                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
-                                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
-                                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
-                              </div>
-                            ))}
-                          </div>
-                        </ChartCard>
-                      </div>
+                    {activeTab === 'records' && (
+                      <div className={`space-y-3 sm:space-y-4 ${isCompact ? COMPACT_SPACE_Y : ''}`}>
+                        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Navigation} label="Más largo" value={summary.maxKm} unit="km" color="bg-red-500/20 text-red-500" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label="Mayor consumo" value={summary.maxKwh} unit="kWh" color="bg-cyan-500/20 text-cyan-500" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label="Más duración" value={summary.maxMin} unit="min" color="bg-amber-500/20 text-amber-500" />
+                          <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
+                        </div>
+                        <div className={`grid ${isCompact ? 'grid-cols-3' : 'grid-cols-1'} gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+                          <ChartCard isCompact={isCompact} title="🥇 Top Distancia">
+                            <div className="space-y-1">
+                              {top.km.map((t, i) => (
+                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
+                                </div>
+                              ))}
+                            </div>
+                          </ChartCard>
+                          <ChartCard isCompact={isCompact} title="⚡ Top Consumo">
+                            <div className="space-y-1">
+                              {top.kwh.map((t, i) => (
+                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
+                                </div>
+                              ))}
+                            </div>
+                          </ChartCard>
+                          <ChartCard isCompact={isCompact} title="⏱️ Top Duración">
+                            <div className="space-y-1">
+                              {top.dur.map((t, i) => (
+                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
+                                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
+                                </div>
+                              ))}
+                            </div>
+                          </ChartCard>
+                        </div>
 
-                    </div>
+                      </div>
                   </div>
 
                   {/* Slide 6: History */}
