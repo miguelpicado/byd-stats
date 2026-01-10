@@ -4,9 +4,8 @@
     "description": "Analiza las estadísticas de tu vehículo BYD de forma local y privada",
     "start_url": "/",
     "scope": "/",
-    "display": "fullscreen",
+    "display": "standalone",
     "display_override": [
-        "fullscreen",
         "standalone"
     ],
     "background_color": "#0f172a",
