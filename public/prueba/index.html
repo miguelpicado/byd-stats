@@ -3,10 +3,12 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug v3 - BYD Stats</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>BYD Stats Debug</title>
     <link rel="manifest" href="/prueba/manifest.json">
     <meta name="theme-color" content="#ea0029">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <style>
         * {
             box-sizing: border-box;
@@ -14,18 +16,27 @@
             padding: 0
         }
 
+        html,
+        body {
+            height: 100%;
+            overflow-x: hidden
+        }
+
         body {
             font-family: system-ui, sans-serif;
             background: #0f172a;
             color: #fff;
             padding: 8px;
-            font-size: 12px
+            padding-top: env(safe-area-inset-top, 8px);
+            padding-bottom: env(safe-area-inset-bottom, 8px);
+            font-size: 12px;
+            min-height: 100vh;
         }
 
         h1 {
             color: #ea0029;
             text-align: center;
-            font-size: 1rem;
+            font-size: 1.1rem;
             margin: 8px 0
         }
 
@@ -46,6 +57,36 @@
         .important {
             border-color: #ea0029;
             background: #1e1e2e
+        }
+
+        .pwa-banner {
+            background: linear-gradient(135deg, #ea0029, #b91c1c);
+            border: none;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pwa-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
         }
 
         .btn {
@@ -80,6 +121,19 @@
             background: #475569
         }
 
+        .exit-btn {
+            background: linear-gradient(135deg, #dc2626, #991b1b);
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: auto;
+            padding: 15px 25px;
+            border-radius: 50px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            font-size: 1rem;
+        }
+
         .sm {
             padding: 8px 12px;
             width: auto;
@@ -90,24 +144,13 @@
             display: none
         }
 
-        input[type=text] {
-            width: 100%;
-            padding: 10px;
-            background: #0f172a;
-            border: 1px solid #475569;
-            color: #fff;
-            border-radius: 4px;
-            margin: 4px 0;
-            font-size: 12px
-        }
-
         .log {
             background: #0f172a;
             border-radius: 4px;
             padding: 8px;
             font-family: monospace;
             font-size: 10px;
-            max-height: 200px;
+            max-height: 150px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all
@@ -146,11 +189,13 @@
         }
 
         .result.ok {
-            border-color: #4ade80
+            border-color: #4ade80;
+            background: rgba(74, 222, 128, 0.1)
         }
 
         .result.no {
-            border-color: #f87171
+            border-color: #f87171;
+            background: rgba(248, 113, 113, 0.1)
         }
 
         .info {
@@ -196,15 +241,103 @@
             border-radius: 3px;
             font-size: 0.8rem
         }
+
+        .standalone-only {
+            display: none
+        }
+
+        .browser-only {
+            display: block
+        }
+
+        @media (display-mode: standalone),
+        (display-mode: fullscreen) {
+            .standalone-only {
+                display: block
+            }
+
+            .browser-only {
+                display: none
+            }
+        }
+
+        .pwa-status {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .pwa-status.installed {
+            background: #059669
+        }
+
+        .pwa-status.browser {
+            background: #d97706
+        }
     </style>
 </head>
 
 <body>
-    <h1>🔬 Debug v3 - BYD Stats</h1>
-    <p style="text-align:center;color:#64748b;font-size:0.7rem">Ruta: /Local/energydata/EC_Database.db</p>
+    <!-- Exit button for fullscreen PWA -->
+    <button class="btn exit-btn standalone-only" onclick="exitApp()">✕ Salir</button>
+
+    <h1>🔬 BYD Stats Debug</h1>
+    <p style="text-align:center;color:#64748b;font-size:0.7rem">
+        Ruta: /Local/energydata/EC_Database.db
+        <span id="pwaStatus" class="pwa-status"></span>
+    </p>
 
     <!-- RESULTADO -->
     <div id="mainResult" class="result" style="display:none"></div>
+
+    <!-- PWA Installation Banner -->
+    <div id="pwaInstall" class="c pwa-banner browser-only" style="display:none">
+        <h2 style="color:#fff">📲 Instalar como WebAPK</h2>
+        <p class="info" style="color:rgba(255,255,255,0.9)">
+            <b>WebAPK</b> = App real instalada en Android (no solo un acceso directo).<br>
+            Con WebAPK la app puede recibir archivos compartidos.
+        </p>
+        <button class="btn" style="background:rgba(255,255,255,0.2);border:2px solid #fff" onclick="installPWA()">
+            📲 Instalar Ahora
+        </button>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff;margin-top:8px">
+            <b>¿No aparece el botón?</b> Usa el menú de Chrome (⋮) → "Añadir a pantalla de inicio" o "Instalar app"
+        </div>
+    </div>
+
+    <!-- WebAPK Manual Instructions (browser only) -->
+    <div class="c browser-only">
+        <h2>📦 ¿Qué es WebAPK?</h2>
+        <p class="info">
+            WebAPK convierte esta web en una <b>app real</b> de Android. A diferencia de un simple acceso directo:
+        </p>
+        <div class="step">✅ Aparece en Ajustes → Aplicaciones</div>
+        <div class="step">✅ Puede recibir archivos via "Compartir"</div>
+        <div class="step">✅ Se ejecuta en pantalla completa</div>
+        <div class="step">✅ Mayor integración con el sistema</div>
+        <h2 style="margin-top:10px">📋 Pasos para instalar:</h2>
+        <div class="step">1. Abre el <b>menú de Chrome</b> (⋮ arriba derecha)</div>
+        <div class="step">2. Busca <b>"Instalar aplicación"</b> o <b>"Añadir a pantalla de inicio"</b></div>
+        <div class="step">3. Confirma la instalación</div>
+        <div class="step">4. <b>Importante:</b> Abre la app desde el icono del launcher (no desde aquí)</div>
+    </div>
+
+    <!-- PWA Installed Success (standalone only) -->
+    <div class="c standalone-only" style="background: linear-gradient(135deg, #059669, #047857); border:none">
+        <h2 style="color:#fff">✅ WebAPK Instalada</h2>
+        <p class="info" style="color:rgba(255,255,255,0.9)">
+            La app está instalada como WebAPK. Ahora puedes compartir archivos desde el explorador.
+        </p>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">1. Abre el <b>explorador de archivos</b> del
+            coche</div>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">2. Navega a <b>/Local/energydata/</b></div>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">3. Mantén pulsado <b>EC_Database.db</b></div>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">4. Pulsa <b>Compartir</b> → <b>"BYD Stats
+                Debug"</b></div>
+        <div id="webapkStatus" style="margin-top:10px"></div>
+    </div>
 
     <!-- PASO 0: Chrome Flags -->
     <div class="c important">
@@ -214,16 +347,13 @@
         <div class="step">2. Busca <code>picker</code> o <code>media</code></div>
         <div class="step">3. Si existe <code>#media-picker-adoption</code> → <b>Disabled</b></div>
         <div class="step">4. Si existe <code>#deprecated-external-picker</code> → <b>Enabled</b></div>
-        <div class="step">5. Busca <code>file</code> y prueba cualquier flag relacionada</div>
-        <div class="step">6. Pulsa <b>Relaunch</b> para reiniciar Chrome</div>
-        <button class="btn b" onclick="window.open('chrome://flags','_blank')">🚀 Abrir chrome://flags</button>
+        <div class="step">5. Pulsa <b>Relaunch</b> para reiniciar Chrome</div>
     </div>
 
     <!-- MÉTODO 1: Input File TRUCO -->
     <div class="c important">
-        <h2>🎯 MÉTODO 1: Selector de Archivos (TRUCO)</h2>
-        <p class="info">Estos botones usan diferentes combinaciones de MIME types para intentar abrir un selector de
-            archivos completo en lugar de solo galería.</p>
+        <h2>🎯 MÉTODO 1: Selector de Archivos</h2>
+        <p class="info">Diferentes combinaciones de MIME types para intentar abrir un selector de archivos completo</p>
         <div class="grid">
             <button class="btn g" onclick="$('f0').click()">🎯 TRUCO 1</button>
             <button class="btn g" onclick="$('f1').click()">🎯 TRUCO 2</button>
@@ -232,10 +362,9 @@
             <button class="btn gr" onclick="$('f4').click()">*/*</button>
             <button class="btn gr" onclick="$('f5').click()">sin accept</button>
         </div>
-        <!-- Trucos principales -->
         <input type="file" id="f0" accept="image/*,text/plain,application/octet-stream"
-            onchange="onFile(this,'🎯 TRUCO 1')">
-        <input type="file" id="f1" accept="text/*,image/*,video/*,.db,.sqlite" onchange="onFile(this,'🎯 TRUCO 2')">
+            onchange="onFile(this,'TRUCO 1')">
+        <input type="file" id="f1" accept="text/*,image/*,video/*,.db,.sqlite" onchange="onFile(this,'TRUCO 2')">
         <input type="file" id="f2" accept="image/*,text/*" onchange="onFile(this,'img+text')">
         <input type="file" id="f3" accept="image/*,text/plain,video/*,audio/*,.db,.sqlite,application/octet-stream,*/*"
             onchange="onFile(this,'all mixed')">
@@ -247,31 +376,16 @@
     <div class="c">
         <h2>📂 MÉTODO 2: Seleccionar Carpeta</h2>
         <p class="info">Intenta seleccionar la carpeta energydata completa</p>
-        <button class="btn y" onclick="$('fdir').click()">📂 Seleccionar carpeta (webkitdirectory)</button>
+        <button class="btn y" onclick="$('fdir').click()">📂 Seleccionar carpeta</button>
         <input type="file" id="fdir" webkitdirectory onchange="onDir(this)">
     </div>
 
-    <!-- MÉTODO 3: Red Local -->
+    <!-- MÉTODO 3: Navegación -->
     <div class="c">
-        <h2>📡 MÉTODO 3: Red Local (HTTP)</h2>
-        <p class="info">Si tienes el archivo en un servidor HTTP en la misma WiFi (ej: móvil con servidor web)</p>
-        <input type="text" id="netUrl" placeholder="http://192.168.X.X:8080/EC_Database.db">
-        <button class="btn g" onclick="fetchNet()">📡 Descargar de red</button>
-    </div>
-
-    <!-- MÉTODO 4: WebSocket -->
-    <div class="c">
-        <h2>🔌 MÉTODO 4: WebSocket Local</h2>
-        <p class="info">Conectar a un servidor WebSocket en la red local</p>
-        <input type="text" id="wsUrl" placeholder="ws://192.168.X.X:8080">
-        <button class="btn b" onclick="tryWebSocket()">🔌 Conectar WebSocket</button>
-    </div>
-
-    <!-- MÉTODO 5: Navegación directa -->
-    <div class="c">
-        <h2>🧭 MÉTODO 5: Navegación a file://</h2>
-        <p class="info">Navega directamente a la ruta del archivo (saldrás de esta página)</p>
-        <button class="btn y" onclick="tryNavigate()">🧭 Navegar a file:///Local/energydata/</button>
+        <h2>🧭 MÉTODO 3: Navegar a file://</h2>
+        <p class="info">Navegar directamente a la ruta del archivo</p>
+        <button class="btn y" onclick="tryNavigate('file:///Local/energydata/')">🧭 Ir a /Local/energydata/</button>
+        <button class="btn gr" onclick="tryNavigate('file:///Local/')">📂 Ir a /Local/</button>
     </div>
 
     <!-- APIs disponibles -->
@@ -296,9 +410,12 @@
         <div id="log" class="log"></div>
     </div>
 
+    <div style="height:80px"></div> <!-- Spacer for exit button -->
+
     <script>
         const $ = id => document.getElementById(id);
         const logs = [];
+        let deferredPrompt = null;
 
         function log(m, t = 'i') {
             const ts = new Date().toLocaleTimeString();
@@ -314,28 +431,154 @@
             r.className = 'result ' + (ok ? 'ok' : 'no');
         }
 
-        // Procesar archivo
+        // PWA Status - detect if running as WebAPK
+        async function updatePWAStatus() {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
+                window.matchMedia('(display-mode: fullscreen)').matches ||
+                window.navigator.standalone;
+            const status = $('pwaStatus');
+            const webapkStatus = $('webapkStatus');
+
+            if (isStandalone) {
+                status.textContent = '✓ WebAPK';
+                status.className = 'pwa-status installed';
+                log('Ejecutando como PWA/WebAPK instalada', 's');
+
+                // Check if getInstalledRelatedApps is available (WebAPK indicator)
+                if ('getInstalledRelatedApps' in navigator) {
+                    try {
+                        const apps = await navigator.getInstalledRelatedApps();
+                        log('Apps relacionadas: ' + apps.length, 'i');
+                        if (webapkStatus) {
+                            webapkStatus.innerHTML = '<div class="step" style="background:rgba(0,0,0,0.2);color:#fff">📱 getInstalledRelatedApps disponible</div>';
+                        }
+                    } catch (e) {
+                        log('Error getInstalledRelatedApps: ' + e.message, 'w');
+                    }
+                }
+
+                // Log referrer to detect if opened via share
+                if (document.referrer) {
+                    log('Referrer: ' + document.referrer, 'i');
+                }
+            } else {
+                status.textContent = '⚠ Navegador';
+                status.className = 'pwa-status browser';
+                log('Ejecutando en navegador (instala como WebAPK para compartir archivos)', 'w');
+            }
+        }
+
+        // PWA Install
+        window.addEventListener('beforeinstallprompt', e => {
+            e.preventDefault();
+            deferredPrompt = e;
+            $('pwaInstall').style.display = 'block';
+            log('PWA instalable detectada', 's');
+        });
+
+        async function installPWA() {
+            if (!deferredPrompt) {
+                log('No hay prompt de instalación disponible', 'w');
+                // Fallback: show manual instructions
+                alert('Para instalar:\n1. Abre el menú de Chrome (⋮)\n2. Selecciona "Añadir a pantalla de inicio"\n3. Confirma la instalación');
+                return;
+            }
+            deferredPrompt.prompt();
+            const { outcome } = await deferredPrompt.userChoice;
+            log('Instalación: ' + outcome, outcome === 'accepted' ? 's' : 'w');
+            deferredPrompt = null;
+            $('pwaInstall').style.display = 'none';
+        }
+
+        // Exit App
+        function exitApp() {
+            if (confirm('¿Cerrar la aplicación?')) {
+                log('Cerrando app...', 'i');
+                window.close();
+                // Fallback if window.close() doesn't work
+                setTimeout(() => {
+                    window.location.href = 'about:blank';
+                }, 100);
+            }
+        }
+
+        // Process blob
         function processBlob(blob, name) {
             log(`Procesando: ${name}, ${blob.size} bytes`, 's');
 
             if (blob.size < 1000) {
-                log('Archivo muy pequeño, probablemente no es el correcto', 'w');
+                log('Archivo muy pequeño', 'w');
             }
 
-            // Verificar si es SQLite
             const reader = new FileReader();
             reader.onload = e => {
                 const arr = new Uint8Array(e.target.result);
                 const header = String.fromCharCode.apply(null, arr.slice(0, 6));
                 if (header === 'SQLite') {
                     log('✅ ¡Es un archivo SQLite válido!', 's');
-                    showResult('✅ ¡ÉXITO! SQLite detectado: ' + name + ' (' + blob.size + ' bytes)', true);
+                    showResult('✅ ¡ÉXITO! SQLite: ' + name + ' (' + blob.size + ' bytes)', true);
+                    // Store in IndexedDB
+                    storeFile(blob, name);
                 } else {
                     log('Header: ' + header, 'w');
                     showResult('Archivo recibido: ' + name + ' (' + blob.size + ' bytes)', true);
                 }
             };
             reader.readAsArrayBuffer(blob.slice(0, 16));
+        }
+
+        // Store file in IndexedDB
+        async function storeFile(blob, name) {
+            try {
+                const db = await openDB();
+                const tx = db.transaction('files', 'readwrite');
+                const store = tx.objectStore('files');
+                const buffer = await blob.arrayBuffer();
+                await store.put({ id: 'database', name, data: buffer, timestamp: Date.now() });
+                log('Archivo guardado en IndexedDB', 's');
+            } catch (e) {
+                log('Error guardando: ' + e.message, 'e');
+            }
+        }
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('byd-debug', 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+                request.onupgradeneeded = e => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('files')) {
+                        db.createObjectStore('files', { keyPath: 'id' });
+                    }
+                };
+            });
+        }
+
+        // Check for shared file (from Share Target)
+        async function checkSharedFile() {
+            const params = new URLSearchParams(location.search);
+            if (params.has('shared') || params.has('filename')) {
+                log('¡Datos recibidos via Share Target!', 's');
+                log('Params: ' + location.search, 'i');
+
+                // Try to get file from IndexedDB (stored by Service Worker)
+                try {
+                    const db = await openDB();
+                    const tx = db.transaction('files', 'readonly');
+                    const store = tx.objectStore('files');
+                    const request = store.get('shared-file');
+                    request.onsuccess = () => {
+                        const file = request.result;
+                        if (file) {
+                            log('Archivo encontrado en IndexedDB: ' + file.name, 's');
+                            showResult('✅ Archivo recibido: ' + file.name + ' (' + file.size + 'b)', true);
+                        }
+                    };
+                } catch (e) {
+                    log('Error buscando archivo: ' + e.message, 'e');
+                }
+            }
         }
 
         // 1. Input File
@@ -359,64 +602,24 @@
             }
         }
 
-        // 3. Network Fetch
-        async function fetchNet() {
-            const url = $('netUrl').value;
-            if (!url) { log('Ingresa URL de red', 'w'); return }
-            log('Descargando: ' + url, 'i');
-            try {
-                const r = await fetch(url);
-                if (!r.ok) throw new Error('HTTP ' + r.status);
-                const b = await r.blob();
-                log('Descargado: ' + b.size + ' bytes', 's');
-                processBlob(b, 'network.db');
-                showResult('✅ Red funcionó: ' + b.size + ' bytes', true);
-            } catch (e) {
-                log('Error red: ' + e.message, 'e');
-                showResult('❌ Red: ' + e.message, false);
-            }
-        }
-
-        // 4. WebSocket
-        function tryWebSocket() {
-            const url = $('wsUrl').value;
-            if (!url) { log('Ingresa URL WebSocket', 'w'); return }
-            log('Conectando WS: ' + url, 'i');
-            try {
-                const ws = new WebSocket(url);
-                ws.onopen = () => log('WS conectado', 's');
-                ws.onmessage = e => {
-                    log('WS mensaje: ' + (typeof e.data === 'string' ? e.data.substring(0, 100) : e.data.size + 'b'), 's');
-                    if (e.data instanceof Blob) processBlob(e.data, 'ws.db');
-                };
-                ws.onerror = () => log('WS error', 'e');
-                ws.onclose = () => log('WS cerrado', 'i');
-            } catch (e) { log('WS exception: ' + e.message, 'e') }
-        }
-
-        // 5. Navigate
-        function tryNavigate() {
+        // 3. Navigate
+        function tryNavigate(url) {
             if (!confirm('Saldrás de esta página. ¿Continuar?')) return;
-            const url = 'file:///Local/energydata/';
             log('Navegando a: ' + url, 'i');
             window.location.href = url;
         }
 
-        // Detectar APIs
+        // Detect APIs
         function detectAPIs() {
             const apis = {
                 'showDirectoryPicker': 'showDirectoryPicker' in window,
                 'showOpenFilePicker': 'showOpenFilePicker' in window,
                 'webkitdirectory': 'webkitdirectory' in document.createElement('input'),
                 'FileReader': 'FileReader' in window,
-                'Blob': 'Blob' in window,
                 'IndexedDB': 'indexedDB' in window,
-                'localStorage': 'localStorage' in window,
-                'Clipboard': 'clipboard' in navigator,
                 'Share': 'share' in navigator,
-                'BroadcastChannel': 'BroadcastChannel' in window,
-                'WebSocket': 'WebSocket' in window,
-                'ServiceWorker': 'serviceWorker' in navigator
+                'ServiceWorker': 'serviceWorker' in navigator,
+                'launchQueue': 'launchQueue' in window
             };
             $('apis').innerHTML = Object.entries(apis).map(([n, ok]) => {
                 log(`API ${n}: ${ok ? 'SÍ' : 'NO'}`, ok ? 's' : 'w');
@@ -424,11 +627,26 @@
             }).join('');
         }
 
+        // Check for LaunchQueue (file_handlers)
+        if ('launchQueue' in window) {
+            window.launchQueue.setConsumer(launchParams => {
+                log('LaunchQueue activado', 's');
+                if (launchParams.files && launchParams.files.length > 0) {
+                    log('Archivos recibidos via file_handlers: ' + launchParams.files.length, 's');
+                    launchParams.files.forEach(async fileHandle => {
+                        const file = await fileHandle.getFile();
+                        log('Archivo: ' + file.name, 's');
+                        processBlob(file, file.name);
+                    });
+                }
+            });
+        }
+
         // Export
         function getLog() { return logs.map(l => `[${l.ts}][${l.t}] ${l.m}`).join('\n') }
         function toGH() {
             const b = encodeURIComponent('```\n' + getLog() + '\n```');
-            const t = encodeURIComponent('[Debug v3] ' + new Date().toISOString());
+            const t = encodeURIComponent('[Debug v4] ' + new Date().toISOString());
             window.open(`https://github.com/miguelpicado/byd-stats/issues/new?title=${t}&body=${b}&labels=debug`, '_blank');
         }
         function share() { navigator.share?.({ title: 'Debug', text: getLog() }) || log('Share no disponible', 'e') }
@@ -445,11 +663,13 @@
         }
 
         // Init
-        log('Debug v3 iniciado', 'i');
+        log('Debug v4 iniciado', 'i');
         log('UA: ' + navigator.userAgent, 'i');
         log('Ruta objetivo: /Local/energydata/EC_Database.db', 'i');
+        updatePWAStatus();
         detectAPIs();
         registerSW();
+        checkSharedFile();
     </script>
 </body>
 
