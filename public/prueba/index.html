@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debug FULL - BYD Stats</title>
+    <title>Debug v3 - BYD Stats</title>
     <link rel="manifest" href="/prueba/manifest.json">
     <meta name="theme-color" content="#ea0029">
     <style>
@@ -30,7 +30,7 @@
         }
 
         h2 {
-            font-size: 0.8rem;
+            font-size: 0.85rem;
             color: #94a3b8;
             margin: 4px 0
         }
@@ -38,20 +38,25 @@
         .c {
             background: #1e293b;
             border-radius: 8px;
-            padding: 8px;
-            margin: 4px 0;
+            padding: 10px;
+            margin: 6px 0;
             border: 1px solid #334155
+        }
+
+        .important {
+            border-color: #ea0029;
+            background: #1e1e2e
         }
 
         .btn {
             width: 100%;
-            padding: 10px;
-            font-size: 0.8rem;
+            padding: 12px;
+            font-size: 0.85rem;
             font-weight: 600;
             border: none;
             border-radius: 6px;
             cursor: pointer;
-            margin: 3px 0;
+            margin: 4px 0;
             color: #fff
         }
 
@@ -76,9 +81,9 @@
         }
 
         .sm {
-            padding: 6px 10px;
+            padding: 8px 12px;
             width: auto;
-            font-size: 0.7rem
+            font-size: 0.75rem
         }
 
         input[type=file] {
@@ -87,22 +92,22 @@
 
         input[type=text] {
             width: 100%;
-            padding: 8px;
+            padding: 10px;
             background: #0f172a;
             border: 1px solid #475569;
             color: #fff;
             border-radius: 4px;
             margin: 4px 0;
-            font-size: 11px
+            font-size: 12px
         }
 
         .log {
             background: #0f172a;
             border-radius: 4px;
-            padding: 6px;
+            padding: 8px;
             font-family: monospace;
-            font-size: 9px;
-            max-height: 180px;
+            font-size: 10px;
+            max-height: 200px;
             overflow-y: auto;
             white-space: pre-wrap;
             word-break: break-all
@@ -124,19 +129,6 @@
             color: #fbbf24
         }
 
-        .drop {
-            border: 2px dashed #475569;
-            border-radius: 8px;
-            padding: 20px;
-            text-align: center;
-            margin: 4px 0
-        }
-
-        .drop.active {
-            border-color: #4ade80;
-            background: rgba(74, 222, 128, 0.1)
-        }
-
         .grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -147,23 +139,33 @@
             background: #0f172a;
             border: 2px solid #334155;
             border-radius: 6px;
-            padding: 10px;
-            text-align: center;
-            margin: 6px 0
+            padding: 12px;
+            margin: 8px 0;
+            font-size: 1rem;
+            text-align: center
         }
 
         .result.ok {
             border-color: #4ade80
         }
 
-        .result.err {
+        .result.no {
             border-color: #f87171
         }
 
         .info {
-            font-size: 0.7rem;
-            color: #64748b;
-            margin: 2px 0
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin: 4px 0;
+            line-height: 1.4
+        }
+
+        .step {
+            background: #334155;
+            padding: 6px 10px;
+            border-radius: 4px;
+            margin: 3px 0;
+            font-size: 0.75rem
         }
 
         .flex {
@@ -187,148 +189,89 @@
         .tag.no {
             background: #dc2626
         }
+
+        code {
+            background: #334155;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 0.8rem
+        }
     </style>
 </head>
 
 <body>
-    <h1>🔬 Debug COMPLETO - Todas las opciones</h1>
+    <h1>🔬 Debug v3 - BYD Stats</h1>
+    <p style="text-align:center;color:#64748b;font-size:0.7rem">Ruta: /Local/energydata/EC_Database.db</p>
 
-    <!-- MÉTODO 1: PWA Share Target -->
-    <div class="c">
-        <h2>1️⃣ PWA Share Target</h2>
-        <p class="info">Instala como PWA, luego comparte desde explorador de archivos</p>
-        <button class="btn b" onclick="installPWA()">📲 Instalar como PWA</button>
-        <button class="btn gr" onclick="checkPWA()">🔍 Verificar estado PWA</button>
-        <div id="pwa-result"></div>
+    <!-- RESULTADO -->
+    <div id="mainResult" class="result" style="display:none"></div>
+
+    <!-- PASO 0: Chrome Flags -->
+    <div class="c important">
+        <h2>⚙️ PASO 0: Chrome Flags (hacer primero)</h2>
+        <p class="info">Antes de probar los métodos, intenta activar estas flags:</p>
+        <div class="step">1. Abre nueva pestaña → escribe <code>chrome://flags</code></div>
+        <div class="step">2. Busca <code>picker</code> o <code>media</code></div>
+        <div class="step">3. Si existe <code>#media-picker-adoption</code> → <b>Disabled</b></div>
+        <div class="step">4. Si existe <code>#deprecated-external-picker</code> → <b>Enabled</b></div>
+        <div class="step">5. Busca <code>file</code> y prueba cualquier flag relacionada</div>
+        <div class="step">6. Pulsa <b>Relaunch</b> para reiniciar Chrome</div>
+        <button class="btn b" onclick="window.open('chrome://flags','_blank')">🚀 Abrir chrome://flags</button>
     </div>
 
-    <!-- MÉTODO 2: Drag & Drop -->
-    <div class="c">
-        <h2>2️⃣ Drag & Drop</h2>
-        <div id="drop" class="drop">📁 Arrastra archivo aquí</div>
-    </div>
-
-    <!-- MÉTODO 3: Input File Variants -->
-    <div class="c">
-        <h2>3️⃣ Input File (variantes)</h2>
-        <p class="info">🎯 El truco es añadir text/plain para forzar selector completo</p>
+    <!-- MÉTODO 1: Input File TRUCO -->
+    <div class="c important">
+        <h2>🎯 MÉTODO 1: Selector de Archivos (TRUCO)</h2>
+        <p class="info">Estos botones usan diferentes combinaciones de MIME types para intentar abrir un selector de
+            archivos completo en lugar de solo galería.</p>
         <div class="grid">
-            <button class="btn g sm" onclick="$('f0').click()">🎯 TRUCO</button>
-            <button class="btn gr sm" onclick="$('f1').click()">*/*</button>
-            <button class="btn gr sm" onclick="$('f2').click()">sin accept</button>
-            <button class="btn gr sm" onclick="$('f3').click()">.db,.sqlite</button>
-            <button class="btn gr sm" onclick="$('f4').click()">octet-stream</button>
-            <button class="btn gr sm" onclick="$('f5').click()">webkitdir</button>
-            <button class="btn y sm" onclick="$('f6').click()">img+text</button>
-            <button class="btn y sm" onclick="$('f7').click()">all mixed</button>
+            <button class="btn g" onclick="$('f0').click()">🎯 TRUCO 1</button>
+            <button class="btn g" onclick="$('f1').click()">🎯 TRUCO 2</button>
+            <button class="btn y" onclick="$('f2').click()">img+text</button>
+            <button class="btn y" onclick="$('f3').click()">all mixed</button>
+            <button class="btn gr" onclick="$('f4').click()">*/*</button>
+            <button class="btn gr" onclick="$('f5').click()">sin accept</button>
         </div>
-        <!-- TRUCO: image/* + text/plain puede abrir selector completo -->
+        <!-- Trucos principales -->
         <input type="file" id="f0" accept="image/*,text/plain,application/octet-stream"
-            onchange="onFile(this,'🎯 TRUCO')">
-        <input type="file" id="f1" accept="*/*" onchange="onFile(this,'*/*')">
-        <input type="file" id="f2" onchange="onFile(this,'sin accept')">
-        <input type="file" id="f3" accept=".db,.sqlite,.sqlite3,application/x-sqlite3,application/vnd.sqlite3"
-            onchange="onFile(this,'.db')">
-        <input type="file" id="f4" accept="application/octet-stream,application/binary,.bin,.db"
-            onchange="onFile(this,'octet-stream')">
-        <input type="file" id="f5" webkitdirectory onchange="onFile(this,'webkitdir')">
-        <input type="file" id="f6" accept="image/*,text/*" onchange="onFile(this,'img+text')">
-        <input type="file" id="f7" accept="image/*,text/plain,video/*,audio/*,.db,.sqlite,application/octet-stream,*/*"
+            onchange="onFile(this,'🎯 TRUCO 1')">
+        <input type="file" id="f1" accept="text/*,image/*,video/*,.db,.sqlite" onchange="onFile(this,'🎯 TRUCO 2')">
+        <input type="file" id="f2" accept="image/*,text/*" onchange="onFile(this,'img+text')">
+        <input type="file" id="f3" accept="image/*,text/plain,video/*,audio/*,.db,.sqlite,application/octet-stream,*/*"
             onchange="onFile(this,'all mixed')">
+        <input type="file" id="f4" accept="*/*" onchange="onFile(this,'*/*')">
+        <input type="file" id="f5" onchange="onFile(this,'sin accept')">
     </div>
 
-    <!-- MÉTODO 4: URL Schemes - Ruta correcta: /Local/energydata/ -->
+    <!-- MÉTODO 2: Directorio -->
     <div class="c">
-        <h2>4️⃣ URL Schemes</h2>
-        <p class="info">Ruta correcta: /Local/energydata/EC_Database.db</p>
-        <button class="btn g" onclick="tryURL('file:///Local/energydata/EC_Database.db')">🎯 file:///Local/</button>
-        <button class="btn gr" onclick="tryURL('file://Local/energydata/EC_Database.db')">file://Local/</button>
-        <button class="btn gr" onclick="tryURL('file:///local/energydata/EC_Database.db')">file:///local/
-            (minús)</button>
-        <button class="btn gr"
-            onclick="tryURL('file:///storage/emulated/0/energydata/EC_Database.db')">file:///storage/</button>
-        <button class="btn gr"
-            onclick="tryURL('content://com.android.externalstorage.documents/document/primary%3Aenergydata%2FEC_Database.db')">content://
-            storage</button>
-        <input type="text" id="customUrl" placeholder="URL personalizada"
-            value="file:///Local/energydata/EC_Database.db">
-        <button class="btn y" onclick="tryURL($('customUrl').value)">🔗 Probar URL</button>
+        <h2>📂 MÉTODO 2: Seleccionar Carpeta</h2>
+        <p class="info">Intenta seleccionar la carpeta energydata completa</p>
+        <button class="btn y" onclick="$('fdir').click()">📂 Seleccionar carpeta (webkitdirectory)</button>
+        <input type="file" id="fdir" webkitdirectory onchange="onDir(this)">
     </div>
 
-    <!-- MÉTODO 5: Network Fetch -->
+    <!-- MÉTODO 3: Red Local -->
     <div class="c">
-        <h2>5️⃣ Red Local (HTTP)</h2>
-        <p class="info">Si tienes servidor HTTP en la red local</p>
-        <input type="text" id="netUrl" placeholder="http://192.168.1.100:8080/EC_Database.db">
+        <h2>📡 MÉTODO 3: Red Local (HTTP)</h2>
+        <p class="info">Si tienes el archivo en un servidor HTTP en la misma WiFi (ej: móvil con servidor web)</p>
+        <input type="text" id="netUrl" placeholder="http://192.168.X.X:8080/EC_Database.db">
         <button class="btn g" onclick="fetchNet()">📡 Descargar de red</button>
     </div>
 
-    <!-- MÉTODO 6: Clipboard -->
+    <!-- MÉTODO 4: WebSocket -->
     <div class="c">
-        <h2>6️⃣ Clipboard</h2>
-        <button class="btn y" onclick="readClipboard()">📋 Leer portapapeles</button>
-        <button class="btn gr" onclick="readClipboardFiles()">📎 Leer archivos del clipboard</button>
+        <h2>🔌 MÉTODO 4: WebSocket Local</h2>
+        <p class="info">Conectar a un servidor WebSocket en la red local</p>
+        <input type="text" id="wsUrl" placeholder="ws://192.168.X.X:8080">
+        <button class="btn b" onclick="tryWebSocket()">🔌 Conectar WebSocket</button>
     </div>
 
-    <!-- MÉTODO 7: Intent URL -->
+    <!-- MÉTODO 5: Navegación directa -->
     <div class="c">
-        <h2>7️⃣ Intent URL (Android)</h2>
-        <p class="info">Abrir con intent:// scheme</p>
-        <button class="btn gr" onclick="tryIntent()">🤖 Probar intent://</button>
-    </div>
-
-    <!-- MÉTODO 8: iframe file:// -->
-    <div class="c">
-        <h2>8️⃣ iframe file://</h2>
-        <button class="btn gr" onclick="tryIframe()">📄 Cargar en iframe</button>
-        <iframe id="fileFrame"
-            style="width:100%;height:50px;background:#0f172a;border:1px solid #475569;display:none"></iframe>
-    </div>
-
-    <!-- MÉTODO 9: XMLHttpRequest file:// -->
-    <div class="c">
-        <h2>9️⃣ XMLHttpRequest file://</h2>
-        <button class="btn gr" onclick="tryXHR()">📄 XHR a file://</button>
-    </div>
-
-    <!-- MÉTODO 10: window.open file:// -->
-    <div class="c">
-        <h2>🔟 window.open file://</h2>
-        <button class="btn gr" onclick="tryWindowOpen()">🪟 Abrir file:// en nueva ventana</button>
-    </div>
-
-    <!-- MÉTODO 11: location.href file:// -->
-    <div class="c">
-        <h2>1️⃣1️⃣ Navegar a file://</h2>
-        <button class="btn gr" onclick="tryNavigate()">🧭 Navegar a file:// (cuidado!)</button>
-    </div>
-
-    <!-- MÉTODO 12: BroadcastChannel -->
-    <div class="c">
-        <h2>1️⃣2️⃣ BroadcastChannel</h2>
-        <p class="info">Recibir datos de otra pestaña</p>
-        <button class="btn gr" onclick="setupBroadcast()">📢 Escuchar BroadcastChannel</button>
-        <div id="broadcast-status"></div>
-    </div>
-
-    <!-- MÉTODO 13: postMessage -->
-    <div class="c">
-        <h2>1️⃣3️⃣ postMessage</h2>
-        <p class="info">Si otra ventana/app puede enviar mensajes</p>
-        <button class="btn gr" onclick="setupPostMessage()">💬 Escuchar postMessage</button>
-    </div>
-
-    <!-- MÉTODO 14: WebSocket local -->
-    <div class="c">
-        <h2>1️⃣4️⃣ WebSocket Local</h2>
-        <input type="text" id="wsUrl" placeholder="ws://192.168.1.100:8080">
-        <button class="btn gr" onclick="tryWebSocket()">🔌 Conectar WebSocket</button>
-    </div>
-
-    <!-- MÉTODO 15: Check for file managers -->
-    <div class="c">
-        <h2>1️⃣5️⃣ Detectar Apps</h2>
-        <button class="btn b" onclick="detectApps()">🔍 Detectar apps/intents disponibles</button>
+        <h2>🧭 MÉTODO 5: Navegación a file://</h2>
+        <p class="info">Navega directamente a la ruta del archivo (saldrás de esta página)</p>
+        <button class="btn y" onclick="tryNavigate()">🧭 Navegar a file:///Local/energydata/</button>
     </div>
 
     <!-- APIs disponibles -->
@@ -339,7 +282,7 @@
 
     <!-- Export -->
     <div class="c">
-        <h2>📤 Exportar</h2>
+        <h2>📤 Exportar Log</h2>
         <div class="flex">
             <button class="btn sm r" onclick="toGH()">🐙 GitHub</button>
             <button class="btn sm g" onclick="share()">📤 Share</button>
@@ -353,109 +296,77 @@
         <div id="log" class="log"></div>
     </div>
 
-    <!-- Result display -->
-    <div id="mainResult" class="result" style="display:none"></div>
-
     <script>
         const $ = id => document.getElementById(id);
         const logs = [];
-        const logEl = $('log');
 
         function log(m, t = 'i') {
-            const ts = new Date().toLocaleTimeString('es', { hour12: 0 });
-            logs.push({ ts, m, t });
-            const d = document.createElement('div');
-            d.className = 'log-' + t;
-            d.textContent = `[${ts}] ${m}`;
-            logEl.appendChild(d);
-            logEl.scrollTop = logEl.scrollHeight;
-            console.log(`[${t}]`, m);
+            const ts = new Date().toLocaleTimeString();
+            logs.push({ ts, t, m });
+            $('log').innerHTML += `<span class="log-${t}">[${ts}][${t}] ${m}</span>\n`;
+            $('log').scrollTop = $('log').scrollHeight;
         }
 
         function showResult(msg, ok) {
             const r = $('mainResult');
             r.style.display = 'block';
-            r.className = 'result ' + (ok ? 'ok' : 'err');
-            r.innerHTML = msg;
-            setTimeout(() => r.scrollIntoView({ behavior: 'smooth' }), 100);
+            r.textContent = msg;
+            r.className = 'result ' + (ok ? 'ok' : 'no');
         }
 
-        // 1. PWA
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); deferredPrompt = e; log('PWA instalable!', 's') });
+        // Procesar archivo
+        function processBlob(blob, name) {
+            log(`Procesando: ${name}, ${blob.size} bytes`, 's');
 
-        function installPWA() {
-            if (deferredPrompt) {
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then(r => log('Instalación: ' + r.outcome, r.outcome === 'accepted' ? 's' : 'w'));
-            } else {
-                log('No hay prompt. Usa menú Chrome → Añadir a inicio', 'w');
+            if (blob.size < 1000) {
+                log('Archivo muy pequeño, probablemente no es el correcto', 'w');
+            }
+
+            // Verificar si es SQLite
+            const reader = new FileReader();
+            reader.onload = e => {
+                const arr = new Uint8Array(e.target.result);
+                const header = String.fromCharCode.apply(null, arr.slice(0, 6));
+                if (header === 'SQLite') {
+                    log('✅ ¡Es un archivo SQLite válido!', 's');
+                    showResult('✅ ¡ÉXITO! SQLite detectado: ' + name + ' (' + blob.size + ' bytes)', true);
+                } else {
+                    log('Header: ' + header, 'w');
+                    showResult('Archivo recibido: ' + name + ' (' + blob.size + ' bytes)', true);
+                }
+            };
+            reader.readAsArrayBuffer(blob.slice(0, 16));
+        }
+
+        // 1. Input File
+        function onFile(input, method) {
+            const f = input.files[0];
+            if (!f) { log('No se seleccionó archivo con ' + method, 'w'); return }
+            log(`[${method}] Archivo: ${f.name}, Tipo: ${f.type}, Tamaño: ${f.size}`, 's');
+            processBlob(f, f.name);
+        }
+
+        // 2. Directory
+        function onDir(input) {
+            const files = input.files;
+            log(`Carpeta: ${files.length} archivos`, 'i');
+            for (const f of files) {
+                log(`  - ${f.webkitRelativePath}: ${f.size}b`, 'i');
+                if (f.name.toLowerCase().includes('database') || f.name.endsWith('.db')) {
+                    log('¡Encontrado posible DB!', 's');
+                    processBlob(f, f.name);
+                }
             }
         }
 
-        function checkPWA() {
-            log('Verificando PWA...', 'i');
-            const standalone = window.matchMedia('(display-mode:standalone)').matches;
-            log('Standalone: ' + standalone, standalone ? 's' : 'w');
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.getRegistration().then(r => {
-                    log('SW registrado: ' + (r ? r.scope : 'NO'), r ? 's' : 'w');
-                });
-            }
-            $('pwa-result').innerHTML = '<div class="tag ' + (standalone ? 'ok' : 'no') + '">' + (standalone ? '✅ PWA activa' : '❌ No es PWA') + '</div>';
-        }
-
-        // 2. Drag & Drop
-        const drop = $('drop');
-        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); ev.stopPropagation() }));
-        ['dragenter', 'dragover'].forEach(e => drop.addEventListener(e, () => { drop.classList.add('active'); log('Drag detectado', 'i') }));
-        ['dragleave', 'drop'].forEach(e => drop.addEventListener(e, () => drop.classList.remove('active')));
-        drop.addEventListener('drop', e => {
-            log('Drop event!', 'i');
-            const dt = e.dataTransfer;
-            log('Tipos: ' + [...dt.types].join(', '), 'i');
-            if (dt.files.length) {
-                const f = dt.files[0];
-                log(`Archivo: ${f.name}, ${f.size}b, ${f.type}`, 's');
-                processFile(f);
-            } else {
-                log('No hay archivos en drop', 'w');
-            }
-        });
-
-        // 3. File inputs
-        function onFile(inp, src) {
-            if (inp.files.length) {
-                const f = inp.files[0];
-                log(`[${src}] ${f.name}, ${f.size}b, ${f.type || 'sin tipo'}`, 's');
-                processFile(f);
-            }
-            inp.value = '';
-        }
-
-        // 4-11. URL/fetch methods
-        async function tryURL(url) {
-            if (!url) { log('URL vacía', 'w'); return }
-            log('Probando: ' + url, 'i');
+        // 3. Network Fetch
+        async function fetchNet() {
+            const url = $('netUrl').value;
+            if (!url) { log('Ingresa URL de red', 'w'); return }
+            log('Descargando: ' + url, 'i');
             try {
                 const r = await fetch(url);
                 if (!r.ok) throw new Error('HTTP ' + r.status);
-                const b = await r.blob();
-                log('Éxito! ' + b.size + ' bytes', 's');
-                processBlob(b, 'fetched.db');
-                showResult('✅ URL funcionó: ' + b.size + ' bytes', true);
-            } catch (e) {
-                log('Error: ' + e.message, 'e');
-                showResult('❌ ' + e.message, false);
-            }
-        }
-
-        async function fetchNet() {
-            const url = $('netUrl').value;
-            if (!url) { log('Ingresa URL', 'w'); return }
-            log('Conectando a ' + url, 'i');
-            try {
-                const r = await fetch(url, { mode: 'cors' });
                 const b = await r.blob();
                 log('Descargado: ' + b.size + ' bytes', 's');
                 processBlob(b, 'network.db');
@@ -466,174 +377,48 @@
             }
         }
 
-        // 6. Clipboard
-        async function readClipboard() {
-            log('Leyendo clipboard...', 'i');
+        // 4. WebSocket
+        function tryWebSocket() {
+            const url = $('wsUrl').value;
+            if (!url) { log('Ingresa URL WebSocket', 'w'); return }
+            log('Conectando WS: ' + url, 'i');
             try {
-                const t = await navigator.clipboard.readText();
-                log('Texto: ' + t.substring(0, 100) + '...', 's');
-            } catch (e) { log('Error: ' + e.message, 'e') }
+                const ws = new WebSocket(url);
+                ws.onopen = () => log('WS conectado', 's');
+                ws.onmessage = e => {
+                    log('WS mensaje: ' + (typeof e.data === 'string' ? e.data.substring(0, 100) : e.data.size + 'b'), 's');
+                    if (e.data instanceof Blob) processBlob(e.data, 'ws.db');
+                };
+                ws.onerror = () => log('WS error', 'e');
+                ws.onclose = () => log('WS cerrado', 'i');
+            } catch (e) { log('WS exception: ' + e.message, 'e') }
         }
 
-        async function readClipboardFiles() {
-            log('Leyendo archivos clipboard...', 'i');
-            try {
-                if (!navigator.clipboard.read) { log('clipboard.read() no disponible', 'e'); return }
-                const items = await navigator.clipboard.read();
-                log('Items: ' + items.length, 'i');
-                for (const item of items) {
-                    log('Tipos: ' + item.types.join(', '), 'i');
-                    for (const type of item.types) {
-                        const blob = await item.getType(type);
-                        log(`${type}: ${blob.size}b`, 's');
-                        if (blob.size > 1000) processBlob(blob, 'clipboard');
-                    }
-                }
-            } catch (e) { log('Error: ' + e.message, 'e') }
-        }
-
-        // 7. Intent
-        function tryIntent() {
-            const url = 'intent://energydata/EC_Database.db#Intent;scheme=file;end';
-            log('Probando: ' + url, 'i');
-            try {
-                window.location.href = url;
-            } catch (e) { log('Error: ' + e.message, 'e') }
-        }
-
-        // 8. iframe
-        function tryIframe() {
-            const url = 'file:///Local/energydata/EC_Database.db';
-            log('Cargando en iframe: ' + url, 'i');
-            const f = $('fileFrame');
-            f.style.display = 'block';
-            f.src = url;
-            f.onload = () => log('iframe cargado', 's');
-            f.onerror = () => log('iframe error', 'e');
-        }
-
-        // 9. XHR
-        function tryXHR() {
-            const url = 'file:///Local/energydata/EC_Database.db';
-            log('XHR a: ' + url, 'i');
-            const xhr = new XMLHttpRequest();
-            xhr.open('GET', url);
-            xhr.responseType = 'blob';
-            xhr.onload = () => { log('XHR éxito: ' + xhr.response.size + 'b', 's'); processBlob(xhr.response, 'xhr.db') };
-            xhr.onerror = () => log('XHR error', 'e');
-            try { xhr.send() } catch (e) { log('XHR exception: ' + e.message, 'e') }
-        }
-
-        // 10. window.open
-        function tryWindowOpen() {
-            const url = 'file:///Local/energydata/EC_Database.db';
-            log('window.open: ' + url, 'i');
-            try {
-                const w = window.open(url, '_blank');
-                log(w ? 'Ventana abierta' : 'Bloqueado', w ? 's' : 'e');
-            } catch (e) { log('Error: ' + e.message, 'e') }
-        }
-
-        // 11. Navigate
+        // 5. Navigate
         function tryNavigate() {
-            if (!confirm('Esto navegará fuera de la página. ¿Continuar?')) return;
-            const url = 'file:///Local/energydata/EC_Database.db';
+            if (!confirm('Saldrás de esta página. ¿Continuar?')) return;
+            const url = 'file:///Local/energydata/';
             log('Navegando a: ' + url, 'i');
             window.location.href = url;
         }
 
-        // 12. BroadcastChannel
-        function setupBroadcast() {
-            log('Configurando BroadcastChannel...', 'i');
-            if (!('BroadcastChannel' in window)) { log('No disponible', 'e'); return }
-            const bc = new BroadcastChannel('bydstats');
-            bc.onmessage = e => {
-                log('Mensaje recibido!', 's');
-                log(JSON.stringify(e.data).substring(0, 200), 'i');
-            };
-            log('Escuchando en canal "bydstats"', 's');
-            $('broadcast-status').innerHTML = '<div class="tag ok">✅ Escuchando</div>';
-        }
-
-        // 13. postMessage
-        function setupPostMessage() {
-            log('Configurando postMessage...', 'i');
-            window.addEventListener('message', e => {
-                log('postMessage recibido de ' + e.origin, 's');
-                log(JSON.stringify(e.data).substring(0, 200), 'i');
-            });
-            log('Escuchando postMessage', 's');
-        }
-
-        // 14. WebSocket
-        function tryWebSocket() {
-            const url = $('wsUrl').value;
-            if (!url) { log('Ingresa URL WS', 'w'); return }
-            log('Conectando WS: ' + url, 'i');
-            try {
-                const ws = new WebSocket(url);
-                ws.onopen = () => log('WS conectado!', 's');
-                ws.onmessage = e => log('WS mensaje: ' + e.data.substring(0, 100), 's');
-                ws.onerror = () => log('WS error', 'e');
-                ws.onclose = () => log('WS cerrado', 'w');
-            } catch (e) { log('WS exception: ' + e.message, 'e') }
-        }
-
-        // 15. Detect apps
-        function detectApps() {
-            log('Detectando capacidades...', 'i');
-            const tests = [
-                ['canShare', navigator.canShare?.({ files: [new File([''], 't.txt')] })],
-                ['registerProtocolHandler', 'registerProtocolHandler' in navigator],
-                ['getInstalledRelatedApps', 'getInstalledRelatedApps' in navigator],
-            ];
-            tests.forEach(([n, v]) => log(`${n}: ${v}`, 'i'));
-
-            if ('getInstalledRelatedApps' in navigator) {
-                navigator.getInstalledRelatedApps().then(apps => {
-                    log('Apps relacionadas: ' + apps.length, 'i');
-                    apps.forEach(a => log(' - ' + a.platform + ': ' + a.url, 'i'));
-                }).catch(e => log('Error: ' + e.message, 'e'));
-            }
-        }
-
-        // Process file
-        function processFile(f) {
-            log('Procesando ' + f.name + '...', 'i');
-            const r = new FileReader();
-            r.onload = () => {
-                const arr = new Uint8Array(r.result.slice(0, 16));
-                const hdr = String.fromCharCode(...arr);
-                if (hdr.includes('SQLite')) {
-                    log('✅ ¡SQLite válido!', 's');
-                    showResult('✅ ¡Archivo SQLite válido! ' + f.size + ' bytes', true);
-                } else {
-                    log('Header: ' + hdr, 'w');
-                    showResult('⚠️ No parece SQLite, pero recibido: ' + f.size + ' bytes', false);
-                }
-            };
-            r.readAsArrayBuffer(f);
-        }
-
-        function processBlob(b, name) { processFile(new File([b], name)) }
-
-        // Detect APIs
+        // Detectar APIs
         function detectAPIs() {
-            const apis = [
-                ['showDirectoryPicker', 'showDirectoryPicker' in window],
-                ['showOpenFilePicker', 'showOpenFilePicker' in window],
-                ['webkitdirectory', 'webkitdirectory' in document.createElement('input')],
-                ['FileReader', 'FileReader' in window],
-                ['Blob', 'Blob' in window],
-                ['IndexedDB', 'indexedDB' in window],
-                ['localStorage', 'localStorage' in window],
-                ['Clipboard', 'clipboard' in navigator],
-                ['Share', 'share' in navigator],
-                ['BroadcastChannel', 'BroadcastChannel' in window],
-                ['WebSocket', 'WebSocket' in window],
-                ['ServiceWorker', 'serviceWorker' in navigator],
-            ];
-            $('apis').innerHTML = apis.map(([n, ok]) => {
+            const apis = {
+                'showDirectoryPicker': 'showDirectoryPicker' in window,
+                'showOpenFilePicker': 'showOpenFilePicker' in window,
+                'webkitdirectory': 'webkitdirectory' in document.createElement('input'),
+                'FileReader': 'FileReader' in window,
+                'Blob': 'Blob' in window,
+                'IndexedDB': 'indexedDB' in window,
+                'localStorage': 'localStorage' in window,
+                'Clipboard': 'clipboard' in navigator,
+                'Share': 'share' in navigator,
+                'BroadcastChannel': 'BroadcastChannel' in window,
+                'WebSocket': 'WebSocket' in window,
+                'ServiceWorker': 'serviceWorker' in navigator
+            };
+            $('apis').innerHTML = Object.entries(apis).map(([n, ok]) => {
                 log(`API ${n}: ${ok ? 'SÍ' : 'NO'}`, ok ? 's' : 'w');
                 return `<span class="tag ${ok ? 'ok' : 'no'}">${ok ? '✅' : '❌'} ${n}</span>`;
             }).join('');
@@ -643,88 +428,28 @@
         function getLog() { return logs.map(l => `[${l.ts}][${l.t}] ${l.m}`).join('\n') }
         function toGH() {
             const b = encodeURIComponent('```\n' + getLog() + '\n```');
-            const t = encodeURIComponent('[Debug FULL] ' + new Date().toISOString());
+            const t = encodeURIComponent('[Debug v3] ' + new Date().toISOString());
             window.open(`https://github.com/miguelpicado/byd-stats/issues/new?title=${t}&body=${b}&labels=debug`, '_blank');
         }
         function share() { navigator.share?.({ title: 'Debug', text: getLog() }) || log('Share no disponible', 'e') }
         function copy() { navigator.clipboard.writeText(getLog()).then(() => log('Copiado', 's')).catch(e => log(e.message, 'e')) }
 
-        // Check URL params for share target
-        function checkShareTarget() {
-            const p = new URLSearchParams(location.search);
-            if (p.has('file') || p.has('shared') || p.has('text') || p.has('filename')) {
-                log('¡Datos recibidos via Share Target!', 's');
-                log('Params: ' + location.search, 'i');
-
-                // Check IndexedDB for shared file
-                checkIndexedDBForFile();
-            }
-        }
-
-        // Check IndexedDB for files from Service Worker
-        async function checkIndexedDBForFile() {
-            log('Buscando archivo en IndexedDB...', 'i');
-            try {
-                const db = await new Promise((resolve, reject) => {
-                    const request = indexedDB.open('byd-debug', 1);
-                    request.onerror = () => reject(request.error);
-                    request.onsuccess = () => resolve(request.result);
-                    request.onupgradeneeded = e => {
-                        const db = e.target.result;
-                        if (!db.objectStoreNames.contains('files')) {
-                            db.createObjectStore('files', { keyPath: 'id' });
-                        }
-                    };
-                });
-
-                const tx = db.transaction('files', 'readonly');
-                const store = tx.objectStore('files');
-                const file = await new Promise((resolve, reject) => {
-                    const request = store.get('shared-file');
-                    request.onsuccess = () => resolve(request.result);
-                    request.onerror = () => reject(request.error);
-                });
-
-                if (file) {
-                    log('¡Archivo encontrado en IndexedDB!', 's');
-                    log(`Nombre: ${file.name}, Tamaño: ${file.size}b`, 's');
-
-                    // Process the file
-                    const blob = new Blob([file.data]);
-                    processBlob(blob, file.name);
-
-                    showResult('✅ ¡Archivo recibido via Share! ' + file.name + ' (' + file.size + ' bytes)', true);
-                } else {
-                    log('No hay archivo en IndexedDB', 'w');
-                }
-            } catch (e) {
-                log('Error IndexedDB: ' + e.message, 'e');
-            }
-        }
-
-        // Register Service Worker
+        // Register SW
         async function registerSW() {
             if ('serviceWorker' in navigator) {
                 try {
-                    const reg = await navigator.serviceWorker.register('/prueba/sw.js', { scope: '/prueba/' });
-                    log('Service Worker registrado: ' + reg.scope, 's');
-                } catch (e) {
-                    log('Error registrando SW: ' + e.message, 'e');
-                }
-            } else {
-                log('ServiceWorker no disponible', 'w');
+                    await navigator.serviceWorker.register('/prueba/sw.js', { scope: '/prueba/' });
+                    log('Service Worker registrado', 's');
+                } catch (e) { log('SW error: ' + e.message, 'e') }
             }
         }
 
         // Init
-        log('Debug FULL iniciado', 'i');
+        log('Debug v3 iniciado', 'i');
         log('UA: ' + navigator.userAgent, 'i');
-        log('Secure: ' + window.isSecureContext, 'i');
-        registerSW();
+        log('Ruta objetivo: /Local/energydata/EC_Database.db', 'i');
         detectAPIs();
-        checkShareTarget();
-        checkPWA();
-        setupPostMessage();
+        registerSW();
     </script>
 </body>
 
