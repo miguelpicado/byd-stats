@@ -294,24 +294,49 @@
 
     <!-- PWA Installation Banner -->
     <div id="pwaInstall" class="c pwa-banner browser-only" style="display:none">
-        <h2 style="color:#fff">📲 ¡Instala la App!</h2>
-        <p class="info" style="color:rgba(255,255,255,0.8)">Instala esta app para poder recibir archivos compartidos
-            desde el explorador de archivos</p>
+        <h2 style="color:#fff">📲 Instalar como WebAPK</h2>
+        <p class="info" style="color:rgba(255,255,255,0.9)">
+            <b>WebAPK</b> = App real instalada en Android (no solo un acceso directo).<br>
+            Con WebAPK la app puede recibir archivos compartidos.
+        </p>
         <button class="btn" style="background:rgba(255,255,255,0.2);border:2px solid #fff" onclick="installPWA()">
-            📲 Instalar BYD Stats Debug
+            📲 Instalar Ahora
         </button>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff;margin-top:8px">
+            <b>¿No aparece el botón?</b> Usa el menú de Chrome (⋮) → "Añadir a pantalla de inicio" o "Instalar app"
+        </div>
     </div>
 
-    <!-- PWA Installed Success -->
-    <div class="c standalone-only" style="background: linear-gradient(135deg, #059669, #047857); border:none">
-        <h2 style="color:#fff">✅ PWA Instalada</h2>
-        <p class="info" style="color:rgba(255,255,255,0.9)">
-            Ahora puedes compartir archivos desde el explorador de archivos del coche a esta app.
+    <!-- WebAPK Manual Instructions (browser only) -->
+    <div class="c browser-only">
+        <h2>📦 ¿Qué es WebAPK?</h2>
+        <p class="info">
+            WebAPK convierte esta web en una <b>app real</b> de Android. A diferencia de un simple acceso directo:
         </p>
-        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">1. Abre el explorador de archivos</div>
-        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">2. Navega a /Local/energydata/</div>
-        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">3. Pulsa en EC_Database.db → Compartir</div>
-        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">4. Selecciona "BYD Stats Debug"</div>
+        <div class="step">✅ Aparece en Ajustes → Aplicaciones</div>
+        <div class="step">✅ Puede recibir archivos via "Compartir"</div>
+        <div class="step">✅ Se ejecuta en pantalla completa</div>
+        <div class="step">✅ Mayor integración con el sistema</div>
+        <h2 style="margin-top:10px">📋 Pasos para instalar:</h2>
+        <div class="step">1. Abre el <b>menú de Chrome</b> (⋮ arriba derecha)</div>
+        <div class="step">2. Busca <b>"Instalar aplicación"</b> o <b>"Añadir a pantalla de inicio"</b></div>
+        <div class="step">3. Confirma la instalación</div>
+        <div class="step">4. <b>Importante:</b> Abre la app desde el icono del launcher (no desde aquí)</div>
+    </div>
+
+    <!-- PWA Installed Success (standalone only) -->
+    <div class="c standalone-only" style="background: linear-gradient(135deg, #059669, #047857); border:none">
+        <h2 style="color:#fff">✅ WebAPK Instalada</h2>
+        <p class="info" style="color:rgba(255,255,255,0.9)">
+            La app está instalada como WebAPK. Ahora puedes compartir archivos desde el explorador.
+        </p>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">1. Abre el <b>explorador de archivos</b> del
+            coche</div>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">2. Navega a <b>/Local/energydata/</b></div>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">3. Mantén pulsado <b>EC_Database.db</b></div>
+        <div class="step" style="background:rgba(0,0,0,0.2);color:#fff">4. Pulsa <b>Compartir</b> → <b>"BYD Stats
+                Debug"</b></div>
+        <div id="webapkStatus" style="margin-top:10px"></div>
     </div>
 
     <!-- PASO 0: Chrome Flags -->
@@ -406,20 +431,40 @@
             r.className = 'result ' + (ok ? 'ok' : 'no');
         }
 
-        // PWA Status
-        function updatePWAStatus() {
+        // PWA Status - detect if running as WebAPK
+        async function updatePWAStatus() {
             const isStandalone = window.matchMedia('(display-mode: standalone)').matches ||
                 window.matchMedia('(display-mode: fullscreen)').matches ||
                 window.navigator.standalone;
             const status = $('pwaStatus');
+            const webapkStatus = $('webapkStatus');
+
             if (isStandalone) {
-                status.textContent = '✓ PWA';
+                status.textContent = '✓ WebAPK';
                 status.className = 'pwa-status installed';
-                log('Ejecutando como PWA instalada', 's');
+                log('Ejecutando como PWA/WebAPK instalada', 's');
+
+                // Check if getInstalledRelatedApps is available (WebAPK indicator)
+                if ('getInstalledRelatedApps' in navigator) {
+                    try {
+                        const apps = await navigator.getInstalledRelatedApps();
+                        log('Apps relacionadas: ' + apps.length, 'i');
+                        if (webapkStatus) {
+                            webapkStatus.innerHTML = '<div class="step" style="background:rgba(0,0,0,0.2);color:#fff">📱 getInstalledRelatedApps disponible</div>';
+                        }
+                    } catch (e) {
+                        log('Error getInstalledRelatedApps: ' + e.message, 'w');
+                    }
+                }
+
+                // Log referrer to detect if opened via share
+                if (document.referrer) {
+                    log('Referrer: ' + document.referrer, 'i');
+                }
             } else {
                 status.textContent = '⚠ Navegador';
                 status.className = 'pwa-status browser';
-                log('Ejecutando en navegador (no PWA)', 'w');
+                log('Ejecutando en navegador (instala como WebAPK para compartir archivos)', 'w');
             }
         }
 
