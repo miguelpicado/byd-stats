@@ -1,0 +1,153 @@
+import React, { useState, useEffect, useCallback } from 'react';
+import { X, Download, LogOut } from 'lucide-react';
+
+/**
+ * PWA Manager Component
+ * Handles PWA installation prompt and exit button for fullscreen mode
+ */
+export default function PWAManager() {
+    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [showInstallBanner, setShowInstallBanner] = useState(false);
+    const [isStandalone, setIsStandalone] = useState(false);
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+    // Check if running as PWA
+    useEffect(() => {
+        const checkStandalone = () => {
+            const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+                window.matchMedia('(display-mode: fullscreen)').matches ||
+                window.navigator.standalone;
+            setIsStandalone(standalone);
+        };
+
+        checkStandalone();
+
+        // Listen for display mode changes
+        const mediaQuery = window.matchMedia('(display-mode: standalone)');
+        mediaQuery.addEventListener('change', checkStandalone);
+
+        return () => mediaQuery.removeEventListener('change', checkStandalone);
+    }, []);
+
+    // Listen for install prompt
+    useEffect(() => {
+        const handleInstallPrompt = (e) => {
+            e.preventDefault();
+            setDeferredPrompt(e);
+            setShowInstallBanner(true);
+        };
+
+        window.addEventListener('beforeinstallprompt', handleInstallPrompt);
+        return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
+    }, []);
+
+    // Install PWA
+    const handleInstall = useCallback(async () => {
+        if (!deferredPrompt) return;
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+
+        if (outcome === 'accepted') {
+            setShowInstallBanner(false);
+        }
+        setDeferredPrompt(null);
+    }, [deferredPrompt]);
+
+    // Exit app
+    const handleExit = useCallback(() => {
+        setShowExitConfirm(true);
+    }, []);
+
+    const confirmExit = useCallback(() => {
+        window.close();
+        // Fallback if window.close() doesn't work
+        setTimeout(() => {
+            window.location.href = 'about:blank';
+        }, 100);
+    }, []);
+
+    // Don't render anything if not needed
+    if (!showInstallBanner && !isStandalone) return null;
+
+    return (
+        <>
+            {/* Install Banner - Only show when not installed */}
+            {showInstallBanner && !isStandalone && (
+                <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-red-600 to-red-700 text-white p-3 shadow-lg animate-slide-down">
+                    <div className="flex items-center justify-between max-w-screen-xl mx-auto">
+                        <div className="flex items-center gap-3">
+                            <Download className="w-5 h-5" />
+                            <div>
+                                <p className="font-semibold text-sm">Instalar BYD Stats</p>
+                                <p className="text-xs opacity-90">Acceso rápido y pantalla completa</p>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleInstall}
+                                className="px-4 py-1.5 bg-white text-red-600 rounded-full text-sm font-bold hover:bg-gray-100 transition-colors"
+                            >
+                                Instalar
+                            </button>
+                            <button
+                                onClick={() => setShowInstallBanner(false)}
+                                className="p-1.5 hover:bg-white/20 rounded-full transition-colors"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Exit Button - Only show when running as PWA */}
+            {isStandalone && (
+                <button
+                    onClick={handleExit}
+                    className="fixed bottom-4 right-4 z-[9999] flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full shadow-lg hover:from-red-700 hover:to-red-800 transition-all"
+                    title="Cerrar aplicación"
+                >
+                    <LogOut className="w-5 h-5" />
+                    <span className="font-semibold text-sm">Salir</span>
+                </button>
+            )}
+
+            {/* Exit Confirmation Modal */}
+            {showExitConfirm && (
+                <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-slate-800 rounded-xl p-6 m-4 max-w-sm w-full shadow-2xl border border-slate-700">
+                        <h3 className="text-lg font-bold text-white mb-2">¿Cerrar BYD Stats?</h3>
+                        <p className="text-slate-400 text-sm mb-4">
+                            Puedes volver a abrir la app desde el icono en tu pantalla de inicio.
+                        </p>
+                        <div className="flex gap-3">
+                            <button
+                                onClick={() => setShowExitConfirm(false)}
+                                className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={confirmExit}
+                                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
+                            >
+                                Salir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            <style>{`
+        @keyframes slide-down {
+          from { transform: translateY(-100%); }
+          to { transform: translateY(0); }
+        }
+        .animate-slide-down {
+          animation: slide-down 0.3s ease-out;
+        }
+      `}</style>
+        </>
+    );
+}
