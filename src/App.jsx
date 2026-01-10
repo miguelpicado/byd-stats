@@ -1996,10 +1996,8 @@ export default function BYDStatsAnalyzer() {
                                   options={{
                                     maintainAspectRatio: false,
                                     scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
-                                    scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
                                     plugins: { legend: { display: false } },
-                                    interaction: { mode: 'nearest', axis: 'r', intersect: false },
-                                    hover: { mode: 'nearest', intersect: false }
+                                    interaction: { mode: 'index', intersect: false }
                                   }}
                                   data={{
                                     labels: weekday.map(d => d.day),
