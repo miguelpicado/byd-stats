@@ -336,7 +336,15 @@ export default function BYDStatsAnalyzer() {
       // 2. Browser color-scheme (prevents BYD forced dark mode)
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 
-      // 3. Native StatusBar
+      // 3. PWA theme-color meta tag (for status bar in PWA)
+      let themeColorMeta = document.querySelector('meta[name="theme-color"]');
+      if (themeColorMeta) {
+        // Dark theme: dark slate background
+        // Light theme: light background
+        themeColorMeta.setAttribute('content', isDark ? '#0f172a' : '#f8fafc');
+      }
+
+      // 4. Native StatusBar (for Capacitor apps)
       if (isNative && window.StatusBar) {
         window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
           .catch(e => console.error('StatusBar error:', e));
