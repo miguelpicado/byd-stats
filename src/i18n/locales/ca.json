@@ -84,7 +84,12 @@
         "avgSpeed": "Velocitat mitjana",
         "comparedToAvg": "Comparat amb la teva mitjana",
         "betterThan": "Millor que el",
-        "ofYourTrips": "dels teus viatges"
+        "ofYourTrips": "dels teus viatges",
+        "batteryState": "Estat de càrrega",
+        "initial": "Inicial",
+        "final": "Final",
+        "energyRecovered": "Energia recuperada",
+        "percentile": "Percentil"
     },
     "settings": {
         "title": "Configuració",

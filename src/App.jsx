@@ -1393,7 +1393,7 @@ export default function BYDStatsAnalyzer() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 pt-24" onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Detalle del viaje</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('tripDetail.title')}</h3>
               <button onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-700">
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
@@ -1412,24 +1412,24 @@ export default function BYDStatsAnalyzer() {
                 <div className="space-y-4">
                   {/* Fecha y hora */}
                   <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Fecha y hora</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('tripDetail.dateTime')}</p>
                     <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
                     <div className="flex items-center gap-4 mt-2">
                       <div>
-                        <p className="text-slate-600 dark:text-slate-400 text-xs">Inicio</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.start')}</p>
                         <p className="text-slate-900 dark:text-white font-medium">{formatTime(selectedTrip.start_timestamp)}</p>
                       </div>
                       {endTime && (
                         <>
                           <span className="text-slate-600">→</span>
                           <div>
-                            <p className="text-slate-600 dark:text-slate-400 text-xs">Fin</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.end')}</p>
                             <p className="text-slate-900 dark:text-white font-medium">{formatTime(endTime)}</p>
                           </div>
                         </>
                       )}
                       <div className="ml-auto">
-                        <p className="text-slate-600 dark:text-slate-400 text-xs">Duración</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.duration')}</p>
                         <p className="text-slate-900 dark:text-white font-medium">{formatDuration(selectedTrip.duration)}</p>
                       </div>
                     </div>
@@ -1438,22 +1438,22 @@ export default function BYDStatsAnalyzer() {
                   {/* Grid de métricas */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Distancia</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('stats.distance')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">km</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Velocidad media</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('tripDetail.avgSpeed')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">km/h</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Consumo</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('tripDetail.consumption')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">kWh</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Eficiencia</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('stats.efficiency')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">kWh/100km</p>
                     </div>
@@ -1462,11 +1462,11 @@ export default function BYDStatsAnalyzer() {
                   {/* SOC si está disponible */}
                   {(selectedTrip.start_soc !== undefined || selectedTrip.end_soc !== undefined) && (
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Estado de carga</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">{t('tripDetail.batteryState')}</p>
                       <div className="flex items-center gap-4">
                         {selectedTrip.start_soc !== undefined && (
                           <div className="flex-1">
-                            <p className="text-xs text-slate-400">Inicial</p>
+                            <p className="text-xs text-slate-400">{t('tripDetail.initial')}</p>
                             <p className="text-3xl font-bold text-green-400">{selectedTrip.start_soc}%</p>
                           </div>
                         )}
@@ -1475,7 +1475,7 @@ export default function BYDStatsAnalyzer() {
                         )}
                         {selectedTrip.end_soc !== undefined && (
                           <div className="flex-1">
-                            <p className="text-xs text-slate-400">Final</p>
+                            <p className="text-xs text-slate-400">{t('tripDetail.final')}</p>
                             <p className="text-3xl font-bold text-orange-400">{selectedTrip.end_soc}%</p>
                           </div>
                         )}
@@ -1486,27 +1486,27 @@ export default function BYDStatsAnalyzer() {
                   {/* Regeneración si está disponible */}
                   {selectedTrip.regeneration !== undefined && selectedTrip.regeneration !== null && (
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Energía regenerada</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('tripDetail.energyRecovered')}</p>
                       <p className="text-green-400 text-2xl font-bold">{selectedTrip.regeneration?.toFixed(2)} kWh</p>
                     </div>
                   )}
 
                   {/* Comparación y percentil */}
                   <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">{t('tripDetail.analysis')}</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 text-sm">Comparación con tu media</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.comparedToAvg')}</span>
                         <span className={`font-bold ${comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {comparisonPercent > 0 ? '+' : ''}{comparisonPercent.toFixed(1)}%
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 text-sm">Percentil</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.percentile')}</span>
                         <span className="font-bold text-cyan-400">Top {percentile}%</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 text-sm">Coste estimado</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.cost')}</span>
                         <span className="font-bold text-amber-500">{cost.toFixed(2)}€</span>
                       </div>
                     </div>

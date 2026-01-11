@@ -84,7 +84,12 @@
         "avgSpeed": "Velocidad media",
         "comparedToAvg": "Comparado con tu media",
         "betterThan": "Mejor que el",
-        "ofYourTrips": "de tus viajes"
+        "ofYourTrips": "de tus viajes",
+        "batteryState": "Estado de carga",
+        "initial": "Inicial",
+        "final": "Final",
+        "energyRecovered": "Energía regenerada",
+        "percentile": "Percentil"
     },
     "settings": {
         "title": "Configuración",

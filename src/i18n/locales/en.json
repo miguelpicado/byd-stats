@@ -84,7 +84,12 @@
         "avgSpeed": "Average speed",
         "comparedToAvg": "Compared to your average",
         "betterThan": "Better than",
-        "ofYourTrips": "of your trips"
+        "ofYourTrips": "of your trips",
+        "batteryState": "Battery state",
+        "initial": "Initial",
+        "final": "Final",
+        "energyRecovered": "Energy recovered",
+        "percentile": "Percentile"
     },
     "settings": {
         "title": "Settings",
