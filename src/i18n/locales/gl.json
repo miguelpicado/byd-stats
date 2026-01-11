@@ -48,9 +48,27 @@
         "kmh": "km/h",
         "perDay": "/día",
         "perMonth": "/mes",
-        "euroPerMonth": "€/mes",
+        "per100km": "/100km",
         "euroPerKwh": "€/kWh",
         "kwhPerDay": "kWh/día"
+    },
+    "days": {
+        "mon": "Luns",
+        "tue": "Martes",
+        "wed": "Mércores",
+        "thu": "Xoves",
+        "fri": "Venres",
+        "sat": "Sábado",
+        "sun": "Domingo"
+    },
+    "daysShort": {
+        "mon": "Lun",
+        "tue": "Mar",
+        "wed": "Mér",
+        "thu": "Xov",
+        "fri": "Ven",
+        "sat": "Sáb",
+        "sun": "Dom"
     },
     "charts": {
         "monthlyEvolution": "Evolución mensual (distancia)",
@@ -205,7 +223,55 @@
         "avgConsumption": "Consumo medio",
         "avgEfficiency": "Eficiencia media",
         "avgDuration": "Duración media",
-        "avgSpeed": "Velocidade media"
+        "avgSpeed": "Velocidade media",
+        "last10Trips": "Últimas 10 viaxes"
+    },
+    "charts": {
+        "monthlyDist": "Evolución mensual (distancia)",
+        "tripDist": "Distribución de Viaxes",
+        "monthlyKmKwh": "Km e kWh Mensal",
+        "last60Days": "Km percorridos nos últimos 60 días",
+        "byHour": "Por Hora",
+        "byDay": "Por Día",
+        "monthlyEff": "Evolución Eficiencia Mensual",
+        "effVsDist": "Eficiencia vs Distancia",
+        "topDist": "Top Distancia",
+        "topCons": "Top Consumo",
+        "topDur": "Top Duración"
+    },
+    "stats": {
+        "distance": "Distancia",
+        "energy": "Enerxía",
+        "trips": "Viaxes",
+        "time": "Tempo",
+        "efficiency": "Eficiencia",
+        "speed": "Velocidade",
+        "avgTrip": "Viaxe medio",
+        "activeDays": "Días activos",
+        "longTripEvery": "Viaxe longo cada",
+        "medianEff": "Eficiencia mediana",
+        "dailyCharge": "Carga diaria",
+        "monthlyCost": "Custe mensual",
+        "freqDay": "Día frecuente",
+        "peakHour": "Hora pico",
+        "totalKm": "Km totais",
+        "dailyAvg": "Media día",
+        "consumptionPerTrip": "Consumo/viaxe",
+        "avgDistance": "Distancia media",
+        "avgSpeed": "Velocidade media",
+        "longest": "Máis longo",
+        "maxCons": "Maior consumo",
+        "maxDur": "Maior duración",
+        "shortest": "Máis curto"
+    },
+    "units": {
+        "km": "km",
+        "kWh": "kWh",
+        "day": "día",
+        "days": "días",
+        "kmh": "km/h",
+        "kWh100km": "kWh/100km",
+        "kWhDay": "kWh/día"
     },
     "confirmations": {
         "deleteAllData": "Borrar todos os datos?",
@@ -219,5 +285,52 @@
     },
     "errors": {
         "invalidFile": "Só se admiten ficheiros *.DB ou *.JPG (base de datos renomeada)\nAtopa EC_Database.db na carpeta \"Energydata\" do coche"
+    },
+    "upload": {
+        "title": "Xestión de datos",
+        "historySection": "Historial ({{count}} viaxes)",
+        "saveCurrent": "Gardar viaxes actuais no historial",
+        "viewLoad": "Ver / Cargar historial",
+        "export": "Exportar",
+        "clearHistory": "Borrar historial",
+        "filesSection": "Arquivos / Base de Datos BYD",
+        "loadNew": "Cargar novas viaxes (Substituír)",
+        "loadMerge": "Cargar só viaxes novas (Combinar)",
+        "clearView": "Limpar vista actual (Non borra historial)",
+        "exportTrips": "Exportar viaxes",
+        "tip": "Consello: Se o arquivo .db non aparece, proba a renomealo a .jpg"
+    },
+    "legal": {
+        "title": "Documentación Legal",
+        "subtitle": "BYD Stats Analyzer",
+        "privacy": "Privacidade",
+        "terms": "Aviso Legal",
+        "understood": "Entendido"
+    },
+    "historyMod": {
+        "title": "Historial de viaxes",
+        "description": "O historial mantén un rexistro permanente de todas as viaxes que cargaches.",
+        "savedCount": "{{count}} viaxes gardadas",
+        "saveCurrent": "Gardar viaxes actuais no historial",
+        "loadFull": "Cargar historial completo",
+        "clear": "Borrar historial"
+    },
+    "footer": {
+        "github": "Ver en GitHub",
+        "email": "Enviar Email",
+        "legal": "Información Legal",
+        "madeWith": "Feito con ❤️ para a comunidade BYD"
+    },
+    "header": {
+        "title": "Estatísticas BYD",
+        "trips": "{{count}} viaxes"
+    },
+    "tooltips": {
+        "help": "Axuda e Reportar Erro",
+        "fullscreen": "Pantalla completa",
+        "exitFullscreen": "Saír de pantalla completa",
+        "history": "Historial de viaxes",
+        "settings": "Configuración",
+        "filters": "Filtros"
     }
 }

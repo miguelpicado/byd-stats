@@ -1,25 +1,34 @@
 // BYD Stats - Date Utilities
 
-const MONTH_NAMES = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+import i18n from '../i18n';
 
 /**
- * Format month string (YYYYMM) to readable format (Ene 2024)
+ * Format month string (YYYYMM) to readable format (Short Month YYYY)
  * @param {string} m - Month string in YYYYMM format
  * @returns {string} Formatted month string
  */
 export const formatMonth = (m) => {
     if (!m || m.length < 6) return m || '';
-    return MONTH_NAMES[parseInt(m.slice(4, 6), 10) - 1] + ' ' + m.slice(0, 4);
+    const year = parseInt(m.slice(0, 4), 10);
+    const month = parseInt(m.slice(4, 6), 10) - 1;
+    const date = new Date(year, month);
+    // Capitalize first letter
+    const formatted = date.toLocaleDateString(i18n.language, { month: 'short', year: 'numeric' });
+    return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
 /**
- * Format date string (YYYYMMDD) to readable format (DD/MM/YYYY)
+ * Format date string (YYYYMMDD) to readable format (DD/MM/YYYY or locale default)
  * @param {string} d - Date string in YYYYMMDD format
  * @returns {string} Formatted date string
  */
 export const formatDate = (d) => {
     if (!d || d.length < 8) return d || '';
-    return d.slice(6, 8) + '/' + d.slice(4, 6) + '/' + d.slice(0, 4);
+    const year = parseInt(d.slice(0, 4), 10);
+    const month = parseInt(d.slice(4, 6), 10) - 1;
+    const day = parseInt(d.slice(6, 8), 10);
+    const date = new Date(year, month, day);
+    return date.toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 /**
@@ -30,7 +39,7 @@ export const formatDate = (d) => {
 export const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
 };
 
 /**

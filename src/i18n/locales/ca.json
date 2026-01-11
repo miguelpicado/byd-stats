@@ -50,7 +50,26 @@
         "perMonth": "/mes",
         "euroPerMonth": "€/mes",
         "euroPerKwh": "€/kWh",
-        "kwhPerDay": "kWh/dia"
+        "kwhPerDay": "kWh/dia",
+        "per100km": "/100km"
+    },
+    "days": {
+        "mon": "Dilluns",
+        "tue": "Dimarts",
+        "wed": "Dimecres",
+        "thu": "Dijous",
+        "fri": "Divendres",
+        "sat": "Dissabte",
+        "sun": "Diumenge"
+    },
+    "daysShort": {
+        "mon": "Dil",
+        "tue": "Dim",
+        "wed": "Dmc",
+        "thu": "Dij",
+        "fri": "Div",
+        "sat": "Dis",
+        "sun": "Diu"
     },
     "charts": {
         "monthlyEvolution": "Evolució mensual (distància)",
@@ -205,7 +224,55 @@
         "avgConsumption": "Consum mitjà",
         "avgEfficiency": "Eficiència mitjana",
         "avgDuration": "Durada mitjana",
-        "avgSpeed": "Velocitat mitjana"
+        "avgSpeed": "Velocitat mitjana",
+        "last10Trips": "Últims 10 viatges"
+    },
+    "charts": {
+        "monthlyDist": "Evolució mensual (distància)",
+        "tripDist": "Distribució de Viatges",
+        "monthlyKmKwh": "Km i kWh Mensual",
+        "last60Days": "Km recorreguts en els últims 60 dies",
+        "byHour": "Per Hora",
+        "byDay": "Per Dia",
+        "monthlyEff": "Evolució Eficiència Mensual",
+        "effVsDist": "Eficiència vs Distància",
+        "topDist": "Top Distància",
+        "topCons": "Top Consum",
+        "topDur": "Top Durada"
+    },
+    "stats": {
+        "distance": "Distància",
+        "energy": "Energia",
+        "trips": "Viatges",
+        "time": "Temps",
+        "efficiency": "Eficiència",
+        "speed": "Velocitat",
+        "avgTrip": "Viatge mitjà",
+        "activeDays": "Dies actius",
+        "longTripEvery": "Viatge llarg cada",
+        "medianEff": "Eficiència mitjana",
+        "dailyCharge": "Càrrega diària",
+        "monthlyCost": "Cost mensual",
+        "freqDay": "Dia freqüent",
+        "peakHour": "Hora pic",
+        "totalKm": "Km totals",
+        "dailyAvg": "Mitjana dia",
+        "consumptionPerTrip": "Consum/viatge",
+        "avgDistance": "Distància mitjana",
+        "avgSpeed": "Velocitat mitjana",
+        "longest": "Més llarg",
+        "maxCons": "Major consum",
+        "maxDur": "Major durada",
+        "shortest": "Més curt"
+    },
+    "units": {
+        "km": "km",
+        "kWh": "kWh",
+        "day": "dia",
+        "days": "dies",
+        "kmh": "km/h",
+        "kWh100km": "kWh/100km",
+        "kWhDay": "kWh/dia"
     },
     "confirmations": {
         "deleteAllData": "Esborrar totes les dades?",
@@ -219,5 +286,52 @@
     },
     "errors": {
         "invalidFile": "Només s'admeten fitxers *.DB o *.JPG (base de dades reanomenada)\nTroba EC_Database.db a la carpeta \"Energydata\" del cotxe"
+    },
+    "upload": {
+        "title": "Gestió de dades",
+        "historySection": "Historial ({{count}} viatges)",
+        "saveCurrent": "Desar viatges actuals a l'historial",
+        "viewLoad": "Veure / Carregar historial",
+        "export": "Exportar",
+        "clearHistory": "Esborrar historial",
+        "filesSection": "Fitxers / Base de Dades BYD",
+        "loadNew": "Carregar nous viatges (Reemplaçar)",
+        "loadMerge": "Carregar només viatges nous (Combinar)",
+        "clearView": "Netejar vista actual (No esborra l'historial)",
+        "exportTrips": "Exportar viatges",
+        "tip": "Consell: Si el fitxer .db no apareix, prova a reanomenar-lo a .jpg"
+    },
+    "legal": {
+        "title": "Documentació Legal",
+        "subtitle": "BYD Stats Analyzer",
+        "privacy": "Privacitat",
+        "terms": "Avís Legal",
+        "understood": "Entès"
+    },
+    "historyMod": {
+        "title": "Historial de viatges",
+        "description": "L'historial manté un registre permanent de tots els viatges que has carregat.",
+        "savedCount": "{{count}} viatges desats",
+        "saveCurrent": "Desar viatges actuals a l'historial",
+        "loadFull": "Carregar historial complet",
+        "clear": "Esborrar historial"
+    },
+    "footer": {
+        "github": "Veure a GitHub",
+        "email": "Enviar Email",
+        "legal": "Informació Legal",
+        "madeWith": "Fet amb ❤️ per a la comunitat BYD"
+    },
+    "header": {
+        "title": "Estadístiques BYD",
+        "trips": "{{count}} viatges"
+    },
+    "tooltips": {
+        "help": "Ajuda i Reportar error",
+        "fullscreen": "Pantalla completa",
+        "exitFullscreen": "Sortir de pantalla completa",
+        "history": "Historial de viatges",
+        "settings": "Configuració",
+        "filters": "Filtres"
     }
 }

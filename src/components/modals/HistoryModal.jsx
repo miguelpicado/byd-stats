@@ -3,6 +3,7 @@
 import React from 'react';
 import { BYD_RED } from '../../utils/constants';
 import { Database, Plus } from '../Icons.jsx';
+import { useTranslation } from 'react-i18next';
 
 /**
  * History modal for trip history management
@@ -15,6 +16,8 @@ import { Database, Plus } from '../Icons.jsx';
  * @param {Function} props.onClear - Clear history
  */
 const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }) => {
+    const { t } = useTranslation();
+
     if (!isOpen) return null;
 
     return (
@@ -27,7 +30,7 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                         <Database className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Historial de viajes</h2>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('historyMod.title')}</h2>
                     </div>
                     <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         <Plus className="w-6 h-6 rotate-45" />
@@ -37,10 +40,10 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
                 <div className="space-y-4">
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
                         <p className="text-sm text-slate-600 dark:text-slate-400">
-                            El historial mantiene un registro permanente de todos los viajes que has cargado.
+                            {t('historyMod.description')}
                         </p>
                         <p className="text-lg font-bold text-slate-900 dark:text-white mt-2">
-                            {historyCount} viajes guardados
+                            {t('historyMod.savedCount', { count: historyCount })}
                         </p>
                     </div>
 
@@ -50,7 +53,7 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
                             className="w-full py-3 rounded-xl font-medium text-white"
                             style={{ backgroundColor: BYD_RED }}
                         >
-                            Guardar viajes actuales al historial
+                            {t('historyMod.saveCurrent')}
                         </button>
 
                         <button
@@ -58,7 +61,7 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
                             className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                             disabled={historyCount === 0}
                         >
-                            Cargar historial completo
+                            {t('historyMod.loadFull')}
                         </button>
 
                         <button
@@ -66,7 +69,7 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
                             className="w-full py-3 rounded-xl font-medium text-red-500 bg-red-500/10 hover:bg-red-500/20 transition-colors"
                             disabled={historyCount === 0}
                         >
-                            Borrar historial
+                            {t('historyMod.clear')}
                         </button>
                     </div>
                 </div>

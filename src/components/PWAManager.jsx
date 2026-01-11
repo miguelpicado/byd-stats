@@ -196,7 +196,7 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
 
             {/* Install Banner - Only show when not installed and no update banner */}
             {showInstallBanner && !isStandalone && !showUpdateBanner && (
-                <div className="fixed top-0 left-0 right-0 z-[9999] bg-gradient-to-r from-red-600 to-red-700 text-white p-3 shadow-lg animate-slide-down">
+                <div className={`fixed ${layoutMode === 'horizontal' ? 'bottom-0 animate-slide-up' : 'top-0 animate-slide-down'} left-0 right-0 z-[9999] bg-gradient-to-r from-red-600 to-red-700 text-white p-3 shadow-lg`}>
                     <div className="flex items-center justify-between max-w-screen-xl mx-auto">
                         <div className="flex items-center gap-3">
                             <Download className="w-5 h-5" />
@@ -266,8 +266,15 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
                     from { transform: translateY(-100%); }
                     to { transform: translateY(0); }
                 }
+                @keyframes slide-up {
+                    from { transform: translateY(100%); }
+                    to { transform: translateY(0); }
+                }
                 .animate-slide-down {
                     animation: slide-down 0.3s ease-out;
+                }
+                .animate-slide-up {
+                    animation: slide-up 0.3s ease-out;
                 }
                 @keyframes spin-slow {
                     from { transform: rotate(0deg); }

@@ -5,6 +5,8 @@ import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
 import { BYD_RED } from '../../utils/constants';
 import { Settings, Plus } from '../Icons.jsx';
+import { GaliciaFlag, CataloniaFlag, BasqueFlag } from '../FlagIcons.jsx';
+
 
 /**
  * Settings modal for app configuration
@@ -115,7 +117,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                 <button
                                     key={lang.code}
                                     onClick={() => handleLanguageChange(lang.code)}
-                                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${i18n.language === lang.code || i18n.language?.startsWith(lang.code)
+                                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${i18n.language === lang.code || i18n.language?.startsWith(lang.code)
                                         ? 'text-white'
                                         : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
                                         }`}
@@ -123,7 +125,11 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                         backgroundColor: (i18n.language === lang.code || i18n.language?.startsWith(lang.code)) ? BYD_RED : ''
                                     }}
                                 >
-                                    {lang.flag} {lang.name}
+                                    {lang.code === 'gl' ? <GaliciaFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
+                                        lang.code === 'ca' ? <CataloniaFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
+                                            lang.code === 'eu' ? <BasqueFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
+                                                <span className="text-lg leading-none">{lang.flag}</span>}
+                                    {lang.name}
                                 </button>
                             ))}
                         </div>
