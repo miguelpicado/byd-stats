@@ -1,6 +1,8 @@
 // BYD Stats - Settings Modal Component
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { languages } from '../../i18n';
 import { BYD_RED } from '../../utils/constants';
 import { Settings, Plus } from '../Icons.jsx';
 
@@ -13,7 +15,13 @@ import { Settings, Plus } from '../Icons.jsx';
  * @param {Function} props.onSettingsChange - Settings change handler
  */
 const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync }) => {
+    const { t, i18n } = useTranslation();
+
     if (!isOpen) return null;
+
+    const handleLanguageChange = (langCode) => {
+        i18n.changeLanguage(langCode);
+    };
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -25,7 +33,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                         <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
-                        Configuración
+                        {t('settings.title')}
                     </h3>
                     <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         <Plus className="w-6 h-6 rotate-45" />
@@ -34,7 +42,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
 
                 <div className="space-y-4">
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Modelo del coche</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.carModel')}</label>
                         <input
                             type="text"
                             value={settings.carModel}
@@ -45,7 +53,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Matrícula</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.licensePlate')}</label>
                         <input
                             type="text"
                             value={settings.licensePlate}
@@ -56,7 +64,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Nº Póliza del seguro</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.insurancePolicy')}</label>
                         <input
                             type="text"
                             value={settings.insurancePolicy}
@@ -67,7 +75,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tamaño de la batería (kWh)</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.batterySize')}</label>
                         <input
                             type="number"
                             step="0.01"
@@ -78,7 +86,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">State of Health - SoH (%)</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.soh')}</label>
                         <input
                             type="number"
                             min="0"
@@ -90,7 +98,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Precio de electricidad (€/kWh)</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.electricityPrice')} (€/kWh)</label>
                         <input
                             type="number"
                             step="0.01"
@@ -101,7 +109,28 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tema</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.language')}</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {languages.map(lang => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => handleLanguageChange(lang.code)}
+                                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${i18n.language === lang.code || i18n.language?.startsWith(lang.code)
+                                        ? 'text-white'
+                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                        }`}
+                                    style={{
+                                        backgroundColor: (i18n.language === lang.code || i18n.language?.startsWith(lang.code)) ? BYD_RED : ''
+                                    }}
+                                >
+                                    {lang.flag} {lang.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.theme')}</label>
                         <div className="flex gap-2">
                             {['auto', 'light', 'dark'].map(theme => (
                                 <button
@@ -115,7 +144,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                         backgroundColor: settings.theme === theme ? BYD_RED : ''
                                     }}
                                 >
-                                    {theme === 'auto' ? 'Automático' : theme === 'light' ? 'Claro' : 'Oscuro'}
+                                    {theme === 'auto' ? t('settings.themeAuto') : theme === 'light' ? t('settings.themeLight') : t('settings.themeDark')}
                                 </button>
                             ))}
                         </div>
@@ -124,7 +153,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     <div>
                         {/* Google Sync Section */}
                         <div className="pt-4 border-t border-slate-200 dark:border-slate-700 mt-4">
-                            <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">Nube y Sincronización (Google Drive)</h4>
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-white mb-3">{t('settings.googleDrive')}</h4>
 
                             {!googleSync.isAuthenticated ? (
                                 <button
@@ -137,7 +166,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05" />
                                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
                                     </svg>
-                                    Iniciar sesión con Google
+                                    {t('settings.signInWithGoogle')}
                                 </button>
                             ) : (
                                 <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
@@ -153,7 +182,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                             <p className="text-sm font-medium text-slate-900 dark:text-white truncate flex items-center gap-2">
                                                 {googleSync.userProfile?.name}
                                                 <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                                                    Conectado
+                                                    {t('settings.connected')}
                                                 </span>
                                             </p>
                                             <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
@@ -175,12 +204,12 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                                                     </svg>
-                                                    Sincronizando...
+                                                    {t('settings.syncing')}
                                                 </>
                                             ) : (
                                                 <>
                                                     <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                                                    Sincronizar ahora
+                                                    {t('settings.syncNow')}
                                                 </>
                                             )}
                                         </button>
@@ -188,12 +217,12 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                             onClick={googleSync.logout}
                                             className="px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors"
                                         >
-                                            Salir
+                                            {t('settings.logout')}
                                         </button>
                                     </div>
                                     {googleSync.lastSyncTime && (
                                         <p className="text-[10px] text-center text-slate-400 mt-2">
-                                            Última sinc: {googleSync.lastSyncTime.toLocaleTimeString()}
+                                            {t('settings.lastSync')}: {googleSync.lastSyncTime.toLocaleTimeString()}
                                         </p>
                                     )}
                                     {googleSync.error && (
@@ -212,7 +241,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     className="w-full mt-6 py-3 rounded-xl font-medium text-white"
                     style={{ backgroundColor: BYD_RED }}
                 >
-                    Guardar
+                    {t('common.save')}
                 </button>
             </div>
         </div>
@@ -220,3 +249,4 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
 };
 
 export default SettingsModal;
+
