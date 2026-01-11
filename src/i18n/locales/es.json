@@ -144,7 +144,8 @@
         "byRange": "Por rango",
         "from": "Desde",
         "to": "Hasta",
-        "apply": "Aplicar filtro"
+        "apply": "Aplicar filtro",
+        "selectMonth": "Seleccionar mes"
     },
     "allTrips": {
         "title": "Todos los viajes",

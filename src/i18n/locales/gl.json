@@ -144,7 +144,8 @@
         "byRange": "Por rango",
         "from": "Dende",
         "to": "Ata",
-        "apply": "Aplicar filtro"
+        "apply": "Aplicar filtro",
+        "selectMonth": "Seleccionar mes"
     },
     "allTrips": {
         "title": "Todas as viaxes",

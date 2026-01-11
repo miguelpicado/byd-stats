@@ -144,7 +144,8 @@
         "byRange": "Per rang",
         "from": "Des de",
         "to": "Fins",
-        "apply": "Aplicar filtre"
+        "apply": "Aplicar filtre",
+        "selectMonth": "Seleccionar mes"
     },
     "allTrips": {
         "title": "Tots els viatges",

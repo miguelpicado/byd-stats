@@ -144,7 +144,8 @@
         "byRange": "By range",
         "from": "From",
         "to": "To",
-        "apply": "Apply filter"
+        "apply": "Apply filter",
+        "selectMonth": "Select month"
     },
     "allTrips": {
         "title": "All trips",
