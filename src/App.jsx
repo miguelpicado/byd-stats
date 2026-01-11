@@ -2832,7 +2832,7 @@ export default function BYDStatsAnalyzer() {
                   {/* Month Selector */}
                   {filterType === 'month' && (
                     <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">Seleccionar mes:</label>
+                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
                       <select
                         value={selMonth}
                         onChange={(e) => setSelMonth(e.target.value)}
