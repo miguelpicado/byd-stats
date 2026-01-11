@@ -272,7 +272,8 @@ export default function BYDStatsAnalyzer() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const touchStartRef = useRef(null);
   const touchStartYRef = useRef(null);
-  const swipeContainerRef = useRef(null);
+  // Use state callback ref to safely detect when the container is mounted/unmounted
+  const [swipeContainer, setSwipeContainer] = useState(null);
 
   // Chart animation key - increments on tab change to force chart re-render and animation
   const [chartAnimationKey, setChartAnimationKey] = useState(0);
@@ -619,106 +620,75 @@ export default function BYDStatsAnalyzer() {
   // Only enabled in vertical layout mode
   // Uses refs to avoid re-registering listeners on every state change
   useEffect(() => {
-    // Only enable swipe in vertical mode
-    if (layoutMode === 'horizontal') return;
+    // Only enable swipe in vertical mode and when container is available
+    if (layoutMode === 'horizontal' || !swipeContainer) return;
 
-    let mounted = true;
-    let retryCount = 0;
-    const maxRetries = 10;
+    const container = swipeContainer;
+    let swipeDirection = null;
 
-    const setupSwipeHandlers = () => {
-      const container = swipeContainerRef.current;
-
-      // If container not ready yet, retry after a short delay
-      if (!container) {
-        if (retryCount < maxRetries && mounted) {
-          retryCount++;
-          requestAnimationFrame(() => {
-            // Ensure we update cleanup if the retry succeeds
-            if (mounted) cleanup = setupSwipeHandlers();
-          });
-        }
-        return null;
-      }
-
-      let swipeDirection = null;
-
-      const handleTouchStart = (e) => {
-        if (isTransitioningRef.current) return;
-        const touch = e.touches[0];
-        touchStartRef.current = touch.clientX;
-        touchStartYRef.current = touch.clientY;
-        swipeDirection = null;
-      };
-
-      const handleTouchMove = (e) => {
-        if (!touchStartRef.current || isTransitioningRef.current) return;
-
-        const touch = e.touches[0];
-        const diffX = Math.abs(touch.clientX - touchStartRef.current);
-        const diffY = Math.abs(touch.clientY - touchStartYRef.current);
-
-        // Detectar dirección solo una vez
-        if (!swipeDirection) {
-          swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
-        }
-
-        // Si es swipe horizontal, prevenir scroll vertical
-        if (swipeDirection === 'horizontal' && diffX > 10) {
-          e.preventDefault();
-        }
-      };
-
-      const handleTouchEnd = (e) => {
-        if (!touchStartRef.current) return;
-
-        const touch = e.changedTouches[0];
-        const diffX = touch.clientX - touchStartRef.current;
-
-        // Solo procesar si fue swipe horizontal
-        if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
-          const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
-
-          if (diffX < 0 && currentIndex < tabs.length - 1) {
-            // Swipe left - siguiente tab
-            handleTabClickRef.current(tabs[currentIndex + 1].id);
-          } else if (diffX > 0 && currentIndex > 0) {
-            // Swipe right - tab anterior
-            handleTabClickRef.current(tabs[currentIndex - 1].id);
-          }
-        }
-
-        // Reset
-        touchStartRef.current = null;
-        touchStartYRef.current = null;
-        swipeDirection = null;
-      };
-
-      // Agregar event listeners con opciones pasivas cuando sea posible
-      container.addEventListener('touchstart', handleTouchStart, { passive: true });
-      container.addEventListener('touchmove', handleTouchMove, { passive: false }); // No pasivo para poder usar preventDefault
-      container.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-      return () => {
-        container.removeEventListener('touchstart', handleTouchStart);
-        container.removeEventListener('touchmove', handleTouchMove);
-        container.removeEventListener('touchend', handleTouchEnd);
-      };
+    const handleTouchStart = (e) => {
+      if (isTransitioningRef.current) return;
+      const touch = e.touches[0];
+      touchStartRef.current = touch.clientX;
+      touchStartYRef.current = touch.clientY;
+      swipeDirection = null;
     };
 
-    // Start setup with requestAnimationFrame to ensure DOM is ready
-    let cleanup = null;
-    requestAnimationFrame(() => {
-      if (mounted) {
-        cleanup = setupSwipeHandlers();
+    const handleTouchMove = (e) => {
+      if (!touchStartRef.current || isTransitioningRef.current) return;
+
+      const touch = e.touches[0];
+      const diffX = Math.abs(touch.clientX - touchStartRef.current);
+      const diffY = Math.abs(touch.clientY - touchStartYRef.current);
+
+      // Detectar dirección solo una vez
+      if (!swipeDirection) {
+        swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
       }
-    });
+
+      // Si es swipe horizontal, prevenir scroll vertical
+      if (swipeDirection === 'horizontal' && diffX > 10) {
+        if (e.cancelable) e.preventDefault();
+      }
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!touchStartRef.current) return;
+
+      const touch = e.changedTouches[0];
+      const diffX = touch.clientX - touchStartRef.current;
+
+      // Solo procesar si fue swipe horizontal
+      if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
+        const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
+
+        if (diffX < 0 && currentIndex < tabs.length - 1) {
+          // Swipe left - siguiente tab
+          handleTabClickRef.current(tabs[currentIndex + 1].id);
+        } else if (diffX > 0 && currentIndex > 0) {
+          // Swipe right - tab anterior
+          handleTabClickRef.current(tabs[currentIndex - 1].id);
+        }
+      }
+
+      // Reset
+      touchStartRef.current = null;
+      touchStartYRef.current = null;
+      swipeDirection = null;
+    };
+
+    // Agregar event listeners
+    // Usamos non-passive en touchmove para poder prevenir el scroll nativo
+    container.addEventListener('touchstart', handleTouchStart, { passive: true });
+    container.addEventListener('touchmove', handleTouchMove, { passive: false });
+    container.addEventListener('touchend', handleTouchEnd, { passive: true });
 
     return () => {
-      mounted = false;
-      if (cleanup) cleanup();
+      container.removeEventListener('touchstart', handleTouchStart);
+      container.removeEventListener('touchmove', handleTouchMove);
+      container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [layoutMode, tabs, minSwipeDistance, loading]); // Remove "loading" if not available in scope, but it is needed here to retry when data loads
+  }, [layoutMode, tabs, minSwipeDistance, swipeContainer]); // Remove "loading" if not available in scope, but it is needed here to retry when data loads
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
@@ -1391,7 +1361,7 @@ export default function BYDStatsAnalyzer() {
 
   return (
     <div
-      ref={swipeContainerRef}
+      ref={setSwipeContainer}
       className="fixed inset-0 flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-900 dark:text-white overflow-hidden transition-colors"
     >
       {showModal && (
@@ -1747,7 +1717,7 @@ export default function BYDStatsAnalyzer() {
           {layoutMode === 'vertical' ? (
             // Vertical layout: sliding tabs with transitions
             <div
-              ref={swipeContainerRef}
+              ref={setSwipeContainer}
               style={{
                 display: 'flex',
                 height: '100%',
@@ -2223,7 +2193,7 @@ export default function BYDStatsAnalyzer() {
             </div>
           ) : (
             // Horizontal layout: show only active tab content
-            <div ref={swipeContainerRef} className="tab-content-container" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
+            <div ref={setSwipeContainer} className="tab-content-container" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />

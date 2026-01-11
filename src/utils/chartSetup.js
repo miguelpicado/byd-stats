@@ -52,9 +52,6 @@ ChartJS.defaults.plugins.tooltip.enabled = true; // Ensure tooltips are enabled
 ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
 ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
 
-// Ensure events work on all devices including touch
-ChartJS.defaults.events = ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'];
-
 // Animation defaults for smooth chart transitions
 ChartJS.defaults.animation = {
     duration: 600,
