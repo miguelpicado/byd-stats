@@ -2778,7 +2778,7 @@ export default function BYDStatsAnalyzer() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('filter.title')}</h2>
                   </div>
                   <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                     <Plus className="w-6 h-6 rotate-45" />
@@ -2788,7 +2788,7 @@ export default function BYDStatsAnalyzer() {
                 <div className="space-y-4">
                   {/* Filter Type Buttons */}
                   <div className="space-y-2">
-                    <label className="text-slate-600 dark:text-slate-400 text-sm">Tipo de filtro:</label>
+                    <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</label>
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
@@ -2800,7 +2800,7 @@ export default function BYDStatsAnalyzer() {
                           backgroundColor: filterType === 'all' ? BYD_RED : ''
                         }}
                       >
-                        📊 Todos los viajes ({rawTrips.length})
+                        📊 {t('filter.all')} ({rawTrips.length})
                       </button>
                       <button
                         onClick={() => setFilterType('month')}
@@ -2812,7 +2812,7 @@ export default function BYDStatsAnalyzer() {
                           backgroundColor: filterType === 'month' ? BYD_RED : ''
                         }}
                       >
-                        📅 Por mes
+                        📅 {t('filter.byMonth')}
                       </button>
                       <button
                         onClick={() => setFilterType('range')}
@@ -2824,7 +2824,7 @@ export default function BYDStatsAnalyzer() {
                           backgroundColor: filterType === 'range' ? BYD_RED : ''
                         }}
                       >
-                        📆 Rango de fechas
+                        📆 {t('filter.byRange')}
                       </button>
                     </div>
                   </div>
