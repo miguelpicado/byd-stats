@@ -18,6 +18,15 @@
       darkMode: 'class'
     }
   </script>
+  <script>
+    // Capture PWA install prompt event immediately
+    window.deferredPrompt = null;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      window.deferredPrompt = e;
+      console.log('[PWA] Captured beforeinstallprompt event');
+    });
+  </script>
 </head>
 
 <body>
