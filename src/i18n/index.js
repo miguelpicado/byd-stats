@@ -13,9 +13,9 @@ export const languages = [
     { code: 'es', name: 'Español', flag: '🇪🇸' },
     { code: 'en', name: 'English', flag: '🇬🇧' },
     { code: 'pt', name: 'Português', flag: '🇵🇹' },
-    { code: 'gl', name: 'Galego', flag: '🇪🇸' },
-    { code: 'ca', name: 'Català', flag: '🇪🇸' },
-    { code: 'eu', name: 'Euskara', flag: '🇪🇸' }
+    { code: 'gl', name: 'Galego', flag: '' }, // Uses custom SVG
+    { code: 'ca', name: 'Català', flag: '' }, // Uses custom SVG
+    { code: 'eu', name: 'Euskara', flag: '' } // Uses custom SVG
 ];
 
 i18n
