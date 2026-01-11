@@ -18,7 +18,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div
-                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[85vh] overflow-y-auto"
+                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[80vh] overflow-y-auto"
                 style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
                 onClick={(e) => e.stopPropagation()}
             >

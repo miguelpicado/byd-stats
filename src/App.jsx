@@ -31,8 +31,8 @@ const LegalPageLazy = lazy(() => import('./pages/LegalPage'));
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
-const TAB_PADDING = '12px 12px 96px 12px';
-const COMPACT_TAB_PADDING = '8px 10px 80px 10px';
+const TAB_PADDING = '12px 12px calc(96px + env(safe-area-inset-bottom)) 12px';
+const COMPACT_TAB_PADDING = '8px 10px calc(80px + env(safe-area-inset-bottom)) 10px';
 const COMPACT_SPACE_Y = 'space-y-3';
 const dayNamesFull = { 'Lun': 'Lunes', 'Mar': 'Martes', 'Mié': 'Miércoles', 'Jue': 'Jueves', 'Vie': 'Viernes', 'Sáb': 'Sábado', 'Dom': 'Domingo' };
 
