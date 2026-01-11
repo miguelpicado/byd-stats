@@ -1765,12 +1765,13 @@ export default function BYDStatsAnalyzer() {
                               <LineJS
                                 options={{
                                   maintainAspectRatio: false,
+                                  interaction: { mode: 'index', intersect: false },
                                   scales: {
                                     y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
                                     x: { grid: { display: false } }
                                   },
                                   plugins: { legend: { display: false } },
-                                  elements: { line: { tension: 0.4 } }
+                                  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
                                 }}
                                 data={{
                                   labels: monthly.map(m => m.monthLabel),
@@ -1781,7 +1782,7 @@ export default function BYDStatsAnalyzer() {
                                     backgroundColor: 'rgba(234, 0, 41, 0.1)',
                                     fill: true,
                                     pointBackgroundColor: BYD_RED,
-                                    pointRadius: 3,
+                                    pointRadius: 4,
                                     borderWidth: 2
                                   }]
                                 }}
@@ -1897,12 +1898,13 @@ export default function BYDStatsAnalyzer() {
                                 <LineJS
                                   options={{
                                     maintainAspectRatio: false,
+                                    interaction: { mode: 'index', intersect: false },
                                     scales: {
                                       y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
                                       x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
                                     },
                                     plugins: { legend: { display: false } },
-                                    elements: { line: { tension: 0.4 } }
+                                    elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 5 } }
                                   }}
                                   data={{
                                     labels: daily.slice(-60).map(d => d.dateLabel),
@@ -1913,7 +1915,7 @@ export default function BYDStatsAnalyzer() {
                                       backgroundColor: 'rgba(234, 0, 41, 0.1)',
                                       fill: true,
                                       pointRadius: 0,
-                                      pointHoverRadius: 4,
+                                      pointHoverRadius: 5,
                                       borderWidth: 2
                                     }]
                                   }}
@@ -2016,6 +2018,7 @@ export default function BYDStatsAnalyzer() {
                               <LineJS
                                 options={{
                                   maintainAspectRatio: false,
+                                  interaction: { mode: 'index', intersect: false },
                                   scales: {
                                     y: {
                                       beginAtZero: false,
@@ -2026,7 +2029,8 @@ export default function BYDStatsAnalyzer() {
                                     },
                                     x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
                                   },
-                                  plugins: { legend: { display: false } }
+                                  plugins: { legend: { display: false } },
+                                  elements: { point: { hitRadius: 20, hoverRadius: 6 } }
                                 }}
                                 data={{
                                   labels: monthly.map(m => m.monthLabel),
@@ -2038,7 +2042,7 @@ export default function BYDStatsAnalyzer() {
                                     fill: true,
                                     pointBackgroundColor: '#10b981',
                                     tension: 0.4,
-                                    pointRadius: 3
+                                    pointRadius: 4
                                   }]
                                 }}
                               />
@@ -2220,12 +2224,13 @@ export default function BYDStatsAnalyzer() {
                             <LineJS
                               options={{
                                 maintainAspectRatio: false,
+                                interaction: { mode: 'index', intersect: false },
                                 scales: {
                                   y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
                                   x: { border: { dash: [] }, grid: { display: false } }
                                 },
                                 plugins: { legend: { display: false } },
-                                elements: { line: { tension: 0.4 } }
+                                elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
                               }}
                               data={{
                                 labels: monthly.map(m => m.monthLabel),
@@ -2237,7 +2242,6 @@ export default function BYDStatsAnalyzer() {
                                   fill: true,
                                   pointBackgroundColor: BYD_RED,
                                   pointRadius: 4,
-                                  pointHoverRadius: 6,
                                   borderWidth: 2
                                 }]
                               }}
@@ -2360,12 +2364,13 @@ export default function BYDStatsAnalyzer() {
                               <LineJS
                                 options={{
                                   maintainAspectRatio: false,
+                                  interaction: { mode: 'index', intersect: false },
                                   scales: {
                                     y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
                                     x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
                                   },
                                   plugins: { legend: { display: false } },
-                                  elements: { line: { tension: 0.4 } }
+                                  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 5 } }
                                 }}
                                 data={{
                                   labels: daily.slice(-60).map(d => d.dateLabel),
@@ -2376,7 +2381,7 @@ export default function BYDStatsAnalyzer() {
                                     backgroundColor: 'rgba(234, 0, 41, 0.1)',
                                     fill: true,
                                     pointRadius: 0,
-                                    pointHoverRadius: 4,
+                                    pointHoverRadius: 5,
                                     borderWidth: 2
                                   }]
                                 }}
@@ -2469,6 +2474,7 @@ export default function BYDStatsAnalyzer() {
                             <LineJS
                               options={{
                                 maintainAspectRatio: false,
+                                interaction: { mode: 'index', intersect: false },
                                 scales: {
                                   y: {
                                     beginAtZero: false,
@@ -2479,7 +2485,8 @@ export default function BYDStatsAnalyzer() {
                                   },
                                   x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
                                 },
-                                plugins: { legend: { display: false } }
+                                plugins: { legend: { display: false } },
+                                elements: { point: { hitRadius: 20, hoverRadius: 6 } }
                               }}
                               data={{
                                 labels: monthly.map(m => m.monthLabel),
@@ -2491,7 +2498,7 @@ export default function BYDStatsAnalyzer() {
                                   fill: true,
                                   pointBackgroundColor: '#10b981',
                                   tension: 0.4,
-                                  pointRadius: 3
+                                  pointRadius: 4
                                 }]
                               }}
                             />
