@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { BYD_RED } from '../../utils/constants';
-import { Settings } from '../Icons.jsx';
+import { Settings, Plus } from '../Icons.jsx';
 
 /**
  * Settings modal for app configuration
@@ -18,14 +18,19 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
             <div
-                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[80vh] overflow-y-auto"
+                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[70vh] overflow-y-auto"
                 style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-900 dark:text-white">
-                    <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
-                    Configuración
-                </h3>
+                <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
+                        <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
+                        Configuración
+                    </h3>
+                    <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                        <Plus className="w-6 h-6 rotate-45" />
+                    </button>
+                </div>
 
                 <div className="space-y-4">
                     <div>
