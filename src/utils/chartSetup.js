@@ -51,7 +51,7 @@ ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
 
 // Animation defaults for smooth chart transitions
 ChartJS.defaults.animation = {
-    duration: 800,
+    duration: 500,
     easing: 'easeOutQuart'
 };
 

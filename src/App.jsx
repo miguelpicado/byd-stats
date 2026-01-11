@@ -1765,7 +1765,7 @@ export default function BYDStatsAnalyzer() {
                         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                           <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Evolución mensual (distancia)">
                             <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                              <LineJS key={chartAnimationKey}
+                              <LineJS
                                 options={{
                                   maintainAspectRatio: false,
                                   scales: {
@@ -1795,7 +1795,7 @@ export default function BYDStatsAnalyzer() {
                             <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
                               <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
                                 <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                                  <PieJS key={chartAnimationKey}
+                                  <PieJS
                                     options={{
                                       maintainAspectRatio: false,
                                       plugins: {
@@ -1875,7 +1875,7 @@ export default function BYDStatsAnalyzer() {
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km y kWh Mensual">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                                <BarJS key={chartAnimationKey}
+                                <BarJS
                                   options={{
                                     maintainAspectRatio: false,
                                     scales: {
@@ -1897,7 +1897,7 @@ export default function BYDStatsAnalyzer() {
                             </ChartCard>
                             <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km recorridos en últimos 60 días">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                                <LineJS key={chartAnimationKey}
+                                <LineJS
                                   options={{
                                     maintainAspectRatio: false,
                                     scales: {
@@ -1946,7 +1946,7 @@ export default function BYDStatsAnalyzer() {
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Hora">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                                <BarJS key={chartAnimationKey}
+                                <BarJS
                                   options={{
                                     maintainAspectRatio: false,
                                     scales: {
@@ -1964,7 +1964,7 @@ export default function BYDStatsAnalyzer() {
                             </ChartCard>
                             <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Día">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                                <RadarJS key={chartAnimationKey}
+                                <RadarJS
                                   options={{
                                     maintainAspectRatio: false,
                                     scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
@@ -2016,7 +2016,7 @@ export default function BYDStatsAnalyzer() {
                         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                           <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="📈 Evolución Eficiencia Mensual">
                             <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
-                              <LineJS key={chartAnimationKey}
+                              <LineJS
                                 options={{
                                   maintainAspectRatio: false,
                                   scales: {
@@ -2219,7 +2219,7 @@ export default function BYDStatsAnalyzer() {
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Evolución mensual (distancia)">
                           <div style={{ width: '100%', height: isCompact ? 275 : 326 }}>
-                            <LineJS key={chartAnimationKey}
+                            <LineJS
                               options={{
                                 maintainAspectRatio: false,
                                 scales: {
@@ -2250,7 +2250,7 @@ export default function BYDStatsAnalyzer() {
                           <div className="flex flex-row items-center gap-4">
                             <div className="w-1/2">
                               <div style={{ width: '100%', height: isCompact ? 273 : 326 }}>
-                                <PieJS key={chartAnimationKey}
+                                <PieJS
                                   options={{
                                     maintainAspectRatio: false,
                                     plugins: {
@@ -2337,7 +2337,7 @@ export default function BYDStatsAnalyzer() {
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km y kWh Mensual">
                             <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
-                              <BarJS key={chartAnimationKey}
+                              <BarJS
                                 options={{
                                   maintainAspectRatio: false,
                                   scales: {
@@ -2359,7 +2359,7 @@ export default function BYDStatsAnalyzer() {
                           </ChartCard>
                           <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km recorridos en últimos 60 días">
                             <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
-                              <LineJS key={chartAnimationKey}
+                              <LineJS
                                 options={{
                                   maintainAspectRatio: false,
                                   scales: {
@@ -2404,7 +2404,7 @@ export default function BYDStatsAnalyzer() {
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Hora">
                             <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
-                              <BarJS key={chartAnimationKey}
+                              <BarJS
                                 options={{
                                   maintainAspectRatio: false,
                                   scales: {
@@ -2422,7 +2422,7 @@ export default function BYDStatsAnalyzer() {
                           </ChartCard>
                           <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Día">
                             <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
-                              <RadarJS key={chartAnimationKey}
+                              <RadarJS
                                 options={{
                                   maintainAspectRatio: false,
                                   scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
@@ -2468,7 +2468,7 @@ export default function BYDStatsAnalyzer() {
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="📈 Evolución Eficiencia Mensual">
                           <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
-                            <LineJS key={chartAnimationKey}
+                            <LineJS
                               options={{
                                 maintainAspectRatio: false,
                                 scales: {
