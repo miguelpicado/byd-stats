@@ -6,6 +6,7 @@ import App from './App.jsx'
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AppProvider } from './context/AppContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import './i18n';  // Initialize i18n
 
 const WEB_CLIENT_ID = '407339918856-6vmd7ijqjgk435hp0a6jnc9bphhogljf.apps.googleusercontent.com';
 

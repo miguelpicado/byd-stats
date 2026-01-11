@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -216,6 +217,8 @@ const getScoreColor = (score) => {
 
 
 export default function BYDStatsAnalyzer() {
+  const { t } = useTranslation();
+
   const [rawTrips, setRawTrips] = useState([]);
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const [activeTab, setActiveTab] = useState('overview');
@@ -236,7 +239,7 @@ export default function BYDStatsAnalyzer() {
 
   if (isLegalPath || isPrivacyPath) {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Cargando...</div>}>
+      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">{t('common.loading')}</div>}>
         <LegalPageLazy forcedTab={isPrivacyPath ? 'privacy' : 'legal'} />
       </Suspense>
     );
@@ -472,12 +475,12 @@ export default function BYDStatsAnalyzer() {
       // Validate that the file is a .DB or image file (renamed .db to .jpg)
       const fileName = f.name.toLowerCase();
       if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-        alert('Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta "Energydata" del coche');
+        alert(t('errors.invalidFile'));
         return;
       }
       processDB(f, merge);
     }
-  }, [processDB]);
+  }, [processDB, t]);
 
   const onFile = useCallback((e, merge) => {
     const f = e.target.files[0];
@@ -485,32 +488,32 @@ export default function BYDStatsAnalyzer() {
       // Validate that the file is a .DB or image file (renamed .db to .jpg)
       const fileName = f.name.toLowerCase();
       if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-        alert('Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta "Energydata" del coche');
+        alert(t('errors.invalidFile'));
         e.target.value = '';
         return;
       }
       processDB(f, merge);
     }
     e.target.value = '';
-  }, [processDB]);
+  }, [processDB, t]);
 
   const clearData = useCallback(() => {
-    if (window.confirm('¿Borrar todos los datos?')) {
+    if (window.confirm(t('confirmations.deleteAllData'))) {
       setRawTrips([]);
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, []);
+  }, [t]);
 
   // Export database to EC_Database.db format
   const exportDatabase = useCallback(async () => {
     const success = await exportDBHook(filtered);
-    if (success) alert('Base de datos exportada correctamente');
-  }, [exportDBHook, filtered]);
+    if (success) alert(t('confirmations.dbExported'));
+  }, [exportDBHook, filtered, t]);
 
   // Save current trips to history
   const saveToHistory = useCallback(() => {
     if (rawTrips.length === 0) {
-      alert('No hay viajes para guardar');
+      alert(t('confirmations.noTripsToSave'));
       return;
     }
 
@@ -528,29 +531,29 @@ export default function BYDStatsAnalyzer() {
     );
 
     setTripHistory(newHistory);
-    alert(`Registro guardado: ${newHistory.length} viajes en total (${newHistory.length - tripHistory.length} nuevos)`);
-  }, [rawTrips, tripHistory]);
+    alert(t('confirmations.historySaved', { total: newHistory.length, new: newHistory.length - tripHistory.length }));
+  }, [rawTrips, tripHistory, t]);
 
   // Load history as current trips
   const loadFromHistory = useCallback(() => {
     if (tripHistory.length === 0) {
-      alert('No hay historial guardado');
+      alert(t('confirmations.noHistory'));
       return;
     }
 
-    if (window.confirm(`¿Cargar ${tripHistory.length} viajes del historial?`)) {
+    if (window.confirm(t('confirmations.loadHistory', { count: tripHistory.length }))) {
       setRawTrips(tripHistory);
     }
-  }, [tripHistory]);
+  }, [tripHistory, t]);
 
   // Clear trip history
   const clearHistory = useCallback(() => {
-    if (window.confirm('¿Borrar el historial de viajes permanentemente?')) {
+    if (window.confirm(t('confirmations.clearHistory'))) {
       setTripHistory([]);
       localStorage.removeItem(TRIP_HISTORY_KEY);
-      alert('Historial borrado');
+      alert(t('confirmations.historyCleared'));
     }
-  }, []);
+  }, [t]);
 
   // Memoized modal handlers to prevent unnecessary re-renders
   const handleOpenSettingsModal = useCallback(() => setShowSettingsModal(true), []);
@@ -570,13 +573,13 @@ export default function BYDStatsAnalyzer() {
   }, []);
 
   const tabs = useMemo(() => [
-    { id: 'overview', label: 'Resumen', icon: Activity },
-    { id: 'trends', label: 'Tendencias', icon: TrendingUp },
-    { id: 'patterns', label: 'Patrones', icon: Clock },
-    { id: 'efficiency', label: 'Eficiencia', icon: Zap },
-    { id: 'records', label: 'Récords', icon: BarChart3 },
-    { id: 'history', label: 'Histórico', icon: List }
-  ], []);
+    { id: 'overview', label: t('tabs.overview'), icon: Activity },
+    { id: 'trends', label: t('tabs.trends'), icon: TrendingUp },
+    { id: 'patterns', label: t('tabs.patterns'), icon: Clock },
+    { id: 'efficiency', label: t('tabs.efficiency'), icon: Zap },
+    { id: 'records', label: t('tabs.records'), icon: BarChart3 },
+    { id: 'history', label: t('tabs.history'), icon: List }
+  ], [t]);
 
   const minSwipeDistance = 30; // Distancia mínima en píxeles
   const transitionDuration = 500;
@@ -750,17 +753,17 @@ export default function BYDStatsAnalyzer() {
         </div>
         <div className="grid grid-cols-4 gap-2">
           <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Distancia</p>
+            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.distance')}</p>
             <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.trip?.toFixed(1)}</p>
             <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>km</p>
           </div>
           <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Consumo</p>
+            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('tripDetail.consumption')}</p>
             <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.electricity?.toFixed(2)}</p>
             <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh</p>
           </div>
           <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Eficiencia</p>
+            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.efficiency')}</p>
             <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{efficiency.toFixed(2)}</p>
             <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh/100km</p>
           </div>
@@ -1171,8 +1174,8 @@ export default function BYDStatsAnalyzer() {
                   </svg>
                 </button>
                 <div>
-                  <h1 className="text-sm sm:text-base md:text-lg font-bold">Todos los viajes</h1>
-                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} viajes</p>
+                  <h1 className="text-sm sm:text-base md:text-lg font-bold">{t('allTrips.title')}</h1>
+                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} {t('stats.trips').toLowerCase()}</p>
                 </div>
               </div>
             </div>
@@ -1189,7 +1192,7 @@ export default function BYDStatsAnalyzer() {
                     color: allTripsFilterType === 'all' ? 'white' : '#94a3b8'
                   }}
                 >
-                  Todos
+                  {t('filter.all')}
                 </button>
                 <button
                   onClick={() => setAllTripsFilterType('month')}
@@ -1199,7 +1202,7 @@ export default function BYDStatsAnalyzer() {
                     color: allTripsFilterType === 'month' ? 'white' : '#94a3b8'
                   }}
                 >
-                  Por mes
+                  {t('filter.byMonth')}
                 </button>
                 <button
                   onClick={() => setAllTripsFilterType('range')}
@@ -1209,7 +1212,7 @@ export default function BYDStatsAnalyzer() {
                     color: allTripsFilterType === 'range' ? 'white' : '#94a3b8'
                   }}
                 >
-                  Rango de fechas
+                  {t('filter.byRange')}
                 </button>
               </div>
 
@@ -1220,7 +1223,7 @@ export default function BYDStatsAnalyzer() {
                   onChange={(e) => setAllTripsMonth(e.target.value)}
                   className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
                 >
-                  <option value="">Seleccionar mes</option>
+                  <option value="">{t('filter.selectMonth')}</option>
                   {months.map((m) => (
                     <option key={m} value={m}>{formatMonth(m)}</option>
                   ))}
@@ -1263,7 +1266,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'date' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Fecha
+                  {t('allTrips.date')}
                   {allTripsSortBy === 'date' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -1283,7 +1286,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'efficiency' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Eficiencia
+                  {t('allTrips.efficiency')}
                   {allTripsSortBy === 'efficiency' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -1303,7 +1306,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'distance' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Distancia
+                  {t('allTrips.distance')}
                   {allTripsSortBy === 'distance' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -1323,7 +1326,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'consumption' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Consumo
+                  {t('allTrips.consumption')}
                   {allTripsSortBy === 'consumption' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -1390,7 +1393,7 @@ export default function BYDStatsAnalyzer() {
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[100] p-4 pt-24" onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white">Detalle del viaje</h3>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">{t('tripDetail.title')}</h3>
               <button onClick={() => { setShowTripDetailModal(false); setSelectedTrip(null); }} className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-slate-700">
                 <Plus className="w-6 h-6 rotate-45" />
               </button>
@@ -1409,24 +1412,24 @@ export default function BYDStatsAnalyzer() {
                 <div className="space-y-4">
                   {/* Fecha y hora */}
                   <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Fecha y hora</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('tripDetail.dateTime')}</p>
                     <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDate(selectedTrip.date)}</p>
                     <div className="flex items-center gap-4 mt-2">
                       <div>
-                        <p className="text-slate-600 dark:text-slate-400 text-xs">Inicio</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.start')}</p>
                         <p className="text-slate-900 dark:text-white font-medium">{formatTime(selectedTrip.start_timestamp)}</p>
                       </div>
                       {endTime && (
                         <>
                           <span className="text-slate-600">→</span>
                           <div>
-                            <p className="text-slate-600 dark:text-slate-400 text-xs">Fin</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.end')}</p>
                             <p className="text-slate-900 dark:text-white font-medium">{formatTime(endTime)}</p>
                           </div>
                         </>
                       )}
                       <div className="ml-auto">
-                        <p className="text-slate-600 dark:text-slate-400 text-xs">Duración</p>
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.duration')}</p>
                         <p className="text-slate-900 dark:text-white font-medium">{formatDuration(selectedTrip.duration)}</p>
                       </div>
                     </div>
@@ -1435,22 +1438,22 @@ export default function BYDStatsAnalyzer() {
                   {/* Grid de métricas */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Distancia</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('stats.distance')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.trip?.toFixed(1)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">km</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Velocidad media</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('tripDetail.avgSpeed')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{avgSpeed.toFixed(0)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">km/h</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Consumo</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('tripDetail.consumption')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{selectedTrip.electricity?.toFixed(2)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">kWh</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
-                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">Eficiencia</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('stats.efficiency')}</p>
                       <p className="text-slate-900 dark:text-white text-2xl font-bold">{efficiency.toFixed(2)}</p>
                       <p className="text-slate-500 dark:text-slate-500 text-xs">kWh/100km</p>
                     </div>
@@ -1459,11 +1462,11 @@ export default function BYDStatsAnalyzer() {
                   {/* SOC si está disponible */}
                   {(selectedTrip.start_soc !== undefined || selectedTrip.end_soc !== undefined) && (
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Estado de carga</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">{t('tripDetail.batteryState')}</p>
                       <div className="flex items-center gap-4">
                         {selectedTrip.start_soc !== undefined && (
                           <div className="flex-1">
-                            <p className="text-xs text-slate-400">Inicial</p>
+                            <p className="text-xs text-slate-400">{t('tripDetail.initial')}</p>
                             <p className="text-3xl font-bold text-green-400">{selectedTrip.start_soc}%</p>
                           </div>
                         )}
@@ -1472,7 +1475,7 @@ export default function BYDStatsAnalyzer() {
                         )}
                         {selectedTrip.end_soc !== undefined && (
                           <div className="flex-1">
-                            <p className="text-xs text-slate-400">Final</p>
+                            <p className="text-xs text-slate-400">{t('tripDetail.final')}</p>
                             <p className="text-3xl font-bold text-orange-400">{selectedTrip.end_soc}%</p>
                           </div>
                         )}
@@ -1483,27 +1486,27 @@ export default function BYDStatsAnalyzer() {
                   {/* Regeneración si está disponible */}
                   {selectedTrip.regeneration !== undefined && selectedTrip.regeneration !== null && (
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">Energía regenerada</p>
+                      <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('tripDetail.energyRecovered')}</p>
                       <p className="text-green-400 text-2xl font-bold">{selectedTrip.regeneration?.toFixed(2)} kWh</p>
                     </div>
                   )}
 
                   {/* Comparación y percentil */}
                   <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">Análisis</p>
+                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">{t('tripDetail.analysis')}</p>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 text-sm">Comparación con tu media</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.comparedToAvg')}</span>
                         <span className={`font-bold ${comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
                           {comparisonPercent > 0 ? '+' : ''}{comparisonPercent.toFixed(1)}%
                         </span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 text-sm">Percentil</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.percentile')}</span>
                         <span className="font-bold text-cyan-400">Top {percentile}%</span>
                       </div>
                       <div className="flex items-center justify-between">
-                        <span className="text-slate-500 dark:text-slate-400 text-sm">Coste estimado</span>
+                        <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.cost')}</span>
                         <span className="font-bold text-amber-500">{cost.toFixed(2)}€</span>
                       </div>
                     </div>
@@ -2775,7 +2778,7 @@ export default function BYDStatsAnalyzer() {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center gap-2">
                     <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
+                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('filter.title')}</h2>
                   </div>
                   <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                     <Plus className="w-6 h-6 rotate-45" />
@@ -2785,7 +2788,7 @@ export default function BYDStatsAnalyzer() {
                 <div className="space-y-4">
                   {/* Filter Type Buttons */}
                   <div className="space-y-2">
-                    <label className="text-slate-600 dark:text-slate-400 text-sm">Tipo de filtro:</label>
+                    <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</label>
                     <div className="flex flex-col gap-2">
                       <button
                         onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
@@ -2797,7 +2800,7 @@ export default function BYDStatsAnalyzer() {
                           backgroundColor: filterType === 'all' ? BYD_RED : ''
                         }}
                       >
-                        📊 Todos los viajes ({rawTrips.length})
+                        📊 {t('filter.all')} ({rawTrips.length})
                       </button>
                       <button
                         onClick={() => setFilterType('month')}
@@ -2809,7 +2812,7 @@ export default function BYDStatsAnalyzer() {
                           backgroundColor: filterType === 'month' ? BYD_RED : ''
                         }}
                       >
-                        📅 Por mes
+                        📅 {t('filter.byMonth')}
                       </button>
                       <button
                         onClick={() => setFilterType('range')}
@@ -2821,7 +2824,7 @@ export default function BYDStatsAnalyzer() {
                           backgroundColor: filterType === 'range' ? BYD_RED : ''
                         }}
                       >
-                        📆 Rango de fechas
+                        📆 {t('filter.byRange')}
                       </button>
                     </div>
                   </div>
@@ -2829,13 +2832,13 @@ export default function BYDStatsAnalyzer() {
                   {/* Month Selector */}
                   {filterType === 'month' && (
                     <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">Seleccionar mes:</label>
+                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
                       <select
                         value={selMonth}
                         onChange={(e) => setSelMonth(e.target.value)}
                         className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                       >
-                        <option value="">Todos los meses</option>
+                        <option value="">{t('filter.allMonths')}</option>
                         {months.map((m) => (
                           <option key={m} value={m}>{formatMonth(m)}</option>
                         ))}
@@ -2846,21 +2849,21 @@ export default function BYDStatsAnalyzer() {
                   {/* Date Range Selector */}
                   {filterType === 'range' && (
                     <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">Rango de fechas:</label>
+                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</label>
                       <div className="flex flex-col gap-2">
                         <input
                           type="date"
                           value={dateFrom}
                           onChange={(e) => setDateFrom(e.target.value)}
                           className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder="Desde"
+                          placeholder={t('filter.from')}
                         />
                         <input
                           type="date"
                           value={dateTo}
                           onChange={(e) => setDateTo(e.target.value)}
                           className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder="Hasta"
+                          placeholder={t('filter.to')}
                         />
                       </div>
                     </div>
@@ -2870,9 +2873,9 @@ export default function BYDStatsAnalyzer() {
                   {filtered.length !== rawTrips.length && (
                     <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                       <p className="text-center text-sm">
-                        <span className="text-slate-400">Mostrando </span>
+                        <span className="text-slate-400">{t('filter.showing')} </span>
                         <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
-                        <span className="text-slate-400"> de {rawTrips.length} viajes</span>
+                        <span className="text-slate-400"> {t('filter.of')} {rawTrips.length} {t('stats.trips').toLowerCase()}</span>
                       </p>
                     </div>
                   )}
@@ -2884,7 +2887,7 @@ export default function BYDStatsAnalyzer() {
                   className="w-full mt-6 py-3 rounded-xl font-medium text-white"
                   style={{ backgroundColor: BYD_RED }}
                 >
-                  Aplicar filtro
+                  {t('filter.apply')}
                 </button>
               </div>
             </div>
