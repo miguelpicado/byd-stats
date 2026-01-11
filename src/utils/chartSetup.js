@@ -54,5 +54,6 @@ ChartJS.defaults.animation = {
     duration: 500,
     easing: 'easeOutQuart'
 };
+ChartJS.defaults.resizeDelay = 200; // Wait for layout to stabilize before rendering/animating
 
 // Dark mode defaults...
