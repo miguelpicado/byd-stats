@@ -49,5 +49,10 @@ ChartJS.defaults.plugins.tooltip.enabled = true; // Ensure tooltips are enabled
 ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
 ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
 
-// Dark mode defaults will be handled by updating ChartJS.defaults dynamically or using CSS variables if possible,
-// but typically Chart.js needs explicit colors. We might need a helper to update defaults on theme change.
+// Animation defaults for smooth chart transitions
+ChartJS.defaults.animation = {
+    duration: 800,
+    easing: 'easeOutQuart'
+};
+
+// Dark mode defaults...
