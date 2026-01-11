@@ -45,13 +45,10 @@ ChartJS.defaults.plugins.tooltip.padding = 10;
 ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
 ChartJS.defaults.plugins.tooltip.enabled = true; // Re-enable tooltips with defaults
 
-// Revert event restriction (didn't help)
-// ChartJS.defaults.events = ... (using default Pointer Events)
-
-// Disable animation to prevent conflict with Tooltip rendering loop
+// Animation defaults for smooth chart transitions
 ChartJS.defaults.animation = {
-    duration: 0,
-    easing: 'linear'
+    duration: 500,
+    easing: 'easeOutQuart'
 };
 ChartJS.defaults.resizeDelay = 200; // Keep resize delay for layout stability
 
