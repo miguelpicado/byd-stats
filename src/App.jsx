@@ -1772,7 +1772,7 @@ export default function BYDStatsAnalyzer() {
                                     y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
                                     x: { grid: { display: false } }
                                   },
-                                  plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                                  plugins: { legend: { display: false } },
                                   elements: { line: { tension: 0.4 } }
                                 }}
                                 data={{
@@ -1904,7 +1904,7 @@ export default function BYDStatsAnalyzer() {
                                       y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
                                       x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
                                     },
-                                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                                    plugins: { legend: { display: false } },
                                     elements: { line: { tension: 0.4 } }
                                   }}
                                   data={{
@@ -1953,7 +1953,7 @@ export default function BYDStatsAnalyzer() {
                                       y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
                                       x: { border: { dash: [] }, grid: { borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } }
                                     },
-                                    plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                                    plugins: { legend: { display: false } }
                                   }}
                                   data={{
                                     labels: hourly.map(h => `${h.hour}h`),
@@ -1968,7 +1968,7 @@ export default function BYDStatsAnalyzer() {
                                   options={{
                                     maintainAspectRatio: false,
                                     scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
-                                    plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                                    plugins: { legend: { display: false } },
                                     interaction: { mode: 'index', intersect: false }
                                   }}
                                   data={{
@@ -2029,7 +2029,7 @@ export default function BYDStatsAnalyzer() {
                                     },
                                     x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
                                   },
-                                  plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                                  plugins: { legend: { display: false } }
                                 }}
                                 data={{
                                   labels: monthly.map(m => m.monthLabel),
@@ -2226,7 +2226,7 @@ export default function BYDStatsAnalyzer() {
                                   y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
                                   x: { border: { dash: [] }, grid: { display: false } }
                                 },
-                                plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                                plugins: { legend: { display: false } },
                                 elements: { line: { tension: 0.4 } }
                               }}
                               data={{
@@ -2366,7 +2366,7 @@ export default function BYDStatsAnalyzer() {
                                     y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
                                     x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
                                   },
-                                  plugins: { legend: { display: false }, tooltip: { enabled: true } },
+                                  plugins: { legend: { display: false } },
                                   elements: { line: { tension: 0.4 } }
                                 }}
                                 data={{
@@ -2411,7 +2411,7 @@ export default function BYDStatsAnalyzer() {
                                     y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
                                     x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
                                   },
-                                  plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                                  plugins: { legend: { display: false } }
                                 }}
                                 data={{
                                   labels: hourly.map(h => `${h.hour}h`),
@@ -2426,7 +2426,7 @@ export default function BYDStatsAnalyzer() {
                                 options={{
                                   maintainAspectRatio: false,
                                   scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
-                                  plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                                  plugins: { legend: { display: false } }
                                 }}
                                 data={{
                                   labels: weekday.map(d => d.day),
@@ -2481,7 +2481,7 @@ export default function BYDStatsAnalyzer() {
                                   },
                                   x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
                                 },
-                                plugins: { legend: { display: false }, tooltip: { enabled: true } }
+                                plugins: { legend: { display: false } }
                               }}
                               data={{
                                 labels: monthly.map(m => m.monthLabel),

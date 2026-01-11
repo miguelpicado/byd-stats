@@ -43,9 +43,9 @@ ChartJS.defaults.plugins.tooltip.borderColor = '#e2e8f0';
 ChartJS.defaults.plugins.tooltip.borderWidth = 1;
 ChartJS.defaults.plugins.tooltip.padding = 10;
 ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
-ChartJS.defaults.plugins.tooltip.enabled = true; // Ensure tooltips are enabled
-ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
-ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
+ChartJS.defaults.plugins.tooltip.enabled = false; // DEBUG: Disable to confirm crash source
+// ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
+// ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
 
 // Animation defaults for smooth chart transitions
 ChartJS.defaults.animation = {
