@@ -2,26 +2,8 @@ name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
-      - master
-      - develop
-      - 'claude/**'
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
-      - '.github/ISSUE_TEMPLATE/**'
-      - 'LICENSE'
     tags:
       - 'v*'
-  pull_request:
-    branches:
-      - main
-      - master
-      - 'claude/**'
-    paths-ignore:
-      - '**.md'
-      - 'docs/**'
   workflow_dispatch:
 
 jobs:
