@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import { useTranslation } from 'react-i18next';
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
@@ -216,6 +217,8 @@ const getScoreColor = (score) => {
 
 
 export default function BYDStatsAnalyzer() {
+  const { t } = useTranslation();
+
   const [rawTrips, setRawTrips] = useState([]);
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const [activeTab, setActiveTab] = useState('overview');
@@ -236,7 +239,7 @@ export default function BYDStatsAnalyzer() {
 
   if (isLegalPath || isPrivacyPath) {
     return (
-      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">Cargando...</div>}>
+      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">{t('common.loading')}</div>}>
         <LegalPageLazy forcedTab={isPrivacyPath ? 'privacy' : 'legal'} />
       </Suspense>
     );
@@ -472,12 +475,12 @@ export default function BYDStatsAnalyzer() {
       // Validate that the file is a .DB or image file (renamed .db to .jpg)
       const fileName = f.name.toLowerCase();
       if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-        alert('Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta "Energydata" del coche');
+        alert(t('errors.invalidFile'));
         return;
       }
       processDB(f, merge);
     }
-  }, [processDB]);
+  }, [processDB, t]);
 
   const onFile = useCallback((e, merge) => {
     const f = e.target.files[0];
@@ -485,32 +488,32 @@ export default function BYDStatsAnalyzer() {
       // Validate that the file is a .DB or image file (renamed .db to .jpg)
       const fileName = f.name.toLowerCase();
       if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-        alert('Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta "Energydata" del coche');
+        alert(t('errors.invalidFile'));
         e.target.value = '';
         return;
       }
       processDB(f, merge);
     }
     e.target.value = '';
-  }, [processDB]);
+  }, [processDB, t]);
 
   const clearData = useCallback(() => {
-    if (window.confirm('¿Borrar todos los datos?')) {
+    if (window.confirm(t('confirmations.deleteAllData'))) {
       setRawTrips([]);
       localStorage.removeItem(STORAGE_KEY);
     }
-  }, []);
+  }, [t]);
 
   // Export database to EC_Database.db format
   const exportDatabase = useCallback(async () => {
     const success = await exportDBHook(filtered);
-    if (success) alert('Base de datos exportada correctamente');
-  }, [exportDBHook, filtered]);
+    if (success) alert(t('confirmations.dbExported'));
+  }, [exportDBHook, filtered, t]);
 
   // Save current trips to history
   const saveToHistory = useCallback(() => {
     if (rawTrips.length === 0) {
-      alert('No hay viajes para guardar');
+      alert(t('confirmations.noTripsToSave'));
       return;
     }
 
@@ -528,29 +531,29 @@ export default function BYDStatsAnalyzer() {
     );
 
     setTripHistory(newHistory);
-    alert(`Registro guardado: ${newHistory.length} viajes en total (${newHistory.length - tripHistory.length} nuevos)`);
-  }, [rawTrips, tripHistory]);
+    alert(t('confirmations.historySaved', { total: newHistory.length, new: newHistory.length - tripHistory.length }));
+  }, [rawTrips, tripHistory, t]);
 
   // Load history as current trips
   const loadFromHistory = useCallback(() => {
     if (tripHistory.length === 0) {
-      alert('No hay historial guardado');
+      alert(t('confirmations.noHistory'));
       return;
     }
 
-    if (window.confirm(`¿Cargar ${tripHistory.length} viajes del historial?`)) {
+    if (window.confirm(t('confirmations.loadHistory', { count: tripHistory.length }))) {
       setRawTrips(tripHistory);
     }
-  }, [tripHistory]);
+  }, [tripHistory, t]);
 
   // Clear trip history
   const clearHistory = useCallback(() => {
-    if (window.confirm('¿Borrar el historial de viajes permanentemente?')) {
+    if (window.confirm(t('confirmations.clearHistory'))) {
       setTripHistory([]);
       localStorage.removeItem(TRIP_HISTORY_KEY);
-      alert('Historial borrado');
+      alert(t('confirmations.historyCleared'));
     }
-  }, []);
+  }, [t]);
 
   // Memoized modal handlers to prevent unnecessary re-renders
   const handleOpenSettingsModal = useCallback(() => setShowSettingsModal(true), []);
@@ -570,13 +573,13 @@ export default function BYDStatsAnalyzer() {
   }, []);
 
   const tabs = useMemo(() => [
-    { id: 'overview', label: 'Resumen', icon: Activity },
-    { id: 'trends', label: 'Tendencias', icon: TrendingUp },
-    { id: 'patterns', label: 'Patrones', icon: Clock },
-    { id: 'efficiency', label: 'Eficiencia', icon: Zap },
-    { id: 'records', label: 'Récords', icon: BarChart3 },
-    { id: 'history', label: 'Histórico', icon: List }
-  ], []);
+    { id: 'overview', label: t('tabs.overview'), icon: Activity },
+    { id: 'trends', label: t('tabs.trends'), icon: TrendingUp },
+    { id: 'patterns', label: t('tabs.patterns'), icon: Clock },
+    { id: 'efficiency', label: t('tabs.efficiency'), icon: Zap },
+    { id: 'records', label: t('tabs.records'), icon: BarChart3 },
+    { id: 'history', label: t('tabs.history'), icon: List }
+  ], [t]);
 
   const minSwipeDistance = 30; // Distancia mínima en píxeles
   const transitionDuration = 500;
