@@ -1,0 +1,195 @@
+{
+    "common": {
+        "loading": "Carregant...",
+        "processing": "Processant...",
+        "cancel": "Cancel·lar",
+        "save": "Desar",
+        "delete": "Eliminar",
+        "close": "Tancar",
+        "yes": "Sí",
+        "no": "No",
+        "or": "O",
+        "showAll": "Mostrar tot",
+        "noData": "No hi ha dades per mostrar"
+    },
+    "tabs": {
+        "overview": "Resum",
+        "trends": "Tendències",
+        "patterns": "Patrons",
+        "efficiency": "Eficiència",
+        "records": "Rècords",
+        "history": "Històric"
+    },
+    "stats": {
+        "distance": "Distància",
+        "energy": "Energia",
+        "trips": "Viatges",
+        "time": "Temps",
+        "efficiency": "Eficiència",
+        "speed": "Velocitat",
+        "avgTrip": "Viatge mitjà",
+        "activeDays": "Dies actius",
+        "medianEfficiency": "Eficiència mediana",
+        "dailyCharge": "Càrrega diària",
+        "monthlyCost": "Cost mensual",
+        "longTripEvery": "Viatge llarg cada",
+        "frequentDay": "Dia freqüent",
+        "peakHour": "Hora punta",
+        "totalKm": "Km totals",
+        "avgDay": "Mitjana dia"
+    },
+    "units": {
+        "km": "km",
+        "kwh": "kWh",
+        "hours": "h",
+        "minutes": "min",
+        "days": "dies",
+        "kwhPer100km": "kWh/100km",
+        "kmh": "km/h",
+        "perDay": "/dia",
+        "perMonth": "/mes",
+        "euroPerMonth": "€/mes",
+        "euroPerKwh": "€/kWh",
+        "kwhPerDay": "kWh/dia"
+    },
+    "charts": {
+        "monthlyEvolution": "Evolució mensual (distància)",
+        "tripDistribution": "Distribució de Viatges",
+        "monthlyKmKwh": "Km i kWh Mensual",
+        "last60Days": "Km recorreguts en els últims 60 dies",
+        "efficiencyEvolution": "📈 Evolució Eficiència Mensual",
+        "efficiencyVsDistance": "📍 Eficiència vs Distància",
+        "byHour": "Per Hora",
+        "byDay": "Per Dia",
+        "tripsPerWeekday": "Viatges per dia de la setmana"
+    },
+    "records": {
+        "title": "Rècords",
+        "topDistance": "🏆 Top Distància",
+        "topEfficiency": "💚 Top Eficiència",
+        "topConsumption": "⚡ Top Consum",
+        "topDuration": "⏱️ Top Durada",
+        "last10Trips": "Últims 10 viatges"
+    },
+    "tripDetail": {
+        "title": "Detall del viatge",
+        "dateTime": "Data i hora",
+        "start": "Inici",
+        "end": "Fi",
+        "duration": "Durada",
+        "mainStats": "Estadístiques principals",
+        "consumption": "Consum",
+        "cost": "Cost",
+        "analysis": "Anàlisi",
+        "avgSpeed": "Velocitat mitjana",
+        "comparedToAvg": "Comparat amb la teva mitjana",
+        "betterThan": "Millor que el",
+        "ofYourTrips": "dels teus viatges"
+    },
+    "settings": {
+        "title": "Configuració",
+        "theme": "Tema",
+        "themeAuto": "Automàtic",
+        "themeDark": "Fosc",
+        "themeLight": "Clar",
+        "language": "Idioma",
+        "electricityPrice": "Preu electricitat",
+        "dataManagement": "Gestió de dades",
+        "updateData": "Actualitzar dades",
+        "exportDb": "Exportar BD",
+        "cloudSync": "Sincronització al núvol",
+        "historyManagement": "Gestió de l'històric",
+        "saveToHistory": "Desar a l'històric",
+        "loadFromHistory": "Carregar històric",
+        "clearHistory": "Esborrar històric",
+        "tripsInHistory": "viatges a l'històric",
+        "about": "Sobre",
+        "version": "Versió",
+        "sourceCode": "Codi font",
+        "reportBug": "Reportar error"
+    },
+    "upload": {
+        "title": "Estadístiques BYD",
+        "subtitle": "Analitza les dades del teu vehicle elèctric",
+        "clickToSelect": "Fes clic per seleccionar el teu fitxer EC_Database.db",
+        "tapToSelect": "Toca per seleccionar el teu fitxer",
+        "preparing": "Preparant...",
+        "hint": "Selecciona el fitxer EC_Database.db a la carpeta \"EnergyData\" del teu cotxe",
+        "tip": "💡 Si el teu navegador no mostra fitxers: copia EC_Database.db a Downloads, selecciona'l, prem els 3 punts i reanomena'l a EC_Database.jpg",
+        "mergeExisting": "Combinar amb existents",
+        "replaceAll": "Substituir tot",
+        "deleteAll": "Esborrar tot"
+    },
+    "filter": {
+        "title": "Filtrar dades",
+        "all": "Tot",
+        "byMonth": "Per mes",
+        "byRange": "Per rang",
+        "from": "Des de",
+        "to": "Fins",
+        "apply": "Aplicar filtre"
+    },
+    "allTrips": {
+        "title": "Tots els viatges",
+        "sortBy": "Ordenar per",
+        "date": "Data",
+        "efficiency": "Eficiència",
+        "distance": "Distància",
+        "consumption": "Consum"
+    },
+    "cloudSync": {
+        "connected": "Núvol connectat",
+        "syncNow": "Sincronitzar ara",
+        "syncing": "Sincronitzant...",
+        "signInToSync": "Inicia sessió per sincronitzar"
+    },
+    "pwa": {
+        "install": "Instal·lar",
+        "quickAccess": "Accés ràpid i pantalla completa"
+    },
+    "weekdays": {
+        "mon": "Dl",
+        "tue": "Dt",
+        "wed": "Dc",
+        "thu": "Dj",
+        "fri": "Dv",
+        "sat": "Ds",
+        "sun": "Dg"
+    },
+    "weekdaysFull": {
+        "monday": "Dilluns",
+        "tuesday": "Dimarts",
+        "wednesday": "Dimecres",
+        "thursday": "Dijous",
+        "friday": "Divendres",
+        "saturday": "Dissabte",
+        "sunday": "Diumenge"
+    },
+    "footer": {
+        "privacy": "Privacitat",
+        "legal": "Legal",
+        "github": "GitHub",
+        "openSource": "Projecte Open Source",
+        "viewOnGithub": "Veure a GitHub"
+    },
+    "history": {
+        "title": "Històric de viatges",
+        "tripsSaved": "viatges desats",
+        "loadTrips": "Carregar viatges",
+        "clearAll": "Esborrar tot",
+        "noHistory": "No hi ha històric desat"
+    },
+    "confirmations": {
+        "deleteAllData": "Esborrar totes les dades?",
+        "loadHistory": "Carregar {count} viatges de l'històric?",
+        "clearHistory": "Esborrar l'històric de viatges permanentment?",
+        "historySaved": "Registre desat: {total} viatges en total ({new} nous)",
+        "historyCleared": "Històric esborrat",
+        "noTripsToSave": "No hi ha viatges per desar",
+        "noHistory": "No hi ha històric desat",
+        "dbExported": "Base de dades exportada correctament"
+    },
+    "errors": {
+        "invalidFile": "Només s'admeten fitxers *.DB o *.JPG (base de dades reanomenada)\nTroba EC_Database.db a la carpeta \"Energydata\" del cotxe"
+    }
+}
