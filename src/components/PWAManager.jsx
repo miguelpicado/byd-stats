@@ -112,6 +112,14 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
             setShowInstallBanner(true);
         };
 
+        // Check if event was already captured in global scope
+        if (window.deferredPrompt) {
+            console.log('[PWA] Using globally captured prompt');
+            setDeferredPrompt(window.deferredPrompt);
+            setShowInstallBanner(true);
+            window.deferredPrompt = null; // Clean up
+        }
+
         window.addEventListener('beforeinstallprompt', handleInstallPrompt);
         return () => window.removeEventListener('beforeinstallprompt', handleInstallPrompt);
     }, []);

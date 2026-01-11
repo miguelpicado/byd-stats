@@ -716,7 +716,11 @@ export default function BYDStatsAnalyzer() {
       mounted = false;
       if (cleanup) cleanup();
     };
-  }, [layoutMode, tabs, minSwipeDistance]); // Only re-register when layout or tabs change
+    return () => {
+      mounted = false;
+      if (cleanup) cleanup();
+    };
+  }, [layoutMode, tabs, minSwipeDistance, loading]); // Remove "loading" if not available in scope, but it is needed here to retry when data loads
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
