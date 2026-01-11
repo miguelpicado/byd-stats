@@ -2838,7 +2838,7 @@ export default function BYDStatsAnalyzer() {
                         onChange={(e) => setSelMonth(e.target.value)}
                         className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                       >
-                        <option value="">Todos los meses</option>
+                        <option value="">{t('filter.allMonths')}</option>
                         {months.map((m) => (
                           <option key={m} value={m}>{formatMonth(m)}</option>
                         ))}
