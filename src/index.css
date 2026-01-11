@@ -8,7 +8,6 @@ body,
 #root {
   height: 100%;
   margin: 0;
-  scrollbar-gutter: stable; /* Previene saltos de layout al aparecer scroll */
 }
 
 /* Ocultar scrollbar en navegación de tabs */
