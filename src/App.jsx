@@ -2658,12 +2658,12 @@ export default function BYDStatsAnalyzer() {
                             className="w-full py-3 rounded-xl font-medium text-white"
                             style={{ backgroundColor: BYD_RED }}
                           >
-                            Mostrar todo
+                            {t('common.showAll')}
                           </button>
                         </div>
 
                         <div className={`lg:col-span-2 space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
-                          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>Promedio últimos 10 viajes</h2>
+                          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>{t('history.avgLast10')}</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
                               const dateCompare = (b.date || '').localeCompare(a.date || '');
@@ -2694,7 +2694,7 @@ export default function BYDStatsAnalyzer() {
                                       <MapPin className={`text-red-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
-                                      <p className="text-xs text-slate-600 dark:text-slate-400">Distancia promedio</p>
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
                                       </p>
@@ -2708,7 +2708,7 @@ export default function BYDStatsAnalyzer() {
                                       <Zap className={`text-cyan-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
-                                      <p className="text-xs text-slate-600 dark:text-slate-400">Consumo promedio</p>
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
                                       </p>
@@ -2722,7 +2722,7 @@ export default function BYDStatsAnalyzer() {
                                       <Battery className={`text-green-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
-                                      <p className="text-xs text-slate-600 dark:text-slate-400">Eficiencia promedio</p>
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
                                       </p>
@@ -2736,7 +2736,7 @@ export default function BYDStatsAnalyzer() {
                                       <Clock className={`text-amber-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
-                                      <p className="text-xs text-slate-600 dark:text-slate-400">Duración promedio</p>
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
                                       </p>
@@ -2750,7 +2750,7 @@ export default function BYDStatsAnalyzer() {
                                       <TrendingUp className={`text-blue-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
-                                      <p className="text-xs text-slate-600 dark:text-slate-400">Velocidad promedio</p>
+                                      <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
                                       </p>
