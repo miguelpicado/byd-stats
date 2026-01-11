@@ -1763,7 +1763,7 @@ export default function BYDStatsAnalyzer() {
                           <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                         </div>
                         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Evolución mensual (distancia)">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Evolución mensual (distancia)">
                             <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
                               <LineJS
                                 options={{
@@ -1791,7 +1791,7 @@ export default function BYDStatsAnalyzer() {
                               />
                             </div>
                           </ChartCard>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Distribución de Viajes">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Distribución de Viajes">
                             <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
                               <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
                                 <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
@@ -1873,7 +1873,7 @@ export default function BYDStatsAnalyzer() {
                             <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                            <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km y kWh Mensual">
+                            <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Km y kWh Mensual">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
                                 <BarJS
                                   options={{
@@ -1895,7 +1895,7 @@ export default function BYDStatsAnalyzer() {
                                 />
                               </div>
                             </ChartCard>
-                            <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km recorridos en últimos 60 días">
+                            <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Km recorridos en últimos 60 días">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
                                 <LineJS
                                   options={{
@@ -1944,7 +1944,7 @@ export default function BYDStatsAnalyzer() {
                             <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                            <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Hora">
+                            <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Por Hora">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
                                 <BarJS
                                   options={{
@@ -1962,7 +1962,7 @@ export default function BYDStatsAnalyzer() {
                                 />
                               </div>
                             </ChartCard>
-                            <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Día">
+                            <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Por Día">
                               <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
                                 <RadarJS
                                   options={{
@@ -2014,7 +2014,7 @@ export default function BYDStatsAnalyzer() {
                           <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                         </div>
                         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="📈 Evolución Eficiencia Mensual">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="📈 Evolución Eficiencia Mensual">
                             <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
                               <LineJS
                                 options={{
@@ -2047,7 +2047,7 @@ export default function BYDStatsAnalyzer() {
                               />
                             </div>
                           </ChartCard>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="📍 Eficiencia vs Distancia">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="📍 Eficiencia vs Distancia">
                             <div style={{ width: '100%', height: isCompact ? 220 : 240 }}>
                               <ScatterJS
                                 options={{
@@ -2107,7 +2107,7 @@ export default function BYDStatsAnalyzer() {
                           <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
                         </div>
                         <div className={`grid ${isCompact ? 'grid-cols-3' : 'grid-cols-1'} gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="🥇 Top Distancia">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="🥇 Top Distancia">
                             <div className="space-y-1">
                               {top.km.map((t, i) => (
                                 <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
@@ -2117,7 +2117,7 @@ export default function BYDStatsAnalyzer() {
                               ))}
                             </div>
                           </ChartCard>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="⚡ Top Consumo">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="⚡ Top Consumo">
                             <div className="space-y-1">
                               {top.kwh.map((t, i) => (
                                 <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
@@ -2127,7 +2127,7 @@ export default function BYDStatsAnalyzer() {
                               ))}
                             </div>
                           </ChartCard>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="⏱️ Top Duración">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="⏱️ Top Duración">
                             <div className="space-y-1">
                               {top.dur.map((t, i) => (
                                 <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
@@ -2217,7 +2217,7 @@ export default function BYDStatsAnalyzer() {
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label="Días activos" value={summary.daysActive} unit="" color="bg-pink-500/20 text-pink-400" />
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                        <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Evolución mensual (distancia)">
+                        <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Evolución mensual (distancia)">
                           <div style={{ width: '100%', height: isCompact ? 275 : 326 }}>
                             <LineJS
                               options={{
@@ -2246,7 +2246,7 @@ export default function BYDStatsAnalyzer() {
                             />
                           </div>
                         </ChartCard>
-                        <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Distribución de Viajes">
+                        <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Distribución de Viajes">
                           <div className="flex flex-row items-center gap-4">
                             <div className="w-1/2">
                               <div style={{ width: '100%', height: isCompact ? 273 : 326 }}>
@@ -2335,7 +2335,7 @@ export default function BYDStatsAnalyzer() {
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Coste mensual" value={monthlyCost.toFixed(2)} unit="€/mes" color="bg-amber-500/20 text-amber-400" />
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km y kWh Mensual">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Km y kWh Mensual">
                             <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
                               <BarJS
                                 options={{
@@ -2357,7 +2357,7 @@ export default function BYDStatsAnalyzer() {
                               />
                             </div>
                           </ChartCard>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Km recorridos en últimos 60 días">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Km recorridos en últimos 60 días">
                             <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
                               <LineJS
                                 options={{
@@ -2402,7 +2402,7 @@ export default function BYDStatsAnalyzer() {
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Media día" value={summary.kmDay} unit="km" color="bg-blue-500/20 text-blue-400" />
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Hora">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Por Hora">
                             <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
                               <BarJS
                                 options={{
@@ -2420,7 +2420,7 @@ export default function BYDStatsAnalyzer() {
                               />
                             </div>
                           </ChartCard>
-                          <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="Por Día">
+                          <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="Por Día">
                             <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
                               <RadarJS
                                 options={{
@@ -2466,7 +2466,7 @@ export default function BYDStatsAnalyzer() {
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={TrendingUp} label="Velocidad media" value={summary.avgSpeed} unit="km/h" color="bg-blue-500/20 text-blue-400" />
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
-                        <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="📈 Evolución Eficiencia Mensual">
+                        <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="📈 Evolución Eficiencia Mensual">
                           <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
                             <LineJS
                               options={{
@@ -2499,7 +2499,7 @@ export default function BYDStatsAnalyzer() {
                             />
                           </div>
                         </ChartCard>
-                        <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="📍 Eficiencia vs Distancia">
+                        <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="📍 Eficiencia vs Distancia">
                           <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
                             <ScatterJS
                               options={{
@@ -2554,7 +2554,7 @@ export default function BYDStatsAnalyzer() {
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label="Más corto" value={summary.minKm} unit="km" color="bg-purple-500/20 text-purple-500" />
                       </div>
                       <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
-                        <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="🥇 Top Distancia">
+                        <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="🥇 Top Distancia">
                           <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.km.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
@@ -2564,7 +2564,7 @@ export default function BYDStatsAnalyzer() {
                             ))}
                           </div>
                         </ChartCard>
-                        <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="⚡ Top Consumo">
+                        <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="⚡ Top Consumo">
                           <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.kwh.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
@@ -2574,7 +2574,7 @@ export default function BYDStatsAnalyzer() {
                             ))}
                           </div>
                         </ChartCard>
-                        <ChartCard isCompact={isCompact} animationKey={chartAnimationKey} title="⏱️ Top Duración">
+                        <ChartCard isCompact={isCompact} animationKey={layoutMode === 'vertical' ? chartAnimationKey : undefined} title="⏱️ Top Duración">
                           <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
                             {top.dur.map((t, i) => (
                               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
