@@ -20,7 +20,7 @@ export const AppProvider = ({ children }) => {
             const w = window.innerWidth;
             const h = window.innerHeight;
             // Consider compact if width is large enough but height is restricted (e.g. 1280x720)
-            const isCompactSize = w >= 1024 && h <= 800;
+            const isCompactSize = w >= 1024 && h <= 680;
             setIsCompact(isCompactSize);
 
             // Apply dense scale for compact mode
