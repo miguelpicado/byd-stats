@@ -45,6 +45,9 @@ ChartJS.defaults.plugins.tooltip.padding = 10;
 ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
 ChartJS.defaults.plugins.tooltip.enabled = true; // Re-enable tooltips with defaults
 
+// Restrict events to avoid Pointer Event crashes in WebAPK/Touch
+ChartJS.defaults.events = ['click', 'touchstart', 'touchmove', 'touchend', 'mousemove', 'mouseout'];
+
 // Animation defaults for smooth chart transitions
 ChartJS.defaults.animation = {
     duration: 500,
