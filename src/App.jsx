@@ -583,22 +583,15 @@ export default function BYDStatsAnalyzer() {
 
   const handleTabClick = useCallback((tabId) => {
     if (tabId === activeTab) return;
+    if (isTransitioning) return;
 
-
-
-    // Only use transitions in vertical layout mode
-    if (layoutMode === 'vertical') {
-      if (isTransitioning) return;
-      setIsTransitioning(true);
-      setActiveTab(tabId);
-      setTimeout(() => {
-        setIsTransitioning(false);
-      }, transitionDuration);
-    } else {
-      // In horizontal mode, just switch tabs immediately
-      setActiveTab(tabId);
-    }
-  }, [activeTab, layoutMode, isTransitioning, transitionDuration]);
+    // Use transitions for both vertical and horizontal modes
+    setIsTransitioning(true);
+    setActiveTab(tabId);
+    setTimeout(() => {
+      setIsTransitioning(false);
+    }, transitionDuration);
+  }, [activeTab, isTransitioning, transitionDuration]);
 
 
   // Swipe gesture - completely rewritten with refs
@@ -615,14 +608,18 @@ export default function BYDStatsAnalyzer() {
   useEffect(() => { handleTabClickRef.current = handleTabClick; }, [handleTabClick]);
 
   // Swipe detection using native event listeners for better performance
-  // Only enabled in vertical layout mode
+  // Enabled for both modes: horizontal swipe for vertical mode, vertical swipe for horizontal mode
   // Uses refs to avoid re-registering listeners on every state change
+  const layoutModeRef = useRef(layoutMode);
+  useEffect(() => { layoutModeRef.current = layoutMode; }, [layoutMode]);
+
   useEffect(() => {
-    // Only enable swipe in vertical mode and when container is available
-    if (layoutMode === 'horizontal' || !swipeContainer) return;
+    // Require container to be available
+    if (!swipeContainer) return;
 
     const container = swipeContainer;
     let swipeDirection = null;
+    const isHorizontalMode = layoutModeRef.current === 'horizontal';
 
     const handleTouchStart = (e) => {
       if (isTransitioningRef.current) return;
@@ -644,8 +641,12 @@ export default function BYDStatsAnalyzer() {
         swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
       }
 
-      // Si es swipe horizontal, prevenir scroll vertical
-      if (swipeDirection === 'horizontal' && diffX > 10) {
+      // En modo vertical: prevenir scroll si swipe horizontal
+      // En modo horizontal: prevenir scroll horizontal si swipe vertical
+      const currentMode = layoutModeRef.current;
+      if (currentMode === 'vertical' && swipeDirection === 'horizontal' && diffX > 10) {
+        if (e.cancelable) e.preventDefault();
+      } else if (currentMode === 'horizontal' && swipeDirection === 'vertical' && diffY > 10) {
         if (e.cancelable) e.preventDefault();
       }
     };
@@ -655,17 +656,32 @@ export default function BYDStatsAnalyzer() {
 
       const touch = e.changedTouches[0];
       const diffX = touch.clientX - touchStartRef.current;
+      const diffY = touch.clientY - touchStartYRef.current;
+      const currentMode = layoutModeRef.current;
 
-      // Solo procesar si fue swipe horizontal
-      if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
-        const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
+      const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
 
-        if (diffX < 0 && currentIndex < tabs.length - 1) {
-          // Swipe left - siguiente tab
-          handleTabClickRef.current(tabs[currentIndex + 1].id);
-        } else if (diffX > 0 && currentIndex > 0) {
-          // Swipe right - tab anterior
-          handleTabClickRef.current(tabs[currentIndex - 1].id);
+      if (currentMode === 'vertical') {
+        // Modo vertical: swipe horizontal para cambiar tabs
+        if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
+          if (diffX < 0 && currentIndex < tabs.length - 1) {
+            // Swipe left - siguiente tab
+            handleTabClickRef.current(tabs[currentIndex + 1].id);
+          } else if (diffX > 0 && currentIndex > 0) {
+            // Swipe right - tab anterior
+            handleTabClickRef.current(tabs[currentIndex - 1].id);
+          }
+        }
+      } else {
+        // Modo horizontal: swipe vertical para cambiar tabs
+        if (swipeDirection === 'vertical' && Math.abs(diffY) > minSwipeDistance) {
+          if (diffY < 0 && currentIndex < tabs.length - 1) {
+            // Swipe up - siguiente tab
+            handleTabClickRef.current(tabs[currentIndex + 1].id);
+          } else if (diffY > 0 && currentIndex > 0) {
+            // Swipe down - tab anterior
+            handleTabClickRef.current(tabs[currentIndex - 1].id);
+          }
         }
       }
 
@@ -686,7 +702,7 @@ export default function BYDStatsAnalyzer() {
       container.removeEventListener('touchmove', handleTouchMove);
       container.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [layoutMode, tabs, minSwipeDistance, swipeContainer]); // Remove "loading" if not available in scope, but it is needed here to retry when data loads
+  }, [layoutMode, tabs, minSwipeDistance, swipeContainer]);
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
@@ -1694,7 +1710,7 @@ export default function BYDStatsAnalyzer() {
         )}
 
         {/* Content container */}
-        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto tab-content-container' : 'max-w-7xl mx-auto h-full'}>
+        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-clip' : 'max-w-7xl mx-auto h-full'}>
           {layoutMode === 'vertical' ? (
             // Vertical layout: sliding tabs with transitions
             <div
@@ -2174,7 +2190,8 @@ export default function BYDStatsAnalyzer() {
             </div>
           ) : (
             // Horizontal layout: show only active tab content
-            <div ref={setSwipeContainer} className="tab-content-container" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
+            // key={activeTab} forces re-mount on tab change, triggering chart animations
+            <div key={activeTab} ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
