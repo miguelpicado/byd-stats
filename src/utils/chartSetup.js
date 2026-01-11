@@ -43,13 +43,7 @@ ChartJS.defaults.plugins.tooltip.borderColor = '#e2e8f0';
 ChartJS.defaults.plugins.tooltip.borderWidth = 1;
 ChartJS.defaults.plugins.tooltip.padding = 10;
 ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
-ChartJS.defaults.plugins.tooltip.enabled = true; // Re-enable tooltips with defaults
-
-// Animation defaults for smooth chart transitions
-ChartJS.defaults.animation = {
-    duration: 500,
-    easing: 'easeOutQuart'
-};
-ChartJS.defaults.resizeDelay = 200; // Keep resize delay for layout stability
-
-// Dark mode defaults...
+ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
+ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
+// Dark mode defaults will be handled by updating ChartJS.defaults dynamically or using CSS variables if possible,
+// but typically Chart.js needs explicit colors. We might need a helper to update defaults on theme change.
