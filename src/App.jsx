@@ -446,20 +446,7 @@ export default function BYDStatsAnalyzer() {
     return filtered.length > 0 ? processData(filtered) : null;
   }, [filtered]);
 
-  // Efficiency range calculation for scoring (not used directly but kept for logic reference if needed, but ESLint says it is unused)
-  // Removing it to satisfy ESLint
-  /*
-  const efficiencyRange = useMemo(() => {
-    const validTrips = filtered.filter(t => t.trip >= 1 && t.electricity !== 0);
-    if (validTrips.length === 0) return { min: 0, max: 0, validTrips: [] };
-    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-    return {
-      min: Math.min(...efficiencies),
-      max: Math.max(...efficiencies),
-      validTrips
-    };
-  }, [filtered]);
-  */
+
 
   const processDB = useCallback(async (file, merge = false) => {
     const trips = await processDBHook(file, merge ? rawTrips : [], merge);
