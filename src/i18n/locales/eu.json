@@ -139,6 +139,7 @@
     },
     "filter": {
         "title": "Datuak iragazi",
+        "type": "Iragazki mota",
         "all": "Dena",
         "byMonth": "Hilabeteka",
         "byRange": "Tarteka",

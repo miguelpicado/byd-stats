@@ -139,6 +139,7 @@
     },
     "filter": {
         "title": "Filtrar datos",
+        "type": "Tipo de filtro",
         "all": "Todo",
         "byMonth": "Por mes",
         "byRange": "Por rango",
