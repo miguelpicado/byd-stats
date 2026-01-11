@@ -145,7 +145,9 @@
         "from": "De",
         "to": "Até",
         "apply": "Aplicar filtro",
-        "selectMonth": "Selecionar mês"
+        "selectMonth": "Selecionar mês",
+        "showing": "A mostrar",
+        "of": "de"
     },
     "allTrips": {
         "title": "Todas as viagens",

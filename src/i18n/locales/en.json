@@ -145,7 +145,9 @@
         "from": "From",
         "to": "To",
         "apply": "Apply filter",
-        "selectMonth": "Select month"
+        "selectMonth": "Select month",
+        "showing": "Showing",
+        "of": "of"
     },
     "allTrips": {
         "title": "All trips",
