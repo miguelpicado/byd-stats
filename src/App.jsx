@@ -68,32 +68,39 @@ function processData(rows) {
   const weekdayData = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => ({ day: d, trips: 0, km: 0 }));
 
   trips.forEach(trip => {
-    const m = trip.month || 'unknown';
-    if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
-    monthlyData[m].trips++;
-    monthlyData[m].km += trip.trip || 0;
-    monthlyData[m].kwh += trip.electricity || 0;
+    try {
+      const m = trip.month || 'unknown';
+      if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
+      monthlyData[m].trips++;
+      monthlyData[m].km += trip.trip || 0;
+      monthlyData[m].kwh += trip.electricity || 0;
 
-    const d = trip.date || 'unknown';
-    if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
-    dailyData[d].trips++;
-    dailyData[d].km += trip.trip || 0;
-    dailyData[d].kwh += trip.electricity || 0;
+      const d = trip.date || 'unknown';
+      if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
+      dailyData[d].trips++;
+      dailyData[d].km += trip.trip || 0;
+      dailyData[d].kwh += trip.electricity || 0;
 
-    if (trip.start_timestamp) {
-      try {
+      if (trip.start_timestamp) {
         const dt = new Date(trip.start_timestamp * 1000);
         const h = dt.getHours();
         const w = dt.getDay();
-        hourlyData[h].trips++;
-        hourlyData[h].km += trip.trip || 0;
+
+        // Ensure h is a valid index (0-23)
+        if (!isNaN(h) && hourlyData[h]) {
+          hourlyData[h].trips++;
+          hourlyData[h].km += trip.trip || 0;
+        }
+
         // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, 2 (Tue) -> 1, etc.
         const weekdayIndex = (w + 6) % 7;
-        weekdayData[weekdayIndex].trips++;
-        weekdayData[weekdayIndex].km += trip.trip || 0;
-      } catch (e) {
-        console.error('Error processing timestamp:', e);
+        if (weekdayData[weekdayIndex]) {
+          weekdayData[weekdayIndex].trips++;
+          weekdayData[weekdayIndex].km += trip.trip || 0;
+        }
       }
+    } catch (e) {
+      console.warn('Skipping malformed trip:', trip, e);
     }
   });
 
@@ -634,7 +641,10 @@ export default function BYDStatsAnalyzer() {
       if (!container) {
         if (retryCount < maxRetries && mounted) {
           retryCount++;
-          requestAnimationFrame(setupSwipeHandlers);
+          requestAnimationFrame(() => {
+            // Ensure we update cleanup if the retry succeeds
+            if (mounted) cleanup = setupSwipeHandlers();
+          });
         }
         return null;
       }
@@ -712,10 +722,6 @@ export default function BYDStatsAnalyzer() {
       }
     });
 
-    return () => {
-      mounted = false;
-      if (cleanup) cleanup();
-    };
     return () => {
       mounted = false;
       if (cleanup) cleanup();
