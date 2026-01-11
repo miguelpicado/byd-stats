@@ -2849,21 +2849,21 @@ export default function BYDStatsAnalyzer() {
                   {/* Date Range Selector */}
                   {filterType === 'range' && (
                     <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">Rango de fechas:</label>
+                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</label>
                       <div className="flex flex-col gap-2">
                         <input
                           type="date"
                           value={dateFrom}
                           onChange={(e) => setDateFrom(e.target.value)}
                           className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder="Desde"
+                          placeholder={t('filter.from')}
                         />
                         <input
                           type="date"
                           value={dateTo}
                           onChange={(e) => setDateTo(e.target.value)}
                           className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder="Hasta"
+                          placeholder={t('filter.to')}
                         />
                       </div>
                     </div>
@@ -2873,9 +2873,9 @@ export default function BYDStatsAnalyzer() {
                   {filtered.length !== rawTrips.length && (
                     <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                       <p className="text-center text-sm">
-                        <span className="text-slate-400">Mostrando </span>
+                        <span className="text-slate-400">{t('filter.showing')} </span>
                         <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
-                        <span className="text-slate-400"> de {rawTrips.length} viajes</span>
+                        <span className="text-slate-400"> {t('filter.of')} {rawTrips.length} {t('stats.trips').toLowerCase()}</span>
                       </p>
                     </div>
                   )}
@@ -2887,7 +2887,7 @@ export default function BYDStatsAnalyzer() {
                   className="w-full mt-6 py-3 rounded-xl font-medium text-white"
                   style={{ backgroundColor: BYD_RED }}
                 >
-                  Aplicar filtro
+                  {t('filter.apply')}
                 </button>
               </div>
             </div>
