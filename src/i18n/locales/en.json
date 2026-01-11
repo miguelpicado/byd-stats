@@ -1,0 +1,195 @@
+{
+    "common": {
+        "loading": "Loading...",
+        "processing": "Processing...",
+        "cancel": "Cancel",
+        "save": "Save",
+        "delete": "Delete",
+        "close": "Close",
+        "yes": "Yes",
+        "no": "No",
+        "or": "Or",
+        "showAll": "Show all",
+        "noData": "No data to display"
+    },
+    "tabs": {
+        "overview": "Overview",
+        "trends": "Trends",
+        "patterns": "Patterns",
+        "efficiency": "Efficiency",
+        "records": "Records",
+        "history": "History"
+    },
+    "stats": {
+        "distance": "Distance",
+        "energy": "Energy",
+        "trips": "Trips",
+        "time": "Time",
+        "efficiency": "Efficiency",
+        "speed": "Speed",
+        "avgTrip": "Avg trip",
+        "activeDays": "Active days",
+        "medianEfficiency": "Median efficiency",
+        "dailyCharge": "Daily charge",
+        "monthlyCost": "Monthly cost",
+        "longTripEvery": "Long trip every",
+        "frequentDay": "Frequent day",
+        "peakHour": "Peak hour",
+        "totalKm": "Total km",
+        "avgDay": "Daily avg"
+    },
+    "units": {
+        "km": "km",
+        "kwh": "kWh",
+        "hours": "h",
+        "minutes": "min",
+        "days": "days",
+        "kwhPer100km": "kWh/100km",
+        "kmh": "km/h",
+        "perDay": "/day",
+        "perMonth": "/month",
+        "euroPerMonth": "€/month",
+        "euroPerKwh": "€/kWh",
+        "kwhPerDay": "kWh/day"
+    },
+    "charts": {
+        "monthlyEvolution": "Monthly evolution (distance)",
+        "tripDistribution": "Trip Distribution",
+        "monthlyKmKwh": "Monthly Km & kWh",
+        "last60Days": "Km driven in last 60 days",
+        "efficiencyEvolution": "📈 Monthly Efficiency Evolution",
+        "efficiencyVsDistance": "📍 Efficiency vs Distance",
+        "byHour": "By Hour",
+        "byDay": "By Day",
+        "tripsPerWeekday": "Trips per weekday"
+    },
+    "records": {
+        "title": "Records",
+        "topDistance": "🏆 Top Distance",
+        "topEfficiency": "💚 Top Efficiency",
+        "topConsumption": "⚡ Top Consumption",
+        "topDuration": "⏱️ Top Duration",
+        "last10Trips": "Last 10 trips"
+    },
+    "tripDetail": {
+        "title": "Trip details",
+        "dateTime": "Date and time",
+        "start": "Start",
+        "end": "End",
+        "duration": "Duration",
+        "mainStats": "Main statistics",
+        "consumption": "Consumption",
+        "cost": "Cost",
+        "analysis": "Analysis",
+        "avgSpeed": "Average speed",
+        "comparedToAvg": "Compared to your average",
+        "betterThan": "Better than",
+        "ofYourTrips": "of your trips"
+    },
+    "settings": {
+        "title": "Settings",
+        "theme": "Theme",
+        "themeAuto": "Auto",
+        "themeDark": "Dark",
+        "themeLight": "Light",
+        "language": "Language",
+        "electricityPrice": "Electricity price",
+        "dataManagement": "Data management",
+        "updateData": "Update data",
+        "exportDb": "Export DB",
+        "cloudSync": "Cloud sync",
+        "historyManagement": "History management",
+        "saveToHistory": "Save to history",
+        "loadFromHistory": "Load history",
+        "clearHistory": "Clear history",
+        "tripsInHistory": "trips in history",
+        "about": "About",
+        "version": "Version",
+        "sourceCode": "Source code",
+        "reportBug": "Report bug"
+    },
+    "upload": {
+        "title": "BYD Stats",
+        "subtitle": "Analyze your electric vehicle data",
+        "clickToSelect": "Click to select your EC_Database.db file",
+        "tapToSelect": "Tap to select your file",
+        "preparing": "Preparing...",
+        "hint": "Select the EC_Database.db file from the \"EnergyData\" folder in your car",
+        "tip": "💡 If your browser doesn't show files: copy EC_Database.db to Downloads, select it, tap the 3 dots and rename it to EC_Database.jpg",
+        "mergeExisting": "Merge with existing",
+        "replaceAll": "Replace all",
+        "deleteAll": "Delete all"
+    },
+    "filter": {
+        "title": "Filter data",
+        "all": "All",
+        "byMonth": "By month",
+        "byRange": "By range",
+        "from": "From",
+        "to": "To",
+        "apply": "Apply filter"
+    },
+    "allTrips": {
+        "title": "All trips",
+        "sortBy": "Sort by",
+        "date": "Date",
+        "efficiency": "Efficiency",
+        "distance": "Distance",
+        "consumption": "Consumption"
+    },
+    "cloudSync": {
+        "connected": "Cloud connected",
+        "syncNow": "Sync now",
+        "syncing": "Syncing...",
+        "signInToSync": "Sign in to sync"
+    },
+    "pwa": {
+        "install": "Install",
+        "quickAccess": "Quick access and fullscreen"
+    },
+    "weekdays": {
+        "mon": "Mon",
+        "tue": "Tue",
+        "wed": "Wed",
+        "thu": "Thu",
+        "fri": "Fri",
+        "sat": "Sat",
+        "sun": "Sun"
+    },
+    "weekdaysFull": {
+        "monday": "Monday",
+        "tuesday": "Tuesday",
+        "wednesday": "Wednesday",
+        "thursday": "Thursday",
+        "friday": "Friday",
+        "saturday": "Saturday",
+        "sunday": "Sunday"
+    },
+    "footer": {
+        "privacy": "Privacy",
+        "legal": "Legal",
+        "github": "GitHub",
+        "openSource": "Open Source Project",
+        "viewOnGithub": "View on GitHub"
+    },
+    "history": {
+        "title": "Trip history",
+        "tripsSaved": "trips saved",
+        "loadTrips": "Load trips",
+        "clearAll": "Clear all",
+        "noHistory": "No history saved"
+    },
+    "confirmations": {
+        "deleteAllData": "Delete all data?",
+        "loadHistory": "Load {count} trips from history?",
+        "clearHistory": "Permanently clear trip history?",
+        "historySaved": "History saved: {total} trips total ({new} new)",
+        "historyCleared": "History cleared",
+        "noTripsToSave": "No trips to save",
+        "noHistory": "No history saved",
+        "dbExported": "Database exported successfully"
+    },
+    "errors": {
+        "invalidFile": "Only *.DB or *.JPG files (renamed database) are allowed\nFind EC_Database.db in the \"Energydata\" folder of your car"
+    }
+}

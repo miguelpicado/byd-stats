@@ -1,6 +1,8 @@
 // BYD Stats - Settings Modal Component
 
 import React from 'react';
+import { useTranslation } from 'react-i18next';
+import { languages } from '../../i18n';
 import { BYD_RED } from '../../utils/constants';
 import { Settings, Plus } from '../Icons.jsx';
 
@@ -13,7 +15,13 @@ import { Settings, Plus } from '../Icons.jsx';
  * @param {Function} props.onSettingsChange - Settings change handler
  */
 const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync }) => {
+    const { t, i18n } = useTranslation();
+
     if (!isOpen) return null;
+
+    const handleLanguageChange = (langCode) => {
+        i18n.changeLanguage(langCode);
+    };
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
@@ -25,7 +33,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-xl font-bold flex items-center gap-2 text-slate-900 dark:text-white">
                         <Settings className="w-6 h-6" style={{ color: BYD_RED }} />
-                        Configuración
+                        {t('settings.title')}
                     </h3>
                     <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         <Plus className="w-6 h-6 rotate-45" />
@@ -90,7 +98,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Precio de electricidad (€/kWh)</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.electricityPrice')} (€/kWh)</label>
                         <input
                             type="number"
                             step="0.01"
@@ -101,7 +109,28 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                     </div>
 
                     <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">Tema</label>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.language')}</label>
+                        <div className="grid grid-cols-3 gap-2">
+                            {languages.map(lang => (
+                                <button
+                                    key={lang.code}
+                                    onClick={() => handleLanguageChange(lang.code)}
+                                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors ${i18n.language === lang.code || i18n.language?.startsWith(lang.code)
+                                        ? 'text-white'
+                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                        }`}
+                                    style={{
+                                        backgroundColor: (i18n.language === lang.code || i18n.language?.startsWith(lang.code)) ? BYD_RED : ''
+                                    }}
+                                >
+                                    {lang.flag} {lang.name}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.theme')}</label>
                         <div className="flex gap-2">
                             {['auto', 'light', 'dark'].map(theme => (
                                 <button
@@ -115,7 +144,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                         backgroundColor: settings.theme === theme ? BYD_RED : ''
                                     }}
                                 >
-                                    {theme === 'auto' ? 'Automático' : theme === 'light' ? 'Claro' : 'Oscuro'}
+                                    {theme === 'auto' ? t('settings.themeAuto') : theme === 'light' ? t('settings.themeLight') : t('settings.themeDark')}
                                 </button>
                             ))}
                         </div>
