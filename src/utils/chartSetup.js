@@ -43,12 +43,24 @@ ChartJS.defaults.plugins.tooltip.borderColor = '#e2e8f0';
 ChartJS.defaults.plugins.tooltip.borderWidth = 1;
 ChartJS.defaults.plugins.tooltip.padding = 10;
 ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
-ChartJS.defaults.interaction.mode = 'nearest';
-ChartJS.defaults.interaction.axis = 'x';
-ChartJS.defaults.interaction.intersect = false;
+ChartJS.defaults.plugins.tooltip.cornerRadius = 8;
+ChartJS.defaults.interaction.mode = 'index'; // Show tooltips for all items at this index
+ChartJS.defaults.interaction.intersect = false; // Trigger hover even when not directly on the point
 ChartJS.defaults.elements.point.hitRadius = 20; // Increase touch target
 ChartJS.defaults.elements.point.hoverRadius = 8; // Visual feedback
+ChartJS.defaults.plugins.tooltip.enabled = true; // Ensure tooltips are enabled
 ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
 ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
+
+// Ensure events work on all devices including touch
+ChartJS.defaults.events = ['mousemove', 'mouseout', 'click', 'touchstart', 'touchmove', 'touchend'];
+
+// Animation defaults for smooth chart transitions
+ChartJS.defaults.animation = {
+    duration: 600,
+    easing: 'easeOutQuart'
+};
+
 // Dark mode defaults will be handled by updating ChartJS.defaults dynamically or using CSS variables if possible,
 // but typically Chart.js needs explicit colors. We might need a helper to update defaults on theme change.
+
