@@ -199,7 +199,13 @@
         "tripsSaved": "viatges desats",
         "loadTrips": "Carregar viatges",
         "clearAll": "Esborrar tot",
-        "noHistory": "No hi ha històric desat"
+        "noHistory": "No hi ha històric desat",
+        "avgLast10": "Mitjana últims 10 viatges",
+        "avgDistance": "Distància mitjana",
+        "avgConsumption": "Consum mitjà",
+        "avgEfficiency": "Eficiència mitjana",
+        "avgDuration": "Durada mitjana",
+        "avgSpeed": "Velocitat mitjana"
     },
     "confirmations": {
         "deleteAllData": "Esborrar totes les dades?",
