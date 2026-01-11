@@ -84,7 +84,12 @@
         "avgSpeed": "Batez besteko abiadura",
         "comparedToAvg": "Zure batez bestekoarekin alderatuta",
         "betterThan": "Hobea",
-        "ofYourTrips": "zure bidaietatik"
+        "ofYourTrips": "zure bidaietatik",
+        "batteryState": "Kar-garen egoera",
+        "initial": "Hasierakoa",
+        "final": "Azkena",
+        "energyRecovered": "Berreskuratutako energia",
+        "percentile": "Percentila"
     },
     "settings": {
         "title": "Ezarpenak",
