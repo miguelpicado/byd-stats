@@ -1,15 +1,17 @@
 import React from 'react';
 import { X, Shield, FileText } from '../Icons.jsx';
 import LegalContent from '../LegalContent.jsx';
+import { useTranslation } from 'react-i18next';
 
 const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
+    const { t } = useTranslation();
     const [activeSection, setActiveSection] = React.useState(initialSection);
 
     if (!isOpen) return null;
 
     const sections = [
-        { id: 'privacy', label: 'Privacidad', icon: Shield },
-        { id: 'legal', label: 'Aviso Legal', icon: FileText },
+        { id: 'privacy', label: t('legal.privacyTab'), icon: Shield },
+        { id: 'legal', label: t('legal.termsTab'), icon: FileText },
     ];
 
     return (
@@ -30,8 +32,8 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
                             <Shield className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">Documentación Legal</h2>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">BYD Stats Analyzer</p>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('legal.pageTitle')}</h2>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{t('legal.projectSubtitle')}</p>
                         </div>
                     </div>
                     <button
@@ -70,7 +72,7 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
                         onClick={onClose}
                         className="px-6 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-white rounded-xl text-sm font-bold transition-all"
                     >
-                        Entendido
+                        {t('legal.understood')}
                     </button>
                 </div>
             </div>

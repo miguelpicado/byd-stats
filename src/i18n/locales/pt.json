@@ -49,6 +49,7 @@
         "perDay": "/dia",
         "perMonth": "/mês",
         "euroPerMonth": "€/mês",
+        "per100km": "/100km",
         "euroPerKwh": "€/kWh",
         "kwhPerDay": "kWh/dia"
     },
@@ -205,7 +206,55 @@
         "avgConsumption": "Consumo médio",
         "avgEfficiency": "Eficiência média",
         "avgDuration": "Duração média",
-        "avgSpeed": "Velocidade média"
+        "avgSpeed": "Velocidade média",
+        "last10Trips": "Últimas 10 viagens"
+    },
+    "charts": {
+        "monthlyDist": "Evolução mensal (distância)",
+        "tripDist": "Distribuição de Viagens",
+        "monthlyKmKwh": "Km e kWh Mensal",
+        "last60Days": "Km percorridos nos últimos 60 dias",
+        "byHour": "Por Hora",
+        "byDay": "Por Dia",
+        "monthlyEff": "Evolução Eficiência Mensal",
+        "effVsDist": "Eficiência vs Distância",
+        "topDist": "Top Distância",
+        "topCons": "Top Consumo",
+        "topDur": "Top Duração"
+    },
+    "stats": {
+        "distance": "Distância",
+        "energy": "Energia",
+        "trips": "Viagens",
+        "time": "Tempo",
+        "efficiency": "Eficiência",
+        "speed": "Velocidade",
+        "avgTrip": "Viagem média",
+        "activeDays": "Dias ativos",
+        "longTripEvery": "Viagem longa a cada",
+        "medianEff": "Eficiência mediana",
+        "dailyCharge": "Carga diária",
+        "monthlyCost": "Custo mensal",
+        "freqDay": "Dia frequente",
+        "peakHour": "Hora pico",
+        "totalKm": "Km totais",
+        "dailyAvg": "Média diária",
+        "consumptionPerTrip": "Consumo/viagem",
+        "avgDistance": "Distância média",
+        "avgSpeed": "Velocidade média",
+        "longest": "Mais longa",
+        "maxCons": "Maior consumo",
+        "maxDur": "Maior duração",
+        "shortest": "Mais curta"
+    },
+    "units": {
+        "km": "km",
+        "kWh": "kWh",
+        "day": "dia",
+        "days": "dias",
+        "kmh": "km/h",
+        "kWh100km": "kWh/100km",
+        "kWhDay": "kWh/dia"
     },
     "confirmations": {
         "deleteAllData": "Eliminar todos os dados?",
@@ -219,5 +268,52 @@
     },
     "errors": {
         "invalidFile": "Apenas ficheiros *.DB ou *.JPG (base de dados renomeada) são permitidos\nEncontre EC_Database.db na pasta \"Energydata\" do seu carro"
+    },
+    "upload": {
+        "title": "Gestão de dados",
+        "historySection": "Histórico ({{count}} viagens)",
+        "saveCurrent": "Guardar viagens atuais no histórico",
+        "viewLoad": "Ver / Carregar histórico",
+        "export": "Exportar",
+        "clearHistory": "Limpar histórico",
+        "filesSection": "Ficheiros / Base de Dados BYD",
+        "loadNew": "Carregar novas viagens (Substituir)",
+        "loadMerge": "Carregar apenas novas viagens (Combinar)",
+        "clearView": "Limpar vista atual (Não apaga histórico)",
+        "exportTrips": "Exportar viagens",
+        "tip": "Dica: Se o ficheiro .db não aparecer, tente renomeá-lo para .jpg"
+    },
+    "legal": {
+        "title": "Documentação Legal",
+        "subtitle": "BYD Stats Analyzer",
+        "privacy": "Privacidade",
+        "terms": "Aviso Legal",
+        "understood": "Entendido"
+    },
+    "historyMod": {
+        "title": "Histórico de viagens",
+        "description": "O histórico mantém um registo permanente de todas as viagens carregadas.",
+        "savedCount": "{{count}} viagens guardadas",
+        "saveCurrent": "Guardar viagens atuais no histórico",
+        "loadFull": "Carregar histórico completo",
+        "clear": "Limpar histórico"
+    },
+    "footer": {
+        "github": "Ver no GitHub",
+        "email": "Enviar Email",
+        "legal": "Informação Legal",
+        "madeWith": "Feito com ❤️ para a comunidade BYD"
+    },
+    "header": {
+        "title": "Estatísticas BYD",
+        "trips": "{{count}} viagens"
+    },
+    "tooltips": {
+        "help": "Ajuda e Reportar Erro",
+        "fullscreen": "Ecrã inteiro",
+        "exitFullscreen": "Sair do ecrã inteiro",
+        "history": "Histórico de viagens",
+        "settings": "Definições",
+        "filters": "Filtros"
     }
 }
