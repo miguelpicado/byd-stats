@@ -853,7 +853,7 @@ export default function BYDStatsAnalyzer() {
       <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-6">
-            <img src="app_logo.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
+            <img src="app_icon_v2.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
             <h1 className={`${isCompact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold text-white mb-1`}>Estadísticas BYD</h1>
             <p className="text-xs sm:text-sm text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
           </div>
