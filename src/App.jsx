@@ -1174,8 +1174,8 @@ export default function BYDStatsAnalyzer() {
                   </svg>
                 </button>
                 <div>
-                  <h1 className="text-sm sm:text-base md:text-lg font-bold">Todos los viajes</h1>
-                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} viajes</p>
+                  <h1 className="text-sm sm:text-base md:text-lg font-bold">{t('allTrips.title')}</h1>
+                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} {t('stats.trips').toLowerCase()}</p>
                 </div>
               </div>
             </div>
@@ -1192,7 +1192,7 @@ export default function BYDStatsAnalyzer() {
                     color: allTripsFilterType === 'all' ? 'white' : '#94a3b8'
                   }}
                 >
-                  Todos
+                  {t('filter.all')}
                 </button>
                 <button
                   onClick={() => setAllTripsFilterType('month')}
@@ -1202,7 +1202,7 @@ export default function BYDStatsAnalyzer() {
                     color: allTripsFilterType === 'month' ? 'white' : '#94a3b8'
                   }}
                 >
-                  Por mes
+                  {t('filter.byMonth')}
                 </button>
                 <button
                   onClick={() => setAllTripsFilterType('range')}
@@ -1212,7 +1212,7 @@ export default function BYDStatsAnalyzer() {
                     color: allTripsFilterType === 'range' ? 'white' : '#94a3b8'
                   }}
                 >
-                  Rango de fechas
+                  {t('filter.byRange')}
                 </button>
               </div>
 
@@ -1223,7 +1223,7 @@ export default function BYDStatsAnalyzer() {
                   onChange={(e) => setAllTripsMonth(e.target.value)}
                   className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
                 >
-                  <option value="">Seleccionar mes</option>
+                  <option value="">{t('filter.selectMonth')}</option>
                   {months.map((m) => (
                     <option key={m} value={m}>{formatMonth(m)}</option>
                   ))}
@@ -1266,7 +1266,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'date' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Fecha
+                  {t('allTrips.date')}
                   {allTripsSortBy === 'date' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -1286,7 +1286,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'efficiency' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Eficiencia
+                  {t('allTrips.efficiency')}
                   {allTripsSortBy === 'efficiency' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -1306,7 +1306,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'distance' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Distancia
+                  {t('allTrips.distance')}
                   {allTripsSortBy === 'distance' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}
@@ -1326,7 +1326,7 @@ export default function BYDStatsAnalyzer() {
                     }`}
                   style={allTripsSortBy === 'consumption' ? { backgroundColor: BYD_RED } : {}}
                 >
-                  Consumo
+                  {t('allTrips.consumption')}
                   {allTripsSortBy === 'consumption' && (
                     <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
                   )}

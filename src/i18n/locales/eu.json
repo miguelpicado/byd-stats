@@ -144,7 +144,8 @@
         "byRange": "Tarteka",
         "from": "Noiztik",
         "to": "Noiz arte",
-        "apply": "Iragazkia aplikatu"
+        "apply": "Iragazkia aplikatu",
+        "selectMonth": "Hilabetea hautatu"
     },
     "allTrips": {
         "title": "Bidaia guztiak",
