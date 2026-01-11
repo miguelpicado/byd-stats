@@ -199,7 +199,13 @@
         "tripsSaved": "viagens guardadas",
         "loadTrips": "Carregar viagens",
         "clearAll": "Limpar tudo",
-        "noHistory": "Sem histórico guardado"
+        "noHistory": "Sem histórico guardado",
+        "avgLast10": "Média últimas 10 viagens",
+        "avgDistance": "Distância média",
+        "avgConsumption": "Consumo médio",
+        "avgEfficiency": "Eficiência média",
+        "avgDuration": "Duração média",
+        "avgSpeed": "Velocidade média"
     },
     "confirmations": {
         "deleteAllData": "Eliminar todos os dados?",

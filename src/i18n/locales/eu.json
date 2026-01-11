@@ -199,7 +199,13 @@
         "tripsSaved": "bidaia gordeta",
         "loadTrips": "Bidaiak kargatu",
         "clearAll": "Dena ezabatu",
-        "noHistory": "Ez dago historiarik gordeta"
+        "noHistory": "Ez dago historiarik gordeta",
+        "avgLast10": "Azken 10 bidaien batez bestekoa",
+        "avgDistance": "Batez besteko distantzia",
+        "avgConsumption": "Batez besteko kontsumoa",
+        "avgEfficiency": "Batez besteko efizientzia",
+        "avgDuration": "Batez besteko iraupena",
+        "avgSpeed": "Batez besteko abiadura"
     },
     "confirmations": {
         "deleteAllData": "Datu guztiak ezabatu?",

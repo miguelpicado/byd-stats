@@ -199,7 +199,13 @@
         "tripsSaved": "trips saved",
         "loadTrips": "Load trips",
         "clearAll": "Clear all",
-        "noHistory": "No history saved"
+        "noHistory": "No history saved",
+        "avgLast10": "Average last 10 trips",
+        "avgDistance": "Average distance",
+        "avgConsumption": "Average consumption",
+        "avgEfficiency": "Average efficiency",
+        "avgDuration": "Average duration",
+        "avgSpeed": "Average speed"
     },
     "confirmations": {
         "deleteAllData": "Delete all data?",
