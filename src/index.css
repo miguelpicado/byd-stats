@@ -36,3 +36,49 @@ body,
 .horizontal-tab-transition {
   animation: fadeInSlideUp 0.5s ease-out;
 }
+
+/* CRITICAL: Force light theme in WebView (prevent car system dark mode override) */
+/* This aggressively overrides Android WebView's force-dark algorithm */
+html:not(.dark) {
+  /* Force light colors on root elements */
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+html:not(.dark) body {
+  background-color: #f8fafc !important;
+  color: #0f172a !important;
+}
+
+/* Prevent WebView from inverting colors */
+html:not(.dark) * {
+  /* This tells WebView: "I've already adapted for light mode, don't invert me" */
+  color-scheme: light !important;
+}
+
+/* Force light backgrounds and dark text on common elements */
+html:not(.dark) div,
+html:not(.dark) section,
+html:not(.dark) article,
+html:not(.dark) main,
+html:not(.dark) header,
+html:not(.dark) footer {
+  /* Don't force background (let Tailwind handle), but ensure color-scheme is light */
+  color-scheme: light !important;
+}
+
+/* Force light theme on input elements (critical for WebView) */
+html:not(.dark) input,
+html:not(.dark) textarea,
+html:not(.dark) select,
+html:not(.dark) button {
+  color-scheme: light !important;
+  background-color: white !important;
+  color: #0f172a !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Override any system-imposed dark backgrounds on light buttons */
+html:not(.dark) button {
+  color-scheme: light !important;
+}
