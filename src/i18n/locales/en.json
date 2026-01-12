@@ -47,23 +47,26 @@
         "shortest": "Shortest"
     },
     "units": {
-        "km": "km",
+        "km": "mi",
         "kwh": "kWh",
         "hours": "h",
         "minutes": "min",
         "days": "days",
-        "kwhPer100km": "kWh/100km",
-        "kmh": "km/h",
+        "kwhPer100km": "kWh/100mi",
+        "kmh": "mph",
         "perDay": "/day",
         "perMonth": "/mo",
-        "per100km": "/100km",
-        "euroPerMonth": "€/month",
-        "euroPerKwh": "€/kWh",
+        "per100km": "/100mi",
+        "euroPerMonth": "£/month",
+        "euroPerKwh": "£/kWh",
         "kwhPerDay": "kWh/day",
         "day": "day",
         "kWh": "kWh",
         "exkwh": "kWh",
-        "kwh100": "kWh/100km"
+        "kwh100": "kWh/100mi",
+        "kWh100km": "kWh/100mi",
+        "kWhDay": "kWh/day",
+        "currencyPerMonth": "£/mo"
     },
     "days": {
         "mon": "Monday",

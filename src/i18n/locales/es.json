@@ -63,7 +63,10 @@
         "day": "día",
         "kWh": "kWh",
         "exkwh": "kWh",
-        "kwh100": "kWh/100km"
+        "kwh100": "kWh/100km",
+        "kWh100km": "kWh/100km",
+        "kWhDay": "kWh/día",
+        "currencyPerMonth": "€/mes"
     },
     "days": {
         "mon": "Lunes",
