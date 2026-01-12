@@ -267,9 +267,15 @@ export default function BYDStatsAnalyzer() {
   const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 270 : 326);
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
-  // Fullscreen BYD: 390px (reduced 60px from 450)
+  // Fullscreen BYD: 395px (reduced 55px from 450)
   // Compact: 345px (reduced 5px from 350)
-  const largeChartHeight = isFullscreenBYD ? 390 : (isCompact ? 345 : 450);
+  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 345 : 450);
+
+  // Spacing adjustments for different modes
+  const patternsSpacing = isFullscreenBYD ? 'space-y-2' : (isCompact ? 'space-y-2' : 'space-y-4');
+  const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[2px]' : 'py-1.5');
+  const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[3.5px]' : 'py-2');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[435px]' : (isCompact ? 'h-[347px]' : 'h-[450px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
@@ -1774,7 +1780,7 @@ export default function BYDStatsAnalyzer() {
                       const topDay = weekday.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
                       const topHour = hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
                       return (
-                        <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+                        <div className={patternsSpacing}>
                           <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
                             <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label={t('stats.freqDay')} value={t(`days.${topDay.day}`)} unit="" color="bg-amber-500/20 text-amber-400" />
                             <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label={t('stats.peakHour')} value={`${topHour.hour.toString().padStart(2, '0')}:00h`} unit="" color="bg-purple-500/20 text-purple-400" />
@@ -1950,7 +1956,7 @@ export default function BYDStatsAnalyzer() {
                           <ChartCard isCompact={isCompact} title={`🥇 ${t('charts.topDist')}`}>
                             <div className="space-y-1">
                               {top.km.map((t, i) => (
-                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPadding}`}>
                                   <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
                                   <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
                                 </div>
@@ -1960,7 +1966,7 @@ export default function BYDStatsAnalyzer() {
                           <ChartCard isCompact={isCompact} title={`⚡ ${t('charts.topCons')}`}>
                             <div className="space-y-1">
                               {top.kwh.map((t, i) => (
-                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPadding}`}>
                                   <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
                                   <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
                                 </div>
@@ -1970,7 +1976,7 @@ export default function BYDStatsAnalyzer() {
                           <ChartCard isCompact={isCompact} title={`⏱️ ${t('charts.topDur')}`}>
                             <div className="space-y-1">
                               {top.dur.map((t, i) => (
-                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[3.5px]' : 'py-1.5'}`}>
+                                <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPadding}`}>
                                   <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
                                   <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
                                 </div>
@@ -2236,7 +2242,7 @@ export default function BYDStatsAnalyzer() {
                     const topDay = weekday.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
                     const topHour = hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b);
                     return (
-                      <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+                      <div className={patternsSpacing}>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Calendar} label={t('stats.freqDay')} value={t(`days.${topDay.day}`)} unit="" color="bg-amber-500/20 text-amber-400" />
                           <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={Clock} label={t('stats.peakHour')} value={`${topHour.hour.toString().padStart(2, '0')}:00h`} unit="" color="bg-purple-500/20 text-purple-400" />
@@ -2245,7 +2251,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
-                            <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
+                            <div style={{ width: '100%', height: smallChartHeight }}>
                               <BarJS
                                 options={{
                                   maintainAspectRatio: false,
@@ -2263,7 +2269,7 @@ export default function BYDStatsAnalyzer() {
                             </div>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
-                            <div style={{ width: '100%', height: isCompact ? 284 : 340 }}>
+                            <div style={{ width: '100%', height: smallChartHeight }}>
                               <RadarJS
                                 options={{
                                   maintainAspectRatio: false,
@@ -2399,9 +2405,9 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                         <ChartCard isCompact={isCompact} title={`🥇 ${t('charts.topDist')}`}>
-                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
+                          <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
                             {top.km.map((t, i) => (
-                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPaddingHorizontal}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
                                 <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.trip?.toFixed(1)} km</span>
                               </div>
@@ -2409,9 +2415,9 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title={`⚡ ${t('charts.topCons')}`}>
-                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
+                          <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
                             {top.kwh.map((t, i) => (
-                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPaddingHorizontal}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
                                 <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{t.electricity?.toFixed(1)} kWh</span>
                               </div>
@@ -2419,9 +2425,9 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title={`⏱️ ${t('charts.topDur')}`}>
-                          <div className={`flex flex-col justify-between ${isCompact ? 'h-[350px]' : 'h-[450px]'}`}>
+                          <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
                             {top.dur.map((t, i) => (
-                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${isCompact ? 'py-[5.5px]' : 'py-2'}`}>
+                              <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPaddingHorizontal}`}>
                                 <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>{i + 1}. {formatDate(t.date)}</span>
                                 <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>{((t.duration || 0) / 60).toFixed(0)} min</span>
                               </div>
