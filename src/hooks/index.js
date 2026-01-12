@@ -5,4 +5,4 @@ export { useSettings } from './useSettings';
 export { useLayoutMode } from './useLayoutMode';
 export { useTheme } from './useTheme';
 export { useDatabase } from './useDatabase';
-export { useFileOpening } from './useFileOpening';
+export { usePWAFileHandling } from './usePWAFileHandling';
