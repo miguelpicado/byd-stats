@@ -264,6 +264,9 @@ export default function BYDStatsAnalyzer() {
   // Normal: 240px
   const chartHeight = isFullscreenBYD ? 140 : (isCompact ? 220 : 240);
 
+  // Debug log
+  console.log('[App] Chart height calculation:', { isFullscreenBYD, isCompact, chartHeight });
+
   // Google Sync Hook - Connect to Context Settings
   // Note: googleSync expects setSettings. updateSettings is compatible.
   const googleSync = useGoogleSync(rawTrips, setRawTrips, settings, updateSettings);

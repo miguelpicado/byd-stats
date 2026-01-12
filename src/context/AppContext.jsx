@@ -30,6 +30,9 @@ export const AppProvider = ({ children }) => {
             const isCompactSize = w >= 1024 && h <= 680;
             setIsCompact(isCompactSize);
 
+            // Debug log
+            console.log('[AppContext] Viewport:', { w, h, isCompactSize, isBYDFullscreen });
+
             // Apply dense scale for compact mode
             if (isCompactSize) {
                 document.documentElement.style.fontSize = '13.5px';
