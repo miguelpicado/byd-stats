@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { X, Download } from './Icons.jsx';
 
 // Simple icons for PWA Manager (not in Icons.jsx)
@@ -24,6 +25,7 @@ const RefreshCw = ({ className }) => (
  * @param {string} layoutMode - 'horizontal' or 'vertical' from parent
  */
 export default function PWAManager({ layoutMode = 'vertical' }) {
+    const { t } = useTranslation();
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
@@ -172,8 +174,8 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
                         <div className="flex items-center gap-3">
                             <RefreshCw className="w-5 h-5 animate-spin-slow" />
                             <div>
-                                <p className="font-semibold text-sm">Nueva versión disponible</p>
-                                <p className="text-xs opacity-90">Pulsa actualizar para obtener las últimas mejoras</p>
+                                <p className="font-semibold text-sm">{t('pwa.newVersion')}</p>
+                                <p className="text-xs opacity-90">{t('pwa.updateHint')}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-2">
@@ -181,7 +183,7 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
                                 onClick={handleUpdate}
                                 className="px-4 py-1.5 bg-white text-green-600 rounded-full text-sm font-bold hover:bg-gray-100 transition-colors"
                             >
-                                Actualizar
+                                {t('pwa.update')}
                             </button>
                             <button
                                 onClick={() => setShowUpdateBanner(false)}
@@ -228,10 +230,10 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
                 <button
                     onClick={handleExit}
                     className="fixed bottom-4 right-4 z-[9999] flex items-center gap-2 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-full shadow-lg hover:from-red-700 hover:to-red-800 transition-all"
-                    title="Cerrar aplicación"
+                    title={t('pwa.closeApp')}
                 >
                     <LogOut className="w-5 h-5" />
-                    <span className="font-semibold text-sm">Salir</span>
+                    <span className="font-semibold text-sm">{t('pwa.exit')}</span>
                 </button>
             )}
 
@@ -239,22 +241,22 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
             {showExitConfirm && (
                 <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="bg-slate-800 rounded-xl p-6 m-4 max-w-sm w-full shadow-2xl border border-slate-700">
-                        <h3 className="text-lg font-bold text-white mb-2">¿Cerrar BYD Stats?</h3>
+                        <h3 className="text-lg font-bold text-white mb-2">{t('pwa.exitConfirmTitle')}</h3>
                         <p className="text-slate-400 text-sm mb-4">
-                            Puedes volver a abrir la app desde el icono en tu pantalla de inicio.
+                            {t('pwa.exitConfirmText')}
                         </p>
                         <div className="flex gap-3">
                             <button
                                 onClick={() => setShowExitConfirm(false)}
                                 className="flex-1 px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-600 transition-colors"
                             >
-                                Cancelar
+                                {t('common.cancel')}
                             </button>
                             <button
                                 onClick={confirmExit}
                                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold"
                             >
-                                Salir
+                                {t('pwa.exit')}
                             </button>
                         </div>
                     </div>

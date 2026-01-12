@@ -834,19 +834,19 @@ export default function BYDStatsAnalyzer() {
 
   if (rawTrips.length === 0) {
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center p-4">
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-start justify-center p-4 pt-8">
         <div className="w-full max-w-xl">
           <div className="text-center mb-6">
             <img src="app_icon_v2.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
-            <h1 className={`${isCompact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold text-white mb-1`}>Estadísticas BYD</h1>
-            <p className="text-xs sm:text-sm text-slate-400">Analiza los datos de tu vehículo eléctrico</p>
+            <h1 className={`${isCompact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold text-white mb-1`}>{t('landing.title')}</h1>
+            <p className="text-xs sm:text-sm text-slate-400">{t('landing.subtitle')}</p>
           </div>
 
           {!sqlReady && !error && (
             <div className="text-center mb-6">
               <div className="inline-flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800/50 rounded-xl">
                 <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
-                <span className="text-slate-400">Cargando...</span>
+                <span className="text-slate-400">{t('landing.loading')}</span>
               </div>
             </div>
           )}
@@ -883,20 +883,20 @@ export default function BYDStatsAnalyzer() {
               <Upload className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'}`} style={{ color: dragOver ? 'white' : BYD_RED }} />
             </div>
             <p className={`text-white mb-2 ${isCompact ? 'text-base' : 'text-lg sm:text-xl'}`}>
-              {sqlReady ? (isNative ? 'Toca para seleccionar tu archivo' : 'Haz clic para seleccionar tu archivo EC_Database.db') : 'Preparando...'}
+              {sqlReady ? (isNative ? t('landing.tapToSelect') : t('landing.clickToSelect')) : t('landing.preparing')}
             </p>
             <p className="text-slate-400 text-xs mt-4">
-              Selecciona el fichero EC_Database.db en la carpeta "EnergyData" de tu coche
+              {t('landing.hint')}
             </p>
             <p className="text-slate-500 text-xs mt-2">
-              💡 Si tu navegador no muestra archivos: copia EC_Database.db a Downloads, selecciónalo, pulsa los 3 puntos y renómbralo a EC_Database.jpg
+              {t('landing.tip')}
             </p>
           </div>
 
           {/* Divider */}
           <div className="flex items-center w-full my-6">
             <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
-            <span className="px-4 text-slate-500 text-sm font-medium">O</span>
+            <span className="px-4 text-slate-500 text-sm font-medium">{t('common.or')}</span>
             <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
           </div>
 
@@ -923,8 +923,8 @@ export default function BYDStatsAnalyzer() {
                   )}
                 </div>
                 <div className="text-left">
-                  <p className="text-xs text-slate-400 leading-none mb-0.5">Nube conectada</p>
-                  <p className="text-sm font-medium leading-none">{googleSync.isSyncing ? 'Sincronizando...' : 'Sincronizar ahora'}</p>
+                  <p className="text-xs text-slate-400 leading-none mb-0.5">{t('landing.cloudConnected')}</p>
+                  <p className="text-sm font-medium leading-none">{googleSync.isSyncing ? t('landing.syncing') : t('landing.syncNow')}</p>
                 </div>
                 {!googleSync.isSyncing && <Cloud className="w-4 h-4 text-slate-400 ml-1" />}
               </button>
@@ -936,7 +936,7 @@ export default function BYDStatsAnalyzer() {
                 <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full">
                   <img src="https://www.google.com/favicon.ico" alt="G" className="w-3 h-3" />
                 </span>
-                Inicia sesión para sincronizar
+                {t('landing.signInToSync')}
               </button>
             )}
           </div>
@@ -2202,7 +2202,7 @@ export default function BYDStatsAnalyzer() {
                                 }}
                                 data={{
                                   labels: hourly.map(h => `${h.hour}h`),
-                                  datasets: [{ label: 'Viajes', data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
+                                  datasets: [{ label: t('stats.trips'), data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
                                 }}
                               />
                             </div>
@@ -2218,7 +2218,7 @@ export default function BYDStatsAnalyzer() {
                                 data={{
                                   labels: weekday.map(d => t(`daysShort.${d.day}`)),
                                   datasets: [{
-                                    label: 'Viajes',
+                                    label: t('stats.trips'),
                                     data: weekday.map(d => d.trips),
                                     borderColor: '#f59e0b',
                                     backgroundColor: 'rgba(245, 158, 11, 0.3)',
@@ -2235,7 +2235,7 @@ export default function BYDStatsAnalyzer() {
                           {weekday.map((d, i) => (
                             <div key={i} className={`bg-white dark:bg-slate-800/50 rounded-lg sm:rounded-xl text-center border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-1.5' : 'p-2 sm:p-3'}`}>
                               <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs">{t(`daysShort.${d.day}`)}</p>
-                              <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{d.trips} viajes</p>
+                              <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{d.trips} {t('patterns.tripsWord')}</p>
                               <p className="text-[9px] sm:text-xs" style={{ color: BYD_RED }}>{d.km.toFixed(0)} km</p>
                             </div>
                           ))}

@@ -283,5 +283,34 @@
         "history": "Histórico de viagens",
         "settings": "Definições",
         "filters": "Filtros"
+    },
+    "landing": {
+        "title": "Estatísticas BYD",
+        "subtitle": "Analise os dados do seu veículo elétrico",
+        "loading": "A carregar...",
+        "clickToSelect": "Clique para selecionar o seu ficheiro EC_Database.db",
+        "tapToSelect": "Toque para selecionar o seu ficheiro",
+        "preparing": "A preparar...",
+        "hint": "Selecione o ficheiro EC_Database.db na pasta \"EnergyData\" do seu carro",
+        "tip": "💡 Se o seu navegador não mostrar ficheiros: copie EC_Database.db para Downloads, selecione-o, prima os 3 pontos e renomeie para EC_Database.jpg",
+        "cloudConnected": "Nuvem conectada",
+        "syncNow": "Sincronizar agora",
+        "syncing": "A sincronizar...",
+        "signInToSync": "Inicie sessão para sincronizar"
+    },
+    "pwa": {
+        "install": "Instalar",
+        "quickAccess": "Acesso rápido e ecrã completo",
+        "exit": "Sair",
+        "closeApp": "Fechar aplicação",
+        "newVersion": "Nova versão disponível",
+        "updateHint": "Toque em atualizar para obter as últimas melhorias",
+        "update": "Atualizar",
+        "exitConfirmTitle": "Fechar BYD Stats?",
+        "exitConfirmText": "Pode reabrir a app a partir do ícone no seu ecrã inicial."
+    },
+    "patterns": {
+        "tripsPerWeekday": "Viagens por dia da semana",
+        "tripsWord": "viagens"
     }
 }

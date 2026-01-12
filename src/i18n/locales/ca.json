@@ -283,5 +283,34 @@
         "history": "Historial de viatges",
         "settings": "Configuració",
         "filters": "Filtres"
+    },
+    "landing": {
+        "title": "Estadístiques BYD",
+        "subtitle": "Analitza les dades del teu vehicle elèctric",
+        "loading": "Carregant...",
+        "clickToSelect": "Fes clic per seleccionar el teu fitxer EC_Database.db",
+        "tapToSelect": "Toca per seleccionar el teu fitxer",
+        "preparing": "Preparant...",
+        "hint": "Selecciona el fitxer EC_Database.db a la carpeta \"EnergyData\" del teu cotxe",
+        "tip": "💡 Si el teu navegador no mostra fitxers: copia EC_Database.db a Downloads, selecciona'l, prem els 3 punts i reanomena'l a EC_Database.jpg",
+        "cloudConnected": "Núvol connectat",
+        "syncNow": "Sincronitzar ara",
+        "syncing": "Sincronitzant...",
+        "signInToSync": "Inicia sessió per sincronitzar"
+    },
+    "pwa": {
+        "install": "Instal·lar",
+        "quickAccess": "Accés ràpid i pantalla completa",
+        "exit": "Sortir",
+        "closeApp": "Tancar aplicació",
+        "newVersion": "Nova versió disponible",
+        "updateHint": "Prem actualitzar per obtenir les últimes millores",
+        "update": "Actualitzar",
+        "exitConfirmTitle": "Tancar BYD Stats?",
+        "exitConfirmText": "Pots tornar a obrir l'app des de la icona a la teva pantalla d'inici."
+    },
+    "patterns": {
+        "tripsPerWeekday": "Viatges per dia de la setmana",
+        "tripsWord": "viatges"
     }
 }
