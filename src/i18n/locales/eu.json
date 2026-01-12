@@ -217,10 +217,6 @@
         "syncing": "Sinkronizatzen...",
         "signInToSync": "Hasi saioa sinkronizatzeko"
     },
-    "pwa": {
-        "install": "Instalatu",
-        "quickAccess": "Sarbide azkarra eta pantaila osoa"
-    },
     "history": {
         "title": "Bidaien historia",
         "tripsSaved": "bidaia gordeta",

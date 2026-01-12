@@ -217,10 +217,6 @@
         "syncing": "A sincronizar...",
         "signInToSync": "Inicie sessão para sincronizar"
     },
-    "pwa": {
-        "install": "Instalar",
-        "quickAccess": "Acesso rápido e ecrã completo"
-    },
     "history": {
         "title": "Histórico de viagens",
         "tripsSaved": "viagens guardadas",
