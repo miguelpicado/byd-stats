@@ -259,10 +259,10 @@ export default function BYDStatsAnalyzer() {
   const isLargerCard = isCompact && layoutMode === 'horizontal';
 
   // Calculate chart height based on mode
-  // Fullscreen BYD (1280x720): 190px
+  // Fullscreen BYD (1280x720): 140px (reduced for 492x370 container target)
   // Compact: 220px
   // Normal: 240px
-  const chartHeight = isFullscreenBYD ? 190 : (isCompact ? 220 : 240);
+  const chartHeight = isFullscreenBYD ? 140 : (isCompact ? 220 : 240);
 
   // Google Sync Hook - Connect to Context Settings
   // Note: googleSync expects setSettings. updateSettings is compatible.
