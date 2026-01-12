@@ -11,6 +11,7 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
+import com.bydstats.app.plugins.FileOpenerPlugin;
 
 
 public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
@@ -61,6 +62,9 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Register custom plugins
+        registerPlugin(FileOpenerPlugin.class);
+
         super.onCreate(savedInstanceState);
 
         // Enable WebView debugging for troubleshooting
