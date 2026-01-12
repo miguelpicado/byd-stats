@@ -1478,7 +1478,7 @@ export default function BYDStatsAnalyzer() {
         )}
 
         {/* Content container */}
-        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-clip' : 'max-w-7xl mx-auto h-full'}>
+        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto' : 'max-w-7xl mx-auto h-full'}>
           {layoutMode === 'vertical' ? (
             // Vertical layout: sliding tabs with transitions
             <div
