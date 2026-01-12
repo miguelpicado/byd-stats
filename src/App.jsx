@@ -262,12 +262,14 @@ export default function BYDStatsAnalyzer() {
   // Different tabs use different heights to maintain proper proportions
 
   // Small charts (Resumen, Patrones): originally 275/326
-  // Fullscreen BYD: 286px (reduced ~40px from 326)
-  const smallChartHeight = isFullscreenBYD ? 286 : (isCompact ? 275 : 326);
+  // Fullscreen BYD: 271px (reduced 55px from 326)
+  // Compact: 270px (reduced 5px from 275)
+  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 270 : 326);
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
-  // Fullscreen BYD: 390px (reduced ~60px from 450)
-  const largeChartHeight = isFullscreenBYD ? 390 : (isCompact ? 350 : 450);
+  // Fullscreen BYD: 390px (reduced 60px from 450)
+  // Compact: 345px (reduced 5px from 350)
+  const largeChartHeight = isFullscreenBYD ? 390 : (isCompact ? 345 : 450);
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
