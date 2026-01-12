@@ -677,13 +677,29 @@ export default function BYDStatsAnalyzer() {
         }
       } else {
         // Modo horizontal: swipe vertical para cambiar tabs
+        // Solo cambiar de tab si el contenido está en el tope del scroll
+        // o si estamos haciendo scroll hacia arriba desde el tope
         if (swipeDirection === 'vertical' && Math.abs(diffY) > minSwipeDistance) {
+          const scrollTop = container.scrollTop;
+          const scrollHeight = container.scrollHeight;
+          const clientHeight = container.clientHeight;
+          const isAtTop = scrollTop <= 5; // Allow small tolerance
+          const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+
           if (diffY < 0 && currentIndex < tabs.length - 1) {
-            // Swipe up - siguiente tab
-            handleTabClickRef.current(tabs[currentIndex + 1].id);
+            // Swipe up - intentando ir a siguiente tab
+            // Solo cambiar si estamos arriba del todo (scroll en top)
+            if (isAtTop) {
+              handleTabClickRef.current(tabs[currentIndex + 1].id);
+            }
+            // Si no estamos en el top, el scroll nativo se encarga
           } else if (diffY > 0 && currentIndex > 0) {
-            // Swipe down - tab anterior
-            handleTabClickRef.current(tabs[currentIndex - 1].id);
+            // Swipe down - intentando ir a tab anterior
+            // Solo cambiar si estamos arriba del todo
+            if (isAtTop) {
+              handleTabClickRef.current(tabs[currentIndex - 1].id);
+            }
+            // Si no estamos en el top, el scroll nativo funciona
           }
         }
       }
