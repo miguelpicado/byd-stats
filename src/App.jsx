@@ -18,6 +18,7 @@ import ChartCard from './components/ui/ChartCard';
 import PWAManager from './components/PWAManager';
 
 import useDatabase from './hooks/useDatabase';
+import { useFileOpening } from './hooks/useFileOpening';
 import { useApp } from './context/AppContext';
 
 
@@ -221,6 +222,7 @@ export default function BYDStatsAnalyzer() {
 
   const [rawTrips, setRawTrips] = useState([]);
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
+  const { sharedFile, clearSharedFile, readFileFromUri } = useFileOpening();
   const [activeTab, setActiveTab] = useState('overview');
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -493,6 +495,43 @@ export default function BYDStatsAnalyzer() {
   useEffect(() => {
     initSql();
   }, [initSql]);
+
+  // Handle shared files from external sources
+  useEffect(() => {
+    if (!sharedFile || !sqlReady) return;
+
+    const handleSharedFile = async () => {
+      try {
+        console.log('Processing shared file:', sharedFile);
+
+        // Try to read the file from the URI
+        const file = await readFileFromUri(sharedFile.uri);
+
+        // Validate file
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+          alert(t('errors.invalidFile'));
+          clearSharedFile();
+          return;
+        }
+
+        // Process the database file
+        const trips = await processDBHook(file, rawTrips, false);
+        if (trips) {
+          setRawTrips(trips);
+          alert(t('upload.success') || 'Archivo cargado correctamente desde compartir');
+        }
+
+        clearSharedFile();
+      } catch (err) {
+        console.error('Error processing shared file:', err);
+        alert(t('errors.processingFile') || 'Error al procesar el archivo compartido: ' + err.message);
+        clearSharedFile();
+      }
+    };
+
+    handleSharedFile();
+  }, [sharedFile, sqlReady, readFileFromUri, processDBHook, clearSharedFile, rawTrips, t]);
 
   const months = useMemo(() => {
     return [...new Set(rawTrips.map(t => t.month).filter(Boolean))].sort();
