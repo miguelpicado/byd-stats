@@ -11,7 +11,8 @@
         "or": "Ou",
         "showAll": "Amosar todo",
         "noData": "Non hai datos para amosar",
-        "allTrips": "Todas as viaxes"
+        "allTrips": "Todas as viaxes",
+        "last10Trips": "Últimas 10 viaxes"
     },
     "tabs": {
         "overview": "Resumo",

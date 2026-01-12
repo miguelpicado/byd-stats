@@ -11,7 +11,8 @@
         "or": "O",
         "showAll": "Mostrar todo",
         "noData": "No hay datos para mostrar",
-        "allTrips": "Todos los viajes"
+        "allTrips": "Todos los viajes",
+        "last10Trips": "Últimos 10 viajes"
     },
     "tabs": {
         "overview": "Resumen",

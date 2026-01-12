@@ -840,7 +840,7 @@ export default function BYDStatsAnalyzer() {
 
   if (rawTrips.length === 0) {
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-start justify-center p-4 pt-8">
+      <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-start justify-center p-4 pt-8 pb-4">
         <div className="w-full max-w-xl">
           <div className="text-center mb-6">
             <img src="app_icon_v2.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
@@ -966,7 +966,7 @@ export default function BYDStatsAnalyzer() {
               className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
             >
               <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
-              <span>Privacidad</span>
+              <span>{t('footer.privacy')}</span>
             </a>
             <div className="w-px h-3 bg-slate-800"></div>
             <a
@@ -974,10 +974,10 @@ export default function BYDStatsAnalyzer() {
               className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
             >
               <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
-              <span>Legal</span>
+              <span>{t('footer.legal')}</span>
             </a>
           </div>
-          <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.1.1</p>
+          <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.2</p>
         </div>
 
         {/* GitHub link in bottom-right - Fixed positioning */}
@@ -1937,7 +1937,7 @@ export default function BYDStatsAnalyzer() {
                   {/* Slide 6: History */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
-                      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">Últimos 10 viajes</h2>
+                      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t('common.last10Trips')}</h2>
                       <div className="space-y-3">
                         {(() => {
                           const allTrips = [...filtered].sort((a, b) => {
@@ -1974,7 +1974,7 @@ export default function BYDStatsAnalyzer() {
                         className="w-full py-3 rounded-xl font-medium text-white"
                         style={{ backgroundColor: BYD_RED }}
                       >
-                        Mostrar todo
+                        {t('common.showAll')}
                       </button>
 
                     </div>
