@@ -31,13 +31,16 @@
         "avgTrip": "Avg trip",
         "activeDays": "Active days",
         "medianEfficiency": "Median efficiency",
+        "medianEff": "Median eff.",
         "dailyCharge": "Daily charge",
         "monthlyCost": "Monthly cost",
         "longTripEvery": "Long trip every",
         "frequentDay": "Frequent day",
+        "freqDay": "Frequent day",
         "peakHour": "Peak hour",
-        "totalKm": "Total km",
+        "totalKm": "Total mi",
         "avgDay": "Daily avg",
+        "dailyAvg": "Daily avg",
         "consumptionPerTrip": "Consumption/trip",
         "avgDistance": "Avg Distance",
         "avgSpeed": "Avg Speed",
@@ -218,10 +221,6 @@
         "syncNow": "Sync now",
         "syncing": "Syncing...",
         "signInToSync": "Sign in to sync"
-    },
-    "pwa": {
-        "install": "Install",
-        "quickAccess": "Quick access and fullscreen"
     },
     "weekdays": {
         "mon": "Mon",

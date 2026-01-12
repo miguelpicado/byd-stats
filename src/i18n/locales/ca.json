@@ -217,10 +217,6 @@
         "syncing": "Sincronitzant...",
         "signInToSync": "Inicia sessió per sincronitzar"
     },
-    "pwa": {
-        "install": "Instal·lar",
-        "quickAccess": "Accés ràpid i pantalla completa"
-    },
     "history": {
         "title": "Històric de viatges",
         "tripsSaved": "viatges desats",
