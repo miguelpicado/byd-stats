@@ -622,6 +622,7 @@ export default function BYDStatsAnalyzer() {
 
     const container = swipeContainer;
     let swipeDirection = null;
+    let initialScrollTop = 0;
     const isHorizontalMode = layoutModeRef.current === 'horizontal';
 
     const handleTouchStart = (e) => {
@@ -630,6 +631,8 @@ export default function BYDStatsAnalyzer() {
       touchStartRef.current = touch.clientX;
       touchStartYRef.current = touch.clientY;
       swipeDirection = null;
+      // Capture initial scroll position at start of touch
+      initialScrollTop = container.scrollTop;
     };
 
     const handleTouchMove = (e) => {
@@ -644,13 +647,26 @@ export default function BYDStatsAnalyzer() {
         swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
       }
 
-      // En modo vertical: prevenir scroll si swipe horizontal
-      // En modo horizontal: prevenir scroll horizontal si swipe vertical
       const currentMode = layoutModeRef.current;
+
+      // En modo vertical: prevenir scroll si swipe horizontal (para cambio de tabs)
       if (currentMode === 'vertical' && swipeDirection === 'horizontal' && diffX > 10) {
         if (e.cancelable) e.preventDefault();
-      } else if (currentMode === 'horizontal' && swipeDirection === 'vertical' && diffY > 10) {
-        if (e.cancelable) e.preventDefault();
+      }
+      // En modo horizontal: SOLO prevenir scroll nativo si:
+      // 1. Estamos en el tope del scroll (scrollTop <= 5)
+      // 2. El gesto es hacia ABAJO (swipe down = ir a tab anterior)
+      // En todos los demás casos, permitir scroll nativo
+      else if (currentMode === 'horizontal' && swipeDirection === 'vertical') {
+        const actualDiffY = touch.clientY - touchStartYRef.current;
+        const isSwipingDown = actualDiffY > 0;
+        const wasAtTop = initialScrollTop <= 5;
+
+        // Solo prevenir si estábamos en el top Y vamos hacia abajo (tab anterior)
+        if (wasAtTop && isSwipingDown && diffY > 10) {
+          if (e.cancelable) e.preventDefault();
+        }
+        // Si no se cumplen las condiciones, el scroll nativo funciona normalmente
       }
     };
 
@@ -677,30 +693,19 @@ export default function BYDStatsAnalyzer() {
         }
       } else {
         // Modo horizontal: swipe vertical para cambiar tabs
-        // Solo cambiar de tab si el contenido está en el tope del scroll
-        // o si estamos haciendo scroll hacia arriba desde el tope
+        // PRIORIDAD: scroll nativo siempre funciona
+        // Solo cambiar tab si el gesto fue válido:
+        // - Swipe DOWN + estábamos en el top = ir a tab anterior
+        // Los swipes UP ya no cambian de tab (scroll tiene prioridad)
         if (swipeDirection === 'vertical' && Math.abs(diffY) > minSwipeDistance) {
-          const scrollTop = container.scrollTop;
-          const scrollHeight = container.scrollHeight;
-          const clientHeight = container.clientHeight;
-          const isAtTop = scrollTop <= 5; // Allow small tolerance
-          const isAtBottom = scrollTop + clientHeight >= scrollHeight - 5;
+          const wasAtTop = initialScrollTop <= 5;
 
-          if (diffY < 0 && currentIndex < tabs.length - 1) {
-            // Swipe up - intentando ir a siguiente tab
-            // Solo cambiar si estamos arriba del todo (scroll en top)
-            if (isAtTop) {
-              handleTabClickRef.current(tabs[currentIndex + 1].id);
-            }
-            // Si no estamos en el top, el scroll nativo se encarga
-          } else if (diffY > 0 && currentIndex > 0) {
-            // Swipe down - intentando ir a tab anterior
-            // Solo cambiar si estamos arriba del todo
-            if (isAtTop) {
-              handleTabClickRef.current(tabs[currentIndex - 1].id);
-            }
-            // Si no estamos en el top, el scroll nativo funciona
+          if (diffY > 0 && currentIndex > 0 && wasAtTop) {
+            // Swipe down + en el top = ir a tab anterior
+            handleTabClickRef.current(tabs[currentIndex - 1].id);
           }
+          // Swipe up en horizontal mode ya NO cambia de tab
+          // El usuario debe usar el menú lateral o el scroll llega al final
         }
       }
 
@@ -708,10 +713,11 @@ export default function BYDStatsAnalyzer() {
       touchStartRef.current = null;
       touchStartYRef.current = null;
       swipeDirection = null;
+      initialScrollTop = 0;
     };
 
     // Agregar event listeners
-    // Usamos non-passive en touchmove para poder prevenir el scroll nativo
+    // Usamos non-passive en touchmove para poder prevenir el scroll nativo cuando sea necesario
     container.addEventListener('touchstart', handleTouchStart, { passive: true });
     container.addEventListener('touchmove', handleTouchMove, { passive: false });
     container.addEventListener('touchend', handleTouchEnd, { passive: true });
