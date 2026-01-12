@@ -10,7 +10,8 @@
         "no": "Ez",
         "or": "Edo",
         "showAll": "Dena erakutsi",
-        "noData": "Ez dago daturik erakusteko"
+        "noData": "Ez dago daturik erakusteko",
+        "allTrips": "Bidaia guztiak"
     },
     "tabs": {
         "overview": "Laburpena",
@@ -36,13 +37,25 @@
         "frequentDay": "Egun ohikoena",
         "peakHour": "Gailur ordua",
         "totalKm": "Km guztira",
-        "avgDay": "Eguneko batez bestekoa"
+        "avgDay": "Eguneko batez bestekoa",
+        "medianEff": "B.B. Efizientzia",
+        "freqDay": "Egun ohikoa",
+        "dailyAvg": "Eguneko B.B",
+        "consumptionPerTrip": "Kontsumoa/bidaia",
+        "avgDistance": "B.B. Distantzia",
+        "avgSpeed": "B.B. Abiadura",
+        "longest": "Luzeena",
+        "maxCons": "Kontsumo max",
+        "maxDur": "Iraupen max",
+        "shortest": "Laburrena"
     },
     "units": {
         "km": "km",
         "kwh": "kWh",
+        "kWh": "kWh",
         "hours": "h",
         "minutes": "min",
+        "day": "eguna",
         "days": "egun",
         "kwhPer100km": "kWh/100km",
         "kmh": "km/h",
@@ -51,7 +64,10 @@
         "per100km": "/100km",
         "euroPerMonth": "€/hil",
         "euroPerKwh": "€/kWh",
-        "kwhPerDay": "kWh/egun"
+        "kwhPerDay": "kWh/egun",
+        "kWh100km": "kWh/100km",
+        "kWhDay": "kWh/egun",
+        "currencyPerMonth": "€/hil"
     },
     "days": {
         "mon": "Astelehena",
@@ -80,7 +96,14 @@
         "efficiencyVsDistance": "📍 Eraginkortasuna vs Distantzia",
         "byHour": "Orduka",
         "byDay": "Egunka",
-        "tripsPerWeekday": "Asteko eguneko bidaiak"
+        "tripsPerWeekday": "Asteko eguneko bidaiak",
+        "monthlyDist": "Hileroko bilakaera (distantzia)",
+        "tripDist": "Bidaien Banaketa",
+        "monthlyEff": "Hileroko Efizientzia Bilakaera",
+        "effVsDist": "Efizientzia vs Distantzia",
+        "topDist": "Top Distantzia",
+        "topCons": "Top Kontsumoa",
+        "topDur": "Top Iraupena"
     },
     "records": {
         "title": "Errekordak",
@@ -145,16 +168,26 @@
         "reportBug": "Akatsa jakinarazi"
     },
     "upload": {
-        "title": "BYD Estatistikak",
+        "title": "Datuen kudeaketa",
         "subtitle": "Zure ibilgailu elektrikoaren datuak aztertu",
         "clickToSelect": "Egin klik EC_Database.db fitxategia hautatzeko",
         "tapToSelect": "Sakatu zure fitxategia hautatzeko",
         "preparing": "Prestatzen...",
         "hint": "Hautatu EC_Database.db fitxategia zure autoaren \"EnergyData\" karpetan",
-        "tip": "💡 Zure nabigatzaileak fitxategiak erakusten ez baditu: kopiatu EC_Database.db Downloads-era, hautatu, sakatu 3 puntuak eta aldatu izena EC_Database.jpg",
+        "tip": "Aholkua: .db fitxategia agertzen ez bada, saiatu .jpg izenera aldatzen",
         "mergeExisting": "Dauzenekin konbinatu",
         "replaceAll": "Dena ordezkatu",
-        "deleteAll": "Dena ezabatu"
+        "deleteAll": "Dena ezabatu",
+        "historySection": "Historia ({{count}} bidaia)",
+        "saveCurrent": "Gorde uneko bidaiak historian",
+        "viewLoad": "Ikusi / Kargatu historia",
+        "export": "Esportatu",
+        "clearHistory": "Ezabatu historia",
+        "filesSection": "Fitxategiak / BYD Datu-basea",
+        "loadNew": "Kargatu bidaia berriak (Ordezkatu)",
+        "loadMerge": "Kargatu bidaia berriak soilik (Konbinatu)",
+        "clearView": "Garbitu uneko ikuspegia (Ez du historia ezabatzen)",
+        "exportTrips": "Esportatu bidaiak"
     },
     "filter": {
         "title": "Datuak iragazi",
@@ -188,31 +221,6 @@
         "install": "Instalatu",
         "quickAccess": "Sarbide azkarra eta pantaila osoa"
     },
-    "weekdays": {
-        "mon": "Al",
-        "tue": "As",
-        "wed": "Az",
-        "thu": "Og",
-        "fri": "Or",
-        "sat": "La",
-        "sun": "Ig"
-    },
-    "weekdaysFull": {
-        "monday": "Astelehena",
-        "tuesday": "Asteartea",
-        "wednesday": "Asteazkena",
-        "thursday": "Osteguna",
-        "friday": "Ostirala",
-        "saturday": "Larunbata",
-        "sunday": "Igandea"
-    },
-    "footer": {
-        "privacy": "Pribatutasuna",
-        "legal": "Legala",
-        "github": "GitHub",
-        "openSource": "Kode Irekiko Proiektua",
-        "viewOnGithub": "GitHub-en ikusi"
-    },
     "history": {
         "title": "Bidaien historia",
         "tripsSaved": "bidaia gordeta",
@@ -227,53 +235,6 @@
         "avgSpeed": "Batez besteko abiadura",
         "last10Trips": "Azken 10 bidaiak"
     },
-    "charts": {
-        "monthlyDist": "Hileroko bilakaera (distantzia)",
-        "tripDist": "Bidaien Banaketa",
-        "monthlyKmKwh": "Hileroko Km eta kWh",
-        "last60Days": "Azken 60 egunetako Km",
-        "byHour": "Orduka",
-        "byDay": "Egunka",
-        "monthlyEff": "Hileroko Efizientzia Bilakaera",
-        "effVsDist": "Efizientzia vs Distantzia",
-        "topDist": "Top Distantzia",
-        "topCons": "Top Kontsumoa",
-        "topDur": "Top Iraupena"
-    },
-    "stats": {
-        "distance": "Distantzia",
-        "energy": "Energia",
-        "trips": "Bidaiak",
-        "time": "Denbora",
-        "efficiency": "Efizientzia",
-        "speed": "Abiadura",
-        "avgTrip": "Batez besteko bidaia",
-        "activeDays": "Egun aktiboak",
-        "longTripEvery": "Bidaia luzea",
-        "medianEff": "B.B. Efizientzia",
-        "dailyCharge": "Eguneko karga",
-        "monthlyCost": "Hileroko kostua",
-        "freqDay": "Egun ohikoa",
-        "peakHour": "Ordu puntakoa",
-        "totalKm": "Km guztira",
-        "dailyAvg": "Eguneko B.B",
-        "consumptionPerTrip": "Kontsumoa/bidaia",
-        "avgDistance": "B.B. Distantzia",
-        "avgSpeed": "B.B. Abiadura",
-        "longest": "Luzeena",
-        "maxCons": "Kontsumo max",
-        "maxDur": "Iraupen max",
-        "shortest": "Laburrena"
-    },
-    "units": {
-        "km": "km",
-        "kWh": "kWh",
-        "day": "eguna",
-        "days": "egun",
-        "kmh": "km/h",
-        "kWh100km": "kWh/100km",
-        "kWhDay": "kWh/egun"
-    },
     "confirmations": {
         "deleteAllData": "Datu guztiak ezabatu?",
         "loadHistory": "{count} bidaia historiatik kargatu?",
@@ -286,20 +247,6 @@
     },
     "errors": {
         "invalidFile": "*.DB edo *.JPG fitxategiak soilik onartzen dira (izena aldatutako datu-basea)\nAurkitu EC_Database.db autoaren \"Energydata\" karpetan"
-    },
-    "upload": {
-        "title": "Datuen kudeaketa",
-        "historySection": "Historia ({{count}} bidaia)",
-        "saveCurrent": "Gorde uneko bidaiak historian",
-        "viewLoad": "Ikusi / Kargatu historia",
-        "export": "Esportatu",
-        "clearHistory": "Ezabatu historia",
-        "filesSection": "Fitxategiak / BYD Datu-basea",
-        "loadNew": "Kargatu bidaia berriak (Ordezkatu)",
-        "loadMerge": "Kargatu bidaia berriak soilik (Konbinatu)",
-        "clearView": "Garbitu uneko ikuspegia (Ez du historia ezabatzen)",
-        "exportTrips": "Esportatu bidaiak",
-        "tip": "Aholkua: .db fitxategia agertzen ez bada, saiatu .jpg izenera aldatzen"
     },
     "legal": {
         "title": "Dokumentazio Legala",
@@ -317,9 +264,12 @@
         "clear": "Ezabatu historia"
     },
     "footer": {
+        "privacy": "Pribatutasuna",
+        "legal": "Informazio Legala",
         "github": "Ikusi GitHub-en",
         "email": "Bidali Emaila",
-        "legal": "Informazio Legala",
+        "openSource": "Kode Irekiko Proiektua",
+        "viewOnGithub": "GitHub-en ikusi",
         "madeWith": "BYD komunitatearentzat ❤️ egina"
     },
     "header": {
