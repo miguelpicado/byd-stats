@@ -18,7 +18,7 @@ import ChartCard from './components/ui/ChartCard';
 import PWAManager from './components/PWAManager';
 
 import useDatabase from './hooks/useDatabase';
-import { useFileOpening } from './hooks/useFileOpening';
+import { usePWAFileHandling } from './hooks/usePWAFileHandling';
 import { useApp } from './context/AppContext';
 
 
@@ -222,7 +222,7 @@ export default function BYDStatsAnalyzer() {
 
   const [rawTrips, setRawTrips] = useState([]);
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
-  const { sharedFile, clearSharedFile, readFileFromUri } = useFileOpening();
+  const { pendingFile, clearPendingFile } = usePWAFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -496,42 +496,42 @@ export default function BYDStatsAnalyzer() {
     initSql();
   }, [initSql]);
 
-  // Handle shared files from external sources
+  // Handle PWA file opening and sharing
   useEffect(() => {
-    if (!sharedFile || !sqlReady) return;
+    if (!pendingFile || !sqlReady) return;
 
-    const handleSharedFile = async () => {
+    const handlePWAFile = async () => {
       try {
-        console.log('Processing shared file:', sharedFile);
-
-        // Try to read the file from the URI
-        const file = await readFileFromUri(sharedFile.uri);
+        console.log('[PWA] Processing pending file:', pendingFile.name);
 
         // Validate file
-        const fileName = file.name.toLowerCase();
+        const fileName = pendingFile.name.toLowerCase();
         if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-          alert(t('errors.invalidFile'));
-          clearSharedFile();
+          alert(t('errors.invalidFile') || 'Archivo inválido. Solo se permiten archivos .db');
+          clearPendingFile();
           return;
         }
 
         // Process the database file
-        const trips = await processDBHook(file, rawTrips, false);
+        const trips = await processDBHook(pendingFile, rawTrips, false);
         if (trips) {
           setRawTrips(trips);
-          alert(t('upload.success') || 'Archivo cargado correctamente desde compartir');
+          console.log('[PWA] File processed successfully:', trips.length, 'trips');
+
+          // Show success message
+          alert(t('upload.success') || 'Archivo cargado correctamente');
         }
 
-        clearSharedFile();
+        clearPendingFile();
       } catch (err) {
-        console.error('Error processing shared file:', err);
-        alert(t('errors.processingFile') || 'Error al procesar el archivo compartido: ' + err.message);
-        clearSharedFile();
+        console.error('[PWA] Error processing file:', err);
+        alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + err.message);
+        clearPendingFile();
       }
     };
 
-    handleSharedFile();
-  }, [sharedFile, sqlReady, readFileFromUri, processDBHook, clearSharedFile, rawTrips, t]);
+    handlePWAFile();
+  }, [pendingFile, sqlReady, processDBHook, clearPendingFile, rawTrips, t]);
 
   const months = useMemo(() => {
     return [...new Set(rawTrips.map(t => t.month).filter(Boolean))].sort();
