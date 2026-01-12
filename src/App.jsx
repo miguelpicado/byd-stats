@@ -357,8 +357,19 @@ export default function BYDStatsAnalyzer() {
         document.documentElement.classList.remove('dark');
       }
 
-      // 2. Browser color-scheme (prevents BYD forced dark mode)
+      // 2. Browser color-scheme (prevents system override)
       document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
+
+      // 2.1 Force meta tag to match active theme (critical for car systems)
+      // This prevents the car's dark mode from overriding app's light theme
+      let colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+      if (!colorSchemeMeta) {
+        colorSchemeMeta = document.createElement('meta');
+        colorSchemeMeta.name = 'color-scheme';
+        document.head.appendChild(colorSchemeMeta);
+      }
+      // Set to ONLY the active theme, not "light dark" which allows system override
+      colorSchemeMeta.content = isDark ? 'dark' : 'light';
 
       // 3. PWA theme-color meta tag (for status bar in PWA)
       let themeColorMeta = document.querySelector('meta[name="theme-color"]');
