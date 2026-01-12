@@ -272,10 +272,18 @@ export default function BYDStatsAnalyzer() {
   const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 345 : 450);
 
   // Spacing adjustments for different modes
-  const patternsSpacing = isFullscreenBYD ? 'space-y-2' : (isCompact ? 'space-y-2' : 'space-y-4');
-  const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[2px]' : 'py-1.5');
-  const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[3.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[435px]' : (isCompact ? 'h-[347px]' : 'h-[450px]');
+  // Overview/Resumen spacing (vertical mode)
+  const overviewSpacingVertical = isCompact ? 'space-y-3.5' : 'space-y-3 sm:space-y-4';
+  // Overview/Resumen spacing (horizontal mode)
+  const overviewSpacingHorizontal = isCompact ? 'space-y-3.5' : 'space-y-4 sm:space-y-6';
+
+  // Patterns spacing: different for compact (+4px) and fullscreenBYD (+3px)
+  const patternsSpacing = isFullscreenBYD ? 'space-y-[11px]' : (isCompact ? 'space-y-3' : 'space-y-4');
+
+  // Records list item padding
+  const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
+  const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[425px]' : (isCompact ? 'h-[345px]' : 'h-[450px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
@@ -1591,7 +1599,7 @@ export default function BYDStatsAnalyzer() {
                   {/* Slide 1: Overview */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     {activeTab === 'overview' && (
-                      <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
+                      <div className={`${overviewSpacingVertical}`}>
                         <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
                           <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label={t('stats.distance')} value={summary.totalKm} unit={t('units.km')} color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} ${t('units.km')}/${t('units.day')}`} />
                           <StatCard isVerticalMode={true} isLarger={isLargerCard} isCompact={isCompact} icon={Zap} label={t('stats.energy')} value={summary.totalKwh} unit={t('units.kWh')} color="bg-cyan-500/20 text-cyan-400" />
@@ -2049,7 +2057,7 @@ export default function BYDStatsAnalyzer() {
               ) : (
                 <>
                   {activeTab === 'overview' && (
-                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
+                    <div className={`${overviewSpacingHorizontal}`}>
 
                       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
                         <StatCard isLarger={isLargerCard} isCompact={isCompact} icon={MapPin} label={t('stats.distance')} value={summary.totalKm} unit={t('units.km')} color="bg-red-500/20 text-red-400" sub={`${summary.kmDay} ${t('units.km')}/${t('units.day')}`} />
