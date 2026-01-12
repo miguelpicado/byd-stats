@@ -319,15 +319,26 @@ export default function BYDStatsAnalyzer() {
     if (!isNative) return;
 
     const backHandler = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
+      // Always handle the back button - prevent default Android behavior
+      // Only exit app if no modals are open AND canGoBack is false
+
       if (showTripDetailModal) {
+        // Close trip detail modal, don't exit
         setShowTripDetailModal(false);
         setSelectedTrip(null);
       } else if (showSettingsModal) {
+        // Close settings modal, don't exit
         setShowSettingsModal(false);
       } else if (showAllTripsModal) {
+        // Close all trips modal, don't exit
         setShowAllTripsModal(false);
-      } else if (!canGoBack) {
-        CapacitorApp.exitApp();
+      } else {
+        // No modals open - only now check if we should exit
+        if (!canGoBack) {
+          CapacitorApp.exitApp();
+        }
+        // If canGoBack is true, let the default behavior happen
+        // (but this shouldn't happen in a single-page app)
       }
     });
 
@@ -694,18 +705,23 @@ export default function BYDStatsAnalyzer() {
       } else {
         // Modo horizontal: swipe vertical para cambiar tabs
         // PRIORIDAD: scroll nativo siempre funciona
-        // Solo cambiar tab si el gesto fue válido:
-        // - Swipe DOWN + estábamos en el top = ir a tab anterior
-        // Los swipes UP ya no cambian de tab (scroll tiene prioridad)
+        // Solo cambiar tab cuando:
+        // - Swipe DOWN + scroll en el TOP = ir a tab anterior
+        // - Swipe UP + scroll en el BOTTOM = ir a siguiente tab
         if (swipeDirection === 'vertical' && Math.abs(diffY) > minSwipeDistance) {
           const wasAtTop = initialScrollTop <= 5;
+          const scrollHeight = container.scrollHeight;
+          const clientHeight = container.clientHeight;
+          const wasAtBottom = initialScrollTop + clientHeight >= scrollHeight - 5;
 
           if (diffY > 0 && currentIndex > 0 && wasAtTop) {
             // Swipe down + en el top = ir a tab anterior
             handleTabClickRef.current(tabs[currentIndex - 1].id);
+          } else if (diffY < 0 && currentIndex < tabs.length - 1 && wasAtBottom) {
+            // Swipe up + en el bottom = ir a siguiente tab
+            handleTabClickRef.current(tabs[currentIndex + 1].id);
           }
-          // Swipe up en horizontal mode ya NO cambia de tab
-          // El usuario debe usar el menú lateral o el scroll llega al final
+          // En cualquier otra posición, el scroll nativo funciona
         }
       }
 
