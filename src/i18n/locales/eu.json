@@ -11,7 +11,8 @@
         "or": "Edo",
         "showAll": "Dena erakutsi",
         "noData": "Ez dago daturik erakusteko",
-        "allTrips": "Bidaia guztiak"
+        "allTrips": "Bidaia guztiak",
+        "last10Trips": "Azken 10 bidaiak"
     },
     "tabs": {
         "overview": "Laburpena",

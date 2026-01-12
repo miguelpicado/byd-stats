@@ -11,7 +11,8 @@
         "or": "O",
         "showAll": "Mostrar tot",
         "noData": "No hi ha dades per mostrar",
-        "allTrips": "Tots els viatges"
+        "allTrips": "Tots els viatges",
+        "last10Trips": "Últims 10 viatges"
     },
     "tabs": {
         "overview": "Resum",
