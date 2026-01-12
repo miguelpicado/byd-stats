@@ -267,10 +267,10 @@ export default function BYDStatsAnalyzer() {
   const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 270 : 326);
 
   // Charts for Patrones (viajes por día): need more height
-  // Fullscreen BYD: 281px (+10px from smallChart base)
-  // Compact: 275px (+5px from smallChart base)
+  // Fullscreen BYD: 286px (+5px more)
+  // Compact: 277px (+2px more)
   // Normal: 336px (+10px from smallChart base)
-  const patternsChartHeight = isFullscreenBYD ? 281 : (isCompact ? 275 : 336);
+  const patternsChartHeight = isFullscreenBYD ? 286 : (isCompact ? 277 : 336);
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
   // Fullscreen BYD: 395px (reduced 55px from 450)
@@ -278,10 +278,10 @@ export default function BYDStatsAnalyzer() {
   const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 345 : 450);
 
   // Spacing adjustments for different modes
-  // Overview/Resumen spacing (vertical mode): compact reduced by 2px
-  const overviewSpacingVertical = isCompact ? 'space-y-2' : 'space-y-3 sm:space-y-4';
-  // Overview/Resumen spacing (horizontal mode): compact reduced by 2px
-  const overviewSpacingHorizontal = isCompact ? 'space-y-2' : 'space-y-4 sm:space-y-6';
+  // Overview/Resumen spacing (vertical mode): compact +1px, normal +2px
+  const overviewSpacingVertical = isCompact ? 'space-y-2.5' : 'space-y-3.5 sm:space-y-5';
+  // Overview/Resumen spacing (horizontal mode): compact +1px, normal +2px
+  const overviewSpacingHorizontal = isCompact ? 'space-y-2.5' : 'space-y-5 sm:space-y-6.5';
 
   // Patterns spacing: fullscreenBYD +10px, normal +5px
   const patternsSpacing = isFullscreenBYD ? 'space-y-[21px]' : (isCompact ? 'space-y-3' : 'space-y-5');
@@ -289,7 +289,7 @@ export default function BYDStatsAnalyzer() {
   // Records list item padding
   const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
   const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[405px]' : (isCompact ? 'h-[345px]' : 'h-[450px]');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[400px]' : (isCompact ? 'h-[345px]' : 'h-[450px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
