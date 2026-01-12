@@ -283,5 +283,34 @@
         "history": "Bidaien historia",
         "settings": "Ezarpenak",
         "filters": "Iragazkiak"
+    },
+    "landing": {
+        "title": "BYD Estatistikak",
+        "subtitle": "Zure ibilgailu elektrikoaren datuak aztertu",
+        "loading": "Kargatzen...",
+        "clickToSelect": "Egin klik EC_Database.db fitxategia hautatzeko",
+        "tapToSelect": "Sakatu zure fitxategia hautatzeko",
+        "preparing": "Prestatzen...",
+        "hint": "Hautatu EC_Database.db fitxategia zure autoaren \"EnergyData\" karpetan",
+        "tip": "💡 Zure nabigatzaileak fitxategiak erakusten ez baditu: kopiatu EC_Database.db Downloads-era, hautatu, sakatu 3 puntuak eta aldatu izena EC_Database.jpg",
+        "cloudConnected": "Hodeia konektatuta",
+        "syncNow": "Orain sinkronizatu",
+        "syncing": "Sinkronizatzen...",
+        "signInToSync": "Hasi saioa sinkronizatzeko"
+    },
+    "pwa": {
+        "install": "Instalatu",
+        "quickAccess": "Sarbide azkarra eta pantaila osoa",
+        "exit": "Irten",
+        "closeApp": "Itxi aplikazioa",
+        "newVersion": "Bertsio berria eskuragarri",
+        "updateHint": "Sakatu eguneratu azken hobekuntzak lortzeko",
+        "update": "Eguneratu",
+        "exitConfirmTitle": "BYD Stats itxi?",
+        "exitConfirmText": "Zure hasierako pantailako ikonoan aplikazioa berriz ireki dezakezu."
+    },
+    "patterns": {
+        "tripsPerWeekday": "Asteko eguneko bidaiak",
+        "tripsWord": "bidaiak"
     }
 }

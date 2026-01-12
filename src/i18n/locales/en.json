@@ -361,5 +361,34 @@
         "longest": "Longest",
         "efficient": "Most efficient",
         "label": "Sort by:"
+    },
+    "landing": {
+        "title": "BYD Statistics",
+        "subtitle": "Analyze your electric vehicle data",
+        "loading": "Loading...",
+        "clickToSelect": "Click to select your EC_Database.db file",
+        "tapToSelect": "Tap to select your file",
+        "preparing": "Preparing...",
+        "hint": "Select the EC_Database.db file in your car's \"EnergyData\" folder",
+        "tip": "💡 If your browser doesn't show files: copy EC_Database.db to Downloads, select it, tap the 3 dots and rename to EC_Database.jpg",
+        "cloudConnected": "Cloud connected",
+        "syncNow": "Sync now",
+        "syncing": "Syncing...",
+        "signInToSync": "Sign in to sync"
+    },
+    "pwa": {
+        "install": "Install",
+        "quickAccess": "Quick access and fullscreen",
+        "exit": "Exit",
+        "closeApp": "Close app",
+        "newVersion": "New version available",
+        "updateHint": "Tap update to get the latest improvements",
+        "update": "Update",
+        "exitConfirmTitle": "Close BYD Stats?",
+        "exitConfirmText": "You can reopen the app from the icon on your home screen."
+    },
+    "patterns": {
+        "tripsPerWeekday": "Trips per weekday",
+        "tripsWord": "trips"
     }
 }
