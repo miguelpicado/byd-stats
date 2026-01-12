@@ -14,11 +14,18 @@ export const AppProvider = ({ children }) => {
     // --- Layout State ---
     const [layoutMode, setLayoutMode] = useState('vertical');
     const [isCompact, setIsCompact] = useState(false);
+    const [isFullscreenBYD, setIsFullscreenBYD] = useState(false);
 
     useEffect(() => {
         const checkCompact = () => {
             const w = window.innerWidth;
             const h = window.innerHeight;
+
+            // Fullscreen BYD mode for car display (1280x720)
+            // Activates when height is between 680px and 740px
+            const isBYDFullscreen = h >= 680 && h <= 740;
+            setIsFullscreenBYD(isBYDFullscreen);
+
             // Consider compact if width is large enough but height is restricted (e.g. 1280x720)
             const isCompactSize = w >= 1024 && h <= 680;
             setIsCompact(isCompactSize);
@@ -133,7 +140,8 @@ export const AppProvider = ({ children }) => {
         updateSettings, // Compatible with setSettings signature
         layoutMode,
         setLayoutMode,
-        isCompact
+        isCompact,
+        isFullscreenBYD
     };
 
     return (

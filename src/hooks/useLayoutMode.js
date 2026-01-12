@@ -4,11 +4,12 @@ import { useState, useEffect } from 'react';
 
 /**
  * Custom hook for detecting layout mode (vertical/horizontal)
- * @returns {{ layoutMode: string, isCompact: boolean }}
+ * @returns {{ layoutMode: string, isCompact: boolean, isFullscreenBYD: boolean }}
  */
 export function useLayoutMode() {
     const [layoutMode, setLayoutMode] = useState('vertical');
     const [isCompact, setIsCompact] = useState(false);
+    const [isFullscreenBYD, setIsFullscreenBYD] = useState(false);
 
     useEffect(() => {
         const updateLayoutMode = () => {
@@ -41,21 +42,34 @@ export function useLayoutMode() {
             }
         };
 
+        const checkFullscreenBYD = () => {
+            const h = window.innerHeight;
+            // Fullscreen BYD mode for car display (1280x720)
+            // Activates when height is between 680px and 740px
+            const isBYDFullscreen = h >= 680 && h <= 740;
+            setIsFullscreenBYD(isBYDFullscreen);
+        };
+
         updateLayoutMode();
         checkCompact();
+        checkFullscreenBYD();
 
         window.addEventListener('resize', updateLayoutMode);
         window.addEventListener('resize', checkCompact);
+        window.addEventListener('resize', checkFullscreenBYD);
         window.addEventListener('orientationchange', updateLayoutMode);
+        window.addEventListener('orientationchange', checkFullscreenBYD);
 
         return () => {
             window.removeEventListener('resize', updateLayoutMode);
             window.removeEventListener('resize', checkCompact);
+            window.removeEventListener('resize', checkFullscreenBYD);
             window.removeEventListener('orientationchange', updateLayoutMode);
+            window.removeEventListener('orientationchange', checkFullscreenBYD);
         };
     }, []);
 
-    return { layoutMode, isCompact };
+    return { layoutMode, isCompact, isFullscreenBYD };
 }
 
 export default useLayoutMode;
