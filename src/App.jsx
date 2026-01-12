@@ -261,10 +261,16 @@ export default function BYDStatsAnalyzer() {
   // Calculate chart heights based on mode
   // Different tabs use different heights to maintain proper proportions
 
-  // Small charts (Resumen, Patrones): originally 275/326
+  // Small charts for Resumen: originally 275/326
   // Fullscreen BYD: 271px (reduced 55px from 326)
   // Compact: 270px (reduced 5px from 275)
   const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 270 : 326);
+
+  // Charts for Patrones (viajes por día): need more height
+  // Fullscreen BYD: 281px (+10px from smallChart base)
+  // Compact: 275px (+5px from smallChart base)
+  // Normal: 336px (+10px from smallChart base)
+  const patternsChartHeight = isFullscreenBYD ? 281 : (isCompact ? 275 : 336);
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
   // Fullscreen BYD: 395px (reduced 55px from 450)
@@ -272,18 +278,18 @@ export default function BYDStatsAnalyzer() {
   const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 345 : 450);
 
   // Spacing adjustments for different modes
-  // Overview/Resumen spacing (vertical mode)
-  const overviewSpacingVertical = isCompact ? 'space-y-3.5' : 'space-y-3 sm:space-y-4';
-  // Overview/Resumen spacing (horizontal mode)
-  const overviewSpacingHorizontal = isCompact ? 'space-y-3.5' : 'space-y-4 sm:space-y-6';
+  // Overview/Resumen spacing (vertical mode): compact reduced by 2px
+  const overviewSpacingVertical = isCompact ? 'space-y-2' : 'space-y-3 sm:space-y-4';
+  // Overview/Resumen spacing (horizontal mode): compact reduced by 2px
+  const overviewSpacingHorizontal = isCompact ? 'space-y-2' : 'space-y-4 sm:space-y-6';
 
-  // Patterns spacing: different for compact (+4px) and fullscreenBYD (+3px)
-  const patternsSpacing = isFullscreenBYD ? 'space-y-[11px]' : (isCompact ? 'space-y-3' : 'space-y-4');
+  // Patterns spacing: fullscreenBYD +10px, normal +5px
+  const patternsSpacing = isFullscreenBYD ? 'space-y-[21px]' : (isCompact ? 'space-y-3' : 'space-y-5');
 
   // Records list item padding
   const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
   const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[425px]' : (isCompact ? 'h-[345px]' : 'h-[450px]');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[405px]' : (isCompact ? 'h-[345px]' : 'h-[450px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
@@ -1797,7 +1803,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                           <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
                             <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
-                              <div style={{ width: '100%', height: smallChartHeight }}>
+                              <div style={{ width: '100%', height: patternsChartHeight }}>
                                 <BarJS
                                   options={{
                                     maintainAspectRatio: false,
@@ -1815,7 +1821,7 @@ export default function BYDStatsAnalyzer() {
                               </div>
                             </ChartCard>
                             <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
-                              <div style={{ width: '100%', height: smallChartHeight }}>
+                              <div style={{ width: '100%', height: patternsChartHeight }}>
                                 <RadarJS
                                   options={{
                                     maintainAspectRatio: false,
@@ -2259,7 +2265,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
-                            <div style={{ width: '100%', height: smallChartHeight }}>
+                            <div style={{ width: '100%', height: patternsChartHeight }}>
                               <BarJS
                                 options={{
                                   maintainAspectRatio: false,
@@ -2277,7 +2283,7 @@ export default function BYDStatsAnalyzer() {
                             </div>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
-                            <div style={{ width: '100%', height: smallChartHeight }}>
+                            <div style={{ width: '100%', height: patternsChartHeight }}>
                               <RadarJS
                                 options={{
                                   maintainAspectRatio: false,
