@@ -2051,7 +2051,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
-                          <div style={{ width: '100%', height: isCompact ? 275 : 326 }}>
+                          <div style={{ width: '100%', height: chartHeight }}>
                             <LineJS
                               options={{
                                 maintainAspectRatio: false,
@@ -2082,7 +2082,7 @@ export default function BYDStatsAnalyzer() {
                         <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
                           <div className="flex flex-row items-center gap-4">
                             <div className="w-1/2">
-                              <div style={{ width: '100%', height: isCompact ? 273 : 326 }}>
+                              <div style={{ width: '100%', height: chartHeight }}>
                                 <PieJS
                                   options={{
                                     maintainAspectRatio: false,
@@ -2169,7 +2169,7 @@ export default function BYDStatsAnalyzer() {
                         </div>
                         <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                           <ChartCard isCompact={isCompact} title={t('charts.monthlyKmKwh')}>
-                            <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                            <div style={{ width: '100%', height: chartHeight }}>
                               <BarJS
                                 options={{
                                   maintainAspectRatio: false,
@@ -2191,7 +2191,7 @@ export default function BYDStatsAnalyzer() {
                             </div>
                           </ChartCard>
                           <ChartCard isCompact={isCompact} title={t('charts.last60Days')}>
-                            <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                            <div style={{ width: '100%', height: chartHeight }}>
                               <LineJS
                                 options={{
                                   maintainAspectRatio: false,
@@ -2301,7 +2301,7 @@ export default function BYDStatsAnalyzer() {
                       </div>
                       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                         <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
-                          <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                          <div style={{ width: '100%', height: chartHeight }}>
                             <LineJS
                               options={{
                                 maintainAspectRatio: false,
@@ -2336,7 +2336,7 @@ export default function BYDStatsAnalyzer() {
                           </div>
                         </ChartCard>
                         <ChartCard isCompact={isCompact} title={`📍 ${t('charts.effVsDist')}`}>
-                          <div style={{ width: '100%', height: isCompact ? 350 : 450 }}>
+                          <div style={{ width: '100%', height: chartHeight }}>
                             <ScatterJS
                               options={{
                                 maintainAspectRatio: false,
