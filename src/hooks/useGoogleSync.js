@@ -36,6 +36,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                     setIsAuthenticated(false);
                     setUserProfile(null);
                     localStorage.removeItem('google_access_token');
+                    localStorage.removeItem('google_token_expiry');
                 }
             }
         } catch (e) {
@@ -62,14 +63,51 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 await googleDriveService.initClient();
 
                 const savedToken = localStorage.getItem('google_access_token');
-                if (savedToken) {
-                    console.log("Restoring session from token");
+                const tokenExpiry = localStorage.getItem('google_token_expiry');
+
+                if (savedToken && tokenExpiry) {
+                    const expiryTime = parseInt(tokenExpiry, 10);
+                    const now = Date.now();
+
+                    // Check if token is still valid (with 5 minute buffer)
+                    if (now < expiryTime - (5 * 60 * 1000)) {
+                        console.log("Restoring session from valid token");
+                        googleDriveService.setAccessToken(savedToken);
+                        setIsAuthenticated(true);
+                        fetchUserProfile(savedToken);
+                    } else {
+                        console.log("Token expired, clearing session");
+                        localStorage.removeItem('google_access_token');
+                        localStorage.removeItem('google_token_expiry');
+                    }
+                } else if (savedToken) {
+                    // Old token without expiry - try to validate it
+                    console.log("Found token without expiry, validating...");
                     googleDriveService.setAccessToken(savedToken);
-                    setIsAuthenticated(true);
-                    fetchUserProfile(savedToken);
+
+                    // Try to fetch profile - if it fails, token is invalid
+                    const response = await fetch(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${savedToken}`, {
+                        headers: {
+                            Authorization: `Bearer ${savedToken}`,
+                            Accept: 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        setIsAuthenticated(true);
+                        fetchUserProfile(savedToken);
+                        // Set expiry to 1 hour from now as default
+                        const expiry = Date.now() + (60 * 60 * 1000);
+                        localStorage.setItem('google_token_expiry', expiry.toString());
+                    } else {
+                        console.log("Token validation failed, clearing");
+                        localStorage.removeItem('google_access_token');
+                    }
                 }
             } catch (e) {
                 console.error("Failed to restore session", e);
+                localStorage.removeItem('google_access_token');
+                localStorage.removeItem('google_token_expiry');
             }
         };
         restoreSession();
@@ -97,6 +135,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
             }
 
             localStorage.removeItem('google_access_token'); // Clear Token
+            localStorage.removeItem('google_token_expiry'); // Clear Token Expiry
             setIsAuthenticated(false);
             setUserProfile(null);
         } catch (e) {
@@ -192,6 +231,12 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     const handleLoginSuccess = async (accessToken) => {
         googleDriveService.setAccessToken(accessToken);
         localStorage.setItem('google_access_token', accessToken);
+
+        // Google access tokens typically expire in 1 hour (3600 seconds)
+        // Store expiry time as timestamp
+        const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour from now
+        localStorage.setItem('google_token_expiry', expiryTime.toString());
+
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);
         performSync();
