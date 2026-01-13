@@ -2751,7 +2751,7 @@ export default function BYDStatsAnalyzer() {
                                           formatTime={formatTime}
                                           calculateScore={calculateScore}
                                           getScoreColor={getScoreColor}
-                                          isCompact={isCompact}
+                                          isCompact={isCompact || isFullscreenBYD}
                                         />
                                       ))}
                                     </div>
@@ -2767,7 +2767,7 @@ export default function BYDStatsAnalyzer() {
                                           formatTime={formatTime}
                                           calculateScore={calculateScore}
                                           getScoreColor={getScoreColor}
-                                          isCompact={isCompact}
+                                          isCompact={isCompact || isFullscreenBYD}
                                         />
                                       ))}
                                     </div>
