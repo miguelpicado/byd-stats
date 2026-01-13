@@ -252,6 +252,20 @@ export default function BYDStatsAnalyzer() {
   const [showLegalModal, setShowLegalModal] = useState(false);
   const [legalInitialSection, setLegalInitialSection] = useState('privacy');
 
+  // Background load state for "Render-Hidden" strategy
+  const [backgroundLoad, setBackgroundLoad] = useState(false);
+
+  // Trigger background rendering of all tabs after initial mount
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // This will cause all tabs to mount (hidden or off-screen)
+      // handling both the network request AND component initialization
+      setBackgroundLoad(true);
+    }, 1500); // 1.5s delay to strictly prioritize first paint and interaction
+
+    return () => clearTimeout(timer);
+  }, []);
+
   // Detect paths like /legal or /privacidad
   const isLegalPath = window.location.pathname.startsWith('/legal');
   const isPrivacyPath = window.location.pathname.startsWith('/privacidad');
@@ -1663,8 +1677,9 @@ export default function BYDStatsAnalyzer() {
                 <>
                   {/* Slide 1: Overview */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    {activeTab === 'overview' && (
+                    {(activeTab === 'overview' || backgroundLoad) && (
                       <OverviewTab
+                        key={activeTab === 'overview' ? 'active' : 'bg'}
                         summary={summary}
                         monthly={monthly}
                         tripDist={tripDist}
@@ -1681,8 +1696,9 @@ export default function BYDStatsAnalyzer() {
                   {/* Slide 2: Trends */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
-                      {activeTab === 'trends' && (
+                      {(activeTab === 'trends' || backgroundLoad) && (
                         <TrendsTab
+                          key={activeTab === 'trends' ? 'active' : 'bg'}
                           filtered={filtered}
                           summary={summary}
                           monthly={monthly}
@@ -1699,8 +1715,9 @@ export default function BYDStatsAnalyzer() {
                   {/* Slide 3: Patterns */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
-                      {activeTab === 'patterns' && (
+                      {(activeTab === 'patterns' || backgroundLoad) && (
                         <PatternsTab
+                          key={activeTab === 'patterns' ? 'active' : 'bg'}
                           weekday={weekday}
                           hourly={hourly}
                           summary={summary}
@@ -1717,8 +1734,9 @@ export default function BYDStatsAnalyzer() {
                   {/* Slide 4: Efficiency */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
-                      {activeTab === 'efficiency' && (
+                      {(activeTab === 'efficiency' || backgroundLoad) && (
                         <EfficiencyTab
+                          key={activeTab === 'efficiency' ? 'active' : 'bg'}
                           summary={summary}
                           monthly={monthly}
                           effScatter={effScatter}
@@ -1733,8 +1751,9 @@ export default function BYDStatsAnalyzer() {
                   {/* Slide 5: Records */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
-                      {activeTab === 'records' && (
+                      {(activeTab === 'records' || backgroundLoad) && (
                         <RecordsTab
+                          key={activeTab === 'records' ? 'active' : 'bg'}
                           summary={summary}
                           top={top}
                           isCompact={isCompact}
@@ -1752,8 +1771,9 @@ export default function BYDStatsAnalyzer() {
                   {/* Slide 6: History */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
-                      {activeTab === 'history' && (
+                      {(activeTab === 'history' || backgroundLoad) && (
                         <HistoryTab
+                          key={activeTab === 'history' ? 'active' : 'bg'}
                           filtered={filtered}
                           isCompact={isCompact}
                           openTripDetail={openTripDetail}
@@ -1768,8 +1788,8 @@ export default function BYDStatsAnalyzer() {
             </div>
           ) : (
             // Horizontal layout: show only active tab content
-            // key={activeTab} forces re-mount on tab change, triggering chart animations
-            <div key={activeTab} ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
+            // Removed key={activeTab} to prevent unmounting when switching tabs
+            <div ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
@@ -1777,84 +1797,107 @@ export default function BYDStatsAnalyzer() {
                 </div>
               ) : (
                 <>
-                  {activeTab === 'overview' && (
-                    <OverviewTab
-                      summary={summary}
-                      monthly={monthly}
-                      tripDist={tripDist}
-                      isCompact={isCompact}
-                      isLargerCard={isLargerCard}
-                      isVertical={false}
-                      isFullscreenBYD={isFullscreenBYD}
-                      smallChartHeight={smallChartHeight}
-                      overviewSpacing={overviewSpacingHorizontal}
-                    />
-                  )}
-                  <Suspense fallback={<TabFallback />}>
-                    {activeTab === 'trends' && (
-                      <TrendsTab
-                        filtered={filtered}
+                  <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+                    {(activeTab === 'overview' || backgroundLoad) && (
+                      <OverviewTab
+                        key={activeTab === 'overview' ? 'active' : 'bg'}
                         summary={summary}
                         monthly={monthly}
-                        daily={daily}
-                        settings={settings}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={false}
-                      />
-                    )}
-                  </Suspense>
-                  <Suspense fallback={<TabFallback />}>
-                    {activeTab === 'patterns' && (
-                      <PatternsTab
-                        weekday={weekday}
-                        hourly={hourly}
-                        summary={summary}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={false}
-                        patternsSpacing={patternsSpacing}
-                        patternsChartHeight={patternsChartHeight}
-                      />
-                    )}
-                  </Suspense>
-                  <Suspense fallback={<TabFallback />}>
-                    {activeTab === 'efficiency' && (
-                      <EfficiencyTab
-                        summary={summary}
-                        monthly={monthly}
-                        effScatter={effScatter}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={false}
-                      />
-                    )}
-                  </Suspense>
-                  <Suspense fallback={<TabFallback />}>
-                    {activeTab === 'records' && (
-                      <RecordsTab
-                        summary={summary}
-                        top={top}
+                        tripDist={tripDist}
                         isCompact={isCompact}
                         isLargerCard={isLargerCard}
                         isVertical={false}
                         isFullscreenBYD={isFullscreenBYD}
-                        recordsItemPadding={recordsItemPadding}
-                        recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                        recordsListHeightHorizontal={recordsListHeightHorizontal}
+                        smallChartHeight={smallChartHeight}
+                        overviewSpacing={overviewSpacingHorizontal}
                       />
                     )}
-                  </Suspense>
+                  </div>
+
                   <Suspense fallback={<TabFallback />}>
-                    {activeTab === 'history' && (
-                      <HistoryTab
-                        filtered={filtered}
-                        isCompact={isCompact}
-                        openTripDetail={openTripDetail}
-                        setShowAllTripsModal={setShowAllTripsModal}
-                        TripCard={TripCard}
-                      />
-                    )}
+                    <div style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
+                      {(activeTab === 'trends' || backgroundLoad) && (
+                        <TrendsTab
+                          key={activeTab === 'trends' ? 'active' : 'bg'}
+                          filtered={filtered}
+                          summary={summary}
+                          monthly={monthly}
+                          daily={daily}
+                          settings={settings}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={false}
+                        />
+                      )}
+                    </div>
+                  </Suspense>
+
+                  <Suspense fallback={<TabFallback />}>
+                    <div style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
+                      {(activeTab === 'patterns' || backgroundLoad) && (
+                        <PatternsTab
+                          key={activeTab === 'patterns' ? 'active' : 'bg'}
+                          weekday={weekday}
+                          hourly={hourly}
+                          summary={summary}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={false}
+                          patternsSpacing={patternsSpacing}
+                          patternsChartHeight={patternsChartHeight}
+                        />
+                      )}
+                    </div>
+                  </Suspense>
+
+                  <Suspense fallback={<TabFallback />}>
+                    <div style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
+                      {(activeTab === 'efficiency' || backgroundLoad) && (
+                        <EfficiencyTab
+                          key={activeTab === 'efficiency' ? 'active' : 'bg'}
+                          summary={summary}
+                          monthly={monthly}
+                          effScatter={effScatter}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={false}
+                        />
+                      )}
+                    </div>
+                  </Suspense>
+
+                  <Suspense fallback={<TabFallback />}>
+                    <div style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
+                      {(activeTab === 'records' || backgroundLoad) && (
+                        <RecordsTab
+                          key={activeTab === 'records' ? 'active' : 'bg'}
+                          summary={summary}
+                          top={top}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={false}
+                          isFullscreenBYD={isFullscreenBYD}
+                          recordsItemPadding={recordsItemPadding}
+                          recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                          recordsListHeightHorizontal={recordsListHeightHorizontal}
+                        />
+                      )}
+                    </div>
+                  </Suspense>
+
+                  <Suspense fallback={<TabFallback />}>
+                    <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
+                      {(activeTab === 'history' || backgroundLoad) && (
+                        <HistoryTab
+                          key={activeTab === 'history' ? 'active' : 'bg'}
+                          filtered={filtered}
+                          isCompact={isCompact}
+                          openTripDetail={openTripDetail}
+                          setShowAllTripsModal={setShowAllTripsModal}
+                          TripCard={TripCard}
+                        />
+                      )}
+                    </div>
                   </Suspense>
                 </>
               )}
