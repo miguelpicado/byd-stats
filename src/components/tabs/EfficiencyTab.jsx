@@ -17,12 +17,10 @@ const EfficiencyTab = React.memo(({
   effScatter,
   isCompact,
   isLargerCard,
-  isVertical
+  isVertical,
+  largeChartHeight
 }) => {
   const { t } = useTranslation();
-
-  // Calculate chart height
-  const largeChartHeight = isCompact ? '180px' : '240px';
 
   // Calculate consumption per trip
   const consumptionPerTrip = useMemo(() => {
