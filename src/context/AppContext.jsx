@@ -21,30 +21,40 @@ export const AppProvider = ({ children }) => {
             const w = window.innerWidth;
             const h = window.innerHeight;
 
-            // Fullscreen BYD mode for car display (1280x720)
-            // Activates when height is between 680px and 740px
-            const isBYDFullscreen = h >= 680 && h <= 740;
-            setIsFullscreenBYD(isBYDFullscreen);
-
-            // Consider compact if width is large enough but height is restricted (e.g. 1280x720)
-            const isCompactSize = w >= 1024 && h <= 680;
-            setIsCompact(isCompactSize);
-
-            // Apply dense scale for compact mode
-            if (isCompactSize) {
-                document.documentElement.style.fontSize = '13.5px';
-            } else {
-                document.documentElement.style.fontSize = '';
-            }
-
             // Layout Mode Logic
             const isLandscape = w > h;
             // Tablet is typically > 10 inches (600dp ~ 960px in landscape)
+            // Or smaller tablets > 768px in landscape
             const isTablet = w >= 960 || (w >= 768 && isLandscape);
+
+            let newLayoutMode = 'vertical';
             if (isTablet && isLandscape) {
-                setLayoutMode('horizontal');
+                newLayoutMode = 'horizontal';
+            }
+            setLayoutMode(newLayoutMode);
+
+            // Sub-modes (Compact / FullscreenBYD) - ONLY enabled in Horizontal Mode
+            if (newLayoutMode === 'horizontal') {
+                // Fullscreen BYD mode for car display (1280x720)
+                // Activates when height is between 680px and 740px
+                const isBYDFullscreen = h >= 680 && h <= 740;
+                setIsFullscreenBYD(isBYDFullscreen);
+
+                // Consider compact if width is large enough but height is restricted (e.g. 1280x720)
+                const isCompactSize = w >= 1024 && h <= 680;
+                setIsCompact(isCompactSize);
+
+                // Apply dense scale for compact mode
+                if (isCompactSize) {
+                    document.documentElement.style.fontSize = '13.5px';
+                } else {
+                    document.documentElement.style.fontSize = '';
+                }
             } else {
-                setLayoutMode('vertical');
+                // In vertical mode, strictly disable these
+                setIsFullscreenBYD(false);
+                setIsCompact(false);
+                document.documentElement.style.fontSize = '';
             }
         };
 
