@@ -318,13 +318,15 @@ export default function BYDStatsAnalyzer() {
   else largeChartHeight = 442;
 
   // Spacing adjustments for different modes
+  const unifiedVerticalSpacing = 'space-y-4';
+
   // Overview/Resumen spacing (vertical mode): fullscreenBYD +2px, compact +1px, normal +2px
-  const overviewSpacingVertical = isFullscreenBYD ? 'space-y-[14px]' : (isCompact ? 'space-y-2.5' : 'space-y-3.5 sm:space-y-5');
+  const overviewSpacingVertical = isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[14px]' : (isCompact ? 'space-y-2.5' : 'space-y-3.5 sm:space-y-5'));
   // Overview/Resumen spacing (horizontal mode): fullscreenBYD +2px, compact +1px, normal +2px
   const overviewSpacingHorizontal = isFullscreenBYD ? 'space-y-[22px]' : (isCompact ? 'space-y-2.5' : 'space-y-5 sm:space-y-6.5');
 
   // Patterns spacing: fullscreenBYD +10px, normal +7px (was +5px, now +2px more)
-  const patternsSpacing = isFullscreenBYD ? 'space-y-[21px]' : (isCompact ? 'space-y-3' : 'space-y-[22px]');
+  const patternsSpacing = isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[21px]' : (isCompact ? 'space-y-3' : 'space-y-[22px]'));
 
   // Records list item padding
   const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
