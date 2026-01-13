@@ -130,7 +130,7 @@ npm run dev
 Opciones:
 - GitHub Actions: usa el workflow "Manual APK Build" y descarga el artefacto (recomendado)
 - Releases: si existe un tag, la APK puede publicarse en Releases
-- Compilar localmente: `npm run android:build` (consulta `ANDROID_BUILD.md` para detalles)
+- Compilar localmente: `npm run android:build` (consulta [`ANDROID_BUILD.md`](docs/ANDROID_BUILD.md) para detalles)
 
 Comandos útiles:
 ```bash
@@ -158,7 +158,7 @@ npm run android:build    # Build local de APK
 ---
 
 ## 🐞 Solución de problemas
-Para problemas con la compilación de la APK y CI, revisa `TROUBLESHOOTING.md`.
+Para problemas con la compilación de la APK y CI, revisa [`TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md).
 Si la app no carga correctamente en Android, asegúrate de haber ejecutado `npm run build` antes de sincronizar con Capacitor.
 
 ---
@@ -193,4 +193,4 @@ Ana Picado ([bravamundana.com](https://bravamundana.com))
 
 ---
 
-**Documentación adicional:** [README_ANDROID.md](README_ANDROID.md) · [ANDROID_BUILD.md](ANDROID_BUILD.md) · [TROUBLESHOOTING.md](TROUBLESHOOTING.md)
+**Documentación adicional:** [ANDROID.md](docs/ANDROID.md) · [ANDROID_BUILD.md](docs/ANDROID_BUILD.md) · [TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md)
