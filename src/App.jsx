@@ -18,6 +18,7 @@ import ChartCard from './components/ui/ChartCard';
 import PWAManager from './components/PWAManager';
 
 import useDatabase from './hooks/useDatabase';
+import { useFileHandling } from './hooks/useFileHandling';
 import { useApp } from './context/AppContext';
 
 
@@ -221,6 +222,7 @@ export default function BYDStatsAnalyzer() {
 
   const [rawTrips, setRawTrips] = useState([]);
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
+  const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
@@ -493,6 +495,46 @@ export default function BYDStatsAnalyzer() {
   useEffect(() => {
     initSql();
   }, [initSql]);
+
+  // Handle file opening and sharing (both Android native and PWA)
+  useEffect(() => {
+    if (!pendingFile || !sqlReady) return;
+
+    const handleSharedFile = async () => {
+      try {
+        console.log('[FileHandling] Processing pending file from:', pendingFile.source);
+
+        // Read file using unified handler (works for both Android and PWA)
+        const file = await readFile(pendingFile);
+
+        // Validate file
+        const fileName = file.name.toLowerCase();
+        if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+          alert(t('errors.invalidFile') || 'Archivo inválido. Solo se permiten archivos .db');
+          clearPendingFile();
+          return;
+        }
+
+        // Process the database file
+        const trips = await processDBHook(file, rawTrips, false);
+        if (trips) {
+          setRawTrips(trips);
+          console.log('[FileHandling] File processed successfully:', trips.length, 'trips');
+
+          // Show success message
+          alert(t('upload.success') || 'Archivo cargado correctamente');
+        }
+
+        clearPendingFile();
+      } catch (err) {
+        console.error('[FileHandling] Error processing file:', err);
+        alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + err.message);
+        clearPendingFile();
+      }
+    };
+
+    handleSharedFile();
+  }, [pendingFile, sqlReady, readFile, processDBHook, clearPendingFile, rawTrips, t]);
 
   const months = useMemo(() => {
     return [...new Set(rawTrips.map(t => t.month).filter(Boolean))].sort();
