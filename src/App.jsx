@@ -2562,10 +2562,160 @@ export default function BYDStatsAnalyzer() {
                     </div>
                   )}
                   {activeTab === 'history' && (
-                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
-                      <div className={`grid lg:grid-cols-8 gap-6 ${isCompact ? 'gap-4' : ''}`}>
-                        <div className={`lg:col-span-6 space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
-                          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>{t('history.last10Trips')}</h2>
+                    <div className={(isCompact || isFullscreenBYD) ? 'h-full' : `${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
+                      {(isCompact || isFullscreenBYD) ? (
+                        // Layout optimizado para modo compacto/fullscreenBYD - sin scroll
+                        <div className="h-full flex gap-3">
+                          {/* Columna izquierda: viajes + botón */}
+                          <div className="flex-1 flex flex-col h-full">
+                            <h2 className="font-bold text-slate-900 dark:text-white text-sm mb-2">{t('history.last10Trips')}</h2>
+                            {(() => {
+                              const allTrips = [...filtered].sort((a, b) => {
+                                const dateCompare = (b.date || '').localeCompare(a.date || '');
+                                if (dateCompare !== 0) return dateCompare;
+                                return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                              });
+
+                              const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+                              const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+                              const minEff = Math.min(...efficiencies);
+                              const maxEff = Math.max(...efficiencies);
+
+                              const last10 = allTrips.slice(0, 10);
+                              const firstColumn = last10.slice(0, 5);
+                              const secondColumn = last10.slice(5, 10);
+
+                              return (
+                                <div className="flex-1 grid grid-cols-2 gap-2">
+                                  <div className="flex flex-col justify-between">
+                                    {firstColumn.map((trip, i) => (
+                                      <TripCard
+                                        key={i}
+                                        trip={trip}
+                                        minEff={minEff}
+                                        maxEff={maxEff}
+                                        onClick={openTripDetail}
+                                        formatDate={formatDate}
+                                        formatTime={formatTime}
+                                        calculateScore={calculateScore}
+                                        getScoreColor={getScoreColor}
+                                        isCompact={isCompact}
+                                        isFullscreenBYD={isFullscreenBYD}
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="flex flex-col justify-between">
+                                    {secondColumn.map((trip, j) => (
+                                      <TripCard
+                                        key={j + 5}
+                                        trip={trip}
+                                        minEff={minEff}
+                                        maxEff={maxEff}
+                                        onClick={openTripDetail}
+                                        formatDate={formatDate}
+                                        formatTime={formatTime}
+                                        calculateScore={calculateScore}
+                                        getScoreColor={getScoreColor}
+                                        isCompact={isCompact}
+                                        isFullscreenBYD={isFullscreenBYD}
+                                      />
+                                    ))}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                            <button
+                              onClick={() => setShowAllTripsModal(true)}
+                              className="mt-2 w-full py-1.5 rounded-lg font-medium text-white text-xs"
+                              style={{ backgroundColor: BYD_RED }}
+                            >
+                              {t('common.showAll')}
+                            </button>
+                          </div>
+
+                          {/* Columna derecha: insights */}
+                          <div className="w-48 flex flex-col h-full">
+                            <h2 className="font-bold text-slate-900 dark:text-white text-sm mb-2">{t('history.avgLast10')}</h2>
+                            {(() => {
+                              const allTrips = [...filtered].sort((a, b) => {
+                                const dateCompare = (b.date || '').localeCompare(a.date || '');
+                                if (dateCompare !== 0) return dateCompare;
+                                return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                              });
+                              const last10 = allTrips.slice(0, 10);
+
+                              const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length || 0;
+                              const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length || 0;
+                              const avgEfficiency = last10.reduce((sum, t) => {
+                                if (t.trip > 0 && t.electricity !== undefined) {
+                                  return sum + ((t.electricity / t.trip) * 100);
+                                }
+                                return sum;
+                              }, 0) / last10.length || 0;
+                              const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length || 0;
+                              const avgSpeedFiltered = last10.filter(t => t.duration > 0 && t.trip > 0);
+                              const avgSpeed = avgSpeedFiltered.length > 0
+                                ? avgSpeedFiltered.reduce((sum, t) => sum + (t.trip / ((t.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
+                                : 0;
+
+                              return (
+                                <div className="flex-1 flex flex-col justify-between">
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-red-500/20 w-5 h-5 flex items-center justify-center">
+                                        <MapPin className="text-red-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgDistance.toFixed(1)} <span className="text-[8px] text-slate-500">km</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-cyan-500/20 w-5 h-5 flex items-center justify-center">
+                                        <Zap className="text-cyan-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgConsumption.toFixed(2)} <span className="text-[8px] text-slate-500">kWh</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-green-500/20 w-5 h-5 flex items-center justify-center">
+                                        <Battery className="text-green-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgEfficiency.toFixed(2)} <span className="text-[8px] text-slate-500">kWh/100</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-amber-500/20 w-5 h-5 flex items-center justify-center">
+                                        <Clock className="text-amber-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgDuration.toFixed(0)} <span className="text-[8px] text-slate-500">min</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-blue-500/20 w-5 h-5 flex items-center justify-center">
+                                        <TrendingUp className="text-blue-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgSpeed.toFixed(1)} <span className="text-[8px] text-slate-500">km/h</span></p>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        </div>
+                      ) : (
+                        // Layout normal para modo no compacto
+                        <div className="space-y-4 sm:space-y-6">
+                      <div className="grid lg:grid-cols-8 gap-6">
+                        <div className="lg:col-span-6 space-y-4">
+                          <h2 className="font-bold text-slate-900 dark:text-white text-xl sm:text-2xl">{t('history.last10Trips')}</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
                               const dateCompare = (b.date || '').localeCompare(a.date || '');
@@ -2582,13 +2732,9 @@ export default function BYDStatsAnalyzer() {
                             const firstColumn = last10.slice(0, 5);
                             const secondColumn = last10.slice(5, 10);
 
-                            // Determine spacing based on mode for 10 trips without scroll
-                            const tripSpacing = (isCompact || isFullscreenBYD) ? 'space-y-1' : 'space-y-3';
-                            const gridGap = (isCompact || isFullscreenBYD) ? 'gap-2' : 'gap-4';
-
                             return (
-                              <div className={`grid lg:grid-cols-2 ${gridGap}`}>
-                                <div className={tripSpacing}>
+                              <div className="grid lg:grid-cols-2 gap-4">
+                                <div className="space-y-3">
                                   {firstColumn.map((trip, i) => (
                                     <TripCard
                                       key={i}
@@ -2600,12 +2746,12 @@ export default function BYDStatsAnalyzer() {
                                       formatTime={formatTime}
                                       calculateScore={calculateScore}
                                       getScoreColor={getScoreColor}
-                                      isCompact={isCompact}
-                                      isFullscreenBYD={isFullscreenBYD}
+                                      isCompact={false}
+                                      isFullscreenBYD={false}
                                     />
                                   ))}
                                 </div>
-                                <div className={tripSpacing}>
+                                <div className="space-y-3">
                                   {secondColumn.map((trip, j) => (
                                     <TripCard
                                       key={j + 5}
@@ -2617,8 +2763,8 @@ export default function BYDStatsAnalyzer() {
                                       formatTime={formatTime}
                                       calculateScore={calculateScore}
                                       getScoreColor={getScoreColor}
-                                      isCompact={isCompact}
-                                      isFullscreenBYD={isFullscreenBYD}
+                                      isCompact={false}
+                                      isFullscreenBYD={false}
                                     />
                                   ))}
                                 </div>
@@ -2628,15 +2774,15 @@ export default function BYDStatsAnalyzer() {
 
                           <button
                             onClick={() => setShowAllTripsModal(true)}
-                            className={`w-full rounded-xl font-medium text-white ${(isCompact || isFullscreenBYD) ? 'py-2 text-sm' : 'py-3'}`}
+                            className="w-full py-3 rounded-xl font-medium text-white"
                             style={{ backgroundColor: BYD_RED }}
                           >
                             {t('common.showAll')}
                           </button>
                         </div>
 
-                        <div className={`lg:col-span-2 ${(isCompact || isFullscreenBYD) ? 'space-y-1' : 'space-y-4'}`}>
-                          <h2 className={`font-bold text-slate-900 dark:text-white ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-xl sm:text-2xl'}`}>{t('history.avgLast10')}</h2>
+                        <div className="lg:col-span-2 space-y-4">
+                          <h2 className="font-bold text-slate-900 dark:text-white text-xl sm:text-2xl">{t('history.avgLast10')}</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
                               const dateCompare = (b.date || '').localeCompare(a.date || '');
@@ -2658,61 +2804,6 @@ export default function BYDStatsAnalyzer() {
                             const avgSpeed = avgSpeedFiltered.length > 0
                               ? avgSpeedFiltered.reduce((sum, t) => sum + (t.trip / ((t.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
                               : 0;
-
-                            // Extra compact layout for insights in compact/fullscreenBYD modes
-                            const isExtraCompactInsights = isCompact || isFullscreenBYD;
-
-                            if (isExtraCompactInsights) {
-                              return (
-                                <div className="space-y-1">
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-red-500/20 w-6 h-6 flex items-center justify-center">
-                                        <MapPin className="text-red-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgDistance.toFixed(1)} <span className="text-[10px] text-slate-500">km</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-cyan-500/20 w-6 h-6 flex items-center justify-center">
-                                        <Zap className="text-cyan-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgConsumption.toFixed(2)} <span className="text-[10px] text-slate-500">kWh</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-green-500/20 w-6 h-6 flex items-center justify-center">
-                                        <Battery className="text-green-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgEfficiency.toFixed(2)} <span className="text-[10px] text-slate-500">kWh/100</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-amber-500/20 w-6 h-6 flex items-center justify-center">
-                                        <Clock className="text-amber-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgDuration.toFixed(0)} <span className="text-[10px] text-slate-500">min</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-blue-500/20 w-6 h-6 flex items-center justify-center">
-                                        <TrendingUp className="text-blue-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgSpeed.toFixed(1)} <span className="text-[10px] text-slate-500">km/h</span></p>
-                                  </div>
-                                </div>
-                              );
-                            }
 
                             return (
                               <div className="space-y-3">
@@ -2790,7 +2881,8 @@ export default function BYDStatsAnalyzer() {
                           })()}
                         </div>
                       </div>
-
+                        </div>
+                      )}
                     </div>
                   )}
                 </>
