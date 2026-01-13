@@ -45,64 +45,67 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-lg w-full border border-slate-200 dark:border-slate-700 max-h-[90vh] overflow-y-auto"
+                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700"
                 onClick={(e) => e.stopPropagation()}
             >
+                {/* Header con título, fecha y score en la misma fila */}
                 <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('tripDetail.title')}</h2>
-                        <p className="text-sm text-slate-600 dark:text-slate-400">
-                            {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-                        </p>
+                    <div className="flex items-center gap-4">
+                        <div>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('tripDetail.title')}</h2>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">
+                                {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+                            </p>
+                        </div>
                     </div>
-                    <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                        <Plus className="w-6 h-6 rotate-45" />
-                    </button>
-                </div>
-
-                {/* Score prominente */}
-                <div className="text-center py-6">
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-2">{t('tripDetail.title')}</p>
-                    <p className="text-6xl font-black" style={{ color: details.scoreColor }}>
-                        {details.score.toFixed(1)}
-                    </p>
-                    <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">/ 10</p>
+                    <div className="flex items-center gap-3">
+                        {/* Score compacto */}
+                        <div className="text-right">
+                            <p className="text-3xl font-black" style={{ color: details.scoreColor }}>
+                                {details.score.toFixed(1)}
+                            </p>
+                            <p className="text-slate-500 dark:text-slate-400 text-xs">/ 10</p>
+                        </div>
+                        <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white ml-2">
+                            <Plus className="w-6 h-6 rotate-45" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Stats grid */}
-                <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 text-center">
-                        <MapPin className="w-5 h-5 mx-auto mb-1 text-red-400" />
-                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('stats.distance')}</p>
-                        <p className="text-slate-900 dark:text-white text-xl font-bold">{trip.trip?.toFixed(1)} {t('units.km')}</p>
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
+                        <MapPin className="w-4 h-4 mx-auto mb-0.5 text-red-400" />
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('stats.distance')}</p>
+                        <p className="text-slate-900 dark:text-white text-lg font-bold">{trip.trip?.toFixed(1)} {t('units.km')}</p>
                     </div>
-                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 text-center">
-                        <Clock className="w-5 h-5 mx-auto mb-1 text-amber-400" />
-                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('tripDetail.duration')}</p>
-                        <p className="text-slate-900 dark:text-white text-xl font-bold">{formatDuration(trip.duration)}</p>
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
+                        <Clock className="w-4 h-4 mx-auto mb-0.5 text-amber-400" />
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.duration')}</p>
+                        <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDuration(trip.duration)}</p>
                     </div>
-                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 text-center">
-                        <Zap className="w-5 h-5 mx-auto mb-1 text-cyan-400" />
-                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('tripDetail.consumption')}</p>
-                        <p className="text-slate-900 dark:text-white text-xl font-bold">{trip.electricity?.toFixed(2)} {t('units.kWh')}</p>
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
+                        <Zap className="w-4 h-4 mx-auto mb-0.5 text-cyan-400" />
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.consumption')}</p>
+                        <p className="text-slate-900 dark:text-white text-lg font-bold">{trip.electricity?.toFixed(2)} {t('units.kWh')}</p>
                     </div>
-                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 text-center">
-                        <Battery className="w-5 h-5 mx-auto mb-1 text-green-400" />
-                        <p className="text-slate-600 dark:text-slate-400 text-xs mb-1">{t('stats.efficiency')}</p>
-                        <p className="text-slate-900 dark:text-white text-xl font-bold">{details.efficiency.toFixed(2)}</p>
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
+                        <Battery className="w-4 h-4 mx-auto mb-0.5 text-green-400" />
+                        <p className="text-slate-600 dark:text-slate-400 text-xs">{t('stats.efficiency')}</p>
+                        <p className="text-slate-900 dark:text-white text-lg font-bold">{details.efficiency.toFixed(2)}</p>
                         <p className="text-slate-500 dark:text-slate-400 text-[10px]">{t('units.kWh100km')}</p>
                     </div>
                 </div>
 
                 {/* Speed */}
                 {trip.duration > 0 && (
-                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 mb-4">
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 mb-3">
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <TrendingUp className="w-5 h-5 text-blue-400" />
+                                <TrendingUp className="w-4 h-4 text-blue-400" />
                                 <span className="text-slate-600 dark:text-slate-400 text-sm">{t('stats.avgSpeed')}</span>
                             </div>
-                            <p className="text-slate-900 dark:text-white text-xl font-bold">
+                            <p className="text-slate-900 dark:text-white text-lg font-bold">
                                 {(trip.trip / (trip.duration / 3600)).toFixed(1)} {t('units.kmh')}
                             </p>
                         </div>
@@ -111,16 +114,17 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
 
                 {/* Regeneration if available */}
                 {trip.regeneration !== undefined && trip.regeneration !== null && (
-                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 mb-4">
-                        <p className="text-slate-600 dark:text-slate-400 text-sm mb-1">{t('tripDetail.energyRecovered')}</p>
-                        <p className="text-green-400 text-2xl font-bold">{trip.regeneration?.toFixed(2)} {t('units.kWh')}</p>
+                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 mb-3">
+                        <div className="flex items-center justify-between">
+                            <span className="text-slate-600 dark:text-slate-400 text-sm">{t('tripDetail.energyRecovered')}</span>
+                            <span className="text-green-400 text-lg font-bold">{trip.regeneration?.toFixed(2)} {t('units.kWh')}</span>
+                        </div>
                     </div>
                 )}
 
-                {/* Comparison and percentile */}
-                <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                    <p className="text-slate-600 dark:text-slate-400 text-sm mb-3">{t('tripDetail.analysis')}</p>
-                    <div className="space-y-2">
+                {/* Comparison and percentile - sin título "análisis" */}
+                <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3">
+                    <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                             <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.comparedToAvg')}</span>
                             <span className={`font-bold ${details.comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
