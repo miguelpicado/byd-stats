@@ -15,12 +15,14 @@ import { useGoogleSync } from './hooks/useGoogleSync';
 import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
-import HistoryTab from './components/tabs/HistoryTab';
-import RecordsTab from './components/tabs/RecordsTab';
+// Keep OverviewTab static (initial tab)
 import OverviewTab from './components/tabs/OverviewTab';
-import TrendsTab from './components/tabs/TrendsTab';
-import PatternsTab from './components/tabs/PatternsTab';
-import EfficiencyTab from './components/tabs/EfficiencyTab';
+// Lazy load other tabs for code splitting
+const HistoryTab = lazy(() => import('./components/tabs/HistoryTab'));
+const RecordsTab = lazy(() => import('./components/tabs/RecordsTab'));
+const TrendsTab = lazy(() => import('./components/tabs/TrendsTab'));
+const PatternsTab = lazy(() => import('./components/tabs/PatternsTab'));
+const EfficiencyTab = lazy(() => import('./components/tabs/EfficiencyTab'));
 // PWAManager lazy loaded for code splitting
 const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
 
@@ -60,6 +62,14 @@ const GitHubFooter = React.memo(() => (
 ));
 
 
+// Tab loading fallback component
+const TabFallback = () => (
+  <div className="flex items-center justify-center h-48">
+    <div className="animate-pulse text-slate-400 dark:text-slate-500">
+      Loading...
+    </div>
+  </div>
+);
 
 function processData(rows) {
   if (!rows || rows.length === 0) return null;
@@ -1670,111 +1680,88 @@ export default function BYDStatsAnalyzer() {
 
                   {/* Slide 2: Trends */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    {activeTab === 'trends' && (
-                      <TrendsTab
-                        filtered={filtered}
-                        summary={summary}
-                        monthly={monthly}
-                        daily={daily}
-                        settings={settings}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={true}
-                      />
-                    )}
+                    <Suspense fallback={<TabFallback />}>
+                      {activeTab === 'trends' && (
+                        <TrendsTab
+                          filtered={filtered}
+                          summary={summary}
+                          monthly={monthly}
+                          daily={daily}
+                          settings={settings}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={true}
+                        />
+                      )}
+                    </Suspense>
                   </div>
 
                   {/* Slide 3: Patterns */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    {activeTab === 'patterns' && (
-                      <PatternsTab
-                        weekday={weekday}
-                        hourly={hourly}
-                        summary={summary}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={true}
-                        patternsSpacing={patternsSpacing}
-                        patternsChartHeight={patternsChartHeight}
-                      />
-                    )}
+                    <Suspense fallback={<TabFallback />}>
+                      {activeTab === 'patterns' && (
+                        <PatternsTab
+                          weekday={weekday}
+                          hourly={hourly}
+                          summary={summary}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={true}
+                          patternsSpacing={patternsSpacing}
+                          patternsChartHeight={patternsChartHeight}
+                        />
+                      )}
+                    </Suspense>
                   </div>
 
                   {/* Slide 4: Efficiency */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    {activeTab === 'efficiency' && (
-                      <EfficiencyTab
-                        summary={summary}
-                        monthly={monthly}
-                        effScatter={effScatter}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={true}
-                      />
-                    )}
+                    <Suspense fallback={<TabFallback />}>
+                      {activeTab === 'efficiency' && (
+                        <EfficiencyTab
+                          summary={summary}
+                          monthly={monthly}
+                          effScatter={effScatter}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={true}
+                        />
+                      )}
+                    </Suspense>
                   </div>
 
                   {/* Slide 5: Records */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    {activeTab === 'records' && (
-                      <RecordsTab
-                        summary={summary}
-                        top={top}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={true}
-                        isFullscreenBYD={isFullscreenBYD}
-                        recordsItemPadding={recordsItemPadding}
-                        recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                        recordsListHeightHorizontal={recordsListHeightHorizontal}
-                      />
-                    )}
+                    <Suspense fallback={<TabFallback />}>
+                      {activeTab === 'records' && (
+                        <RecordsTab
+                          summary={summary}
+                          top={top}
+                          isCompact={isCompact}
+                          isLargerCard={isLargerCard}
+                          isVertical={true}
+                          isFullscreenBYD={isFullscreenBYD}
+                          recordsItemPadding={recordsItemPadding}
+                          recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                          recordsListHeightHorizontal={recordsListHeightHorizontal}
+                        />
+                      )}
+                    </Suspense>
                   </div>
 
                   {/* Slide 6: History */}
                   <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
-                      <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">{t('common.last10Trips')}</h2>
-                      <div className="space-y-3">
-                        {(() => {
-                          const allTrips = [...filtered].sort((a, b) => {
-                            const dateCompare = (b.date || '').localeCompare(a.date || '');
-                            if (dateCompare !== 0) return dateCompare;
-                            return (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                          });
-
-                          // Filter trips >= 1km for scoring calculation
-                          // Incluir eficiencias negativas (regeneración) que son las MEJORES
-                          const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
-                          const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-                          const minEff = Math.min(...efficiencies);
-                          const maxEff = Math.max(...efficiencies);
-
-                          return allTrips.slice(0, 10).map((trip) => (
-                            <TripCard
-                              isCompact={isCompact}
-                              key={trip.date + '-' + trip.start_timestamp}
-                              trip={trip}
-                              minEff={minEff}
-                              maxEff={maxEff}
-                              onClick={openTripDetail}
-                              formatDate={formatDate}
-                              formatTime={formatTime}
-                              calculateScore={calculateScore}
-                              getScoreColor={getScoreColor}
-                            />
-                          ));
-                        })()}
-                      </div>
-                      <button
-                        onClick={() => setShowAllTripsModal(true)}
-                        className="w-full py-3 rounded-xl font-medium text-white"
-                        style={{ backgroundColor: BYD_RED }}
-                      >
-                        {t('common.showAll')}
-                      </button>
-
-                    </div>
+                    <Suspense fallback={<TabFallback />}>
+                      {activeTab === 'history' && (
+                        <HistoryTab
+                          filtered={filtered}
+                          isCompact={isCompact}
+                          openTripDetail={openTripDetail}
+                          setShowAllTripsModal={setShowAllTripsModal}
+                          TripCard={TripCard}
+                        />
+                      )}
+                    </Suspense>
                   </div>
                 </>
               )}
@@ -1803,62 +1790,72 @@ export default function BYDStatsAnalyzer() {
                       overviewSpacing={overviewSpacingHorizontal}
                     />
                   )}
-                  {activeTab === 'trends' && (
-                    <TrendsTab
-                      filtered={filtered}
-                      summary={summary}
-                      monthly={monthly}
-                      daily={daily}
-                      settings={settings}
-                      isCompact={isCompact}
-                      isLargerCard={isLargerCard}
-                      isVertical={false}
-                    />
-                  )}
-                  {activeTab === 'patterns' && (
-                    <PatternsTab
-                      weekday={weekday}
-                      hourly={hourly}
-                      summary={summary}
-                      isCompact={isCompact}
-                      isLargerCard={isLargerCard}
-                      isVertical={false}
-                      patternsSpacing={patternsSpacing}
-                      patternsChartHeight={patternsChartHeight}
-                    />
-                  )}
-                  {activeTab === 'efficiency' && (
-                    <EfficiencyTab
-                      summary={summary}
-                      monthly={monthly}
-                      effScatter={effScatter}
-                      isCompact={isCompact}
-                      isLargerCard={isLargerCard}
-                      isVertical={false}
-                    />
-                  )}
-                  {activeTab === 'records' && (
-                    <RecordsTab
-                      summary={summary}
-                      top={top}
-                      isCompact={isCompact}
-                      isLargerCard={isLargerCard}
-                      isVertical={false}
-                      isFullscreenBYD={isFullscreenBYD}
-                      recordsItemPadding={recordsItemPadding}
-                      recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                      recordsListHeightHorizontal={recordsListHeightHorizontal}
-                    />
-                  )}
-                  {activeTab === 'history' && (
-                    <HistoryTab
-                      filtered={filtered}
-                      isCompact={isCompact}
-                      openTripDetail={openTripDetail}
-                      setShowAllTripsModal={setShowAllTripsModal}
-                      TripCard={TripCard}
-                    />
-                  )}
+                  <Suspense fallback={<TabFallback />}>
+                    {activeTab === 'trends' && (
+                      <TrendsTab
+                        filtered={filtered}
+                        summary={summary}
+                        monthly={monthly}
+                        daily={daily}
+                        settings={settings}
+                        isCompact={isCompact}
+                        isLargerCard={isLargerCard}
+                        isVertical={false}
+                      />
+                    )}
+                  </Suspense>
+                  <Suspense fallback={<TabFallback />}>
+                    {activeTab === 'patterns' && (
+                      <PatternsTab
+                        weekday={weekday}
+                        hourly={hourly}
+                        summary={summary}
+                        isCompact={isCompact}
+                        isLargerCard={isLargerCard}
+                        isVertical={false}
+                        patternsSpacing={patternsSpacing}
+                        patternsChartHeight={patternsChartHeight}
+                      />
+                    )}
+                  </Suspense>
+                  <Suspense fallback={<TabFallback />}>
+                    {activeTab === 'efficiency' && (
+                      <EfficiencyTab
+                        summary={summary}
+                        monthly={monthly}
+                        effScatter={effScatter}
+                        isCompact={isCompact}
+                        isLargerCard={isLargerCard}
+                        isVertical={false}
+                      />
+                    )}
+                  </Suspense>
+                  <Suspense fallback={<TabFallback />}>
+                    {activeTab === 'records' && (
+                      <RecordsTab
+                        summary={summary}
+                        top={top}
+                        isCompact={isCompact}
+                        isLargerCard={isLargerCard}
+                        isVertical={false}
+                        isFullscreenBYD={isFullscreenBYD}
+                        recordsItemPadding={recordsItemPadding}
+                        recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                        recordsListHeightHorizontal={recordsListHeightHorizontal}
+                      />
+                    )}
+                  </Suspense>
+                  <Suspense fallback={<TabFallback />}>
+                    {activeTab === 'history' && (
+                      <HistoryTab
+                        filtered={filtered}
+                        isCompact={isCompact}
+                        openTripDetail={openTripDetail}
+                        setShowAllTripsModal={setShowAllTripsModal}
+                        TripCard={TripCard}
+                      />
+                    )}
+                  </Suspense>
                 </>
               )}
             </div>
