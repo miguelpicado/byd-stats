@@ -2,8 +2,8 @@
     "name": "BYD Stats",
     "short_name": "BYD Stats",
     "description": "Analiza las estadísticas de tu vehículo BYD de forma local y privada",
-    "id": "/?v=1.1.1",
-    "start_url": "/?v=1.1.1",
+    "id": "/?v=1.2",
+    "start_url": "/?v=1.2",
     "scope": "/",
     "display": "standalone",
     "display_override": [
