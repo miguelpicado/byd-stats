@@ -42,7 +42,7 @@ const EfficiencyTab = React.memo(({
   // Render vertical layout
   if (isVertical) {
     return (
-      <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-3 sm:space-y-4'}`}>
+      <div className={isCompact ? 'space-y-3' : 'space-y-4'}>
         <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
           <StatCard
             isVerticalMode={true}
