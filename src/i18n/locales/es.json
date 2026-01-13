@@ -214,6 +214,7 @@
         "date": "Fecha",
         "efficiency": "Eficiencia",
         "distance": "Distancia",
+        "consumption": "Consumo",
         "duration": "Duración"
     },
     "cloudSync": {
