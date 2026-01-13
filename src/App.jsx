@@ -265,19 +265,19 @@ export default function BYDStatsAnalyzer() {
 
   // Small charts for Resumen: originally 275/326
   // Fullscreen BYD: 271px (reduced 55px from 326)
-  // Compact: 270px (reduced 5px from 275)
-  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 270 : 326);
+  // Compact: 295px (270 + 25px extra)
+  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 295 : 326);
 
   // Charts for Patrones (viajes por día): need more height
   // Fullscreen BYD: 289px (+3px more)
-  // Compact: 278px (+1px more)
+  // Compact: 303px (278 + 25px extra)
   // Normal: 336px (+10px from smallChart base)
-  const patternsChartHeight = isFullscreenBYD ? 289 : (isCompact ? 278 : 336);
+  const patternsChartHeight = isFullscreenBYD ? 289 : (isCompact ? 303 : 336);
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
   // Fullscreen BYD: 395px (reduced 55px from 450)
-  // Compact: 345px (reduced 5px from 350)
-  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 345 : 450);
+  // Compact: 370px (345 + 25px extra)
+  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 370 : 450);
 
   // Spacing adjustments for different modes
   // Overview/Resumen spacing (vertical mode): fullscreenBYD +2px, compact +1px, normal +2px
@@ -291,7 +291,7 @@ export default function BYDStatsAnalyzer() {
   // Records list item padding
   const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
   const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[397px]' : (isCompact ? 'h-[345px]' : 'h-[450px]');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[397px]' : (isCompact ? 'h-[370px]' : 'h-[450px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
@@ -2816,7 +2816,7 @@ export default function BYDStatsAnalyzer() {
           )}
         </div>
       </div >
-      <PWAManager layoutMode={layoutMode} />
+      <PWAManager layoutMode={layoutMode} isCompact={isCompact} />
     </div >
   );
 }
