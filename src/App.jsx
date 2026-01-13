@@ -2516,7 +2516,7 @@ export default function BYDStatsAnalyzer() {
                             const secondColumn = last10.slice(5, 10);
 
                             return (
-                              <div className={`grid lg:grid-cols-2 gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                              <div className={`grid lg:grid-cols-2 gap-4 ${isCompact ? 'gap-4' : ''}`}>
                                 <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
                                   {firstColumn.map((trip, i) => (
                                     <TripCard
@@ -2529,6 +2529,7 @@ export default function BYDStatsAnalyzer() {
                                       formatTime={formatTime}
                                       calculateScore={calculateScore}
                                       getScoreColor={getScoreColor}
+                                      isCompact={isCompact}
                                     />
                                   ))}
                                 </div>
@@ -2544,6 +2545,7 @@ export default function BYDStatsAnalyzer() {
                                       formatTime={formatTime}
                                       calculateScore={calculateScore}
                                       getScoreColor={getScoreColor}
+                                      isCompact={isCompact}
                                     />
                                   ))}
                                 </div>
@@ -2588,12 +2590,12 @@ export default function BYDStatsAnalyzer() {
                               <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
                                 <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className={`rounded-lg bg-red-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                                      <MapPin className={`text-red-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                                    <div className={`rounded-lg bg-red-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
+                                      <MapPin className={`text-red-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
-                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
                                         {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
                                       </p>
                                     </div>
@@ -2602,12 +2604,12 @@ export default function BYDStatsAnalyzer() {
 
                                 <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className={`rounded-lg bg-cyan-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                                      <Zap className={`text-cyan-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                                    <div className={`rounded-lg bg-cyan-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
+                                      <Zap className={`text-cyan-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
-                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
                                         {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
                                       </p>
                                     </div>
@@ -2616,12 +2618,12 @@ export default function BYDStatsAnalyzer() {
 
                                 <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className={`rounded-lg bg-green-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                                      <Battery className={`text-green-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                                    <div className={`rounded-lg bg-green-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
+                                      <Battery className={`text-green-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
-                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
                                         {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
                                       </p>
                                     </div>
@@ -2630,12 +2632,12 @@ export default function BYDStatsAnalyzer() {
 
                                 <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className={`rounded-lg bg-amber-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                                      <Clock className={`text-amber-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                                    <div className={`rounded-lg bg-amber-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
+                                      <Clock className={`text-amber-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
-                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
                                         {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
                                       </p>
                                     </div>
@@ -2644,12 +2646,12 @@ export default function BYDStatsAnalyzer() {
 
                                 <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className={`rounded-lg bg-blue-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                                      <TrendingUp className={`text-blue-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
+                                    <div className={`rounded-lg bg-blue-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
+                                      <TrendingUp className={`text-blue-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
-                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
                                         {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
                                       </p>
                                     </div>
