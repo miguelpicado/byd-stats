@@ -162,7 +162,7 @@ Por defecto, la APK de release no está firmada. Para firmarla:
 - [Documentación de GitHub Actions](https://docs.github.com/en/actions)
 - [Capacitor Android](https://capacitorjs.com/docs/android)
 - [Android Build Guide](ANDROID_BUILD.md)
-- [README Android](README_ANDROID.md)
+- [README Android](ANDROID.md)
 
 ---
 
