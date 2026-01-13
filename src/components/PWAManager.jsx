@@ -23,8 +23,9 @@ const RefreshCw = ({ className }) => (
  * PWA Manager Component
  * Handles PWA installation prompt, exit button, and update notifications
  * @param {string} layoutMode - 'horizontal' or 'vertical' from parent
+ * @param {boolean} isCompact - Whether compact mode is active
  */
-export default function PWAManager({ layoutMode = 'vertical' }) {
+export default function PWAManager({ layoutMode = 'vertical', isCompact = false }) {
     const { t } = useTranslation();
     const [deferredPrompt, setDeferredPrompt] = useState(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
@@ -33,8 +34,8 @@ export default function PWAManager({ layoutMode = 'vertical' }) {
     const [showUpdateBanner, setShowUpdateBanner] = useState(false);
     const [waitingWorker, setWaitingWorker] = useState(null);
 
-    // Exit button only shows in horizontal + standalone mode
-    const showExitButton = isStandalone && layoutMode === 'horizontal';
+    // Exit button only shows in horizontal + standalone mode, but NOT in compact mode
+    const showExitButton = isStandalone && layoutMode === 'horizontal' && !isCompact;
 
     // Check if running as PWA
     useEffect(() => {
