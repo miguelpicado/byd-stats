@@ -13,6 +13,7 @@ const COMPACT_SPACE_Y = 'space-y-3';
 const HistoryTab = React.memo(({
   filtered,
   isCompact,
+  isVertical,
   openTripDetail,
   setShowAllTripsModal,
   TripCard
@@ -52,6 +53,103 @@ const HistoryTab = React.memo(({
     ? avgSpeedFiltered.reduce((sum, trip) => sum + (trip.trip / ((trip.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
     : 0;
 
+  // Helper function to render a stat card
+  const renderStatCard = (icon, label, value, unit, color, size = 'normal') => (
+    <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
+      <div className="flex flex-col items-center text-center gap-2">
+        <div className={`rounded-lg ${color} flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
+          {React.createElement(icon, { className: `${isCompact ? 'w-4 h-4' : 'w-5 h-5'}` })}
+        </div>
+        <div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{label}</p>
+          <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
+            {value} <span className="text-sm text-slate-500 dark:text-slate-400">{unit}</span>
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // Render vertical layout
+  if (isVertical) {
+    return (
+      <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
+        {/* Averages section - at the top in vertical mode */}
+        <div className={`space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
+          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>
+            {t('history.avgLast10')}
+          </h2>
+
+          {/* First row: 2 cards */}
+          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            {renderStatCard(MapPin, t('history.avgDistance'), avgDistance.toFixed(1), 'km', 'bg-red-500/20 text-red-400')}
+            {renderStatCard(Zap, t('history.avgConsumption'), avgConsumption.toFixed(2), 'kWh', 'bg-cyan-500/20 text-cyan-400')}
+          </div>
+
+          {/* Second row: 2 cards */}
+          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            {renderStatCard(Battery, t('history.avgEfficiency'), avgEfficiency.toFixed(2), 'kWh/100km', 'bg-green-500/20 text-green-400')}
+            {renderStatCard(Clock, t('history.avgDuration'), avgDuration.toFixed(0), 'min', 'bg-amber-500/20 text-amber-400')}
+          </div>
+
+          {/* Third row: 1 card centered */}
+          <div className={`grid grid-cols-1 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            {renderStatCard(TrendingUp, t('history.avgSpeed'), avgSpeed.toFixed(1), 'km/h', 'bg-blue-500/20 text-blue-400')}
+          </div>
+        </div>
+
+        {/* Last 10 trips section */}
+        <div className={`space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
+          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>
+            {t('history.last10Trips')}
+          </h2>
+
+          <div className={`grid md:grid-cols-2 gap-4 ${isCompact ? 'gap-3' : ''}`}>
+            <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
+              {firstColumn.map((trip, i) => (
+                <TripCard
+                  key={i}
+                  trip={trip}
+                  minEff={minEff}
+                  maxEff={maxEff}
+                  onClick={openTripDetail}
+                  formatDate={formatDate}
+                  formatTime={formatTime}
+                  calculateScore={calculateScore}
+                  getScoreColor={getScoreColor}
+                />
+              ))}
+            </div>
+            <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
+              {secondColumn.map((trip, j) => (
+                <TripCard
+                  key={j + 5}
+                  trip={trip}
+                  minEff={minEff}
+                  maxEff={maxEff}
+                  onClick={openTripDetail}
+                  formatDate={formatDate}
+                  formatTime={formatTime}
+                  calculateScore={calculateScore}
+                  getScoreColor={getScoreColor}
+                />
+              ))}
+            </div>
+          </div>
+
+          <button
+            onClick={() => setShowAllTripsModal(true)}
+            className="w-full py-3 rounded-xl font-medium text-white"
+            style={{ backgroundColor: BYD_RED }}
+          >
+            {t('common.showAll')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Render horizontal layout (original layout)
   return (
     <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
       <div className={`grid lg:grid-cols-8 gap-6 ${isCompact ? 'gap-4' : ''}`}>
@@ -110,80 +208,11 @@ const HistoryTab = React.memo(({
           </h2>
 
           <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
-            {/* Average Distance */}
-            <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className={`rounded-lg bg-red-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                  <MapPin className={`text-red-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
-                  <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
-                    {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Average Consumption */}
-            <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className={`rounded-lg bg-cyan-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                  <Zap className={`text-cyan-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
-                  <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
-                    {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Average Efficiency */}
-            <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className={`rounded-lg bg-green-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                  <Battery className={`text-green-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
-                  <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
-                    {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Average Duration */}
-            <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className={`rounded-lg bg-amber-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                  <Clock className={`text-amber-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
-                  <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
-                    {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Average Speed */}
-            <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-              <div className="flex flex-col items-center text-center gap-2">
-                <div className={`rounded-lg bg-blue-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
-                  <TrendingUp className={`text-blue-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
-                </div>
-                <div>
-                  <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
-                  <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
-                    {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
-                  </p>
-                </div>
-              </div>
-            </div>
+            {renderStatCard(MapPin, t('history.avgDistance'), avgDistance.toFixed(1), 'km', 'bg-red-500/20 text-red-400')}
+            {renderStatCard(Zap, t('history.avgConsumption'), avgConsumption.toFixed(2), 'kWh', 'bg-cyan-500/20 text-cyan-400')}
+            {renderStatCard(Battery, t('history.avgEfficiency'), avgEfficiency.toFixed(2), 'kWh/100km', 'bg-green-500/20 text-green-400')}
+            {renderStatCard(Clock, t('history.avgDuration'), avgDuration.toFixed(0), 'min', 'bg-amber-500/20 text-amber-400')}
+            {renderStatCard(TrendingUp, t('history.avgSpeed'), avgSpeed.toFixed(1), 'km/h', 'bg-blue-500/20 text-blue-400')}
           </div>
         </div>
       </div>

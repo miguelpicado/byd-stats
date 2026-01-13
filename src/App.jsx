@@ -1787,6 +1787,7 @@ export default function BYDStatsAnalyzer() {
                           key={activeTab === 'history' ? 'active' : 'bg'}
                           filtered={filtered}
                           isCompact={isCompact}
+                          isVertical={isVertical}
                           openTripDetail={openTripDetail}
                           setShowAllTripsModal={setShowAllTripsModal}
                           TripCard={TripCard}
@@ -1905,6 +1906,7 @@ export default function BYDStatsAnalyzer() {
                           key={activeTab === 'history' ? 'active' : 'bg'}
                           filtered={filtered}
                           isCompact={isCompact}
+                          isVertical={isVertical}
                           openTripDetail={openTripDetail}
                           setShowAllTripsModal={setShowAllTripsModal}
                           TripCard={TripCard}
