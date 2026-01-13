@@ -2659,52 +2659,57 @@ export default function BYDStatsAnalyzer() {
                                 : 0;
 
                               return (
-                                <div className="flex-1 flex flex-col justify-between">
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="rounded bg-red-500/20 w-5 h-5 flex items-center justify-center">
-                                        <MapPin className="text-red-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgDistance.toFixed(1)} <span className="text-[8px] text-slate-500">km</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="rounded bg-cyan-500/20 w-5 h-5 flex items-center justify-center">
-                                        <Zap className="text-cyan-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgConsumption.toFixed(2)} <span className="text-[8px] text-slate-500">kWh</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="rounded bg-green-500/20 w-5 h-5 flex items-center justify-center">
-                                        <Battery className="text-green-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgEfficiency.toFixed(2)} <span className="text-[8px] text-slate-500">kWh/100</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="rounded bg-amber-500/20 w-5 h-5 flex items-center justify-center">
-                                        <Clock className="text-amber-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgDuration.toFixed(0)} <span className="text-[8px] text-slate-500">min</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
-                                    <div className="flex items-center gap-1.5">
-                                      <div className="rounded bg-blue-500/20 w-5 h-5 flex items-center justify-center">
-                                        <TrendingUp className="text-blue-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgSpeed.toFixed(1)} <span className="text-[8px] text-slate-500">km/h</span></p>
-                                  </div>
+                                <div className="flex-1 flex flex-col justify-between gap-2">
+                                  <StatCard
+                                    isLarger={true}
+                                    isCompact={isCompact}
+                                    icon={MapPin}
+                                    label={t('history.avgDistance')}
+                                    value={avgDistance.toFixed(1)}
+                                    unit="km"
+                                    color="bg-red-500/20 text-red-500"
+                                    lowPadding={true}
+                                  />
+                                  <StatCard
+                                    isLarger={true}
+                                    isCompact={isCompact}
+                                    icon={Zap}
+                                    label={t('history.avgConsumption')}
+                                    value={avgConsumption.toFixed(2)}
+                                    unit="kWh"
+                                    color="bg-cyan-500/20 text-cyan-500"
+                                    lowPadding={true}
+                                  />
+                                  <StatCard
+                                    isLarger={true}
+                                    isCompact={isCompact}
+                                    icon={Battery}
+                                    label={t('history.avgEfficiency')}
+                                    value={avgEfficiency.toFixed(2)}
+                                    unit="kWh/100"
+                                    color="bg-green-500/20 text-green-500"
+                                    lowPadding={true}
+                                  />
+                                  <StatCard
+                                    isLarger={true}
+                                    isCompact={isCompact}
+                                    icon={Clock}
+                                    label={t('history.avgDuration')}
+                                    value={avgDuration.toFixed(0)}
+                                    unit="min"
+                                    color="bg-amber-500/20 text-amber-500"
+                                    lowPadding={true}
+                                  />
+                                  <StatCard
+                                    isLarger={true}
+                                    isCompact={isCompact}
+                                    icon={TrendingUp}
+                                    label={t('history.avgSpeed')}
+                                    value={avgSpeed.toFixed(1)}
+                                    unit="km/h"
+                                    color="bg-blue-500/20 text-blue-500"
+                                    lowPadding={true}
+                                  />
                                 </div>
                               );
                             })()}
