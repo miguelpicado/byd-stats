@@ -273,7 +273,10 @@
         "dbExported": "Base de datos exportada correctamente"
     },
     "errors": {
-        "invalidFile": "Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta \"Energydata\" del coche"
+        "invalidFile": "Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta \"Energydata\" del coche",
+        "somethingWentWrong": "Algo salió mal",
+        "unexpectedRenderError": "La aplicación ha encontrado un error inesperado al renderizar.",
+        "resetAndClearCache": "Reiniciar y Borrar Caché"
     },
     "historyMod": {
         "title": "Historial de viajes",
@@ -310,7 +313,7 @@
             "sections": {
                 "collection": {
                     "title": "1. Recopilación de Datos",
-                    "text": "La aplicación procesa exclusivamente los datos contenidos en el archivo <code>EC_Database.db</code> generado por tu vehículo BYD. Estos datos incluyen registros de viajes, eficiencia, consumos y ubicaciones (coordenadas GPS de inicio/fin si las guardas)."
+                    "text": "La aplicación procesa exclusivamente los datos contenidos en el archivo EC_Database.db generado por tu vehículo BYD. Estos datos incluyen registros de viajes, eficiencia, consumos y ubicaciones (coordenadas GPS de inicio/fin si las guardas)."
                 },
                 "usage": {
                     "title": "2. Uso de la Información",
@@ -318,8 +321,8 @@
                 },
                 "storage": {
                     "title": "3. Almacenamiento y Seguridad",
-                    "local": "<strong>Local:</strong> Los datos se guardan en el almacenamiento local de tu navegador o dispositivo (IndexedDB/LocalStorage).",
-                    "cloud": "<strong>Nube (Opcional):</strong> Si activas la Sincronización con Google Drive, los datos se subirán a tu cuenta privada de Google Drive (en la carpeta de \"application data\"). Solo tú tienes acceso a esos archivos."
+                    "local": "Local: Los datos se guardan en el almacenamiento local de tu navegador o dispositivo (IndexedDB/LocalStorage).",
+                    "cloud": "Nube (Opcional): Si activas la Sincronización con Google Drive, los datos se subirán a tu cuenta privada de Google Drive (en la carpeta de \"application data\"). Solo tú tienes acceso a esos archivos."
                 },
                 "thirdParty": {
                     "title": "4. Servicios de Terceros",

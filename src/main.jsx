@@ -8,7 +8,7 @@ import { AppProvider } from './context/AppContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './i18n';  // Initialize i18n
 
-const WEB_CLIENT_ID = '407339918856-6vmd7ijqjgk435hp0a6jnc9bphhogljf.apps.googleusercontent.com';
+const WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID;
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
