@@ -12,7 +12,7 @@ import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, LogOut, BYD_RED } from './components/Icons.jsx';
+import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
 import PWAManager from './components/PWAManager';
@@ -224,7 +224,6 @@ export default function BYDStatsAnalyzer() {
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
-  const [chartKey, setChartKey] = useState(0); // Key to force chart re-render on tab change
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -254,21 +253,8 @@ export default function BYDStatsAnalyzer() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [tripHistory, setTripHistory] = useState([]);
-  const [isStandalone, setIsStandalone] = useState(false);
 
-  // Detect if running as PWA/standalone
-  useEffect(() => {
-    const checkStandalone = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches ||
-        window.matchMedia('(display-mode: fullscreen)').matches ||
-        window.navigator.standalone;
-      setIsStandalone(standalone);
-    };
-    checkStandalone();
-    const mediaQuery = window.matchMedia('(display-mode: standalone)');
-    mediaQuery.addEventListener('change', checkStandalone);
-    return () => mediaQuery.removeEventListener('change', checkStandalone);
-  }, []);
+
 
   // Context state
   const { settings, updateSettings, layoutMode, isCompact, isFullscreenBYD } = useApp();
@@ -279,19 +265,19 @@ export default function BYDStatsAnalyzer() {
 
   // Small charts for Resumen: originally 275/326
   // Fullscreen BYD: 271px (reduced 55px from 326)
-  // Compact: 310px (270 + 40px extra)
-  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 310 : 326);
+  // Compact: 295px (270 + 25px extra)
+  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 295 : 326);
 
   // Charts for Patrones (viajes por día): need more height
   // Fullscreen BYD: 289px (+3px more)
-  // Compact: 318px (278 + 40px extra)
+  // Compact: 303px (278 + 25px extra)
   // Normal: 336px (+10px from smallChart base)
-  const patternsChartHeight = isFullscreenBYD ? 289 : (isCompact ? 318 : 336);
+  const patternsChartHeight = isFullscreenBYD ? 289 : (isCompact ? 303 : 336);
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
   // Fullscreen BYD: 395px (reduced 55px from 450)
-  // Compact: 385px (345 + 40px extra)
-  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 385 : 450);
+  // Compact: 370px (345 + 25px extra)
+  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 370 : 450);
 
   // Spacing adjustments for different modes
   // Overview/Resumen spacing (vertical mode): fullscreenBYD +2px, compact +1px, normal +2px
@@ -305,7 +291,7 @@ export default function BYDStatsAnalyzer() {
   // Records list item padding
   const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
   const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[397px]' : (isCompact ? 'h-[385px]' : 'h-[450px]');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[397px]' : (isCompact ? 'h-[370px]' : 'h-[450px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
@@ -711,8 +697,6 @@ export default function BYDStatsAnalyzer() {
     // Use transitions for both vertical and horizontal modes
     setIsTransitioning(true);
     setActiveTab(tabId);
-    // Increment chartKey to force chart re-render and trigger animations
-    setChartKey(prev => prev + 1);
     setTimeout(() => {
       setIsTransitioning(false);
     }, transitionDuration);
@@ -872,7 +856,7 @@ export default function BYDStatsAnalyzer() {
 
 
 
-  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor, isCompact, isFullscreenBYD }) => {
+  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor, isCompact }) => {
     const efficiency = useMemo(() => {
       if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
         return 0;
@@ -890,70 +874,39 @@ export default function BYDStatsAnalyzer() {
       [score, getScoreColor]
     );
 
-    // Extra compact mode for isCompact or isFullscreenBYD to fit 10 trips without scroll
-    const isExtraCompact = isCompact || isFullscreenBYD;
-
     return (
       <div
         onClick={() => onClick(trip)}
-        className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${isExtraCompact ? 'p-1.5 py-1' : 'p-3 sm:p-4'}`}
+        className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${isCompact ? 'p-2' : 'p-3 sm:p-4'}`}
       >
-        <div className={`flex items-center justify-between ${isExtraCompact ? 'gap-2' : 'flex-col text-center mb-3'}`}>
-          {isExtraCompact ? (
-            <>
-              {/* Extra compact layout: all in one row */}
-              <p className="text-slate-900 dark:text-white font-semibold text-[10px] whitespace-nowrap">
-                {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="text-center">
-                  <p className="text-slate-900 dark:text-white font-bold text-xs">{trip.trip?.toFixed(1)}<span className="text-slate-500 text-[8px] ml-0.5">km</span></p>
-                </div>
-                <div className="text-center">
-                  <p className="text-slate-900 dark:text-white font-bold text-xs">{trip.electricity?.toFixed(1)}<span className="text-slate-500 text-[8px] ml-0.5">kWh</span></p>
-                </div>
-                <div className="text-center">
-                  <p className="text-slate-900 dark:text-white font-bold text-xs">{efficiency.toFixed(1)}<span className="text-slate-500 text-[8px] ml-0.5">kWh/100</span></p>
-                </div>
-                <p className="font-bold text-base" style={{ color: scoreColor }}>
-                  {score.toFixed(1)}
-                </p>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Normal layout */}
-              <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
-                {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-              </p>
-            </>
-          )}
+        <div className={`text-center ${isCompact ? 'mb-1' : 'mb-3'}`}>
+          <p className={`text-slate-900 dark:text-white font-semibold ${isCompact ? 'text-xs' : 'text-sm sm:text-base'}`}>
+            {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+          </p>
         </div>
-        {!isExtraCompact && (
-          <div className="grid grid-cols-4 gap-2">
-            <div className="text-center">
-              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">{t('stats.distance')}</p>
-              <p className="text-slate-900 dark:text-white font-bold text-base sm:text-xl">{trip.trip?.toFixed(1)}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">{t('tripDetail.consumption')}</p>
-              <p className="text-slate-900 dark:text-white font-bold text-base sm:text-xl">{trip.electricity?.toFixed(2)}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">{t('stats.efficiency')}</p>
-              <p className="text-slate-900 dark:text-white font-bold text-base sm:text-xl">{efficiency.toFixed(2)}</p>
-              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
-            </div>
-            <div className="text-center">
-              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
-              <p className="font-bold text-2xl sm:text-3xl" style={{ color: scoreColor }}>
-                {score.toFixed(1)}
-              </p>
-            </div>
+        <div className="grid grid-cols-4 gap-2">
+          <div className="text-center">
+            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.distance')}</p>
+            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.trip?.toFixed(1)}</p>
+            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>km</p>
           </div>
-        )}
+          <div className="text-center">
+            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('tripDetail.consumption')}</p>
+            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.electricity?.toFixed(2)}</p>
+            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh</p>
+          </div>
+          <div className="text-center">
+            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.efficiency')}</p>
+            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{efficiency.toFixed(2)}</p>
+            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh/100km</p>
+          </div>
+          <div className="text-center">
+            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Score</p>
+            <p className={`font-bold ${isCompact ? 'text-lg' : 'text-2xl sm:text-3xl'}`} style={{ color: scoreColor }}>
+              {score.toFixed(1)}
+            </p>
+          </div>
+        </div>
       </div>
     );
   });
@@ -1635,8 +1588,8 @@ export default function BYDStatsAnalyzer() {
       <div className="flex-1 overflow-hidden" style={{ display: layoutMode === 'horizontal' ? 'flex' : 'block' }}>
         {/* Horizontal Layout: Sidebar with tabs */}
         {layoutMode === 'horizontal' && (
-          <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto flex flex-col">
-            <div className="p-4 space-y-2 flex-1">
+          <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
+            <div className="p-4 space-y-2">
               {tabs.map((t) => (
                 <button
                   key={t.id}
@@ -1654,26 +1607,6 @@ export default function BYDStatsAnalyzer() {
                 </button>
               ))}
             </div>
-            {/* Exit button for fullscreenBYD mode when running as PWA */}
-            {isFullscreenBYD && isStandalone && (
-              <div className="p-4 border-t border-slate-200 dark:border-slate-700/50">
-                <button
-                  onClick={() => {
-                    if (window.confirm(t('pwa.exitConfirmTitle'))) {
-                      window.close();
-                      // Fallback if window.close() doesn't work
-                      setTimeout(() => {
-                        window.location.href = 'about:blank';
-                      }, 100);
-                    }
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left bg-red-500/10 hover:bg-red-500/20 text-red-500"
-                >
-                  <LogOut className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-medium">{t('pwa.exit')}</span>
-                </button>
-              </div>
-            )}
           </div>
         )}
 
@@ -2162,8 +2095,8 @@ export default function BYDStatsAnalyzer() {
             </div>
           ) : (
             // Horizontal layout: show only active tab content
-            // key combines activeTab and chartKey to force re-mount and trigger chart animations in all contexts (web, PWA, WebAPK)
-            <div key={`${activeTab}-${chartKey}`} ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
+            // key={activeTab} forces re-mount on tab change, triggering chart animations
+            <div key={activeTab} ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
@@ -2582,13 +2515,9 @@ export default function BYDStatsAnalyzer() {
                             const firstColumn = last10.slice(0, 5);
                             const secondColumn = last10.slice(5, 10);
 
-                            // Determine spacing based on mode for 10 trips without scroll
-                            const tripSpacing = (isCompact || isFullscreenBYD) ? 'space-y-1' : 'space-y-3';
-                            const gridGap = (isCompact || isFullscreenBYD) ? 'gap-2' : 'gap-4';
-
                             return (
-                              <div className={`grid lg:grid-cols-2 ${gridGap}`}>
-                                <div className={tripSpacing}>
+                              <div className={`grid lg:grid-cols-2 gap-4 ${isCompact ? 'gap-3' : ''}`}>
+                                <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
                                   {firstColumn.map((trip, i) => (
                                     <TripCard
                                       key={i}
@@ -2600,12 +2529,10 @@ export default function BYDStatsAnalyzer() {
                                       formatTime={formatTime}
                                       calculateScore={calculateScore}
                                       getScoreColor={getScoreColor}
-                                      isCompact={isCompact}
-                                      isFullscreenBYD={isFullscreenBYD}
                                     />
                                   ))}
                                 </div>
-                                <div className={tripSpacing}>
+                                <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
                                   {secondColumn.map((trip, j) => (
                                     <TripCard
                                       key={j + 5}
@@ -2617,8 +2544,6 @@ export default function BYDStatsAnalyzer() {
                                       formatTime={formatTime}
                                       calculateScore={calculateScore}
                                       getScoreColor={getScoreColor}
-                                      isCompact={isCompact}
-                                      isFullscreenBYD={isFullscreenBYD}
                                     />
                                   ))}
                                 </div>
@@ -2628,15 +2553,15 @@ export default function BYDStatsAnalyzer() {
 
                           <button
                             onClick={() => setShowAllTripsModal(true)}
-                            className={`w-full rounded-xl font-medium text-white ${(isCompact || isFullscreenBYD) ? 'py-2 text-sm' : 'py-3'}`}
+                            className="w-full py-3 rounded-xl font-medium text-white"
                             style={{ backgroundColor: BYD_RED }}
                           >
                             {t('common.showAll')}
                           </button>
                         </div>
 
-                        <div className={`lg:col-span-2 ${(isCompact || isFullscreenBYD) ? 'space-y-1' : 'space-y-4'}`}>
-                          <h2 className={`font-bold text-slate-900 dark:text-white ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-xl sm:text-2xl'}`}>{t('history.avgLast10')}</h2>
+                        <div className={`lg:col-span-2 space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
+                          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>{t('history.avgLast10')}</h2>
                           {(() => {
                             const allTrips = [...filtered].sort((a, b) => {
                               const dateCompare = (b.date || '').localeCompare(a.date || '');
@@ -2659,127 +2584,72 @@ export default function BYDStatsAnalyzer() {
                               ? avgSpeedFiltered.reduce((sum, t) => sum + (t.trip / ((t.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
                               : 0;
 
-                            // Extra compact layout for insights in compact/fullscreenBYD modes
-                            const isExtraCompactInsights = isCompact || isFullscreenBYD;
-
-                            if (isExtraCompactInsights) {
-                              return (
-                                <div className="space-y-1">
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-red-500/20 w-6 h-6 flex items-center justify-center">
-                                        <MapPin className="text-red-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgDistance.toFixed(1)} <span className="text-[10px] text-slate-500">km</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-cyan-500/20 w-6 h-6 flex items-center justify-center">
-                                        <Zap className="text-cyan-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgConsumption.toFixed(2)} <span className="text-[10px] text-slate-500">kWh</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-green-500/20 w-6 h-6 flex items-center justify-center">
-                                        <Battery className="text-green-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgEfficiency.toFixed(2)} <span className="text-[10px] text-slate-500">kWh/100</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-amber-500/20 w-6 h-6 flex items-center justify-center">
-                                        <Clock className="text-amber-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgDuration.toFixed(0)} <span className="text-[10px] text-slate-500">min</span></p>
-                                  </div>
-                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-1.5 flex items-center justify-between">
-                                    <div className="flex items-center gap-2">
-                                      <div className="rounded bg-blue-500/20 w-6 h-6 flex items-center justify-center">
-                                        <TrendingUp className="text-blue-400 w-3 h-3" />
-                                      </div>
-                                      <p className="text-[10px] text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
-                                    </div>
-                                    <p className="font-bold text-slate-900 dark:text-white text-sm">{avgSpeed.toFixed(1)} <span className="text-[10px] text-slate-500">km/h</span></p>
-                                  </div>
-                                </div>
-                              );
-                            }
-
                             return (
-                              <div className="space-y-3">
-                                <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                              <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
+                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className="rounded-lg bg-red-500/20 w-10 h-10 flex items-center justify-center">
-                                      <MapPin className="text-red-400 w-5 h-5" />
+                                    <div className={`rounded-lg bg-red-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
+                                      <MapPin className={`text-red-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
-                                      <p className="font-bold text-slate-900 dark:text-white text-2xl">
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
                                       </p>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className="rounded-lg bg-cyan-500/20 w-10 h-10 flex items-center justify-center">
-                                      <Zap className="text-cyan-400 w-5 h-5" />
+                                    <div className={`rounded-lg bg-cyan-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
+                                      <Zap className={`text-cyan-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
-                                      <p className="font-bold text-slate-900 dark:text-white text-2xl">
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
                                       </p>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className="rounded-lg bg-green-500/20 w-10 h-10 flex items-center justify-center">
-                                      <Battery className="text-green-400 w-5 h-5" />
+                                    <div className={`rounded-lg bg-green-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
+                                      <Battery className={`text-green-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
-                                      <p className="font-bold text-slate-900 dark:text-white text-2xl">
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
                                       </p>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className="rounded-lg bg-amber-500/20 w-10 h-10 flex items-center justify-center">
-                                      <Clock className="text-amber-400 w-5 h-5" />
+                                    <div className={`rounded-lg bg-amber-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
+                                      <Clock className={`text-amber-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
-                                      <p className="font-bold text-slate-900 dark:text-white text-2xl">
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
                                       </p>
                                     </div>
                                   </div>
                                 </div>
 
-                                <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
                                   <div className="flex flex-col items-center text-center gap-2">
-                                    <div className="rounded-lg bg-blue-500/20 w-10 h-10 flex items-center justify-center">
-                                      <TrendingUp className="text-blue-400 w-5 h-5" />
+                                    <div className={`rounded-lg bg-blue-500/20 flex items-center justify-center ${isCompact ? 'w-8 h-8' : 'w-10 h-10'}`}>
+                                      <TrendingUp className={`text-blue-400 ${isCompact ? 'w-4 h-4' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
-                                      <p className="font-bold text-slate-900 dark:text-white text-2xl">
+                                      <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-xl' : 'text-2xl'}`}>
                                         {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
                                       </p>
                                     </div>
@@ -2946,7 +2816,7 @@ export default function BYDStatsAnalyzer() {
           )}
         </div>
       </div >
-      <PWAManager layoutMode={layoutMode} isCompact={isCompact} isFullscreenBYD={isFullscreenBYD} />
+      <PWAManager layoutMode={layoutMode} isCompact={isCompact} />
     </div >
   );
 }
