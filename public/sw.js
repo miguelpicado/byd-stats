@@ -1,5 +1,5 @@
 // BYD Stats Service Worker
-const CACHE_NAME = 'byd-stats-v1.1.2';
+const CACHE_NAME = 'byd-stats-v1.1.3';
 
 // Install event - don't skip waiting automatically
 self.addEventListener('install', (event) => {
@@ -54,7 +54,8 @@ self.addEventListener('fetch', (event) => {
     if (event.request.method !== 'POST') return;
 
     const url = new URL(event.request.url);
-    if (url.pathname === '/' || url.pathname === '/index.html') {
+    // Handle share target from manifest
+    if (url.pathname === '/' || url.pathname === '/index.html' || url.search.includes('share-target')) {
         event.respondWith(handleShareTarget(event.request));
     }
 });
