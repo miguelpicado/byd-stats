@@ -12,7 +12,7 @@ import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, BYD_RED } from './components/Icons.jsx';
+import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, LogOut, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
 import PWAManager from './components/PWAManager';
@@ -224,6 +224,7 @@ export default function BYDStatsAnalyzer() {
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
+  const [chartKey, setChartKey] = useState(0); // Key to force chart re-render on tab change
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -253,8 +254,21 @@ export default function BYDStatsAnalyzer() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [tripHistory, setTripHistory] = useState([]);
+  const [isStandalone, setIsStandalone] = useState(false);
 
-
+  // Detect if running as PWA/standalone
+  useEffect(() => {
+    const checkStandalone = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches ||
+        window.matchMedia('(display-mode: fullscreen)').matches ||
+        window.navigator.standalone;
+      setIsStandalone(standalone);
+    };
+    checkStandalone();
+    const mediaQuery = window.matchMedia('(display-mode: standalone)');
+    mediaQuery.addEventListener('change', checkStandalone);
+    return () => mediaQuery.removeEventListener('change', checkStandalone);
+  }, []);
 
   // Context state
   const { settings, updateSettings, layoutMode, isCompact, isFullscreenBYD } = useApp();
@@ -265,19 +279,19 @@ export default function BYDStatsAnalyzer() {
 
   // Small charts for Resumen: originally 275/326
   // Fullscreen BYD: 271px (reduced 55px from 326)
-  // Compact: 270px (reduced 5px from 275)
-  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 270 : 326);
+  // Compact: 310px (270 + 40px extra)
+  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 310 : 326);
 
   // Charts for Patrones (viajes por día): need more height
   // Fullscreen BYD: 289px (+3px more)
-  // Compact: 278px (+1px more)
+  // Compact: 318px (278 + 40px extra)
   // Normal: 336px (+10px from smallChart base)
-  const patternsChartHeight = isFullscreenBYD ? 289 : (isCompact ? 278 : 336);
+  const patternsChartHeight = isFullscreenBYD ? 289 : (isCompact ? 318 : 336);
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
   // Fullscreen BYD: 395px (reduced 55px from 450)
-  // Compact: 345px (reduced 5px from 350)
-  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 345 : 450);
+  // Compact: 385px (345 + 40px extra)
+  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 385 : 450);
 
   // Spacing adjustments for different modes
   // Overview/Resumen spacing (vertical mode): fullscreenBYD +2px, compact +1px, normal +2px
@@ -291,7 +305,7 @@ export default function BYDStatsAnalyzer() {
   // Records list item padding
   const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
   const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[397px]' : (isCompact ? 'h-[345px]' : 'h-[450px]');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[397px]' : (isCompact ? 'h-[385px]' : 'h-[450px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
@@ -697,6 +711,8 @@ export default function BYDStatsAnalyzer() {
     // Use transitions for both vertical and horizontal modes
     setIsTransitioning(true);
     setActiveTab(tabId);
+    // Increment chartKey to force chart re-render and trigger animations
+    setChartKey(prev => prev + 1);
     setTimeout(() => {
       setIsTransitioning(false);
     }, transitionDuration);
@@ -856,7 +872,7 @@ export default function BYDStatsAnalyzer() {
 
 
 
-  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor, isCompact }) => {
+  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor, isCompact, isFullscreenBYD }) => {
     const efficiency = useMemo(() => {
       if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
         return 0;
@@ -874,39 +890,70 @@ export default function BYDStatsAnalyzer() {
       [score, getScoreColor]
     );
 
+    // Extra compact mode for isCompact or isFullscreenBYD to fit 10 trips without scroll
+    const isExtraCompact = isCompact || isFullscreenBYD;
+
     return (
       <div
         onClick={() => onClick(trip)}
-        className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${isCompact ? 'p-2' : 'p-3 sm:p-4'}`}
+        className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${isExtraCompact ? 'p-1.5 py-1' : 'p-3 sm:p-4'}`}
       >
-        <div className={`text-center ${isCompact ? 'mb-1' : 'mb-3'}`}>
-          <p className={`text-slate-900 dark:text-white font-semibold ${isCompact ? 'text-xs' : 'text-sm sm:text-base'}`}>
-            {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-          </p>
+        <div className={`flex items-center justify-between ${isExtraCompact ? 'gap-2' : 'flex-col text-center mb-3'}`}>
+          {isExtraCompact ? (
+            <>
+              {/* Extra compact layout: all in one row */}
+              <p className="text-slate-900 dark:text-white font-semibold text-[10px] whitespace-nowrap">
+                {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+              </p>
+              <div className="flex items-center gap-3">
+                <div className="text-center">
+                  <p className="text-slate-900 dark:text-white font-bold text-xs">{trip.trip?.toFixed(1)}<span className="text-slate-500 text-[8px] ml-0.5">km</span></p>
+                </div>
+                <div className="text-center">
+                  <p className="text-slate-900 dark:text-white font-bold text-xs">{trip.electricity?.toFixed(1)}<span className="text-slate-500 text-[8px] ml-0.5">kWh</span></p>
+                </div>
+                <div className="text-center">
+                  <p className="text-slate-900 dark:text-white font-bold text-xs">{efficiency.toFixed(1)}<span className="text-slate-500 text-[8px] ml-0.5">kWh/100</span></p>
+                </div>
+                <p className="font-bold text-base" style={{ color: scoreColor }}>
+                  {score.toFixed(1)}
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Normal layout */}
+              <p className="text-slate-900 dark:text-white font-semibold text-sm sm:text-base">
+                {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
+              </p>
+            </>
+          )}
         </div>
-        <div className="grid grid-cols-4 gap-2">
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.distance')}</p>
-            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.trip?.toFixed(1)}</p>
-            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>km</p>
+        {!isExtraCompact && (
+          <div className="grid grid-cols-4 gap-2">
+            <div className="text-center">
+              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">{t('stats.distance')}</p>
+              <p className="text-slate-900 dark:text-white font-bold text-base sm:text-xl">{trip.trip?.toFixed(1)}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">km</p>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">{t('tripDetail.consumption')}</p>
+              <p className="text-slate-900 dark:text-white font-bold text-base sm:text-xl">{trip.electricity?.toFixed(2)}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh</p>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">{t('stats.efficiency')}</p>
+              <p className="text-slate-900 dark:text-white font-bold text-base sm:text-xl">{efficiency.toFixed(2)}</p>
+              <p className="text-slate-500 dark:text-slate-400 text-[9px] sm:text-[10px]">kWh/100km</p>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-600 dark:text-slate-400 text-[10px] sm:text-xs mb-1">Score</p>
+              <p className="font-bold text-2xl sm:text-3xl" style={{ color: scoreColor }}>
+                {score.toFixed(1)}
+              </p>
+            </div>
           </div>
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('tripDetail.consumption')}</p>
-            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.electricity?.toFixed(2)}</p>
-            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh</p>
-          </div>
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.efficiency')}</p>
-            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{efficiency.toFixed(2)}</p>
-            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh/100km</p>
-          </div>
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Score</p>
-            <p className={`font-bold ${isCompact ? 'text-lg' : 'text-2xl sm:text-3xl'}`} style={{ color: scoreColor }}>
-              {score.toFixed(1)}
-            </p>
-          </div>
-        </div>
+        )}
       </div>
     );
   });
@@ -1588,8 +1635,8 @@ export default function BYDStatsAnalyzer() {
       <div className="flex-1 overflow-hidden" style={{ display: layoutMode === 'horizontal' ? 'flex' : 'block' }}>
         {/* Horizontal Layout: Sidebar with tabs */}
         {layoutMode === 'horizontal' && (
-          <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
-            <div className="p-4 space-y-2">
+          <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto flex flex-col">
+            <div className="p-4 space-y-2 flex-1">
               {tabs.map((t) => (
                 <button
                   key={t.id}
@@ -1607,6 +1654,26 @@ export default function BYDStatsAnalyzer() {
                 </button>
               ))}
             </div>
+            {/* Exit button for fullscreenBYD mode when running as PWA */}
+            {isFullscreenBYD && isStandalone && (
+              <div className="p-4 border-t border-slate-200 dark:border-slate-700/50">
+                <button
+                  onClick={() => {
+                    if (window.confirm(t('pwa.exitConfirmTitle'))) {
+                      window.close();
+                      // Fallback if window.close() doesn't work
+                      setTimeout(() => {
+                        window.location.href = 'about:blank';
+                      }, 100);
+                    }
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left bg-red-500/10 hover:bg-red-500/20 text-red-500"
+                >
+                  <LogOut className="w-5 h-5 flex-shrink-0" />
+                  <span className="font-medium">{t('pwa.exit')}</span>
+                </button>
+              </div>
+            )}
           </div>
         )}
 
@@ -2095,8 +2162,8 @@ export default function BYDStatsAnalyzer() {
             </div>
           ) : (
             // Horizontal layout: show only active tab content
-            // key={activeTab} forces re-mount on tab change, triggering chart animations
-            <div key={activeTab} ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
+            // key combines activeTab and chartKey to force re-mount and trigger chart animations in all contexts (web, PWA, WebAPK)
+            <div key={`${activeTab}-${chartKey}`} ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
@@ -2495,330 +2562,530 @@ export default function BYDStatsAnalyzer() {
                     </div>
                   )}
                   {activeTab === 'history' && (
-                    <div className={`${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
-                      <div className={`grid lg:grid-cols-8 gap-6 ${isCompact ? 'gap-4' : ''}`}>
-                        <div className={`lg:col-span-6 space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
-                          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>{t('history.last10Trips')}</h2>
-                          {(() => {
-                            const allTrips = [...filtered].sort((a, b) => {
-                              const dateCompare = (b.date || '').localeCompare(a.date || '');
-                              if (dateCompare !== 0) return dateCompare;
-                              return (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                            });
+                    <div className={(isCompact || isFullscreenBYD) ? 'h-full' : `${isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}`}>
+                      {(isCompact || isFullscreenBYD) ? (
+                        // Layout optimizado para modo compacto/fullscreenBYD - sin scroll
+                        <div className="h-full flex gap-3">
+                          {/* Columna izquierda: viajes + botón */}
+                          <div className="flex-1 flex flex-col h-full">
+                            <h2 className="font-bold text-slate-900 dark:text-white text-sm mb-2">{t('history.last10Trips')}</h2>
+                            {(() => {
+                              const allTrips = [...filtered].sort((a, b) => {
+                                const dateCompare = (b.date || '').localeCompare(a.date || '');
+                                if (dateCompare !== 0) return dateCompare;
+                                return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                              });
 
-                            const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
-                            const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-                            const minEff = Math.min(...efficiencies);
-                            const maxEff = Math.max(...efficiencies);
+                              const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+                              const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+                              const minEff = Math.min(...efficiencies);
+                              const maxEff = Math.max(...efficiencies);
 
-                            const last10 = allTrips.slice(0, 10);
-                            const firstColumn = last10.slice(0, 5);
-                            const secondColumn = last10.slice(5, 10);
+                              const last10 = allTrips.slice(0, 10);
+                              const firstColumn = last10.slice(0, 5);
+                              const secondColumn = last10.slice(5, 10);
 
-                            return (
-                              <div className={`grid lg:grid-cols-2 gap-4 ${isCompact ? 'gap-4' : ''}`}>
-                                <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
-                                  {firstColumn.map((trip, i) => (
-                                    <TripCard
-                                      key={i}
-                                      trip={trip}
-                                      minEff={minEff}
-                                      maxEff={maxEff}
-                                      onClick={openTripDetail}
-                                      formatDate={formatDate}
-                                      formatTime={formatTime}
-                                      calculateScore={calculateScore}
-                                      getScoreColor={getScoreColor}
-                                      isCompact={isCompact}
-                                    />
-                                  ))}
+                              return (
+                                <div className="flex-1 grid grid-cols-2 gap-2">
+                                  <div className="flex flex-col justify-between">
+                                    {firstColumn.map((trip, i) => (
+                                      <TripCard
+                                        key={i}
+                                        trip={trip}
+                                        minEff={minEff}
+                                        maxEff={maxEff}
+                                        onClick={openTripDetail}
+                                        formatDate={formatDate}
+                                        formatTime={formatTime}
+                                        calculateScore={calculateScore}
+                                        getScoreColor={getScoreColor}
+                                        isCompact={isCompact}
+                                        isFullscreenBYD={isFullscreenBYD}
+                                      />
+                                    ))}
+                                  </div>
+                                  <div className="flex flex-col justify-between">
+                                    {secondColumn.map((trip, j) => (
+                                      <TripCard
+                                        key={j + 5}
+                                        trip={trip}
+                                        minEff={minEff}
+                                        maxEff={maxEff}
+                                        onClick={openTripDetail}
+                                        formatDate={formatDate}
+                                        formatTime={formatTime}
+                                        calculateScore={calculateScore}
+                                        getScoreColor={getScoreColor}
+                                        isCompact={isCompact}
+                                        isFullscreenBYD={isFullscreenBYD}
+                                      />
+                                    ))}
+                                  </div>
                                 </div>
-                                <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
-                                  {secondColumn.map((trip, j) => (
-                                    <TripCard
-                                      key={j + 5}
-                                      trip={trip}
-                                      minEff={minEff}
-                                      maxEff={maxEff}
-                                      onClick={openTripDetail}
-                                      formatDate={formatDate}
-                                      formatTime={formatTime}
-                                      calculateScore={calculateScore}
-                                      getScoreColor={getScoreColor}
-                                      isCompact={isCompact}
-                                    />
-                                  ))}
-                                </div>
-                              </div>
-                            );
-                          })()}
+                              );
+                            })()}
+                            <button
+                              onClick={() => setShowAllTripsModal(true)}
+                              className="mt-2 w-full py-1.5 rounded-lg font-medium text-white text-xs"
+                              style={{ backgroundColor: BYD_RED }}
+                            >
+                              {t('common.showAll')}
+                            </button>
+                          </div>
 
-                          <button
-                            onClick={() => setShowAllTripsModal(true)}
-                            className="w-full py-3 rounded-xl font-medium text-white"
-                            style={{ backgroundColor: BYD_RED }}
-                          >
-                            {t('common.showAll')}
-                          </button>
+                          {/* Columna derecha: insights */}
+                          <div className="w-48 flex flex-col h-full">
+                            <h2 className="font-bold text-slate-900 dark:text-white text-sm mb-2">{t('history.avgLast10')}</h2>
+                            {(() => {
+                              const allTrips = [...filtered].sort((a, b) => {
+                                const dateCompare = (b.date || '').localeCompare(a.date || '');
+                                if (dateCompare !== 0) return dateCompare;
+                                return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                              });
+                              const last10 = allTrips.slice(0, 10);
+
+                              const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length || 0;
+                              const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length || 0;
+                              const avgEfficiency = last10.reduce((sum, t) => {
+                                if (t.trip > 0 && t.electricity !== undefined) {
+                                  return sum + ((t.electricity / t.trip) * 100);
+                                }
+                                return sum;
+                              }, 0) / last10.length || 0;
+                              const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length || 0;
+                              const avgSpeedFiltered = last10.filter(t => t.duration > 0 && t.trip > 0);
+                              const avgSpeed = avgSpeedFiltered.length > 0
+                                ? avgSpeedFiltered.reduce((sum, t) => sum + (t.trip / ((t.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
+                                : 0;
+
+                              return (
+                                <div className="flex-1 flex flex-col justify-between">
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-red-500/20 w-5 h-5 flex items-center justify-center">
+                                        <MapPin className="text-red-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgDistance.toFixed(1)} <span className="text-[8px] text-slate-500">km</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-cyan-500/20 w-5 h-5 flex items-center justify-center">
+                                        <Zap className="text-cyan-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgConsumption.toFixed(2)} <span className="text-[8px] text-slate-500">kWh</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-green-500/20 w-5 h-5 flex items-center justify-center">
+                                        <Battery className="text-green-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgEfficiency.toFixed(2)} <span className="text-[8px] text-slate-500">kWh/100</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-amber-500/20 w-5 h-5 flex items-center justify-center">
+                                        <Clock className="text-amber-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgDuration.toFixed(0)} <span className="text-[8px] text-slate-500">min</span></p>
+                                  </div>
+                                  <div className="bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700/50 p-2 flex items-center justify-between">
+                                    <div className="flex items-center gap-1.5">
+                                      <div className="rounded bg-blue-500/20 w-5 h-5 flex items-center justify-center">
+                                        <TrendingUp className="text-blue-400 w-3 h-3" />
+                                      </div>
+                                      <p className="text-[9px] text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
+                                    </div>
+                                    <p className="font-bold text-slate-900 dark:text-white text-xs">{avgSpeed.toFixed(1)} <span className="text-[8px] text-slate-500">km/h</span></p>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
                         </div>
+                      ) : (
+                        // Layout normal para modo no compacto
+                        <div className="space-y-4 sm:space-y-6">
+                          <div className="grid lg:grid-cols-8 gap-6">
+                            <div className="lg:col-span-6 space-y-4">
+                              <h2 className="font-bold text-slate-900 dark:text-white text-xl sm:text-2xl">{t('history.last10Trips')}</h2>
+                              {(() => {
+                                const allTrips = [...filtered].sort((a, b) => {
+                                  const dateCompare = (b.date || '').localeCompare(a.date || '');
+                                  if (dateCompare !== 0) return dateCompare;
+                                  return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                                });
 
-                        <div className={`lg:col-span-2 space-y-4 ${isCompact ? 'space-y-3' : ''}`}>
-                          <h2 className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-lg sm:text-xl' : 'text-xl sm:text-2xl'}`}>{t('history.avgLast10')}</h2>
-                          {(() => {
-                            const allTrips = [...filtered].sort((a, b) => {
-                              const dateCompare = (b.date || '').localeCompare(a.date || '');
-                              if (dateCompare !== 0) return dateCompare;
-                              return (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                            });
-                            const last10 = allTrips.slice(0, 10);
+                                const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
+                                const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
+                                const minEff = Math.min(...efficiencies);
+                                const maxEff = Math.max(...efficiencies);
 
-                            const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length || 0;
-                            const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length || 0;
-                            const avgEfficiency = last10.reduce((sum, t) => {
-                              if (t.trip > 0 && t.electricity !== undefined) {
-                                return sum + ((t.electricity / t.trip) * 100);
-                              }
-                              return sum;
-                            }, 0) / last10.length || 0;
-                            const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length || 0;
-                            const avgSpeedFiltered = last10.filter(t => t.duration > 0 && t.trip > 0);
-                            const avgSpeed = avgSpeedFiltered.length > 0
-                              ? avgSpeedFiltered.reduce((sum, t) => sum + (t.trip / ((t.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
-                              : 0;
+                                const last10 = allTrips.slice(0, 10);
+                                const firstColumn = last10.slice(0, 5);
+                                const secondColumn = last10.slice(5, 10);
 
-                            return (
-                              <div className={`space-y-3 ${isCompact ? 'space-y-2' : ''}`}>
-                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-                                  <div className="flex flex-col items-center text-center gap-2">
+                                return (
+                                  <div className={`grid lg:grid-cols-2 gap-4 ${isCompact ? 'gap-4' : ''}`}>
+                                    <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
+                                      {firstColumn.map((trip, i) => (
+                                        <TripCard
+                                          key={i}
+                                          trip={trip}
+                                          minEff={minEff}
+                                          maxEff={maxEff}
+                                          onClick={openTripDetail}
+                                          formatDate={formatDate}
+                                          formatTime={formatTime}
+                                          calculateScore={calculateScore}
+                                          getScoreColor={getScoreColor}
+                                          isCompact={isCompact}
+                                        />
+                                      ))}
+                                    </div>
+                                    <div className={`space-y-3 ${isCompact ? 'space-y-3' : ''}`}>
+                                      {secondColumn.map((trip, j) => (
+                                        <TripCard
+                                          key={j + 5}
+                                          trip={trip}
+                                          minEff={minEff}
+                                          maxEff={maxEff}
+                                          onClick={openTripDetail}
+                                          formatDate={formatDate}
+                                          formatTime={formatTime}
+                                          calculateScore={calculateScore}
+                                          getScoreColor={getScoreColor}
+                                          isCompact={isCompact}
+                                        />
+                                      ))}
+                                    </div>
+                                  </div>
+                                );
+                              })()}
+
+                              <button
+                                onClick={() => setShowAllTripsModal(true)}
+                                className="w-full py-3 rounded-xl font-medium text-white"
+                                style={{ backgroundColor: BYD_RED }}
+                              >
+                                {t('common.showAll')}
+                              </button>
+                            </div>
+
+                            <div className="lg:col-span-2 space-y-4">
+                              <h2 className="font-bold text-slate-900 dark:text-white text-xl sm:text-2xl">{t('history.avgLast10')}</h2>
+                              {(() => {
+                                const allTrips = [...filtered].sort((a, b) => {
+                                  const dateCompare = (b.date || '').localeCompare(a.date || '');
+                                  if (dateCompare !== 0) return dateCompare;
+                                  return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+                                });
+                                const last10 = allTrips.slice(0, 10);
+
+                                const avgDistance = last10.reduce((sum, t) => sum + (t.trip || 0), 0) / last10.length || 0;
+                                const avgConsumption = last10.reduce((sum, t) => sum + (t.electricity || 0), 0) / last10.length || 0;
+                                const avgEfficiency = last10.reduce((sum, t) => {
+                                  if (t.trip > 0 && t.electricity !== undefined) {
+                                    return sum + ((t.electricity / t.trip) * 100);
+                                  }
+                                  return sum;
+                                }, 0) / last10.length || 0;
+                                const avgDuration = last10.reduce((sum, t) => sum + ((t.duration || 0) / 60), 0) / last10.length || 0;
+                                const avgSpeedFiltered = last10.filter(t => t.duration > 0 && t.trip > 0);
+                                const avgSpeed = avgSpeedFiltered.length > 0
+                                  ? avgSpeedFiltered.reduce((sum, t) => sum + (t.trip / ((t.duration || 0) / 3600)), 0) / avgSpeedFiltered.length
+                                  : 0;
+
+                                return (
+                                  <div className="space-y-3">
+                                    <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+                                      <div className="flex flex-col items-center text-center gap-2">
+<<<<<<< HEAD
                                     <div className={`rounded-lg bg-red-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
                                       <MapPin className={`text-red-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
-                                        {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
+=======
+                                    <div className="rounded-lg bg-red-500/20 w-10 h-10 flex items-center justify-center">
+          <MapPin className="text-red-400 w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDistance')}</p>
+          <p className="font-bold text-slate-900 dark:text-white text-2xl">
+>>>>>>> a2857a100f3646bfd9f521f4f5ce825561d5d2dc
+            {avgDistance.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km</span>
+          </p>
+        </div>
+    </div>
+                                </div >
 
-                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-                                  <div className="flex flex-col items-center text-center gap-2">
+    <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+      <div className="flex flex-col items-center text-center gap-2">
+<<<<<<< HEAD
                                     <div className={`rounded-lg bg-cyan-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
                                       <Zap className={`text-cyan-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
-                                        {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
+=======
+                                    <div className="rounded-lg bg-cyan-500/20 w-10 h-10 flex items-center justify-center">
+          <Zap className="text-cyan-400 w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgConsumption')}</p>
+          <p className="font-bold text-slate-900 dark:text-white text-2xl">
+>>>>>>> a2857a100f3646bfd9f521f4f5ce825561d5d2dc
+            {avgConsumption.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh</span>
+          </p>
+        </div>
+    </div>
+                                </div >
 
-                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-                                  <div className="flex flex-col items-center text-center gap-2">
+    <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+      <div className="flex flex-col items-center text-center gap-2">
+<<<<<<< HEAD
                                     <div className={`rounded-lg bg-green-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
                                       <Battery className={`text-green-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
-                                        {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
+=======
+                                    <div className="rounded-lg bg-green-500/20 w-10 h-10 flex items-center justify-center">
+          <Battery className="text-green-400 w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgEfficiency')}</p>
+          <p className="font-bold text-slate-900 dark:text-white text-2xl">
+>>>>>>> a2857a100f3646bfd9f521f4f5ce825561d5d2dc
+            {avgEfficiency.toFixed(2)} <span className="text-sm text-slate-500 dark:text-slate-400">kWh/100km</span>
+          </p>
+        </div>
+    </div>
+                                </div >
 
-                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-                                  <div className="flex flex-col items-center text-center gap-2">
+    <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+      <div className="flex flex-col items-center text-center gap-2">
+<<<<<<< HEAD
                                     <div className={`rounded-lg bg-amber-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
                                       <Clock className={`text-amber-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
-                                        {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
+=======
+                                    <div className="rounded-lg bg-amber-500/20 w-10 h-10 flex items-center justify-center">
+          <Clock className="text-amber-400 w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgDuration')}</p>
+          <p className="font-bold text-slate-900 dark:text-white text-2xl">
+>>>>>>> a2857a100f3646bfd9f521f4f5ce825561d5d2dc
+            {avgDuration.toFixed(0)} <span className="text-sm text-slate-500 dark:text-slate-400">min</span>
+          </p>
+        </div>
+    </div>
+                                </div >
 
-                                <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 ${isCompact ? 'p-2' : 'p-4'}`}>
-                                  <div className="flex flex-col items-center text-center gap-2">
+    <div className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4">
+      <div className="flex flex-col items-center text-center gap-2">
+<<<<<<< HEAD
                                     <div className={`rounded-lg bg-blue-500/20 flex items-center justify-center ${isCompact ? 'w-10 h-10' : 'w-10 h-10'}`}>
                                       <TrendingUp className={`text-blue-400 ${isCompact ? 'w-5 h-5' : 'w-5 h-5'}`} />
                                     </div>
                                     <div>
                                       <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
                                       <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-2xl' : 'text-2xl'}`}>
-                                        {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
+=======
+                                    <div className="rounded-lg bg-blue-500/20 w-10 h-10 flex items-center justify-center">
+          <TrendingUp className="text-blue-400 w-5 h-5" />
+        </div>
+        <div>
+          <p className="text-xs text-slate-600 dark:text-slate-400">{t('history.avgSpeed')}</p>
+          <p className="font-bold text-slate-900 dark:text-white text-2xl">
+>>>>>>> a2857a100f3646bfd9f521f4f5ce825561d5d2dc
+            {avgSpeed.toFixed(1)} <span className="text-sm text-slate-500 dark:text-slate-400">km/h</span>
+          </p>
+        </div>
+    </div>
+                                </div >
+                              </div >
                             );
-                          })()}
-                        </div>
-                      </div>
-
-                    </div>
+}) ()}
+                        </div >
+                      </div >
+                        </div >
+                      )}
+                    </div >
                   )}
                 </>
               )}
+            </div >
+          )}
+
+{/* Filter Modal */ }
+{
+  showFilterModal && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowFilterModal(false)}>
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+      <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('filter.title')}</h2>
+          </div>
+          <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+            <Plus className="w-6 h-6 rotate-45" />
+          </button>
+        </div>
+
+        <div className="space-y-4">
+          {/* Filter Type Buttons */}
+          <div className="space-y-2">
+            <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</label>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
+                className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'all'
+                  ? 'text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                  }`}
+                style={{
+                  backgroundColor: filterType === 'all' ? BYD_RED : ''
+                }}
+              >
+                📊 {t('filter.all')} ({rawTrips.length})
+              </button>
+              <button
+                onClick={() => setFilterType('month')}
+                className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'month'
+                  ? 'text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                  }`}
+                style={{
+                  backgroundColor: filterType === 'month' ? BYD_RED : ''
+                }}
+              >
+                📅 {t('filter.byMonth')}
+              </button>
+              <button
+                onClick={() => setFilterType('range')}
+                className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'range'
+                  ? 'text-white'
+                  : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                  }`}
+                style={{
+                  backgroundColor: filterType === 'range' ? BYD_RED : ''
+                }}
+              >
+                📆 {t('filter.byRange')}
+              </button>
+            </div>
+          </div>
+
+          {/* Month Selector */}
+          {filterType === 'month' && (
+            <div className="space-y-2">
+              <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
+              <select
+                value={selMonth}
+                onChange={(e) => setSelMonth(e.target.value)}
+                className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
+              >
+                <option value="">{t('filter.allMonths')}</option>
+                {months.map((m) => (
+                  <option key={m} value={m}>{formatMonth(m)}</option>
+                ))}
+              </select>
             </div>
           )}
 
-          {/* Filter Modal */}
-          {showFilterModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowFilterModal(false)}>
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('filter.title')}</h2>
-                  </div>
-                  <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                    <Plus className="w-6 h-6 rotate-45" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Filter Type Buttons */}
-                  <div className="space-y-2">
-                    <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</label>
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'all'
-                          ? 'text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                          }`}
-                        style={{
-                          backgroundColor: filterType === 'all' ? BYD_RED : ''
-                        }}
-                      >
-                        📊 {t('filter.all')} ({rawTrips.length})
-                      </button>
-                      <button
-                        onClick={() => setFilterType('month')}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'month'
-                          ? 'text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                          }`}
-                        style={{
-                          backgroundColor: filterType === 'month' ? BYD_RED : ''
-                        }}
-                      >
-                        📅 {t('filter.byMonth')}
-                      </button>
-                      <button
-                        onClick={() => setFilterType('range')}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'range'
-                          ? 'text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                          }`}
-                        style={{
-                          backgroundColor: filterType === 'range' ? BYD_RED : ''
-                        }}
-                      >
-                        📆 {t('filter.byRange')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Month Selector */}
-                  {filterType === 'month' && (
-                    <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
-                      <select
-                        value={selMonth}
-                        onChange={(e) => setSelMonth(e.target.value)}
-                        className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                      >
-                        <option value="">{t('filter.allMonths')}</option>
-                        {months.map((m) => (
-                          <option key={m} value={m}>{formatMonth(m)}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Date Range Selector */}
-                  {filterType === 'range' && (
-                    <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</label>
-                      <div className="flex flex-col gap-2">
-                        <input
-                          type="date"
-                          value={dateFrom}
-                          onChange={(e) => setDateFrom(e.target.value)}
-                          className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder={t('filter.from')}
-                        />
-                        <input
-                          type="date"
-                          value={dateTo}
-                          onChange={(e) => setDateTo(e.target.value)}
-                          className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder={t('filter.to')}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Results Count */}
-                  {filtered.length !== rawTrips.length && (
-                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <p className="text-center text-sm">
-                        <span className="text-slate-400">{t('filter.showing')} </span>
-                        <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
-                        <span className="text-slate-400"> {t('filter.of')} {rawTrips.length} {t('stats.trips').toLowerCase()}</span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Apply Button */}
-                <button
-                  onClick={() => setShowFilterModal(false)}
-                  className="w-full mt-6 py-3 rounded-xl font-medium text-white"
-                  style={{ backgroundColor: BYD_RED }}
-                >
-                  {t('filter.apply')}
-                </button>
+          {/* Date Range Selector */}
+          {filterType === 'range' && (
+            <div className="space-y-2">
+              <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</label>
+              <div className="flex flex-col gap-2">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
+                  placeholder={t('filter.from')}
+                />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
+                  placeholder={t('filter.to')}
+                />
               </div>
             </div>
           )}
 
-          {/* Bottom Navigation Bar - Only show in vertical mode */}
-          {layoutMode === 'vertical' && (
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-              <div className="max-w-7xl mx-auto px-2 py-2">
-                <div className="flex justify-around items-center">
-                  {tabs.map((t) => (
-                    <button
-                      key={t.id}
-                      onClick={() => handleTabClick(t.id)}
-                      className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
-                      style={{
-                        backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
-                        color: activeTab === t.id ? BYD_RED : ''
-                      }}
-                    >
-                      <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
-                      <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
+          {/* Results Count */}
+          {filtered.length !== rawTrips.length && (
+            <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+              <p className="text-center text-sm">
+                <span className="text-slate-400">{t('filter.showing')} </span>
+                <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
+                <span className="text-slate-400"> {t('filter.of')} {rawTrips.length} {t('stats.trips').toLowerCase()}</span>
+              </p>
             </div>
           )}
         </div>
+
+        {/* Apply Button */}
+        <button
+          onClick={() => setShowFilterModal(false)}
+          className="w-full mt-6 py-3 rounded-xl font-medium text-white"
+          style={{ backgroundColor: BYD_RED }}
+        >
+          {t('filter.apply')}
+        </button>
+      </div>
+    </div>
+  )
+}
+
+{/* Bottom Navigation Bar - Only show in vertical mode */ }
+{
+  layoutMode === 'vertical' && (
+    <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <div className="max-w-7xl mx-auto px-2 py-2">
+        <div className="flex justify-around items-center">
+          {tabs.map((t) => (
+            <button
+              key={t.id}
+              onClick={() => handleTabClick(t.id)}
+              className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
+              style={{
+                backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
+                color: activeTab === t.id ? BYD_RED : ''
+              }}
+            >
+              <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
+              <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+        </div >
       </div >
-      <PWAManager layoutMode={layoutMode} />
+  <PWAManager layoutMode={layoutMode} isCompact={isCompact} isFullscreenBYD={isFullscreenBYD} />
     </div >
   );
 }
