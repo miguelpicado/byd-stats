@@ -308,7 +308,7 @@ export default function BYDStatsAnalyzer() {
   // Large charts (Tendencias, Eficiencia): originally 350/450
   // Fullscreen BYD: 395px (reduced 55px from 450)
   // Compact: 370px (345 + 25px extra)
-  const largeChartHeight = isFullscreenBYD ? 395 : (isCompact ? 370 : 450);
+  const largeChartHeight = isFullscreenBYD ? 387 : (isCompact ? 362 : 442);
 
   // Spacing adjustments for different modes
   // Overview/Resumen spacing (vertical mode): fullscreenBYD +2px, compact +1px, normal +2px
@@ -322,7 +322,7 @@ export default function BYDStatsAnalyzer() {
   // Records list item padding
   const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
   const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[397px]' : (isCompact ? 'h-[370px]' : 'h-[450px]');
+  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[389px]' : (isCompact ? 'h-[362px]' : 'h-[442px]');
 
   // DEBUG: Log to verify mode detection
   console.log('[DEBUG] Mode detection:', {
@@ -1707,6 +1707,7 @@ export default function BYDStatsAnalyzer() {
                           isCompact={isCompact}
                           isLargerCard={isLargerCard}
                           isVertical={true}
+                          largeChartHeight={largeChartHeight}
                         />
                       )}
                     </Suspense>
@@ -1743,6 +1744,7 @@ export default function BYDStatsAnalyzer() {
                           isCompact={isCompact}
                           isLargerCard={isLargerCard}
                           isVertical={true}
+                          largeChartHeight={largeChartHeight}
                         />
                       )}
                     </Suspense>
@@ -1827,6 +1829,7 @@ export default function BYDStatsAnalyzer() {
                           isCompact={isCompact}
                           isLargerCard={isLargerCard}
                           isVertical={false}
+                          largeChartHeight={largeChartHeight}
                         />
                       )}
                     </div>
@@ -1861,6 +1864,7 @@ export default function BYDStatsAnalyzer() {
                           isCompact={isCompact}
                           isLargerCard={isLargerCard}
                           isVertical={false}
+                          largeChartHeight={largeChartHeight}
                         />
                       )}
                     </div>

@@ -19,7 +19,8 @@ const TrendsTab = React.memo(({
   settings,
   isCompact,
   isLargerCard,
-  isVertical
+  isVertical,
+  largeChartHeight
 }) => {
   const { t } = useTranslation();
 
@@ -59,9 +60,6 @@ const TrendsTab = React.memo(({
       monthlyCost
     };
   }, [filtered, summary, monthly, settings]);
-
-  // Calculate chart height based on mode
-  const largeChartHeight = isCompact ? '180px' : '240px';
 
   // Render vertical layout
   if (isVertical) {
