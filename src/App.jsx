@@ -291,24 +291,31 @@ export default function BYDStatsAnalyzer() {
   const { settings, updateSettings, layoutMode, isCompact, isFullscreenBYD } = useApp();
   const isLargerCard = isCompact && layoutMode === 'horizontal';
 
+  const isVertical = layoutMode === 'vertical';
+
   // Calculate chart heights based on mode
   // Different tabs use different heights to maintain proper proportions
 
   // Small charts for Resumen: originally 275/326
-  // Fullscreen BYD: 271px (reduced 55px from 326)
-  // Compact: 295px (270 + 25px extra)
-  const smallChartHeight = isFullscreenBYD ? 271 : (isCompact ? 295 : 326);
+  let smallChartHeight;
+  if (isVertical) smallChartHeight = 350;
+  else if (isFullscreenBYD) smallChartHeight = 271;
+  else if (isCompact) smallChartHeight = 295;
+  else smallChartHeight = 326;
 
   // Charts for Patrones (viajes por día): need more height
-  // Fullscreen BYD: 289px (+3px more)
-  // Compact: 303px (278 + 25px extra)
-  // Normal: 336px (+10px from smallChart base)
-  const patternsChartHeight = isFullscreenBYD ? 289 : (isCompact ? 303 : 336);
+  let patternsChartHeight;
+  if (isVertical) patternsChartHeight = 350;
+  else if (isFullscreenBYD) patternsChartHeight = 289;
+  else if (isCompact) patternsChartHeight = 303;
+  else patternsChartHeight = 336;
 
   // Large charts (Tendencias, Eficiencia): originally 350/450
-  // Fullscreen BYD: 395px (reduced 55px from 450)
-  // Compact: 370px (345 + 25px extra)
-  const largeChartHeight = isFullscreenBYD ? 387 : (isCompact ? 369 : 442);
+  let largeChartHeight;
+  if (isVertical) largeChartHeight = 350;
+  else if (isFullscreenBYD) largeChartHeight = 387;
+  else if (isCompact) largeChartHeight = 369;
+  else largeChartHeight = 442;
 
   // Spacing adjustments for different modes
   // Overview/Resumen spacing (vertical mode): fullscreenBYD +2px, compact +1px, normal +2px
