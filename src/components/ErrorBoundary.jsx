@@ -1,5 +1,6 @@
 import React from 'react';
 import { BYD_RED } from '../utils/constants';
+import i18n from '../i18n';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -26,9 +27,9 @@ class ErrorBoundary extends React.Component {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
                         </div>
-                        <h1 className="text-xl font-bold mb-2">Algo salió mal</h1>
+                        <h1 className="text-xl font-bold mb-2">{i18n.t('errors.somethingWentWrong')}</h1>
                         <p className="text-slate-400 text-sm mb-6">
-                            La aplicación ha encontrado un error inesperado al renderizar.
+                            {i18n.t('errors.unexpectedRenderError')}
                         </p>
 
                         <div className="bg-black/30 p-4 rounded-xl text-left overflow-auto max-h-40 mb-6 border border-slate-700">
@@ -45,7 +46,7 @@ class ErrorBoundary extends React.Component {
                             className="w-full py-3 rounded-xl font-medium text-white transition-opacity hover:opacity-90"
                             style={{ backgroundColor: BYD_RED || '#ea0029' }}
                         >
-                            Reiniciar y Borrar Caché
+                            {i18n.t('errors.resetAndClearCache')}
                         </button>
                     </div>
                 </div>

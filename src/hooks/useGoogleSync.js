@@ -52,7 +52,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         if (Capacitor.isNativePlatform()) {
             SocialLogin.initialize({
                 google: {
-                    webClientId: 'REDACTED_GOOGLE_CLIENT_ID'
+                    webClientId: import.meta.env.VITE_GOOGLE_ANDROID_CLIENT_ID
                 }
             }).catch(err => console.error("Failed to init SocialLogin on mount:", err));
         }
