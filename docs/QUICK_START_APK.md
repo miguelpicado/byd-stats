@@ -128,7 +128,7 @@ adb install app-debug.apk
 
 - **Documentación completa:** [GITHUB_ACTIONS.md](GITHUB_ACTIONS.md)
 - **Build local con Android Studio:** [ANDROID_BUILD.md](ANDROID_BUILD.md)
-- **Info de la app Android:** [README_ANDROID.md](README_ANDROID.md)
+- **Info de la app Android:** [ANDROID.md](ANDROID.md)
 
 ---
 
