@@ -64,7 +64,7 @@ const TrendsTab = React.memo(({
   // Render vertical layout
   if (isVertical) {
     return (
-      <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+      <div className={isCompact ? 'space-y-3' : 'space-y-4'}>
         <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
           <StatCard
             isVerticalMode={true}
