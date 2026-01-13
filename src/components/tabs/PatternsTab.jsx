@@ -6,6 +6,38 @@ import { Calendar, Clock, MapPin, TrendingUp, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 
+// Static chart options
+const BAR_CHART_OPTIONS_VERTICAL = {
+  maintainAspectRatio: false,
+  scales: {
+    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
+    x: { border: { dash: [] }, grid: { borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } }
+  },
+  plugins: { legend: { display: false } }
+};
+
+const BAR_CHART_OPTIONS_HORIZONTAL = {
+  maintainAspectRatio: false,
+  scales: {
+    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
+    x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+  },
+  plugins: { legend: { display: false } }
+};
+
+const RADAR_CHART_OPTIONS_VERTICAL = {
+  maintainAspectRatio: false,
+  scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
+  plugins: { legend: { display: false } },
+  interaction: { mode: 'index', intersect: false }
+};
+
+const RADAR_CHART_OPTIONS_HORIZONTAL = {
+  maintainAspectRatio: false,
+  scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
+  plugins: { legend: { display: false } }
+};
+
 /**
  * Patterns tab showing usage patterns by hour and day
  */
@@ -31,6 +63,39 @@ const PatternsTab = React.memo(({
     hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b),
     [hourly]
   );
+
+  // Memoize chart data
+  const barChartData = useMemo(() => ({
+    labels: hourly.map(h => `${h.hour}h`),
+    datasets: [{ label: t('stats.trips'), data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
+  }), [hourly, t]);
+
+  const radarChartDataVertical = useMemo(() => ({
+    labels: weekday.map(d => t(`daysShort.${d.day}`)),
+    datasets: [{
+      pointHitRadius: 50,
+      label: t('stats.trips'),
+      data: weekday.map(d => d.trips),
+      borderColor: '#f59e0b',
+      backgroundColor: 'rgba(245, 158, 11, 0.3)',
+      borderWidth: 2,
+      pointBackgroundColor: '#f59e0b',
+      pointRadius: 3
+    }]
+  }), [weekday, t]);
+
+  const radarChartDataHorizontal = useMemo(() => ({
+    labels: weekday.map(d => t(`daysShort.${d.day}`)),
+    datasets: [{
+      label: t('stats.trips'),
+      data: weekday.map(d => d.trips),
+      borderColor: '#f59e0b',
+      backgroundColor: 'rgba(245, 158, 11, 0.3)',
+      borderWidth: 2,
+      pointBackgroundColor: '#f59e0b',
+      pointRadius: 3
+    }]
+  }), [weekday, t]);
 
   // Render vertical layout
   if (isVertical) {
@@ -81,45 +146,12 @@ const PatternsTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
             <div style={{ width: '100%', height: patternsChartHeight }}>
-              <BarJS
-                options={{
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
-                    x: { border: { dash: [] }, grid: { borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } }
-                  },
-                  plugins: { legend: { display: false } }
-                }}
-                data={{
-                  labels: hourly.map(h => `${h.hour}h`),
-                  datasets: [{ label: t('stats.trips'), data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
-                }}
-              />
+              <BarJS options={BAR_CHART_OPTIONS_VERTICAL} data={barChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
             <div style={{ width: '100%', height: patternsChartHeight }}>
-              <RadarJS
-                options={{
-                  maintainAspectRatio: false,
-                  scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
-                  plugins: { legend: { display: false } },
-                  interaction: { mode: 'index', intersect: false }
-                }}
-                data={{
-                  labels: weekday.map(d => t(`daysShort.${d.day}`)),
-                  datasets: [{
-                    pointHitRadius: 50, // Massive touch target
-                    label: t('stats.trips'),
-                    data: weekday.map(d => d.trips),
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.3)',
-                    borderWidth: 2,
-                    pointBackgroundColor: '#f59e0b',
-                    pointRadius: 3
-                  }]
-                }}
-              />
+              <RadarJS options={RADAR_CHART_OPTIONS_VERTICAL} data={radarChartDataVertical} />
             </div>
           </ChartCard>
         </div>
@@ -180,43 +212,12 @@ const PatternsTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
           <div style={{ width: '100%', height: patternsChartHeight }}>
-            <BarJS
-              options={{
-                maintainAspectRatio: false,
-                scales: {
-                  y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false }, ticks: { font: { size: 10 } } },
-                  x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
-                },
-                plugins: { legend: { display: false } }
-              }}
-              data={{
-                labels: hourly.map(h => `${h.hour}h`),
-                datasets: [{ label: t('stats.trips'), data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
-              }}
-            />
+            <BarJS options={BAR_CHART_OPTIONS_HORIZONTAL} data={barChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
           <div style={{ width: '100%', height: patternsChartHeight }}>
-            <RadarJS
-              options={{
-                maintainAspectRatio: false,
-                scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
-                plugins: { legend: { display: false } }
-              }}
-              data={{
-                labels: weekday.map(d => t(`daysShort.${d.day}`)),
-                datasets: [{
-                  label: t('stats.trips'),
-                  data: weekday.map(d => d.trips),
-                  borderColor: '#f59e0b',
-                  backgroundColor: 'rgba(245, 158, 11, 0.3)',
-                  borderWidth: 2,
-                  pointBackgroundColor: '#f59e0b',
-                  pointRadius: 3
-                }]
-              }}
-            />
+            <RadarJS options={RADAR_CHART_OPTIONS_HORIZONTAL} data={radarChartDataHorizontal} />
           </div>
         </ChartCard>
       </div>

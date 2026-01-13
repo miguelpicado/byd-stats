@@ -8,6 +8,28 @@ import ChartCard from '../ui/ChartCard';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
+// Static chart options that don't change
+const BAR_CHART_OPTIONS = {
+  maintainAspectRatio: false,
+  scales: {
+    y: { beginAtZero: true, position: 'left', border: { dash: [] }, ticks: { color: BYD_RED }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+    y1: { beginAtZero: true, position: 'right', border: { dash: [] }, ticks: { color: '#06b6d4' }, grid: { drawOnChartArea: false } },
+    x: { border: { dash: [] }, grid: { display: false } }
+  },
+  plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10 } } } }
+};
+
+const LINE_CHART_OPTIONS = {
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  scales: {
+    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+    x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
+  },
+  plugins: { legend: { display: false } },
+  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 5 } }
+};
+
 /**
  * Trends tab showing insights and long-term trends
  */
@@ -61,6 +83,29 @@ const TrendsTab = React.memo(({
     };
   }, [filtered, summary, monthly, settings]);
 
+  // Memoize chart data
+  const barChartData = useMemo(() => ({
+    labels: monthly.map(m => m.monthLabel),
+    datasets: [
+      { label: 'Km', data: monthly.map(m => m.km), backgroundColor: BYD_RED, yAxisID: 'y', borderRadius: 4 },
+      { label: 'kWh', data: monthly.map(m => m.kwh), backgroundColor: '#06b6d4', yAxisID: 'y1', borderRadius: 4 }
+    ]
+  }), [monthly]);
+
+  const lineChartData = useMemo(() => ({
+    labels: daily.slice(-60).map(d => d.dateLabel),
+    datasets: [{
+      label: 'Km',
+      data: daily.slice(-60).map(d => d.km),
+      borderColor: BYD_RED,
+      backgroundColor: 'rgba(234, 0, 41, 0.1)',
+      fill: true,
+      pointRadius: 0,
+      pointHoverRadius: 5,
+      borderWidth: 2
+    }]
+  }), [daily]);
+
   // Render vertical layout
   if (isVertical) {
     return (
@@ -110,53 +155,12 @@ const TrendsTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.monthlyKmKwh')}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <BarJS
-                options={{
-                  maintainAspectRatio: false,
-                  scales: {
-                    y: { beginAtZero: true, position: 'left', border: { dash: [] }, ticks: { color: BYD_RED }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
-                    y1: { beginAtZero: true, position: 'right', border: { dash: [] }, ticks: { color: '#06b6d4' }, grid: { drawOnChartArea: false } },
-                    x: { border: { dash: [] }, grid: { display: false } }
-                  },
-                  plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10 } } } }
-                }}
-                data={{
-                  labels: monthly.map(m => m.monthLabel),
-                  datasets: [
-                    { label: 'Km', data: monthly.map(m => m.km), backgroundColor: BYD_RED, yAxisID: 'y', borderRadius: 4 },
-                    { label: 'kWh', data: monthly.map(m => m.kwh), backgroundColor: '#06b6d4', yAxisID: 'y1', borderRadius: 4 }
-                  ]
-                }}
-              />
+              <BarJS options={BAR_CHART_OPTIONS} data={barChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.last60Days')}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <LineJS
-                options={{
-                  maintainAspectRatio: false,
-                  interaction: { mode: 'index', intersect: false },
-                  scales: {
-                    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
-                    x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
-                  },
-                  plugins: { legend: { display: false } },
-                  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 5 } }
-                }}
-                data={{
-                  labels: daily.slice(-60).map(d => d.dateLabel),
-                  datasets: [{
-                    label: 'Km',
-                    data: daily.slice(-60).map(d => d.km),
-                    borderColor: BYD_RED,
-                    backgroundColor: 'rgba(234, 0, 41, 0.1)',
-                    fill: true,
-                    pointRadius: 0,
-                    pointHoverRadius: 5,
-                    borderWidth: 2
-                  }]
-                }}
-              />
+              <LineJS options={LINE_CHART_OPTIONS} data={lineChartData} />
             </div>
           </ChartCard>
         </div>
@@ -208,53 +212,12 @@ const TrendsTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.monthlyKmKwh')}>
           <div style={{ width: '100%', height: largeChartHeight }}>
-            <BarJS
-              options={{
-                maintainAspectRatio: false,
-                scales: {
-                  y: { beginAtZero: true, position: 'left', border: { dash: [] }, ticks: { color: BYD_RED }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
-                  y1: { beginAtZero: true, position: 'right', border: { dash: [] }, ticks: { color: '#06b6d4' }, grid: { drawOnChartArea: false } },
-                  x: { border: { dash: [] }, grid: { display: false } }
-                },
-                plugins: { legend: { display: true, position: 'top', labels: { boxWidth: 10, usePointStyle: true, font: { size: 10 } } } }
-              }}
-              data={{
-                labels: monthly.map(m => m.monthLabel),
-                datasets: [
-                  { label: 'Km', data: monthly.map(m => m.km), backgroundColor: BYD_RED, yAxisID: 'y', borderRadius: 4 },
-                  { label: 'kWh', data: monthly.map(m => m.kwh), backgroundColor: '#06b6d4', yAxisID: 'y1', borderRadius: 4 }
-                ]
-              }}
-            />
+            <BarJS options={BAR_CHART_OPTIONS} data={barChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.last60Days')}>
           <div style={{ width: '100%', height: largeChartHeight }}>
-            <LineJS
-              options={{
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                  y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
-                  x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
-                },
-                plugins: { legend: { display: false } },
-                elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 5 } }
-              }}
-              data={{
-                labels: daily.slice(-60).map(d => d.dateLabel),
-                datasets: [{
-                  label: 'Km',
-                  data: daily.slice(-60).map(d => d.km),
-                  borderColor: BYD_RED,
-                  backgroundColor: 'rgba(234, 0, 41, 0.1)',
-                  fill: true,
-                  pointRadius: 0,
-                  pointHoverRadius: 5,
-                  borderWidth: 2
-                }]
-              }}
-            />
+            <LineJS options={LINE_CHART_OPTIONS} data={lineChartData} />
           </div>
         </ChartCard>
       </div>

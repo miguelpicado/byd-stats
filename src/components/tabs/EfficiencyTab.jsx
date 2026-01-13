@@ -8,6 +8,23 @@ import ChartCard from '../ui/ChartCard';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
+// Static base options for line chart
+const LINE_CHART_BASE = {
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: { legend: { display: false } },
+  elements: { point: { hitRadius: 20, hoverRadius: 6 } }
+};
+
+// Static scatter chart tick callback
+const scatterTickCallback = function (value) {
+  const allowed = [1, 2, 5, 10, 50, 200, 500];
+  return allowed.includes(value) ? value : '';
+};
+
+// Scatter tooltip callback
+const scatterTooltipCallback = (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}`;
+
 /**
  * Efficiency tab showing consumption patterns and efficiency analysis
  */
@@ -38,6 +55,79 @@ const EfficiencyTab = React.memo(({
       max: Math.ceil(Math.max(...validEfficiencies)) + 1
     };
   }, [monthly]);
+
+  // Memoize line chart options (depends on efficiencyYAxis)
+  const lineChartOptions = useMemo(() => ({
+    ...LINE_CHART_BASE,
+    scales: {
+      y: {
+        beginAtZero: false,
+        min: efficiencyYAxis.min,
+        max: efficiencyYAxis.max,
+        border: { dash: [] },
+        grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+        ticks: { font: { size: 10 } }
+      },
+      x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+    }
+  }), [efficiencyYAxis]);
+
+  // Memoize scatter chart options
+  const scatterChartOptions = useMemo(() => ({
+    maintainAspectRatio: false,
+    scales: {
+      x: {
+        type: 'logarithmic',
+        position: 'bottom',
+        title: { display: true, text: `${t('stats.distance')} (km)`, font: { size: 10 } },
+        border: { dash: [] },
+        grid: { display: true, borderDash: [3, 3], drawBorder: false },
+        min: 1,
+        max: 500,
+        ticks: {
+          font: { size: 10 },
+          callback: scatterTickCallback,
+          autoSkip: false,
+          maxRotation: 0
+        }
+      },
+      y: {
+        title: { display: true, text: t('stats.efficiency'), font: { size: 10 } },
+        border: { dash: [] },
+        grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+        ticks: { font: { size: 10 } }
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: { callbacks: { label: scatterTooltipCallback } }
+    },
+    interaction: { mode: 'nearest', axis: 'xy', intersect: true }
+  }), [t]);
+
+  // Memoize chart data
+  const lineChartData = useMemo(() => ({
+    labels: monthly.map(m => m.monthLabel),
+    datasets: [{
+      label: 'kWh/100km',
+      data: monthly.map(m => m.efficiency),
+      borderColor: '#10b981',
+      backgroundColor: 'rgba(16, 185, 129, 0.1)',
+      fill: true,
+      pointBackgroundColor: '#10b981',
+      tension: 0.4,
+      pointRadius: 4
+    }]
+  }), [monthly]);
+
+  const scatterChartData = useMemo(() => ({
+    datasets: [{
+      label: 'Eficiencia',
+      data: effScatter,
+      backgroundColor: BYD_RED,
+      pointRadius: 4
+    }]
+  }), [effScatter]);
 
   // Render vertical layout
   if (isVertical) {
@@ -88,86 +178,12 @@ const EfficiencyTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <LineJS
-                options={{
-                  maintainAspectRatio: false,
-                  interaction: { mode: 'index', intersect: false },
-                  scales: {
-                    y: {
-                      beginAtZero: false,
-                      min: efficiencyYAxis.min,
-                      max: efficiencyYAxis.max,
-                      border: { dash: [] },
-                      grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
-                      ticks: { font: { size: 10 } }
-                    },
-                    x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
-                  },
-                  plugins: { legend: { display: false } },
-                  elements: { point: { hitRadius: 20, hoverRadius: 6 } }
-                }}
-                data={{
-                  labels: monthly.map(m => m.monthLabel),
-                  datasets: [{
-                    label: 'kWh/100km',
-                    data: monthly.map(m => m.efficiency),
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    fill: true,
-                    pointBackgroundColor: '#10b981',
-                    tension: 0.4,
-                    pointRadius: 4
-                  }]
-                }}
-              />
+              <LineJS options={lineChartOptions} data={lineChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={`📍 ${t('charts.effVsDist')}`}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <ScatterJS
-                options={{
-                  maintainAspectRatio: false,
-                  scales: {
-                    x: {
-                      type: 'logarithmic',
-                      position: 'bottom',
-                      title: { display: true, text: 'Distancia (km)', font: { size: 10 } },
-                      border: { dash: [] },
-                      grid: { display: true, borderDash: [3, 3], drawBorder: false },
-                      min: 1,
-                      max: 500,
-                      ticks: {
-                        font: { size: 10 },
-                        callback: function (value) {
-                          const allowed = [1, 2, 5, 10, 50, 200, 500];
-                          return allowed.includes(value) ? value : '';
-                        },
-                        autoSkip: false,
-                        maxRotation: 0
-                      }
-                    },
-                    y: {
-                      title: { display: true, text: 'Eficiencia', font: { size: 10 } },
-                      border: { dash: [] },
-                      grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
-                      ticks: { font: { size: 10 } }
-                    }
-                  },
-                  plugins: {
-                    legend: { display: false },
-                    tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } }
-                  },
-                  interaction: { mode: 'nearest', axis: 'xy', intersect: true }
-                }}
-                data={{
-                  datasets: [{
-                    label: 'Eficiencia',
-                    data: effScatter,
-                    backgroundColor: BYD_RED,
-                    pointRadius: 4
-                  }]
-                }}
-              />
+              <ScatterJS options={scatterChartOptions} data={scatterChartData} />
             </div>
           </ChartCard>
         </div>
@@ -219,85 +235,12 @@ const EfficiencyTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
           <div style={{ width: '100%', height: largeChartHeight }}>
-            <LineJS
-              options={{
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                  y: {
-                    beginAtZero: false,
-                    min: efficiencyYAxis.min,
-                    max: efficiencyYAxis.max,
-                    border: { dash: [] },
-                    grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
-                    ticks: { font: { size: 10 } }
-                  },
-                  x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
-                },
-                plugins: { legend: { display: false } },
-                elements: { point: { hitRadius: 20, hoverRadius: 6 } }
-              }}
-              data={{
-                labels: monthly.map(m => m.monthLabel),
-                datasets: [{
-                  label: 'kWh/100km',
-                  data: monthly.map(m => m.efficiency),
-                  borderColor: '#10b981',
-                  backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                  fill: true,
-                  pointBackgroundColor: '#10b981',
-                  tension: 0.4,
-                  pointRadius: 4
-                }]
-              }}
-            />
+            <LineJS options={lineChartOptions} data={lineChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={`📍 ${t('charts.effVsDist')}`}>
           <div style={{ width: '100%', height: largeChartHeight }}>
-            <ScatterJS
-              options={{
-                maintainAspectRatio: false,
-                scales: {
-                  x: {
-                    type: 'logarithmic',
-                    position: 'bottom',
-                    title: { display: true, text: `${t('stats.distance')} (km)`, font: { size: 10 } },
-                    border: { dash: [] },
-                    grid: { display: true, borderDash: [3, 3], drawBorder: false },
-                    min: 1,
-                    max: 500,
-                    ticks: {
-                      font: { size: 10 },
-                      callback: function (value) {
-                        const allowed = [1, 2, 5, 10, 50, 200, 500];
-                        return allowed.includes(value) ? value : '';
-                      },
-                      autoSkip: false,
-                      maxRotation: 0
-                    }
-                  },
-                  y: {
-                    title: { display: true, text: t('stats.efficiency'), font: { size: 10 } },
-                    border: { dash: [] },
-                    grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
-                    ticks: { font: { size: 10 } }
-                  }
-                },
-                plugins: {
-                  legend: { display: false },
-                  tooltip: { callbacks: { label: (c) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}` } }
-                }
-              }}
-              data={{
-                datasets: [{
-                  label: 'Eficiencia',
-                  data: effScatter,
-                  backgroundColor: BYD_RED,
-                  pointRadius: 4
-                }]
-              }}
-            />
+            <ScatterJS options={scatterChartOptions} data={scatterChartData} />
           </div>
         </ChartCard>
       </div>
