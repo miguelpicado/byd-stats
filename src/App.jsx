@@ -33,6 +33,7 @@ import { useFileHandling } from './hooks/useFileHandling';
 import { useApp } from './context/AppContext';
 import { useLayout } from './context/LayoutContext';
 import useModalState from './hooks/useModalState';
+import useAppData from './hooks/useAppData';
 
 
 // Lazy load modals for code splitting
@@ -109,7 +110,28 @@ const getScoreColor = (score) => {
 export default function BYDStatsAnalyzer() {
   const { t, i18n } = useTranslation();
 
-  const [rawTrips, setRawTrips] = useState([]);
+  // Data management hook - replaces rawTrips, filter states, and history
+  const {
+    rawTrips,
+    setRawTrips,
+    tripHistory,
+    setTripHistory,
+    filterType,
+    setFilterType,
+    selMonth,
+    setSelMonth,
+    dateFrom,
+    setDateFrom,
+    dateTo,
+    setDateTo,
+    months,
+    filtered,
+    data,
+    clearData,
+    saveToHistory,
+    loadFromHistory,
+    clearHistory
+  } = useAppData();
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
@@ -165,11 +187,6 @@ export default function BYDStatsAnalyzer() {
   }
 
   const [selectedTrip, setSelectedTrip] = useState(null);
-  const [filterType, setFilterType] = useState('all');
-  const [selMonth, setSelMonth] = useState('');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo, setDateTo] = useState('');
-  const [tripHistory, setTripHistory] = useState([]);
 
 
 
@@ -372,47 +389,7 @@ export default function BYDStatsAnalyzer() {
     }
   }, [settings.theme, isNative]);
 
-  useEffect(() => {
-    try {
-      const s = localStorage.getItem(STORAGE_KEY);
-      if (s) {
-        const p = JSON.parse(s);
-        if (Array.isArray(p) && p.length > 0) {
-          setRawTrips(p);
-        }
-      }
-
-      // Load trip history
-      const h = localStorage.getItem(TRIP_HISTORY_KEY);
-      if (h) {
-        const history = JSON.parse(h);
-        if (Array.isArray(history)) setTripHistory(history);
-      }
-    } catch (e) {
-      console.error('Error loading from localStorage:', e);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (rawTrips.length > 0) {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(rawTrips));
-      } catch (e) {
-        console.error('Error saving to localStorage:', e);
-      }
-    }
-  }, [rawTrips]);
-
-  // Save trip history to localStorage
-  useEffect(() => {
-    if (tripHistory.length > 0) {
-      try {
-        localStorage.setItem(TRIP_HISTORY_KEY, JSON.stringify(tripHistory));
-      } catch (e) {
-        console.error('Error saving trip history:', e);
-      }
-    }
-  }, [tripHistory]);
+  // localStorage loading/saving is now handled by useAppData hook
 
 
 
@@ -460,27 +437,7 @@ export default function BYDStatsAnalyzer() {
     handleSharedFile();
   }, [pendingFile, sqlReady, readFile, processDBHook, clearPendingFile, rawTrips, t]);
 
-  const months = useMemo(() => {
-    return [...new Set(rawTrips.map(t => t.month).filter(Boolean))].sort();
-  }, [rawTrips]);
-
-  const filtered = useMemo(() => {
-    if (rawTrips.length === 0) return [];
-    if (filterType === 'month' && selMonth) {
-      return rawTrips.filter(t => t.month === selMonth);
-    }
-    if (filterType === 'range') {
-      let r = [...rawTrips];
-      if (dateFrom) r = r.filter(t => t.date >= dateFrom.replace(/-/g, ''));
-      if (dateTo) r = r.filter(t => t.date <= dateTo.replace(/-/g, ''));
-      return r;
-    }
-    return rawTrips;
-  }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
-
-  const data = useMemo(() => {
-    return filtered.length > 0 ? processData(filtered) : null;
-  }, [filtered, i18n.language]);
+  // months, filtered, and data are now provided by useAppData hook
 
 
 
@@ -527,63 +484,13 @@ export default function BYDStatsAnalyzer() {
     e.target.value = '';
   }, [processDB, t]);
 
-  const clearData = useCallback(() => {
-    if (window.confirm(t('confirmations.deleteAllData'))) {
-      setRawTrips([]);
-      localStorage.removeItem(STORAGE_KEY);
-    }
-  }, [t]);
+  // clearData, saveToHistory, loadFromHistory, clearHistory now provided by useAppData hook
 
   // Export database to EC_Database.db format
   const exportDatabase = useCallback(async () => {
     const success = await exportDBHook(filtered);
     if (success) alert(t('confirmations.dbExported'));
   }, [exportDBHook, filtered, t]);
-
-  // Save current trips to history
-  const saveToHistory = useCallback(() => {
-    if (rawTrips.length === 0) {
-      alert(t('confirmations.noTripsToSave'));
-      return;
-    }
-
-    // Merge current trips with existing history using unique key
-    const map = new Map();
-
-    // Add existing history
-    tripHistory.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
-
-    // Add current trips
-    rawTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
-
-    const newHistory = Array.from(map.values()).sort((a, b) =>
-      (a.date || '').localeCompare(b.date || '')
-    );
-
-    setTripHistory(newHistory);
-    alert(t('confirmations.historySaved', { total: newHistory.length, new: newHistory.length - tripHistory.length }));
-  }, [rawTrips, tripHistory, t]);
-
-  // Load history as current trips
-  const loadFromHistory = useCallback(() => {
-    if (tripHistory.length === 0) {
-      alert(t('confirmations.noHistory'));
-      return;
-    }
-
-    if (window.confirm(t('confirmations.loadHistory', { count: tripHistory.length }))) {
-      setRawTrips(tripHistory);
-    }
-  }, [tripHistory, t]);
-
-  // Clear trip history
-  const clearHistory = useCallback(() => {
-    if (window.confirm(t('confirmations.clearHistory'))) {
-      setTripHistory([]);
-      localStorage.removeItem(TRIP_HISTORY_KEY);
-      alert(t('confirmations.historyCleared'));
-    }
-  }, [t]);
 
   // Memoized modal handlers to prevent unnecessary re-renders
   const handleOpenSettingsModal = useCallback(() => setShowSettingsModal(true), []);
