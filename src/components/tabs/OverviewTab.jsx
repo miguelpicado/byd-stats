@@ -5,6 +5,7 @@ import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
+import { useLayout } from '../../context/LayoutContext';
 
 // Static chart options that don't change
 const LINE_CHART_OPTIONS_BASE = {
@@ -39,14 +40,11 @@ const OverviewTab = React.memo(({
   summary,
   monthly,
   tripDist,
-  isCompact,
-  isLargerCard,
-  isVertical,
-  isFullscreenBYD,
   smallChartHeight,
   overviewSpacing
 }) => {
   const { t } = useTranslation();
+  const { isCompact, isLargerCard, isVertical, isFullscreenBYD } = useLayout();
 
   // Memoize chart options with scales
   const lineChartOptionsVertical = useMemo(() => ({

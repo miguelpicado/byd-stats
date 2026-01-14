@@ -5,6 +5,7 @@ import { Bar as BarJS, Line as LineJS } from 'react-chartjs-2';
 import { Navigation, Battery, Zap, TrendingUp, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
+import { useLayout } from '../../context/LayoutContext';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
@@ -39,12 +40,10 @@ const TrendsTab = React.memo(({
   monthly,
   daily,
   settings,
-  isCompact,
-  isLargerCard,
-  isVertical,
   largeChartHeight
 }) => {
   const { t } = useTranslation();
+  const { isCompact, isLargerCard, isVertical } = useLayout();
 
   // Calculate insights based on filtered data
   const insights = useMemo(() => {
