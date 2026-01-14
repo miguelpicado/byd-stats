@@ -243,7 +243,7 @@
     },
     "footer": {
         "privacy": "Privacidad",
-        "madeWith": "Hecho con ❤️ por Miguel Picado",
+        "madeWith": "Hecho con ❤️ para la comunidad BYD",
         "legal": "Legal",
         "github": "GitHub",
         "email": "Email de contacto",
@@ -278,7 +278,13 @@
         "invalidFile": "Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta \"Energydata\" del coche",
         "somethingWentWrong": "Algo salió mal",
         "unexpectedRenderError": "La aplicación ha encontrado un error inesperado al renderizar.",
-        "resetAndClearCache": "Reiniciar y Borrar Caché"
+        "resetAndClearCache": "Reiniciar y Borrar Caché",
+        "loadingSqlJs": "Error cargando SQL.js",
+        "sqlNotReady": "SQL no está listo",
+        "tableNotFound": "Tabla no encontrada",
+        "noDataFound": "Sin datos",
+        "noDataToExport": "No hay datos para exportar",
+        "exportError": "Error al exportar la base de datos"
     },
     "historyMod": {
         "title": "Historial de viajes",

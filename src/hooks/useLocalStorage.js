@@ -1,6 +1,7 @@
 // BYD Stats - useLocalStorage Hook
 
 import { useState, useEffect, useCallback } from 'react';
+import { logger } from '../utils/logger';
 
 /**
  * Custom hook for localStorage with automatic serialization
@@ -15,7 +16,7 @@ export function useLocalStorage(key, initialValue) {
             const item = localStorage.getItem(key);
             return item ? JSON.parse(item) : initialValue;
         } catch (error) {
-            console.error(`Error reading localStorage key "${key}":`, error);
+            logger.error(`Error reading localStorage key "${key}":`, error);
             return initialValue;
         }
     });
@@ -29,7 +30,7 @@ export function useLocalStorage(key, initialValue) {
                 localStorage.setItem(key, JSON.stringify(storedValue));
             }
         } catch (error) {
-            console.error(`Error writing localStorage key "${key}":`, error);
+            logger.error(`Error writing localStorage key "${key}":`, error);
         }
     }, [key, storedValue]);
 
@@ -39,7 +40,7 @@ export function useLocalStorage(key, initialValue) {
             localStorage.removeItem(key);
             setStoredValue(initialValue);
         } catch (error) {
-            console.error(`Error removing localStorage key "${key}":`, error);
+            logger.error(`Error removing localStorage key "${key}":`, error);
         }
     }, [key, initialValue]);
 

@@ -28,6 +28,7 @@ ChartJS.register(
     Tooltip,
     Legend,
     Filler,
+    TimeScale,
     LogarithmicScale
 );
 
