@@ -68,7 +68,9 @@
         "kwhPerDay": "kWh/egun",
         "kWh100km": "kWh/100km",
         "kWhDay": "kWh/egun",
-        "currencyPerMonth": "€/hil"
+        "currencyPerMonth": "€/hil",
+        "exkwh": "kWh",
+        "kwh100": "kWh/100km"
     },
     "days": {
         "mon": "Astelehena",
@@ -132,7 +134,9 @@
         "initial": "Hasierakoa",
         "final": "Azkena",
         "energyRecovered": "Berreskuratutako energia",
-        "percentile": "Percentila"
+        "percentile": "Percentila",
+        "consumptionPerTrip": "Kontsumoa/bidaia",
+        "avgDistance": "Batez besteko distantzia"
     },
     "settings": {
         "title": "Ezarpenak",
@@ -210,13 +214,32 @@
         "date": "Data",
         "efficiency": "Eraginkortasuna",
         "distance": "Distantzia",
-        "consumption": "Kontsumoa"
+        "consumption": "Kontsumoa",
+        "duration": "Iraupena"
     },
     "cloudSync": {
         "connected": "Hodeia konektatuta",
         "syncNow": "Orain sinkronizatu",
         "syncing": "Sinkronizatzen...",
         "signInToSync": "Hasi saioa sinkronizatzeko"
+    },
+    "weekdays": {
+        "mon": "Asl",
+        "tue": "Ast",
+        "wed": "Asz",
+        "thu": "Osg",
+        "fri": "Osi",
+        "sat": "Lar",
+        "sun": "Iga"
+    },
+    "weekdaysFull": {
+        "monday": "Astelehena",
+        "tuesday": "Asteartea",
+        "wednesday": "Asteazkena",
+        "thursday": "Osteguna",
+        "friday": "Ostirala",
+        "saturday": "Larunbata",
+        "sunday": "Igandea"
     },
     "history": {
         "title": "Bidaien historia",
@@ -243,14 +266,64 @@
         "dbExported": "Datu-basea ondo esportatu da"
     },
     "errors": {
-        "invalidFile": "*.DB edo *.JPG fitxategiak soilik onartzen dira (izena aldatutako datu-basea)\nAurkitu EC_Database.db autoaren \"Energydata\" karpetan"
+        "invalidFile": "*.DB edo *.JPG fitxategiak soilik onartzen dira (izena aldatutako datu-basea)\nAurkitu EC_Database.db autoaren \"Energydata\" karpetan",
+        "somethingWentWrong": "Zerbait gaizki joan da",
+        "unexpectedRenderError": "Aplikazioak ustekabeko errorea aurkitu du",
+        "resetAndClearCache": "Berrabiarazi eta Katxea Garbitu"
     },
     "legal": {
-        "title": "Dokumentazio Legala",
-        "subtitle": "BYD Stats Analyzer",
-        "privacy": "Pribatutasuna",
-        "terms": "Lege Oharra",
-        "understood": "Ulertuta"
+        "pageTitle": "Dokumentazio Legala",
+        "projectSubtitle": "BYD Stats Analyzer",
+        "privacyTab": "Pribatutasun Politika",
+        "termsTab": "Lege Oharra",
+        "understood": "Ulertuta",
+        "lastUpdate": "Azken eguneratzea: 2026ko urtarrilaren 8a",
+        "footerRights": "© 2026 BYD Stats Community. Kode Irekiko Proiektua.",
+        "footerNote": "Orri hau gardentasun helburuekin eta Google Play-ren politikak betetzeko existitzen da.",
+        "privacy": {
+            "title": "Pribatutasun Politika",
+            "summary": "Laburpena: Zure datuak **zureak** dira. BYD Stats lokalki funtzionatzen du eta ez du zure informazioa kanpoko zerbitzarietara saltzen edo bidaltzen automatikoki.",
+            "sections": {
+                "collection": {
+                    "title": "1. Datuen Bilketa",
+                    "text": "Aplikazioak zure BYD ibilgailuak sortutako EC_Database.db fitxategiko datuak soilik prozesatzen ditu. Datu hauek bidaia erregistroak, eraginkortasuna, kontsumoak eta kokalekuak (hasiera/amaiera GPS koordenatuak gordetzen badituzu) barne hartzen ditu."
+                },
+                "usage": {
+                    "title": "2. Informazioaren Erabilera",
+                    "text": "Informazioa pantailan ikusten dituzun estatistikak, grafikoak eta txostenak sortzeko soilik erabiltzen da. Ez dugu erabiltzailearen jarraipenik egiten ezta publizitate profilik ere."
+                },
+                "storage": {
+                    "title": "3. Biltegiratzea eta Segurtasuna",
+                    "local": "Lokala: Datuak zure nabigatzaile edo gailuaren biltegiratze lokalean gordetzen dira (IndexedDB/LocalStorage).",
+                    "cloud": "Hodeia (Aukerakoa): Google Drive Sinkronizazioa aktibatzen baduzu, datuak zure Google Drive kontu pribatura igoko dira (\"application data\" karpetara). Zuk bakarrik duzu fitxategi horietarako sarbidea."
+                },
+                "thirdParty": {
+                    "title": "4. Hirugarrenen Zerbitzuak",
+                    "text": "Google-ren APIak soilik aukerako sinkronizazio funtziorako erabiltzen ditugu. Google-ren pribatutasun politika kontsulta dezakezu zure Google kontua nola kudeatzen duten jakiteko."
+                }
+            }
+        },
+        "terms": {
+            "title": "Lege Oharra",
+            "sections": {
+                "about": {
+                    "title": "Proiektuari buruz",
+                    "text": "BYD Stats Analyzer kode irekiko tresna bat da (Open Source) komunitateak eta komunitatearentzat garatua. Ez dugu harreman ofizialik BYD Auto Co., Ltd.-rekin ezta bere filialekin ere."
+                },
+                "trademarks": {
+                    "title": "Marken erabilera",
+                    "text": "\"BYD\" izenak, ibilgailuen logotipoak eta aipatutako beste marka erregistratu batzuk beren jabeenak dira eta hemen deskribapen eta informazio helburuekin soilik erabiltzen dira."
+                },
+                "liability": {
+                    "title": "Erantzukizun mugatua",
+                    "text": "Aplikazioa \"dagoen bezala\" (as is) eskaintzen da, inolako bermerik gabe. Ez gara datu galeraren, kalkuluen zehaztasun ezaren edo lortutako informazioaren erabilera okerraren erantzule. Datuak ibilgailuaren softwareak sortutako fitxategietatik ateratzen dira eta aplikazio honetatik kanpoko erroreak eduki ditzakete."
+                },
+                "contributions": {
+                    "title": "Ekarpenak",
+                    "text": "Ekarpenak egin, errore bat jakinarazi edo iturburu kodea berrikusi nahi baduzu, gure GitHub biltegi ofizialean egin dezakezu."
+                }
+            }
+        }
     },
     "historyMod": {
         "title": "Bidaien Historia",
@@ -269,17 +342,30 @@
         "viewOnGithub": "GitHub-en ikusi",
         "madeWith": "BYD komunitatearentzat ❤️ egina"
     },
+    "help": {
+        "title": "Laguntza",
+        "description": "Laguntza eta Laguntza Teknikoa",
+        "subtitle": "Akatsen bat aurkitu duzu edo iradokizunik?",
+        "reportBug": "Akatsa jakinarazi"
+    },
     "header": {
         "title": "BYD Estatistikak",
         "trips": "{{count}} bidaia"
     },
     "tooltips": {
-        "help": "Laguntza eta Akatsen Txostena",
+        "help": "Laguntza eta Errorea jakinarazi",
         "fullscreen": "Pantaila osoa",
         "exitFullscreen": "Irten pantaila osotik",
         "history": "Bidaien historia",
         "settings": "Ezarpenak",
         "filters": "Iragazkiak"
+    },
+    "sort": {
+        "label": "Ordenatu:",
+        "newest": "Berrienak",
+        "oldest": "Zaharrenak",
+        "longest": "Luzeenak",
+        "efficient": "Eraginkorrenak"
     },
     "landing": {
         "title": "BYD Estatistikak",

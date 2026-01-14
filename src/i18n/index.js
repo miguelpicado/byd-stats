@@ -1,13 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-
-import es from './locales/es.json';
-import en from './locales/en.json';
-import pt from './locales/pt.json';
-import gl from './locales/gl.json';
-import ca from './locales/ca.json';
-import eu from './locales/eu.json';
+import HttpBackend from 'i18next-http-backend';
 
 export const languages = [
     { code: 'es', name: 'Español', flag: '🇪🇸' },
@@ -19,18 +13,15 @@ export const languages = [
 ];
 
 i18n
+    .use(HttpBackend)
     .use(LanguageDetector)
     .use(initReactI18next)
     .init({
-        resources: {
-            es: { translation: es },
-            en: { translation: en },
-            pt: { translation: pt },
-            gl: { translation: gl },
-            ca: { translation: ca },
-            eu: { translation: eu }
-        },
         fallbackLng: 'es',
+        supportedLngs: ['es', 'en', 'pt', 'gl', 'ca', 'eu'],
+        backend: {
+            loadPath: '/locales/{{lng}}.json'
+        },
         detection: {
             order: ['localStorage', 'navigator'],
             lookupLocalStorage: 'byd_language',
