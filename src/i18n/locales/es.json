@@ -246,6 +246,7 @@
         "legal": "Legal",
         "github": "GitHub",
         "email": "Email",
+        "madeWith": "Hecho con",
         "openSource": "Open Source Project",
         "viewOnGithub": "Ver en GitHub"
     },
