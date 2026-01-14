@@ -34,6 +34,8 @@ import { useApp } from './context/AppContext';
 import { useLayout } from './context/LayoutContext';
 import useModalState from './hooks/useModalState';
 import useAppData from './hooks/useAppData';
+import useAppVersion from './hooks/useAppVersion';
+
 
 
 // Lazy load modals for code splitting
@@ -130,6 +132,10 @@ export default function BYDStatsAnalyzer() {
   // Context state - Settings from AppContext, Layout from LayoutContext
   const { settings, updateSettings } = useApp();
   const { layoutMode, isCompact, isFullscreenBYD, isVertical, isLargerCard } = useLayout();
+
+  // Get dynamic app version from GitHub releases
+  const { version: appVersion } = useAppVersion();
+
 
   // Calculate chart heights based on mode - memoized to prevent recalculation
   const smallChartHeight = useMemo(() => {
@@ -699,6 +705,7 @@ export default function BYDStatsAnalyzer() {
           months={months}
           rawTripsCount={rawTrips.length}
           filteredCount={0}
+          appVersion={appVersion}
         />
 
         {/* Privacy & Legal links in bottom-left - Fixed positioning */}
@@ -720,7 +727,7 @@ export default function BYDStatsAnalyzer() {
               <span>{t('footer.legal')}</span>
             </a>
           </div>
-          <p className="text-[10px] text-slate-600 pl-1">BYD Stats v1.2</p>
+          <p className="text-[10px] text-slate-600 pl-1">BYD Stats {appVersion}</p>
         </div>
 
         {/* GitHub link in bottom-right - Fixed positioning */}
@@ -828,6 +835,7 @@ export default function BYDStatsAnalyzer() {
           months={months}
           rawTripsCount={rawTrips.length}
           filteredCount={allTripsFiltered.length}
+          appVersion={appVersion}
         />
 
         {/* Header */}
@@ -1058,6 +1066,7 @@ export default function BYDStatsAnalyzer() {
         months={months}
         rawTripsCount={rawTrips.length}
         filteredCount={filtered ? filtered.length : 0}
+        appVersion={appVersion}
       />
 
       <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -1284,7 +1293,7 @@ export default function BYDStatsAnalyzer() {
                 <>
                   {/* Overview - Always visible when active */}
                   {(activeTab === 'overview' || backgroundLoad) && (
-                    <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+                    <div className="horizontal-tab-transition" style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
                       <OverviewTab
                         key={activeTab === 'overview' ? 'overview-active' : 'overview-bg'}
                         summary={summary}
@@ -1299,7 +1308,7 @@ export default function BYDStatsAnalyzer() {
                   {/* Trends - Background loaded */}
                   <Suspense fallback={activeTab === 'trends' ? <TabFallback /> : null}>
                     {(activeTab === 'trends' || backgroundLoad) && (
-                      <div style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
+                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
                         <TrendsTab
                           key={activeTab === 'trends' ? 'trends-active' : 'trends-bg'}
                           filtered={filtered}
@@ -1316,7 +1325,7 @@ export default function BYDStatsAnalyzer() {
                   {/* Patterns - Background loaded */}
                   <Suspense fallback={activeTab === 'patterns' ? <TabFallback /> : null}>
                     {(activeTab === 'patterns' || backgroundLoad) && (
-                      <div style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
+                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
                         <PatternsTab
                           key={activeTab === 'patterns' ? 'patterns-active' : 'patterns-bg'}
                           weekday={weekday}
@@ -1332,7 +1341,7 @@ export default function BYDStatsAnalyzer() {
                   {/* Efficiency - Background loaded */}
                   <Suspense fallback={activeTab === 'efficiency' ? <TabFallback /> : null}>
                     {(activeTab === 'efficiency' || backgroundLoad) && (
-                      <div style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
+                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
                         <EfficiencyTab
                           key={activeTab === 'efficiency' ? 'efficiency-active' : 'efficiency-bg'}
                           summary={summary}
@@ -1347,7 +1356,7 @@ export default function BYDStatsAnalyzer() {
                   {/* Records - Background loaded */}
                   <Suspense fallback={activeTab === 'records' ? <TabFallback /> : null}>
                     {(activeTab === 'records' || backgroundLoad) && (
-                      <div style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
+                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
                         <RecordsTab
                           key={activeTab === 'records' ? 'records-active' : 'records-bg'}
                           summary={summary}
@@ -1363,7 +1372,7 @@ export default function BYDStatsAnalyzer() {
                   {/* History - Background loaded */}
                   <Suspense fallback={activeTab === 'history' ? <TabFallback /> : null}>
                     {(activeTab === 'history' || backgroundLoad) && (
-                      <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
+                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
                         <HistoryTab
                           key={activeTab === 'history' ? 'history-active' : 'history-bg'}
                           filtered={filtered}

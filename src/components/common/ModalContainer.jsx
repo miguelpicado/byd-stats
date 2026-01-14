@@ -48,7 +48,8 @@ const ModalContainer = ({
     dateTo,
     months,
     rawTripsCount,
-    filteredCount
+    filteredCount,
+    appVersion = 'v1.2' // Dynamic version from GitHub releases
 }) => {
     const { t } = useTranslation();
 
@@ -245,7 +246,7 @@ const ModalContainer = ({
                             </div>
 
                             <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
-                                <p>BYD Stats Analyzer v1.2</p>
+                                <p>BYD Stats Analyzer {appVersion}</p>
                                 <p className="mt-1">{t('footer.madeWith')}</p>
                             </div>
                         </div>
@@ -288,7 +289,8 @@ ModalContainer.propTypes = {
     dateTo: PropTypes.string,
     months: PropTypes.array,
     rawTripsCount: PropTypes.number,
-    filteredCount: PropTypes.number
+    filteredCount: PropTypes.number,
+    appVersion: PropTypes.string
 };
 
 export default React.memo(ModalContainer);
