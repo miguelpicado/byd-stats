@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { logger } from '../utils/logger';
 
 /**
  * Custom hook for managing app theme
@@ -25,7 +26,7 @@ export function useTheme(theme) {
             // 3. Native StatusBar
             if (isNative && window.StatusBar) {
                 window.StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' })
-                    .catch(e => console.error('StatusBar error:', e));
+                    .catch(e => logger.error('StatusBar error:', e));
             }
         };
 

@@ -2,6 +2,7 @@
 // Manages application settings and theme (layout moved to LayoutContext)
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import { logger } from '../utils/logger';
 
 const AppContext = createContext();
 
@@ -39,7 +40,7 @@ export const AppProvider = ({ children }) => {
             const saved = localStorage.getItem('byd_settings');
             return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
         } catch (e) {
-            console.error('Error loading settings:', e);
+            logger.error('Error loading settings:', e);
             return DEFAULT_SETTINGS;
         }
     });
@@ -55,7 +56,7 @@ export const AppProvider = ({ children }) => {
 
             // Defensive: Ensure updated is a valid settings object
             if (!updated || typeof updated !== 'object' || Array.isArray(updated)) {
-                console.warn('updateSettings received invalid settings, ignoring:', updated);
+                logger.warn('updateSettings received invalid settings, ignoring:', updated);
                 return prev;
             }
 

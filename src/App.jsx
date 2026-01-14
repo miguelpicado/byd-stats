@@ -1,11 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter as ScatterJS } from 'react-chartjs-2';
-
-// Import extracted utilities (code splitting for utils)
 import { formatMonth, formatDate, formatTime } from './utils/dateUtils';
 import { processData } from './utils/dataProcessing';
 import { calculateScore, getScoreColor } from './utils/formatters';
@@ -15,11 +13,10 @@ import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, BYD_RED } from './components/Icons.jsx';
-import StatCard from './components/ui/StatCard';
-import ChartCard from './components/ui/ChartCard';
+import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, BYD_RED } from './components/Icons.jsx';
 import TripCard from './components/cards/TripCard';
 import TabFallback from './components/common/TabFallback';
+import VirtualizedTripList from './components/lists/VirtualizedTripList';
 // Keep OverviewTab static (initial tab)
 import OverviewTab from './components/tabs/OverviewTab';
 // Lazy load other tabs for code splitting
@@ -40,16 +37,11 @@ import useAppData from './hooks/useAppData';
 
 
 // Lazy load modals for code splitting
-const SettingsModalLazy = lazy(() => import('./components/modals/SettingsModal'));
-const FilterModalLazy = lazy(() => import('./components/modals/FilterModal'));
-const TripDetailModalLazy = lazy(() => import('./components/modals/TripDetailModal'));
-const HistoryModalLazy = lazy(() => import('./components/modals/HistoryModal'));
-const DatabaseUploadModalLazy = lazy(() => import('./components/modals/DatabaseUploadModal'));
-const LegalModalLazy = lazy(() => import('./components/modals/LegalModal'));
+// Modals moved to ModalContainer, except LegalPage which is a page
 const LegalPageLazy = lazy(() => import('./pages/LegalPage'));
 
-// processData imported from utils/dataProcessing.js
-// calculateScore and getScoreColor imported from utils/formatters.js
+import ModalContainer from './components/common/ModalContainer';
+import { useSwipeGesture } from './hooks/useSwipeGesture';
 
 
 export default function BYDStatsAnalyzer() {
@@ -139,45 +131,60 @@ export default function BYDStatsAnalyzer() {
   const { settings, updateSettings } = useApp();
   const { layoutMode, isCompact, isFullscreenBYD, isVertical, isLargerCard } = useLayout();
 
-  // Calculate chart heights based on mode
-  // Different tabs use different heights to maintain proper proportions
+  // Calculate chart heights based on mode - memoized to prevent recalculation
+  const smallChartHeight = useMemo(() => {
+    if (isVertical) return 350;
+    if (isFullscreenBYD) return 271;
+    if (isCompact) return 295;
+    return 326;
+  }, [isVertical, isFullscreenBYD, isCompact]);
 
-  // Small charts for Resumen: originally 275/326
-  let smallChartHeight;
-  if (isVertical) smallChartHeight = 350;
-  else if (isFullscreenBYD) smallChartHeight = 271;
-  else if (isCompact) smallChartHeight = 295;
-  else smallChartHeight = 326;
+  const patternsChartHeight = useMemo(() => {
+    if (isVertical) return 350;
+    if (isFullscreenBYD) return 289;
+    if (isCompact) return 303;
+    return 336;
+  }, [isVertical, isFullscreenBYD, isCompact]);
 
-  // Charts for Patrones (viajes por día): need more height
-  let patternsChartHeight;
-  if (isVertical) patternsChartHeight = 350;
-  else if (isFullscreenBYD) patternsChartHeight = 289;
-  else if (isCompact) patternsChartHeight = 303;
-  else patternsChartHeight = 336;
+  const largeChartHeight = useMemo(() => {
+    if (isVertical) return 350;
+    if (isFullscreenBYD) return 387;
+    if (isCompact) return 369;
+    return 442;
+  }, [isVertical, isFullscreenBYD, isCompact]);
 
-  // Large charts (Tendencias, Eficiencia): originally 350/450
-  let largeChartHeight;
-  if (isVertical) largeChartHeight = 350;
-  else if (isFullscreenBYD) largeChartHeight = 387;
-  else if (isCompact) largeChartHeight = 369;
-  else largeChartHeight = 442;
-
-  // Spacing adjustments for different modes
+  // Spacing adjustments for different modes - memoized
   const unifiedVerticalSpacing = 'space-y-4';
 
-  // Overview/Resumen spacing (vertical mode): fullscreenBYD +2px, compact +1px, normal +2px
-  const overviewSpacingVertical = isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[14px]' : (isCompact ? 'space-y-2.5' : 'space-y-3.5 sm:space-y-5'));
-  // Overview/Resumen spacing (horizontal mode): fullscreenBYD +2px, compact +1px, normal +2px
-  const overviewSpacingHorizontal = isFullscreenBYD ? 'space-y-[22px]' : (isCompact ? 'space-y-2.5' : 'space-y-5 sm:space-y-6.5');
+  const overviewSpacingVertical = useMemo(() =>
+    isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[14px]' : (isCompact ? 'space-y-2.5' : 'space-y-3.5 sm:space-y-5')),
+    [isVertical, isFullscreenBYD, isCompact]
+  );
 
-  // Patterns spacing: fullscreenBYD +10px, normal +7px (was +5px, now +2px more)
-  const patternsSpacing = isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[21px]' : (isCompact ? 'space-y-3' : 'space-y-[22px]'));
+  const overviewSpacingHorizontal = useMemo(() =>
+    isFullscreenBYD ? 'space-y-[22px]' : (isCompact ? 'space-y-2.5' : 'space-y-5 sm:space-y-6.5'),
+    [isFullscreenBYD, isCompact]
+  );
 
-  // Records list item padding
-  const recordsItemPadding = isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5');
-  const recordsItemPaddingHorizontal = isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2');
-  const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[389px]' : (isCompact ? 'h-[369px]' : 'h-[442px]');
+  const patternsSpacing = useMemo(() =>
+    isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[21px]' : (isCompact ? 'space-y-3' : 'space-y-[22px]')),
+    [isVertical, isFullscreenBYD, isCompact]
+  );
+
+  const recordsItemPadding = useMemo(() =>
+    isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5'),
+    [isFullscreenBYD, isCompact]
+  );
+
+  const recordsItemPaddingHorizontal = useMemo(() =>
+    isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2'),
+    [isFullscreenBYD, isCompact]
+  );
+
+  const recordsListHeightHorizontal = useMemo(() =>
+    isFullscreenBYD ? 'h-[389px]' : (isCompact ? 'h-[369px]' : 'h-[442px]'),
+    [isFullscreenBYD, isCompact]
+  );
 
   // DEBUG: Log to verify mode detection
   logger.debug('[DEBUG] Mode detection:', {
@@ -205,8 +212,13 @@ export default function BYDStatsAnalyzer() {
   const [isTransitioning, setIsTransitioning] = useState(false);
   const touchStartRef = useRef(null);
   const touchStartYRef = useRef(null);
-  // Use state callback ref to safely detect when the container is mounted/unmounted
-  const [swipeContainer, setSwipeContainer] = useState(null);
+  // Swipe gesture is now handled by useSwipeGesture hook
+  // const [swipeContainer, setSwipeContainer] = useState(null); -> Removed, hook returns ref setter except when it doesn't? 
+  // Wait, useSwipeGesture returns 'setSwipeContainer'. App.jsx used 'useState' for it.
+  // We don't need to declare it here anymore if the hook provides it.
+  // But wait, previously I said: const setSwipeContainer = useSwipeGesture(...)
+  // So I removed 'useState(null)' here.
+
 
 
 
@@ -224,7 +236,7 @@ export default function BYDStatsAnalyzer() {
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((e) => {
-        console.error(`Error attempting to enable fullscreen mode: ${e.message} (${e.name})`);
+        logger.error(`Error attempting to enable fullscreen mode: ${e.message} (${e.name})`);
       });
     } else {
       if (document.exitFullscreen) {
@@ -240,7 +252,7 @@ export default function BYDStatsAnalyzer() {
     try {
       localStorage.setItem('byd_settings', JSON.stringify(settings));
     } catch (e) {
-      console.error('Error saving settings:', e);
+      logger.error('Error saving settings:', e);
     }
   }, [settings]);
 
@@ -312,7 +324,7 @@ export default function BYDStatsAnalyzer() {
       // 4. Native StatusBar (for Capacitor apps)
       if (isNative && window.StatusBar) {
         window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-          .catch(e => console.error('StatusBar error:', e));
+          .catch(e => logger.error('StatusBar error:', e));
       }
     };
 
@@ -373,7 +385,7 @@ export default function BYDStatsAnalyzer() {
 
         clearPendingFile();
       } catch (err) {
-        console.error('[FileHandling] Error processing file:', err);
+        logger.error('[FileHandling] Error processing file:', err);
         alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + err.message);
         clearPendingFile();
       }
@@ -479,142 +491,14 @@ export default function BYDStatsAnalyzer() {
   }, [activeTab, isTransitioning, transitionDuration]);
 
 
-  // Swipe gesture - completely rewritten with refs
-
-
-  // Refs to hold latest values for swipe handlers (avoid re-registering listeners)
-  const activeTabRef = useRef(activeTab);
-  const isTransitioningRef = useRef(isTransitioning);
-  const handleTabClickRef = useRef(handleTabClick);
-
-  // Keep refs updated
-  useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
-  useEffect(() => { isTransitioningRef.current = isTransitioning; }, [isTransitioning]);
-  useEffect(() => { handleTabClickRef.current = handleTabClick; }, [handleTabClick]);
-
-  // Swipe detection using native event listeners for better performance
-  // Enabled for both modes: horizontal swipe for vertical mode, vertical swipe for horizontal mode
-  // Uses refs to avoid re-registering listeners on every state change
-  const layoutModeRef = useRef(layoutMode);
-  useEffect(() => { layoutModeRef.current = layoutMode; }, [layoutMode]);
-
-  useEffect(() => {
-    // Require container to be available
-    if (!swipeContainer) return;
-
-    const container = swipeContainer;
-    let swipeDirection = null;
-    let initialScrollTop = 0;
-    const isHorizontalMode = layoutModeRef.current === 'horizontal';
-
-    const handleTouchStart = (e) => {
-      if (isTransitioningRef.current) return;
-      const touch = e.touches[0];
-      touchStartRef.current = touch.clientX;
-      touchStartYRef.current = touch.clientY;
-      swipeDirection = null;
-      // Capture initial scroll position at start of touch
-      initialScrollTop = container.scrollTop;
-    };
-
-    const handleTouchMove = (e) => {
-      if (!touchStartRef.current || isTransitioningRef.current) return;
-
-      const touch = e.touches[0];
-      const diffX = Math.abs(touch.clientX - touchStartRef.current);
-      const diffY = Math.abs(touch.clientY - touchStartYRef.current);
-
-      // Detectar dirección solo una vez
-      if (!swipeDirection) {
-        swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
-      }
-
-      const currentMode = layoutModeRef.current;
-
-      // En modo vertical: prevenir scroll si swipe horizontal (para cambio de tabs)
-      if (currentMode === 'vertical' && swipeDirection === 'horizontal' && diffX > 10) {
-        if (e.cancelable) e.preventDefault();
-      }
-      // En modo horizontal: SOLO prevenir scroll nativo si:
-      // 1. Estamos en el tope del scroll (scrollTop <= 5)
-      // 2. El gesto es hacia ABAJO (swipe down = ir a tab anterior)
-      // En todos los demás casos, permitir scroll nativo
-      else if (currentMode === 'horizontal' && swipeDirection === 'vertical') {
-        const actualDiffY = touch.clientY - touchStartYRef.current;
-        const isSwipingDown = actualDiffY > 0;
-        const wasAtTop = initialScrollTop <= 5;
-
-        // Solo prevenir si estábamos en el top Y vamos hacia abajo (tab anterior)
-        if (wasAtTop && isSwipingDown && diffY > 10) {
-          if (e.cancelable) e.preventDefault();
-        }
-        // Si no se cumplen las condiciones, el scroll nativo funciona normalmente
-      }
-    };
-
-    const handleTouchEnd = (e) => {
-      if (!touchStartRef.current) return;
-
-      const touch = e.changedTouches[0];
-      const diffX = touch.clientX - touchStartRef.current;
-      const diffY = touch.clientY - touchStartYRef.current;
-      const currentMode = layoutModeRef.current;
-
-      const currentIndex = tabs.findIndex(t => t.id === activeTabRef.current);
-
-      if (currentMode === 'vertical') {
-        // Modo vertical: swipe horizontal para cambiar tabs
-        if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
-          if (diffX < 0 && currentIndex < tabs.length - 1) {
-            // Swipe left - siguiente tab
-            handleTabClickRef.current(tabs[currentIndex + 1].id);
-          } else if (diffX > 0 && currentIndex > 0) {
-            // Swipe right - tab anterior
-            handleTabClickRef.current(tabs[currentIndex - 1].id);
-          }
-        }
-      } else {
-        // Modo horizontal: swipe vertical para cambiar tabs
-        // PRIORIDAD: scroll nativo siempre funciona
-        // Solo cambiar tab cuando:
-        // - Swipe DOWN + scroll en el TOP = ir a tab anterior
-        // - Swipe UP + scroll en el BOTTOM = ir a siguiente tab
-        if (swipeDirection === 'vertical' && Math.abs(diffY) > minSwipeDistance) {
-          const wasAtTop = initialScrollTop <= 5;
-          const scrollHeight = container.scrollHeight;
-          const clientHeight = container.clientHeight;
-          const wasAtBottom = initialScrollTop + clientHeight >= scrollHeight - 5;
-
-          if (diffY > 0 && currentIndex > 0 && wasAtTop) {
-            // Swipe down + en el top = ir a tab anterior
-            handleTabClickRef.current(tabs[currentIndex - 1].id);
-          } else if (diffY < 0 && currentIndex < tabs.length - 1 && wasAtBottom) {
-            // Swipe up + en el bottom = ir a siguiente tab
-            handleTabClickRef.current(tabs[currentIndex + 1].id);
-          }
-          // En cualquier otra posición, el scroll nativo funciona
-        }
-      }
-
-      // Reset
-      touchStartRef.current = null;
-      touchStartYRef.current = null;
-      swipeDirection = null;
-      initialScrollTop = 0;
-    };
-
-    // Agregar event listeners
-    // Usamos non-passive en touchmove para poder prevenir el scroll nativo cuando sea necesario
-    container.addEventListener('touchstart', handleTouchStart, { passive: true });
-    container.addEventListener('touchmove', handleTouchMove, { passive: false });
-    container.addEventListener('touchend', handleTouchEnd, { passive: true });
-
-    return () => {
-      container.removeEventListener('touchstart', handleTouchStart);
-      container.removeEventListener('touchmove', handleTouchMove);
-      container.removeEventListener('touchend', handleTouchEnd);
-    };
-  }, [layoutMode, tabs, minSwipeDistance, swipeContainer]);
+  // Swipe gesture - using extracted hook
+  const setSwipeContainer = useSwipeGesture({
+    activeTab,
+    handleTabClick,
+    isTransitioning,
+    tabs,
+    layoutMode
+  });
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
@@ -779,14 +663,43 @@ export default function BYDStatsAnalyzer() {
 
         </div>
 
-        {/* Legal Modal available on Landing Page */}
-        <Suspense fallback={null}>
-          <LegalModalLazy
-            isOpen={showLegalModal}
-            onClose={() => setShowLegalModal(false)}
-            initialSection={legalInitialSection}
-          />
-        </Suspense>
+        {/* ModalContainer for Legal Modal available on Landing Page */}
+        <ModalContainer
+          modals={modals}
+          closeModal={closeModal}
+          openModal={openModal}
+          setLegalInitialSection={setLegalInitialSection}
+          legalInitialSection={legalInitialSection}
+          // Pass empty/null for other props not needed in landing, or pass them if safe
+          // Landing page mainly needs Legal modal.
+          settings={settings} // Might be needed?
+          updateSettings={updateSettings}
+          googleSync={googleSync}
+          rawTrips={rawTrips}
+          selectedTrip={null}
+          setSelectedTrip={setSelectedTrip}
+          data={null}
+          sqlReady={sqlReady}
+          processDB={processDB}
+          exportDatabase={exportDatabase}
+          clearData={clearData}
+          saveToHistory={saveToHistory}
+          clearHistory={clearHistory}
+          tripHistory={tripHistory}
+          isNative={isNative}
+          onFile={onFile}
+          setFilterType={setFilterType}
+          setSelMonth={setSelMonth}
+          setDateFrom={setDateFrom}
+          setDateTo={setDateTo}
+          filterType={filterType}
+          selMonth={selMonth}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          months={months}
+          rawTripsCount={rawTrips.length}
+          filteredCount={0}
+        />
 
         {/* Privacy & Legal links in bottom-left - Fixed positioning */}
         <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1.5 items-start">
@@ -881,17 +794,41 @@ export default function BYDStatsAnalyzer() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white">
-        {/* Trip Detail Modal */}
-        <Suspense fallback={null}>
-          <TripDetailModalLazy
-            isOpen={showTripDetailModal}
-            onClose={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}
-            trip={selectedTrip}
-            allTrips={rawTrips}
-            summary={data?.summary}
-            settings={settings}
-          />
-        </Suspense>
+        {/* Trip Detail Modal (using ModalContainer) */}
+        <ModalContainer
+          modals={modals}
+          closeModal={closeModal}
+          openModal={openModal}
+          setLegalInitialSection={setLegalInitialSection}
+          legalInitialSection={legalInitialSection}
+          settings={settings}
+          updateSettings={updateSettings}
+          googleSync={googleSync}
+          rawTrips={rawTrips}
+          selectedTrip={selectedTrip}
+          setSelectedTrip={setSelectedTrip}
+          data={data}
+          sqlReady={sqlReady}
+          processDB={processDB}
+          exportDatabase={exportDatabase}
+          clearData={clearData}
+          saveToHistory={saveToHistory}
+          clearHistory={clearHistory}
+          tripHistory={tripHistory}
+          isNative={isNative}
+          onFile={onFile}
+          setFilterType={setFilterType}
+          setSelMonth={setSelMonth}
+          setDateFrom={setDateFrom}
+          setDateTo={setDateTo}
+          filterType={filterType}
+          selMonth={selMonth}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          months={months}
+          rawTripsCount={rawTrips.length}
+          filteredCount={allTripsFiltered.length}
+        />
 
         {/* Header */}
         <div className="sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
@@ -1070,20 +1007,14 @@ export default function BYDStatsAnalyzer() {
           </div>
         </div>
 
-        {/* Trip List */}
+        {/* Trip List - Virtualized with TanStack Virtual */}
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
-          <div className="space-y-3">
-            {allTripsFiltered.map((trip, i) => (
-              <TripCard
-                key={i}
-                trip={trip}
-                minEff={minEff}
-                maxEff={maxEff}
-                onClick={openTripDetail}
-                isCompact={false}
-              />
-            ))}
-          </div>
+          <VirtualizedTripList
+            trips={allTripsFiltered}
+            minEff={minEff}
+            maxEff={maxEff}
+            onTripClick={openTripDetail}
+          />
         </div>
       </div >
     );
@@ -1094,155 +1025,40 @@ export default function BYDStatsAnalyzer() {
       ref={setSwipeContainer}
       className="fixed inset-0 flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-900 dark:text-white overflow-hidden transition-colors"
     >
-      {showModal && (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
-          <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Actualizar datos</h3>
-            <div className="space-y-3">
-              <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
-                <input type="file" accept="*/*,image/*,.db,.jpg,.jpeg" className="hidden" onChange={(e) => onFile(e, true)} />
-                <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                <p className="text-slate-900 dark:text-white">Combinar con existentes</p>
-              </label>
-              <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
-                <input type="file" accept="*/*,image/*,.db,.jpg,.jpeg" className="hidden" onChange={(e) => onFile(e, false)} />
-                <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
-                <p className="text-slate-900 dark:text-white">Reemplazar todo</p>
-              </label>
-            </div>
-            <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600">Cancelar</button>
-              <button onClick={clearData} className="py-2 px-4 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30">Borrar todo</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Trip Detail Modal */}
-      <Suspense fallback={null}>
-        <TripDetailModalLazy
-          isOpen={showTripDetailModal}
-          onClose={() => { setShowTripDetailModal(false); setSelectedTrip(null); }}
-          trip={selectedTrip}
-          allTrips={rawTrips}
-          summary={data?.summary}
-          settings={settings}
-        />
-      </Suspense>
-
-      {/* Settings Modal */}
-      <Suspense fallback={null}>
-        <SettingsModalLazy
-          isOpen={showSettingsModal}
-          onClose={() => setShowSettingsModal(false)}
-          settings={settings}
-          onSettingsChange={updateSettings}
-          googleSync={googleSync}
-        />
-      </Suspense>
-
-      {/* Database Management Modal (Unified) */}
-      <DatabaseUploadModalLazy
-        isOpen={showHistoryModal}
-        onClose={() => setShowHistoryModal(false)}
+      <ModalContainer
+        modals={modals}
+        closeModal={closeModal}
+        openModal={openModal}
+        setLegalInitialSection={setLegalInitialSection}
+        legalInitialSection={legalInitialSection}
+        settings={settings}
+        updateSettings={updateSettings}
+        googleSync={googleSync}
+        rawTrips={rawTrips}
+        selectedTrip={selectedTrip}
+        setSelectedTrip={setSelectedTrip}
+        data={data}
         sqlReady={sqlReady}
-        onFileSelect={processDB}
-        onExport={exportDatabase}
-        onClearData={() => {
-          setRawTrips([]);
-          localStorage.removeItem(STORAGE_KEY);
-        }}
-        onShowHistory={() => { }}
-        onSaveToHistory={saveToHistory}
-        onClearHistory={clearHistory}
-        hasData={rawTrips.length > 0}
-        historyCount={tripHistory.length}
+        processDB={processDB}
+        exportDatabase={exportDatabase}
+        clearData={clearData}
+        saveToHistory={saveToHistory}
+        clearHistory={clearHistory}
+        tripHistory={tripHistory}
         isNative={isNative}
+        onFile={onFile}
+        setFilterType={setFilterType}
+        setSelMonth={setSelMonth}
+        setDateFrom={setDateFrom}
+        setDateTo={setDateTo}
+        filterType={filterType}
+        selMonth={selMonth}
+        dateFrom={dateFrom}
+        dateTo={dateTo}
+        months={months}
+        rawTripsCount={rawTrips.length}
+        filteredCount={filtered ? filtered.length : 0}
       />
-
-      {/* History Modal */}
-
-
-      <Suspense fallback={null}>
-        <LegalModalLazy
-          isOpen={showLegalModal}
-          onClose={() => setShowLegalModal(false)}
-          initialSection={legalInitialSection}
-        />
-      </Suspense>
-
-      {/* Help/Bug Report Modal */}
-      {showHelpModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowHelpModal(false)}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-          <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('help.title')}</h2>
-              </div>
-              <button onClick={() => setShowHelpModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                <Plus className="w-6 h-6 rotate-45" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">
-                <p className="text-sm text-slate-600 dark:text-slate-400 mb-2">
-                  {t('help.subtitle')}
-                </p>
-                <p className="text-xs text-slate-500 dark:text-slate-500">
-                  {t('help.description')}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <a
-                  href="https://github.com/miguelpicado/byd-stats/issues/new"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 rounded-xl font-medium text-white flex items-center justify-center gap-2"
-                  style={{ backgroundColor: BYD_RED }}
-                >
-                  <Bug className="w-5 h-5" />
-                  {t('help.reportBug')}
-                </a>
-
-                <a
-                  href="https://github.com/miguelpicado/byd-stats"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
-                >
-                  <GitHub className="w-5 h-5" />
-                  {t('footer.github')}
-                </a>
-
-                <a
-                  href="mailto:contacto@bydstats.com?subject=BYD Stats - Contacto&body=Hola,%0A%0AMe gustaría contactar sobre..."
-                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Mail className="w-5 h-5" />
-                  {t('footer.email')}
-                </a>
-
-                <button
-                  onClick={() => { setLegalInitialSection('privacy'); setShowLegalModal(true); }}
-                  className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Shield className="w-5 h-5" />
-                  {t('footer.legal')}
-                </button>
-              </div>
-
-              <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
-                <p>BYD Stats Analyzer v1.2</p>
-                <p className="mt-1">{t('footer.madeWith')}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
         <div className={`${layoutMode === 'horizontal' ? 'px-3 sm:px-4' : 'max-w-7xl mx-auto px-3 sm:px-4'} py-3 sm:py-4`}>
@@ -1304,10 +1120,13 @@ export default function BYDStatsAnalyzer() {
         {/* Horizontal Layout: Sidebar with tabs */}
         {layoutMode === 'horizontal' && (
           <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
-            <div className="p-4 space-y-2">
+            <div role="tablist" aria-label="Main navigation" className="p-4 space-y-2">
               {tabs.map((t) => (
                 <button
                   key={t.id}
+                  role="tab"
+                  aria-selected={activeTab === t.id}
+                  aria-controls={`tabpanel-${t.id}`}
                   onClick={() => handleTabClick(t.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${activeTab === t.id
                     ? 'text-white'
@@ -1354,7 +1173,7 @@ export default function BYDStatsAnalyzer() {
                 tabs.map((tab) => (
                   <div key={tab.id} className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
                     <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
-                    <p className="text-slate-400">No hay datos para mostrar</p>
+                    <p className="text-slate-400">{t('common.noData')}</p>
                   </div>
                 ))
               ) : (
@@ -1454,34 +1273,35 @@ export default function BYDStatsAnalyzer() {
               )}
             </div>
           ) : (
-            // Horizontal layout: show only active tab content
-            // Removed key={activeTab} to prevent unmounting when switching tabs
+            // Horizontal layout: show only active tab content (tabs unmount/remount for animations)
             <div ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
-                  <p className="text-slate-400">No hay datos para mostrar</p>
+                  <p className="text-slate-400">{t('common.noData')}</p>
                 </div>
               ) : (
                 <>
-                  <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-                    {(activeTab === 'overview' || backgroundLoad) && (
+                  {/* Overview - Always visible when active */}
+                  {(activeTab === 'overview' || backgroundLoad) && (
+                    <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
                       <OverviewTab
-                        key={activeTab === 'overview' ? 'active' : 'bg'}
+                        key={activeTab === 'overview' ? 'overview-active' : 'overview-bg'}
                         summary={summary}
                         monthly={monthly}
                         tripDist={tripDist}
                         smallChartHeight={smallChartHeight}
                         overviewSpacing={overviewSpacingHorizontal}
                       />
-                    )}
-                  </div>
+                    </div>
+                  )}
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
-                      {(activeTab === 'trends' || backgroundLoad) && (
+                  {/* Trends - Background loaded */}
+                  <Suspense fallback={activeTab === 'trends' ? <TabFallback /> : null}>
+                    {(activeTab === 'trends' || backgroundLoad) && (
+                      <div style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
                         <TrendsTab
-                          key={activeTab === 'trends' ? 'active' : 'bg'}
+                          key={activeTab === 'trends' ? 'trends-active' : 'trends-bg'}
                           filtered={filtered}
                           summary={summary}
                           monthly={monthly}
@@ -1489,191 +1309,72 @@ export default function BYDStatsAnalyzer() {
                           settings={settings}
                           largeChartHeight={largeChartHeight}
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Suspense>
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
-                      {(activeTab === 'patterns' || backgroundLoad) && (
+                  {/* Patterns - Background loaded */}
+                  <Suspense fallback={activeTab === 'patterns' ? <TabFallback /> : null}>
+                    {(activeTab === 'patterns' || backgroundLoad) && (
+                      <div style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
                         <PatternsTab
-                          key={activeTab === 'patterns' ? 'active' : 'bg'}
+                          key={activeTab === 'patterns' ? 'patterns-active' : 'patterns-bg'}
                           weekday={weekday}
                           hourly={hourly}
                           summary={summary}
                           patternsSpacing={patternsSpacing}
                           patternsChartHeight={patternsChartHeight}
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Suspense>
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
-                      {(activeTab === 'efficiency' || backgroundLoad) && (
+                  {/* Efficiency - Background loaded */}
+                  <Suspense fallback={activeTab === 'efficiency' ? <TabFallback /> : null}>
+                    {(activeTab === 'efficiency' || backgroundLoad) && (
+                      <div style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
                         <EfficiencyTab
-                          key={activeTab === 'efficiency' ? 'active' : 'bg'}
+                          key={activeTab === 'efficiency' ? 'efficiency-active' : 'efficiency-bg'}
                           summary={summary}
                           monthly={monthly}
                           effScatter={effScatter}
                           largeChartHeight={largeChartHeight}
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Suspense>
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
-                      {(activeTab === 'records' || backgroundLoad) && (
+                  {/* Records - Background loaded */}
+                  <Suspense fallback={activeTab === 'records' ? <TabFallback /> : null}>
+                    {(activeTab === 'records' || backgroundLoad) && (
+                      <div style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
                         <RecordsTab
-                          key={activeTab === 'records' ? 'active' : 'bg'}
+                          key={activeTab === 'records' ? 'records-active' : 'records-bg'}
                           summary={summary}
                           top={top}
                           recordsItemPadding={recordsItemPadding}
                           recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
                           recordsListHeightHorizontal={recordsListHeightHorizontal}
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Suspense>
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
-                      {(activeTab === 'history' || backgroundLoad) && (
+                  {/* History - Background loaded */}
+                  <Suspense fallback={activeTab === 'history' ? <TabFallback /> : null}>
+                    {(activeTab === 'history' || backgroundLoad) && (
+                      <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
                         <HistoryTab
-                          key={activeTab === 'history' ? 'active' : 'bg'}
+                          key={activeTab === 'history' ? 'history-active' : 'history-bg'}
                           filtered={filtered}
                           openTripDetail={openTripDetail}
                           setShowAllTripsModal={setShowAllTripsModal}
                         />
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </Suspense>
                 </>
               )}
-            </div>
-          )}
-
-          {/* Filter Modal */}
-          {showFilterModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setShowFilterModal(false)}>
-              <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-              <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('filter.title')}</h2>
-                  </div>
-                  <button onClick={() => setShowFilterModal(false)} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                    <Plus className="w-6 h-6 rotate-45" />
-                  </button>
-                </div>
-
-                <div className="space-y-4">
-                  {/* Filter Type Buttons */}
-                  <div className="space-y-2">
-                    <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</label>
-                    <div className="flex flex-col gap-2">
-                      <button
-                        onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'all'
-                          ? 'text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                          }`}
-                        style={{
-                          backgroundColor: filterType === 'all' ? BYD_RED : ''
-                        }}
-                      >
-                        📊 {t('filter.all')} ({rawTrips.length})
-                      </button>
-                      <button
-                        onClick={() => setFilterType('month')}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'month'
-                          ? 'text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                          }`}
-                        style={{
-                          backgroundColor: filterType === 'month' ? BYD_RED : ''
-                        }}
-                      >
-                        📅 {t('filter.byMonth')}
-                      </button>
-                      <button
-                        onClick={() => setFilterType('range')}
-                        className={`px-4 py-3 rounded-xl text-sm font-medium transition-colors text-left ${filterType === 'range'
-                          ? 'text-white'
-                          : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
-                          }`}
-                        style={{
-                          backgroundColor: filterType === 'range' ? BYD_RED : ''
-                        }}
-                      >
-                        📆 {t('filter.byRange')}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Month Selector */}
-                  {filterType === 'month' && (
-                    <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
-                      <select
-                        value={selMonth}
-                        onChange={(e) => setSelMonth(e.target.value)}
-                        className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                      >
-                        <option value="">{t('filter.allMonths')}</option>
-                        {months.map((m) => (
-                          <option key={m} value={m}>{formatMonth(m)}</option>
-                        ))}
-                      </select>
-                    </div>
-                  )}
-
-                  {/* Date Range Selector */}
-                  {filterType === 'range' && (
-                    <div className="space-y-2">
-                      <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</label>
-                      <div className="flex flex-col gap-2">
-                        <input
-                          type="date"
-                          value={dateFrom}
-                          onChange={(e) => setDateFrom(e.target.value)}
-                          className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder={t('filter.from')}
-                        />
-                        <input
-                          type="date"
-                          value={dateTo}
-                          onChange={(e) => setDateTo(e.target.value)}
-                          className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
-                          placeholder={t('filter.to')}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Results Count */}
-                  {filtered.length !== rawTrips.length && (
-                    <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
-                      <p className="text-center text-sm">
-                        <span className="text-slate-400">{t('filter.showing')} </span>
-                        <span className="font-bold" style={{ color: BYD_RED }}>{filtered.length}</span>
-                        <span className="text-slate-400"> {t('filter.of')} {rawTrips.length} {t('stats.trips').toLowerCase()}</span>
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Apply Button */}
-                <button
-                  onClick={() => setShowFilterModal(false)}
-                  className="w-full mt-6 py-3 rounded-xl font-medium text-white"
-                  style={{ backgroundColor: BYD_RED }}
-                >
-                  {t('filter.apply')}
-                </button>
-              </div>
             </div>
           )}
 
@@ -1681,10 +1382,13 @@ export default function BYDStatsAnalyzer() {
           {layoutMode === 'vertical' && (
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
               <div className="max-w-7xl mx-auto px-2 py-2">
-                <div className="flex justify-around items-center">
+                <div role="tablist" aria-label="Main navigation" className="flex justify-around items-center">
                   {tabs.map((t) => (
                     <button
                       key={t.id}
+                      role="tab"
+                      aria-selected={activeTab === t.id}
+                      aria-controls={`tabpanel-${t.id}`}
                       onClick={() => handleTabClick(t.id)}
                       className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
                       style={{

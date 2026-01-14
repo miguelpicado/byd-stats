@@ -1,6 +1,7 @@
 import React from 'react';
 import { BYD_RED } from '../utils/constants';
 import i18n from '../i18n';
+import { logger } from '../utils/logger';
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -13,7 +14,7 @@ class ErrorBoundary extends React.Component {
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error("ErrorBoundary caught an error", error, errorInfo);
+        logger.error("ErrorBoundary caught an error", error, errorInfo);
         this.setState({ errorInfo });
     }
 
