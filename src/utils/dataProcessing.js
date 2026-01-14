@@ -21,35 +21,43 @@ export function processData(rows) {
     const monthlyData = {};
     const dailyData = {};
     const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
-    const weekdayData = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'].map(d => ({ day: d, trips: 0, km: 0 }));
+    // Use translation keys for weekdays (i18n compatible)
+    const weekdayData = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => ({ day: d, trips: 0, km: 0 }));
 
     trips.forEach(trip => {
-        const m = trip.month || 'unknown';
-        if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
-        monthlyData[m].trips++;
-        monthlyData[m].km += trip.trip || 0;
-        monthlyData[m].kwh += trip.electricity || 0;
+        try {
+            const m = trip.month || 'unknown';
+            if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
+            monthlyData[m].trips++;
+            monthlyData[m].km += trip.trip || 0;
+            monthlyData[m].kwh += trip.electricity || 0;
 
-        const d = trip.date || 'unknown';
-        if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
-        dailyData[d].trips++;
-        dailyData[d].km += trip.trip || 0;
-        dailyData[d].kwh += trip.electricity || 0;
+            const d = trip.date || 'unknown';
+            if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
+            dailyData[d].trips++;
+            dailyData[d].km += trip.trip || 0;
+            dailyData[d].kwh += trip.electricity || 0;
 
-        if (trip.start_timestamp) {
-            try {
+            if (trip.start_timestamp) {
                 const dt = new Date(trip.start_timestamp * 1000);
                 const h = dt.getHours();
                 const w = dt.getDay();
-                hourlyData[h].trips++;
-                hourlyData[h].km += trip.trip || 0;
+
+                // Ensure h is a valid index (0-23)
+                if (!isNaN(h) && hourlyData[h]) {
+                    hourlyData[h].trips++;
+                    hourlyData[h].km += trip.trip || 0;
+                }
+
                 // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, etc.
                 const weekdayIndex = (w + 6) % 7;
-                weekdayData[weekdayIndex].trips++;
-                weekdayData[weekdayIndex].km += trip.trip || 0;
-            } catch (e) {
-                console.error('Error processing timestamp:', e);
+                if (weekdayData[weekdayIndex]) {
+                    weekdayData[weekdayIndex].trips++;
+                    weekdayData[weekdayIndex].km += trip.trip || 0;
+                }
             }
+        } catch (e) {
+            console.warn('Skipping malformed trip:', trip, e);
         }
     });
 
@@ -81,11 +89,12 @@ export function processData(rows) {
         else tripDistribution[4].count++;
     });
 
+    // Use x/y format for Chart.js Scatter compatibility
     const efficiencyScatter = trips
         .filter(t => t.trip > 0 && t.electricity > 0)
-        .map(t => ({ km: t.trip, eff: (t.electricity / t.trip) * 100 }))
-        .filter(t => t.eff > 0 && t.eff < 50)
-        .sort((a, b) => a.km - b.km);
+        .map(t => ({ x: t.trip, y: (t.electricity / t.trip) * 100 }))
+        .filter(t => t.y > 0 && t.y < 50)
+        .sort((a, b) => a.x - b.x);
 
     const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
     const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));

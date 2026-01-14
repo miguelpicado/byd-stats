@@ -5,6 +5,7 @@ import { Navigation, Zap, Clock, MapPin } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 import { formatDate } from '../../utils/dateUtils';
+import { useLayout } from '../../context/LayoutContext';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
@@ -14,15 +15,12 @@ const COMPACT_SPACE_Y = 'space-y-3';
 const RecordsTab = React.memo(({
   summary,
   top,
-  isCompact,
-  isLargerCard,
-  isVertical,
-  isFullscreenBYD,
   recordsItemPadding,
   recordsItemPaddingHorizontal,
   recordsListHeightHorizontal
 }) => {
   const { t } = useTranslation();
+  const { isCompact, isLargerCard, isVertical, isFullscreenBYD } = useLayout();
 
   // Render vertical layout
   if (isVertical) {

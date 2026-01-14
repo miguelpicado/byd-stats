@@ -7,6 +7,7 @@ import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter a
 
 // Import extracted utilities (code splitting for utils)
 import { formatMonth, formatDate, formatTime } from './utils/dateUtils';
+import { processData } from './utils/dataProcessing';
 // Formatters are defined locally in this file for performance
 import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
@@ -15,6 +16,7 @@ import { useGoogleSync } from './hooks/useGoogleSync';
 import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car, Activity, BarChart3, AlertCircle, Filter, Plus, List, Settings, Download, Database, HelpCircle, Mail, Bug, GitHub, Navigation, Maximize, Minimize, Cloud, ChevronDown, ChevronUp, ChevronLeft, Shield, FileText, X, BYD_RED } from './components/Icons.jsx';
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
+import TripCard from './components/cards/TripCard';
 // Keep OverviewTab static (initial tab)
 import OverviewTab from './components/tabs/OverviewTab';
 // Lazy load other tabs for code splitting
@@ -29,6 +31,8 @@ const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
 import useDatabase from './hooks/useDatabase';
 import { useFileHandling } from './hooks/useFileHandling';
 import { useApp } from './context/AppContext';
+import { useLayout } from './context/LayoutContext';
+import useModalState from './hooks/useModalState';
 
 
 // Lazy load modals for code splitting
@@ -71,139 +75,7 @@ const TabFallback = () => (
   </div>
 );
 
-function processData(rows) {
-  if (!rows || rows.length === 0) return null;
-  const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
-  if (trips.length === 0) return null;
-
-  const totalKm = trips.reduce((s, r) => s + (r.trip || 0), 0);
-  const totalKwh = trips.reduce((s, r) => s + (r.electricity || 0), 0);
-  const totalDuration = trips.reduce((s, r) => s + (r.duration || 0), 0);
-  if (totalKm === 0) return null;
-
-  const monthlyData = {};
-  const dailyData = {};
-  const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
-  const weekdayData = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => ({ day: d, trips: 0, km: 0 }));
-
-  trips.forEach(trip => {
-    try {
-      const m = trip.month || 'unknown';
-      if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
-      monthlyData[m].trips++;
-      monthlyData[m].km += trip.trip || 0;
-      monthlyData[m].kwh += trip.electricity || 0;
-
-      const d = trip.date || 'unknown';
-      if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
-      dailyData[d].trips++;
-      dailyData[d].km += trip.trip || 0;
-      dailyData[d].kwh += trip.electricity || 0;
-
-      if (trip.start_timestamp) {
-        const dt = new Date(trip.start_timestamp * 1000);
-        const h = dt.getHours();
-        const w = dt.getDay();
-
-        // Ensure h is a valid index (0-23)
-        if (!isNaN(h) && hourlyData[h]) {
-          hourlyData[h].trips++;
-          hourlyData[h].km += trip.trip || 0;
-        }
-
-        // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, 2 (Tue) -> 1, etc.
-        const weekdayIndex = (w + 6) % 7;
-        if (weekdayData[weekdayIndex]) {
-          weekdayData[weekdayIndex].trips++;
-          weekdayData[weekdayIndex].km += trip.trip || 0;
-        }
-      }
-    } catch (e) {
-      console.warn('Skipping malformed trip:', trip, e);
-    }
-  });
-
-
-  const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
-  monthlyArray.forEach(m => {
-    m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
-    m.monthLabel = formatMonth(m.month);
-  });
-
-  const dailyArray = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
-  dailyArray.forEach(d => {
-    d.efficiency = d.km > 0 ? (d.kwh / d.km * 100) : 0;
-    d.dateLabel = formatDate(d.date);
-  });
-
-  const tripDistribution = [
-    { range: '0-5', count: 0, color: '#06b6d4' },
-    { range: '5-15', count: 0, color: '#10b981' },
-    { range: '15-30', count: 0, color: '#f59e0b' },
-    { range: '30-50', count: 0, color: BYD_RED },
-    { range: '50+', count: 0, color: '#8b5cf6' }
-  ];
-  trips.forEach(t => {
-    const km = t.trip || 0;
-    if (km <= 5) tripDistribution[0].count++;
-    else if (km <= 15) tripDistribution[1].count++;
-    else if (km <= 30) tripDistribution[2].count++;
-    else if (km <= 50) tripDistribution[3].count++;
-    else tripDistribution[4].count++;
-  });
-
-  const efficiencyScatter = trips
-    .filter(t => t.trip > 0 && t.electricity > 0)
-    .map(t => ({ x: t.trip, y: (t.electricity / t.trip) * 100 }))
-    .filter(t => t.y > 0 && t.y < 50)
-    .sort((a, b) => a.x - b.x);
-
-  const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
-  const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
-  const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
-  const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
-  const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
-
-  // Calculate total span of days in the database using timestamps
-  const firstTs = sorted[0]?.start_timestamp;
-  const lastTs = sorted[sorted.length - 1]?.start_timestamp;
-  const totalDays = (firstTs && lastTs)
-    ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
-    : daysActive;
-
-  return {
-    summary: {
-      totalTrips: trips.length,
-      totalKm: totalKm.toFixed(1),
-      totalKwh: totalKwh.toFixed(1),
-      totalHours: (totalDuration / 3600).toFixed(1),
-      avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
-      avgKm: (totalKm / trips.length).toFixed(1),
-      avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
-      avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
-      daysActive,
-      totalDays,
-      dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
-      maxKm: sortedByKm[0]?.trip?.toFixed(1) || '0',
-      minKm: sortedByKm[sortedByKm.length - 1]?.trip?.toFixed(1) || '0',
-      maxKwh: sortedByKwh[0]?.electricity?.toFixed(1) || '0',
-      maxMin: ((sortedByDur[0]?.duration || 0) / 60).toFixed(0),
-      tripsDay: (trips.length / daysActive).toFixed(1),
-      kmDay: (totalKm / daysActive).toFixed(1)
-    },
-    monthly: monthlyArray,
-    daily: dailyArray,
-    hourly: hourlyData,
-    weekday: weekdayData,
-    tripDist: tripDistribution,
-    effScatter: efficiencyScatter,
-    top: {
-      km: sortedByKm.slice(0, 10),
-      kwh: sortedByKwh.slice(0, 10),
-      dur: sortedByDur.slice(0, 10)
-    }
-  };
-}
+// processData imported from utils/dataProcessing.js
 
 // Helper functions
 const calculateScore = (efficiency, minEff, maxEff) => {
@@ -242,15 +114,29 @@ export default function BYDStatsAnalyzer() {
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
   const [dragOver, setDragOver] = useState(false);
-  const [showModal, setShowModal] = useState(false);
-  const [showFilterModal, setShowFilterModal] = useState(false);
-  const [showAllTripsModal, setShowAllTripsModal] = useState(false);
-  const [showTripDetailModal, setShowTripDetailModal] = useState(false);
-  const [showSettingsModal, setShowSettingsModal] = useState(false);
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
-  const [showHelpModal, setShowHelpModal] = useState(false);
-  const [showLegalModal, setShowLegalModal] = useState(false);
-  const [legalInitialSection, setLegalInitialSection] = useState('privacy');
+  // Centralized modal state management
+  const { modals, openModal, closeModal, openLegalModal, legalInitialSection, setLegalInitialSection } = useModalState();
+
+  // Destructure for backwards compatibility with existing code
+  const showModal = modals.upload;
+  const showFilterModal = modals.filter;
+  const showAllTripsModal = modals.allTrips;
+  const showTripDetailModal = modals.tripDetail;
+  const showSettingsModal = modals.settings;
+  const showHistoryModal = modals.history;
+  const showHelpModal = modals.help;
+  const showLegalModal = modals.legal;
+
+  // Setter functions for backwards compatibility
+  const setShowModal = useCallback((value) => value ? openModal('upload') : closeModal('upload'), [openModal, closeModal]);
+  const setShowFilterModal = useCallback((value) => value ? openModal('filter') : closeModal('filter'), [openModal, closeModal]);
+  const setShowAllTripsModal = useCallback((value) => value ? openModal('allTrips') : closeModal('allTrips'), [openModal, closeModal]);
+  const setShowTripDetailModal = useCallback((value) => value ? openModal('tripDetail') : closeModal('tripDetail'), [openModal, closeModal]);
+  const setShowSettingsModal = useCallback((value) => value ? openModal('settings') : closeModal('settings'), [openModal, closeModal]);
+  const setShowHistoryModal = useCallback((value) => value ? openModal('history') : closeModal('history'), [openModal, closeModal]);
+  const setShowHelpModal = useCallback((value) => value ? openModal('help') : closeModal('help'), [openModal, closeModal]);
+  const setShowLegalModal = useCallback((value) => value ? openModal('legal') : closeModal('legal'), [openModal, closeModal]);
+  // setLegalInitialSection comes directly from useModalState hook
 
   // Background load state for "Render-Hidden" strategy
   const [backgroundLoad, setBackgroundLoad] = useState(false);
@@ -287,11 +173,9 @@ export default function BYDStatsAnalyzer() {
 
 
 
-  // Context state
-  const { settings, updateSettings, layoutMode, isCompact, isFullscreenBYD } = useApp();
-  const isLargerCard = isCompact && layoutMode === 'horizontal';
-
-  const isVertical = layoutMode === 'vertical';
+  // Context state - Settings from AppContext, Layout from LayoutContext
+  const { settings, updateSettings } = useApp();
+  const { layoutMode, isCompact, isFullscreenBYD, isVertical, isLargerCard } = useLayout();
 
   // Calculate chart heights based on mode
   // Different tabs use different heights to maintain proper proportions
@@ -892,64 +776,7 @@ export default function BYDStatsAnalyzer() {
 
 
 
-
-
-
-
-  const TripCard = React.memo(({ trip, minEff, maxEff, onClick, formatDate, formatTime, calculateScore, getScoreColor, isCompact }) => {
-    const efficiency = useMemo(() => {
-      if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
-        return 0;
-      }
-      return (trip.electricity / trip.trip) * 100;
-    }, [trip.trip, trip.electricity]);
-
-    const score = useMemo(() =>
-      calculateScore(efficiency, minEff, maxEff),
-      [efficiency, minEff, maxEff, calculateScore]
-    );
-
-    const scoreColor = useMemo(() =>
-      getScoreColor(score),
-      [score, getScoreColor]
-    );
-
-    return (
-      <div
-        onClick={() => onClick(trip)}
-        className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${isCompact ? 'p-2' : 'p-3 sm:p-4'}`}
-      >
-        <div className={`text-center ${isCompact ? 'mb-1' : 'mb-3'}`}>
-          <p className={`text-slate-900 dark:text-white font-semibold ${isCompact ? 'text-xs' : 'text-sm sm:text-base'}`}>
-            {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
-          </p>
-        </div>
-        <div className="grid grid-cols-4 gap-2">
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.distance')}</p>
-            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.trip?.toFixed(1)}</p>
-            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>km</p>
-          </div>
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('tripDetail.consumption')}</p>
-            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.electricity?.toFixed(2)}</p>
-            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh</p>
-          </div>
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.efficiency')}</p>
-            <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{efficiency.toFixed(2)}</p>
-            <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh/100km</p>
-          </div>
-          <div className="text-center">
-            <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Score</p>
-            <p className={`font-bold ${isCompact ? 'text-lg' : 'text-2xl sm:text-3xl'}`} style={{ color: scoreColor }}>
-              {score.toFixed(1)}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  });
+  // TripCard imported from components/cards/TripCard.jsx
 
   // Format duration in minutes/hours - memoized
   const formatDuration = useCallback((seconds) => {
@@ -1401,11 +1228,7 @@ export default function BYDStatsAnalyzer() {
                 minEff={minEff}
                 maxEff={maxEff}
                 onClick={openTripDetail}
-                formatDate={formatDate}
-                formatTime={formatTime}
-                calculateScore={calculateScore}
-                getScoreColor={getScoreColor}
-                isCompact={false} // Assuming full view is not compact
+                isCompact={false}
               />
             ))}
           </div>
@@ -1692,10 +1515,6 @@ export default function BYDStatsAnalyzer() {
                         summary={summary}
                         monthly={monthly}
                         tripDist={tripDist}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={true}
-                        isFullscreenBYD={isFullscreenBYD}
                         smallChartHeight={smallChartHeight}
                         overviewSpacing={overviewSpacingVertical}
                       />
@@ -1713,9 +1532,6 @@ export default function BYDStatsAnalyzer() {
                           monthly={monthly}
                           daily={daily}
                           settings={settings}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={true}
                           largeChartHeight={largeChartHeight}
                         />
                       )}
@@ -1731,9 +1547,6 @@ export default function BYDStatsAnalyzer() {
                           weekday={weekday}
                           hourly={hourly}
                           summary={summary}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={true}
                           patternsSpacing={patternsSpacing}
                           patternsChartHeight={patternsChartHeight}
                         />
@@ -1750,9 +1563,6 @@ export default function BYDStatsAnalyzer() {
                           summary={summary}
                           monthly={monthly}
                           effScatter={effScatter}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={true}
                           largeChartHeight={largeChartHeight}
                         />
                       )}
@@ -1767,10 +1577,6 @@ export default function BYDStatsAnalyzer() {
                           key={activeTab === 'records' ? 'active' : 'bg'}
                           summary={summary}
                           top={top}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={true}
-                          isFullscreenBYD={isFullscreenBYD}
                           recordsItemPadding={recordsItemPadding}
                           recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
                           recordsListHeightHorizontal={recordsListHeightHorizontal}
@@ -1786,11 +1592,8 @@ export default function BYDStatsAnalyzer() {
                         <HistoryTab
                           key={activeTab === 'history' ? 'active' : 'bg'}
                           filtered={filtered}
-                          isCompact={isCompact}
-                          isVertical={isVertical}
                           openTripDetail={openTripDetail}
                           setShowAllTripsModal={setShowAllTripsModal}
-                          TripCard={TripCard}
                         />
                       )}
                     </Suspense>
@@ -1816,10 +1619,6 @@ export default function BYDStatsAnalyzer() {
                         summary={summary}
                         monthly={monthly}
                         tripDist={tripDist}
-                        isCompact={isCompact}
-                        isLargerCard={isLargerCard}
-                        isVertical={false}
-                        isFullscreenBYD={isFullscreenBYD}
                         smallChartHeight={smallChartHeight}
                         overviewSpacing={overviewSpacingHorizontal}
                       />
@@ -1836,9 +1635,6 @@ export default function BYDStatsAnalyzer() {
                           monthly={monthly}
                           daily={daily}
                           settings={settings}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={false}
                           largeChartHeight={largeChartHeight}
                         />
                       )}
@@ -1853,9 +1649,6 @@ export default function BYDStatsAnalyzer() {
                           weekday={weekday}
                           hourly={hourly}
                           summary={summary}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={false}
                           patternsSpacing={patternsSpacing}
                           patternsChartHeight={patternsChartHeight}
                         />
@@ -1871,9 +1664,6 @@ export default function BYDStatsAnalyzer() {
                           summary={summary}
                           monthly={monthly}
                           effScatter={effScatter}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={false}
                           largeChartHeight={largeChartHeight}
                         />
                       )}
@@ -1887,10 +1677,6 @@ export default function BYDStatsAnalyzer() {
                           key={activeTab === 'records' ? 'active' : 'bg'}
                           summary={summary}
                           top={top}
-                          isCompact={isCompact}
-                          isLargerCard={isLargerCard}
-                          isVertical={false}
-                          isFullscreenBYD={isFullscreenBYD}
                           recordsItemPadding={recordsItemPadding}
                           recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
                           recordsListHeightHorizontal={recordsListHeightHorizontal}
@@ -1905,11 +1691,8 @@ export default function BYDStatsAnalyzer() {
                         <HistoryTab
                           key={activeTab === 'history' ? 'active' : 'bg'}
                           filtered={filtered}
-                          isCompact={isCompact}
-                          isVertical={isVertical}
                           openTripDetail={openTripDetail}
                           setShowAllTripsModal={setShowAllTripsModal}
-                          TripCard={TripCard}
                         />
                       )}
                     </div>

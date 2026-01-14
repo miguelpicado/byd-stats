@@ -1,10 +1,37 @@
 // BYD Stats - Overview Tab Component
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
+import { useLayout } from '../../context/LayoutContext';
+
+// Static chart options that don't change
+const LINE_CHART_OPTIONS_BASE = {
+  maintainAspectRatio: false,
+  interaction: { mode: 'index', intersect: false },
+  plugins: { legend: { display: false } },
+  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
+};
+
+const PIE_CHART_OPTIONS = {
+  maintainAspectRatio: false,
+  plugins: {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: (context) => {
+          const label = context.label || '';
+          const value = context.parsed;
+          const total = context.dataset.data.reduce((a, b) => a + b, 0);
+          const percent = ((value / total) * 100).toFixed(0) + '%';
+          return `${label}: ${context.raw} (${percent})`;
+        }
+      }
+    }
+  }
+};
 
 /**
  * Overview tab showing main statistics and charts
@@ -13,14 +40,53 @@ const OverviewTab = React.memo(({
   summary,
   monthly,
   tripDist,
-  isCompact,
-  isLargerCard,
-  isVertical,
-  isFullscreenBYD,
   smallChartHeight,
   overviewSpacing
 }) => {
   const { t } = useTranslation();
+  const { isCompact, isLargerCard, isVertical, isFullscreenBYD } = useLayout();
+
+  // Memoize chart options with scales
+  const lineChartOptionsVertical = useMemo(() => ({
+    ...LINE_CHART_OPTIONS_BASE,
+    scales: {
+      y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
+      x: { grid: { display: false } }
+    }
+  }), []);
+
+  const lineChartOptionsHorizontal = useMemo(() => ({
+    ...LINE_CHART_OPTIONS_BASE,
+    scales: {
+      y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+      x: { border: { dash: [] }, grid: { display: false } }
+    }
+  }), []);
+
+  // Memoize chart data
+  const lineChartData = useMemo(() => ({
+    labels: monthly.map(m => m.monthLabel),
+    datasets: [{
+      label: 'Km',
+      data: monthly.map(m => m.km),
+      borderColor: BYD_RED,
+      backgroundColor: 'rgba(234, 0, 41, 0.1)',
+      fill: true,
+      pointBackgroundColor: BYD_RED,
+      pointRadius: 4,
+      borderWidth: 2
+    }]
+  }), [monthly]);
+
+  const pieChartData = useMemo(() => ({
+    labels: tripDist.map(d => `${d.range} km`),
+    datasets: [{
+      data: tripDist.map(d => d.count),
+      backgroundColor: tripDist.map(d => d.color),
+      borderWidth: 0,
+      hoverOffset: 4
+    }]
+  }), [tripDist]);
 
   // Render vertical layout
   if (isVertical) {
@@ -116,65 +182,14 @@ const OverviewTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
             <div style={{ width: '100%', height: smallChartHeight }}>
-              <LineJS
-                options={{
-                  maintainAspectRatio: false,
-                  interaction: { mode: 'index', intersect: false },
-                  scales: {
-                    y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
-                    x: { grid: { display: false } }
-                  },
-                  plugins: { legend: { display: false } },
-                  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
-                }}
-                data={{
-                  labels: monthly.map(m => m.monthLabel),
-                  datasets: [{
-                    label: 'Km',
-                    data: monthly.map(m => m.km),
-                    borderColor: BYD_RED,
-                    backgroundColor: 'rgba(234, 0, 41, 0.1)',
-                    fill: true,
-                    pointBackgroundColor: BYD_RED,
-                    pointRadius: 4,
-                    borderWidth: 2
-                  }]
-                }}
-              />
+              <LineJS options={lineChartOptionsVertical} data={lineChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
             <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
               <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
                 <div style={{ width: '100%', height: smallChartHeight }}>
-                  <PieJS
-                    options={{
-                      maintainAspectRatio: false,
-                      plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                          callbacks: {
-                            label: (context) => {
-                              const label = context.label || '';
-                              const value = context.parsed;
-                              const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                              const percent = ((value / total) * 100).toFixed(0) + '%';
-                              return `${label}: ${context.raw} (${percent})`;
-                            }
-                          }
-                        }
-                      }
-                    }}
-                    data={{
-                      labels: tripDist.map(d => `${d.range} km`),
-                      datasets: [{
-                        data: tripDist.map(d => d.count),
-                        backgroundColor: tripDist.map(d => d.color),
-                        borderWidth: 0,
-                        hoverOffset: 4
-                      }]
-                    }}
-                  />
+                  <PieJS options={PIE_CHART_OPTIONS} data={pieChartData} />
                 </div>
               </div>
               <div className={`grid ${isCompact ? 'grid-cols-1 w-full gap-1' : 'md:grid-cols-1 md:w-1/2 grid-cols-5 w-full gap-2 mt-4'} text-center`}>
@@ -280,65 +295,14 @@ const OverviewTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
           <div style={{ width: '100%', height: smallChartHeight }}>
-            <LineJS
-              options={{
-                maintainAspectRatio: false,
-                interaction: { mode: 'index', intersect: false },
-                scales: {
-                  y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
-                  x: { border: { dash: [] }, grid: { display: false } }
-                },
-                plugins: { legend: { display: false } },
-                elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
-              }}
-              data={{
-                labels: monthly.map(m => m.monthLabel),
-                datasets: [{
-                  label: 'Km',
-                  data: monthly.map(m => m.km),
-                  borderColor: BYD_RED,
-                  backgroundColor: 'rgba(234, 0, 41, 0.1)',
-                  fill: true,
-                  pointBackgroundColor: BYD_RED,
-                  pointRadius: 4,
-                  borderWidth: 2
-                }]
-              }}
-            />
+            <LineJS options={lineChartOptionsHorizontal} data={lineChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
           <div className="flex flex-row items-center gap-4">
             <div className="w-1/2">
               <div style={{ width: '100%', height: smallChartHeight }}>
-                <PieJS
-                  options={{
-                    maintainAspectRatio: false,
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: {
-                        callbacks: {
-                          label: (context) => {
-                            const label = context.label || '';
-                            const value = context.parsed;
-                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                            const percent = ((value / total) * 100).toFixed(0) + '%';
-                            return `${label}: ${context.raw} (${percent})`;
-                          }
-                        }
-                      }
-                    }
-                  }}
-                  data={{
-                    labels: tripDist.map(d => `${d.range} km`),
-                    datasets: [{
-                      data: tripDist.map(d => d.count),
-                      backgroundColor: tripDist.map(d => d.color),
-                      borderWidth: 0,
-                      hoverOffset: 4
-                    }]
-                  }}
-                />
+                <PieJS options={PIE_CHART_OPTIONS} data={pieChartData} />
               </div>
             </div>
             <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
