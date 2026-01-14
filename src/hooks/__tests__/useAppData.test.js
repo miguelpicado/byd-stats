@@ -8,7 +8,20 @@ vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key) => key,
         i18n: { language: 'en' }
-    })
+    }),
+    initReactI18next: { type: '3rdParty', init: () => {} }
+}));
+
+vi.mock('i18next-http-backend', () => ({
+    default: { type: 'backend', init: () => {}, read: () => {} }
+}));
+
+vi.mock('i18next', () => ({
+    default: {
+        use: () => ({ use: () => ({ use: () => ({ init: () => Promise.resolve() }) }) }),
+        t: (key) => key,
+        language: 'en'
+    }
 }));
 
 describe('useAppData', () => {

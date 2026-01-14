@@ -3,6 +3,7 @@ import { useGoogleLogin } from '@react-oauth/google';
 import { googleDriveService } from '../services/googleDrive';
 import { Capacitor } from '@capacitor/core';
 import { SocialLogin } from '@capgo/capacitor-social-login';
+import { logger } from '../utils/logger';
 
 export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -30,23 +31,23 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
             } else {
                 // If profile fetch fails with 401, token is likely expired
                 if (response.status === 401) {
-                    console.warn("Token expired, clearing session");
+                    logger.warn('Token expired, clearing session');
                     // Call logout here, but ensure it doesn't cause a circular dependency or infinite loop
                     // For now, we'll just clear auth state. The actual logout function will handle clearing token.
                     setIsAuthenticated(false);
                     setUserProfile(null);
-                    localStorage.removeItem('google_access_token');
-                    localStorage.removeItem('google_token_expiry');
+                    sessionStorage.removeItem('google_access_token');
+                    sessionStorage.removeItem('google_token_expiry');
                 }
             }
         } catch (e) {
-            console.error("Error fetching user profile", e);
+            logger.error('Error fetching user profile', e);
         }
     }, []); // No dependencies needed for this specific implementation
 
     // Initial auth check (restore session)
     useEffect(() => {
-        console.log("useGoogleSync: MOUNTED");
+        logger.debug('useGoogleSync: MOUNTED');
 
         // Initialize Native SocialLogin immediately if native
         if (Capacitor.isNativePlatform()) {
@@ -54,7 +55,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 google: {
                     webClientId: import.meta.env.VITE_GOOGLE_ANDROID_CLIENT_ID
                 }
-            }).catch(err => console.error("Failed to init SocialLogin on mount:", err));
+            }).catch(err => logger.error('Failed to init SocialLogin on mount:', err));
         }
 
         const restoreSession = async () => {
@@ -62,8 +63,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 // Initialize service (Fetch mode)
                 await googleDriveService.initClient();
 
-                const savedToken = localStorage.getItem('google_access_token');
-                const tokenExpiry = localStorage.getItem('google_token_expiry');
+                const savedToken = sessionStorage.getItem('google_access_token');
+                const tokenExpiry = sessionStorage.getItem('google_token_expiry');
 
                 if (savedToken && tokenExpiry) {
                     const expiryTime = parseInt(tokenExpiry, 10);
@@ -71,18 +72,18 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
 
                     // Check if token is still valid (with 5 minute buffer)
                     if (now < expiryTime - (5 * 60 * 1000)) {
-                        console.log("Restoring session from valid token");
+                        logger.debug('Restoring session from valid token');
                         googleDriveService.setAccessToken(savedToken);
                         setIsAuthenticated(true);
                         fetchUserProfile(savedToken);
                     } else {
-                        console.log("Token expired, clearing session");
-                        localStorage.removeItem('google_access_token');
-                        localStorage.removeItem('google_token_expiry');
+                        logger.debug('Token expired, clearing session');
+                        sessionStorage.removeItem('google_access_token');
+                        sessionStorage.removeItem('google_token_expiry');
                     }
                 } else if (savedToken) {
                     // Old token without expiry - try to validate it
-                    console.log("Found token without expiry, validating...");
+                    logger.debug('Found token without expiry, validating...');
                     googleDriveService.setAccessToken(savedToken);
 
                     // Try to fetch profile - if it fails, token is invalid
@@ -98,24 +99,24 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                         fetchUserProfile(savedToken);
                         // Set expiry to 1 hour from now as default
                         const expiry = Date.now() + (60 * 60 * 1000);
-                        localStorage.setItem('google_token_expiry', expiry.toString());
+                        sessionStorage.setItem('google_token_expiry', expiry.toString());
                     } else {
-                        console.log("Token validation failed, clearing");
-                        localStorage.removeItem('google_access_token');
+                        logger.debug('Token validation failed, clearing');
+                        sessionStorage.removeItem('google_access_token');
                     }
                 }
             } catch (e) {
-                console.error("Failed to restore session", e);
-                localStorage.removeItem('google_access_token');
-                localStorage.removeItem('google_token_expiry');
+                logger.error('Failed to restore session', e);
+                sessionStorage.removeItem('google_access_token');
+                sessionStorage.removeItem('google_token_expiry');
             }
         };
         restoreSession();
-        return () => console.log("useGoogleSync: UNMOUNTED");
+        return () => logger.debug('useGoogleSync: UNMOUNTED');
     }, [fetchUserProfile]);
 
     useEffect(() => {
-        console.log("useGoogleSync: isAuthenticated changed to:", isAuthenticated);
+        logger.debug('useGoogleSync: isAuthenticated changed to:', isAuthenticated);
     }, [isAuthenticated]);
 
     // Moved fetchUserProfile definition above useEffect to avoid lint warning and ensure availability
@@ -128,18 +129,18 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
             if (Capacitor.isNativePlatform()) {
                 try {
                     await SocialLogin.logout({ provider: 'google' });
-                    console.log("Native SocialLogin logout completed");
+                    logger.debug('Native SocialLogin logout completed');
                 } catch (nativeErr) {
-                    console.warn("Native logout error (ignoring):", nativeErr);
+                    logger.warn('Native logout error (ignoring):', nativeErr);
                 }
             }
 
-            localStorage.removeItem('google_access_token'); // Clear Token
-            localStorage.removeItem('google_token_expiry'); // Clear Token Expiry
+            sessionStorage.removeItem('google_access_token'); // Clear Token
+            sessionStorage.removeItem('google_token_expiry'); // Clear Token Expiry
             setIsAuthenticated(false);
             setUserProfile(null);
         } catch (e) {
-            console.error("Logout failed", e);
+            logger.error('Logout failed', e);
         }
     }, []);
 
@@ -159,7 +160,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
 
             if (files && files.length > 0) {
                 fileId = files[0].id;
-                console.log("Found existing DB file:", fileId);
+                logger.debug('Found existing DB file:', fileId);
             }
 
             // 2. Download Remote Data
@@ -173,14 +174,14 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
             const isFreshLogin = localTrips.length === 0 && !newTripsData && remoteData.trips.length > 0;
 
             if (isFreshLogin) {
-                console.log("Fresh login detected: Loading data from Cloud.");
+                logger.debug('Fresh login detected: Loading data from Cloud.');
                 setLocalTrips(remoteData.trips);
                 if (remoteData.settings && Object.keys(remoteData.settings).length > 0) {
                     setSettings(remoteData.settings);
                 }
             } else {
                 // Standard Merge: Union of local + remote
-                console.log("Syncing: Merging local and cloud data.");
+                logger.debug('Syncing: Merging local and cloud data.');
                 const currentTrips = newTripsData || localTrips;
 
                 // Merge Data (Services handles Trips Union and Settings Overlay)
@@ -201,11 +202,11 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
             setLastSyncTime(new Date());
 
         } catch (e) {
-            console.error("Sync failed:", e);
+            logger.error('Sync failed:', e);
 
             if (e.status === 401 || e.status === 403 ||
                 (e.result && e.result.error && (e.result.error.code === 401 || e.result.error.code === 403))) {
-                console.warn("Auth error (401/403), logging out...");
+                logger.warn('Auth error (401/403), logging out...');
                 logout(); // Auto logout on auth error or permission denied
             }
             setError(e.message || "Error de sincronización");
@@ -217,11 +218,11 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     // Web login hook (only used on web)
     const webLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
-            console.log("Web Login Success:", tokenResponse);
+            logger.debug('Web Login Success:', tokenResponse);
             await handleLoginSuccess(tokenResponse.access_token);
         },
         onError: (error) => {
-            console.error("Web Login Failed:", error);
+            logger.error('Web Login Failed:', error);
             setError("Login failed");
         },
         scope: "https://www.googleapis.com/auth/drive.appdata"
@@ -230,12 +231,12 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     // Common login success handler
     const handleLoginSuccess = async (accessToken) => {
         googleDriveService.setAccessToken(accessToken);
-        localStorage.setItem('google_access_token', accessToken);
+        sessionStorage.setItem('google_access_token', accessToken);
 
         // Google access tokens typically expire in 1 hour (3600 seconds)
         // Store expiry time as timestamp
         const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour from now
-        localStorage.setItem('google_token_expiry', expiryTime.toString());
+        sessionStorage.setItem('google_token_expiry', expiryTime.toString());
 
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);
@@ -245,7 +246,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     // Platform-aware login function
     const login = useCallback(async () => {
         const isNative = Capacitor.isNativePlatform();
-        console.log("Login attempt. Platform:", isNative ? "Native" : "Web");
+        logger.debug('Login attempt. Platform:', isNative ? 'Native' : 'Web');
 
         if (isNative) {
             // Native Android/iOS - use Capacitor SocialLogin
@@ -258,7 +259,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                         scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata']
                     }
                 });
-                console.log("Native Login Success:", JSON.stringify(result));
+                logger.debug('Native Login Success:', JSON.stringify(result));
 
                 // Get access token from authentication - try multiple paths
                 const accessToken = result.result?.accessToken?.token
@@ -269,10 +270,10 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 // Get access token from authentication - try multiple paths
 
                 if (accessToken) {
-                    console.log("Access token found, handling success...");
+                    logger.debug('Access token found, handling success...');
                     await handleLoginSuccess(accessToken);
                 } else {
-                    console.error("No accessToken found. Result:", JSON.stringify(result));
+                    logger.error('No accessToken found. Result:', JSON.stringify(result));
                     // setError("Error crítico: Google no devolvió Token de Acceso (solo ID). Reporta esto.");
 
                     // Fallback attempt (sometimes plugins put it elsewhere) or try ID token as last resort if needed
@@ -280,7 +281,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                     setError("Error: No Access Token received.");
                 }
             } catch (e) {
-                console.error("Native Login Failed:", e);
+                logger.error('Native Login Failed:', e);
                 setError(e.message || "Error al iniciar sesión con Google");
             }
         } else {

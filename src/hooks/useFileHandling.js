@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { registerPlugin } from '@capacitor/core';
+import { logger } from '../utils/logger';
 
 // Register the custom FileOpener plugin for Android native
 const FileOpener = registerPlugin('FileOpener');
@@ -27,18 +28,18 @@ export function useFileHandling() {
         // ANDROID NATIVE FILE HANDLING
         // ========================================
         if (isNative) {
-            console.log('[FileHandling] Running on Android native platform');
+            logger.debug('[FileHandling] Running on Android native platform');
 
             // Check for shared file on startup
             const checkNativeSharedFile = async () => {
                 try {
                     const result = await FileOpener.getSharedFile();
                     if (result && result.uri) {
-                        console.log('[Android] Found shared file on startup:', result);
+                        logger.debug('[Android] Found shared file on startup:', result);
                         setPendingFile({ uri: result.uri, source: 'android' });
                     }
                 } catch (err) {
-                    console.error('[Android] Error checking for shared file:', err);
+                    logger.error('[Android] Error checking for shared file:', err);
                 }
             };
 
@@ -47,18 +48,18 @@ export function useFileHandling() {
                 if (!isSubscribed) return;
 
                 try {
-                    console.log('[Android] App URL Open event:', event);
+                    logger.debug('[Android] App URL Open event:', event);
 
                     if (event.url) {
                         const fileUri = event.url;
 
                         if (fileUri.startsWith('file://') || fileUri.startsWith('content://')) {
-                            console.log('[Android] File URI detected:', fileUri);
+                            logger.debug('[Android] File URI detected:', fileUri);
                             setPendingFile({ uri: fileUri, source: 'android' });
                         }
                     }
                 } catch (err) {
-                    console.error('[Android] Error handling app URL open:', err);
+                    logger.error('[Android] Error handling app URL open:', err);
                     setError(err.message);
                 }
             };
@@ -75,7 +76,7 @@ export function useFileHandling() {
                     handleAppUrlOpen({ url: result.url });
                 }
             }).catch(err => {
-                console.error('[Android] Error getting launch URL:', err);
+                logger.error('[Android] Error getting launch URL:', err);
             });
 
             // Cleanup
@@ -89,32 +90,32 @@ export function useFileHandling() {
         // PWA FILE HANDLING
         // ========================================
         else {
-            console.log('[FileHandling] Running on PWA/Web platform');
+            logger.debug('[FileHandling] Running on PWA/Web platform');
 
             // 1. Handle File Handling API (when user opens .db file from system)
             if ('launchQueue' in window) {
-                console.log('[PWA] File Handling API supported');
+                logger.debug('[PWA] File Handling API supported');
 
                 window.launchQueue.setConsumer(async (launchParams) => {
                     if (!isSubscribed) return;
 
                     try {
                         if (launchParams.files && launchParams.files.length > 0) {
-                            console.log('[PWA] Files received via launchQueue:', launchParams.files.length);
+                            logger.debug('[PWA] Files received via launchQueue:', launchParams.files.length);
 
                             const fileHandle = launchParams.files[0];
                             const file = await fileHandle.getFile();
 
-                            console.log('[PWA] File opened:', file.name, file.size);
+                            logger.debug('[PWA] File opened:', file.name, file.size);
                             setPendingFile({ file, source: 'pwa-launch' });
                         }
                     } catch (err) {
-                        console.error('[PWA] Error handling launchQueue file:', err);
+                        logger.error('[PWA] Error handling launchQueue file:', err);
                         setError('Error al abrir el archivo');
                     }
                 });
             } else {
-                console.log('[PWA] File Handling API not supported');
+                logger.debug('[PWA] File Handling API not supported');
             }
 
             // 2. Handle Web Share Target API (when file is shared to PWA)
@@ -122,7 +123,7 @@ export function useFileHandling() {
                 try {
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.get('shared') === 'true') {
-                        console.log('[PWA] Shared file detected, checking IndexedDB');
+                        logger.debug('[PWA] Shared file detected, checking IndexedDB');
 
                         // Clean up URL
                         window.history.replaceState({}, '', window.location.pathname);
@@ -136,7 +137,7 @@ export function useFileHandling() {
                         request.onsuccess = () => {
                             const data = request.result;
                             if (data && data.data) {
-                                console.log('[PWA] Shared file loaded from IndexedDB:', data.name, data.size);
+                                logger.debug('[PWA] Shared file loaded from IndexedDB:', data.name, data.size);
 
                                 // Convert ArrayBuffer back to File
                                 const blob = new Blob([data.data], { type: data.type });
@@ -152,12 +153,12 @@ export function useFileHandling() {
                         };
 
                         request.onerror = () => {
-                            console.error('[PWA] Error reading shared file from IndexedDB');
+                            logger.error('[PWA] Error reading shared file from IndexedDB');
                             setError('Error al leer el archivo compartido');
                         };
                     }
                 } catch (err) {
-                    console.error('[PWA] Error checking shared file:', err);
+                    logger.error('[PWA] Error checking shared file:', err);
                 }
             };
 
@@ -195,7 +196,7 @@ export function useFileHandling() {
         // Android: need to read from URI using native plugin
         if (pendingFile.source === 'android') {
             try {
-                console.log('[Android] Reading file from URI:', pendingFile.uri);
+                logger.debug('[Android] Reading file from URI:', pendingFile.uri);
 
                 const result = await FileOpener.readFileFromUri({ uri: pendingFile.uri });
 
@@ -217,7 +218,7 @@ export function useFileHandling() {
                 const fileName = result.fileName || 'shared.db';
                 return new File([blob], fileName, { type: result.mimeType || 'application/x-sqlite3' });
             } catch (err) {
-                console.error('[Android] Error reading file from URI:', err);
+                logger.error('[Android] Error reading file from URI:', err);
                 throw err;
             }
         }
