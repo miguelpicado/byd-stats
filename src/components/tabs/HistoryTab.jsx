@@ -1,5 +1,6 @@
 // BYD Stats - History Tab Component
 import React, { useMemo, useCallback } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Zap, Battery, Clock, TrendingUp, BYD_RED } from '../Icons.jsx';
 import TripCard from '../cards/TripCard';
@@ -239,6 +240,18 @@ const HistoryTab = React.memo(({
     </div>
   );
 });
+
+HistoryTab.propTypes = {
+  filtered: PropTypes.arrayOf(PropTypes.shape({
+    trip: PropTypes.number,
+    electricity: PropTypes.number,
+    date: PropTypes.string,
+    start_timestamp: PropTypes.number,
+    duration: PropTypes.number
+  })).isRequired,
+  openTripDetail: PropTypes.func.isRequired,
+  setShowAllTripsModal: PropTypes.func.isRequired
+};
 
 HistoryTab.displayName = 'HistoryTab';
 

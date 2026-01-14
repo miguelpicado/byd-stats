@@ -1,3 +1,5 @@
+import { logger } from '../utils/logger';
+
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
 const DB_FILENAME = 'byd_stats_data.json';
@@ -13,7 +15,7 @@ export const googleDriveService = {
    * Initialize - No-op for fetch implementation, kept for compatibility
    */
   initClient: async () => {
-    console.log("googleDriveService: Init (Fetch mode) - Ready");
+    logger.debug('googleDriveService: Init (Fetch mode) - Ready');
     return Promise.resolve(true);
   },
 
@@ -68,7 +70,7 @@ export const googleDriveService = {
       const data = await response.json();
       return data.files;
     } catch (error) {
-      console.error("Error listing files", error);
+      logger.error('Error listing files', error);
       throw error;
     }
   },
@@ -88,11 +90,11 @@ export const googleDriveService = {
       }
 
       const result = await response.json();
-      console.log("Download successful");
+      logger.debug('Download successful');
 
       // Normalize to { trips: [], settings: {} }
       if (Array.isArray(result)) {
-        console.log("Migrating legacy array format to object...");
+        logger.debug('Migrating legacy array format to object...');
         return { trips: result, settings: {} };
       }
 
@@ -105,7 +107,7 @@ export const googleDriveService = {
 
       return { trips: [], settings: {} };
     } catch (error) {
-      console.error("Error downloading file", error);
+      logger.error('Error downloading file', error);
       throw error;
     }
   },
@@ -137,7 +139,7 @@ export const googleDriveService = {
         }
         const createData = await createRes.json();
         fileId = createData.id;
-        console.log("Created new file ID:", fileId);
+        logger.debug('Created new file ID:', fileId);
       }
 
       // Step 2: Upload Content (Simple Upload)
@@ -157,7 +159,7 @@ export const googleDriveService = {
       return await updateRes.json();
 
     } catch (error) {
-      console.error('Error uploading file:', error);
+      logger.error('Error uploading file:', error);
       throw error;
     }
   },
