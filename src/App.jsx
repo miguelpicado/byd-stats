@@ -8,8 +8,9 @@ import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter a
 // Import extracted utilities (code splitting for utils)
 import { formatMonth, formatDate, formatTime } from './utils/dateUtils';
 import { processData } from './utils/dataProcessing';
+import { calculateScore, getScoreColor } from './utils/formatters';
 import { logger } from './utils/logger';
-// Formatters are defined locally in this file for performance
+import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPACT_SPACE_Y } from './constants/layout';
 import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
@@ -18,6 +19,7 @@ import { BYDLogo, Battery, Zap, MapPin, Clock, TrendingUp, Calendar, Upload, Car
 import StatCard from './components/ui/StatCard';
 import ChartCard from './components/ui/ChartCard';
 import TripCard from './components/cards/TripCard';
+import TabFallback from './components/common/TabFallback';
 // Keep OverviewTab static (initial tab)
 import OverviewTab from './components/tabs/OverviewTab';
 // Lazy load other tabs for code splitting
@@ -46,66 +48,8 @@ const DatabaseUploadModalLazy = lazy(() => import('./components/modals/DatabaseU
 const LegalModalLazy = lazy(() => import('./components/modals/LegalModal'));
 const LegalPageLazy = lazy(() => import('./pages/LegalPage'));
 
-const STORAGE_KEY = 'byd_stats_data';
-const TRIP_HISTORY_KEY = 'byd_trip_history';
-const TAB_PADDING = '12px 12px calc(96px + env(safe-area-inset-bottom)) 12px';
-const COMPACT_TAB_PADDING = '8px 10px calc(80px + env(safe-area-inset-bottom)) 10px';
-const COMPACT_SPACE_Y = 'space-y-3';
-
-
-const GitHubFooter = React.memo(() => (
-  <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
-    <a
-      href="https://github.com/miguelpicado/byd-stats"
-      target="_blank"
-      rel="noopener noreferrer"
-      className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mx-auto w-fit"
-    >
-      <GitHub className="w-5 h-5" />
-      <span>Ver en GitHub</span>
-    </a>
-  </div>
-));
-
-
-// Tab loading fallback component
-const TabFallback = () => (
-  <div className="flex items-center justify-center h-48">
-    <div className="animate-pulse text-slate-400 dark:text-slate-500">
-      Loading...
-    </div>
-  </div>
-);
-
 // processData imported from utils/dataProcessing.js
-
-// Helper functions
-const calculateScore = (efficiency, minEff, maxEff) => {
-  if (!efficiency || maxEff === minEff) return 5;
-  // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
-  // Score should be 10 when efficiency equals minEff (best)
-  // Score should be 0 when efficiency equals maxEff (worst)
-  const normalized = (maxEff - efficiency) / (maxEff - minEff);
-  return Math.max(0, Math.min(10, normalized * 10));
-};
-
-// Get color based on score (0=red, 5=orange, 10=green)
-const getScoreColor = (score) => {
-  if (score >= 5) {
-    // Green to orange (score 5-10)
-    const ratio = (score - 5) / 5;
-    const r = Math.round(255 - ratio * 155);
-    const g = Math.round(165 + ratio * 90);
-    return `rgb(${r}, ${g}, 0)`;
-  } else {
-    // Red to orange (score 0-5)
-    const ratio = score / 5;
-    const r = Math.round(234 + ratio * 21);
-    const g = Math.round(ratio * 165);
-    return `rgb(${r}, ${g}, 41)`;
-  }
-};
-
+// calculateScore and getScoreColor imported from utils/formatters.js
 
 
 export default function BYDStatsAnalyzer() {

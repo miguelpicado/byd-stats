@@ -1,5 +1,6 @@
 // BYD Stats - Overview Tab Component
 import React, { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from '../Icons.jsx';
@@ -322,6 +323,33 @@ const OverviewTab = React.memo(({
     </div>
   );
 });
+
+OverviewTab.propTypes = {
+  summary: PropTypes.shape({
+    totalKm: PropTypes.string,
+    kmDay: PropTypes.string,
+    totalKwh: PropTypes.string,
+    totalTrips: PropTypes.number,
+    tripsDay: PropTypes.string,
+    totalHours: PropTypes.string,
+    avgEff: PropTypes.string,
+    avgSpeed: PropTypes.string,
+    avgKm: PropTypes.string,
+    avgMin: PropTypes.string,
+    daysActive: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+  }).isRequired,
+  monthly: PropTypes.arrayOf(PropTypes.shape({
+    monthLabel: PropTypes.string,
+    km: PropTypes.number
+  })).isRequired,
+  tripDist: PropTypes.arrayOf(PropTypes.shape({
+    range: PropTypes.string,
+    count: PropTypes.number,
+    color: PropTypes.string
+  })).isRequired,
+  smallChartHeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+  overviewSpacing: PropTypes.string.isRequired
+};
 
 OverviewTab.displayName = 'OverviewTab';
 
