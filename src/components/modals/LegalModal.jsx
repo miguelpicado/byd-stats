@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { X, Shield, FileText } from '../Icons.jsx';
 import LegalContent from '../LegalContent.jsx';
 import { useTranslation } from 'react-i18next';
@@ -22,6 +23,9 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
             ></div>
 
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="legal-modal-title"
                 className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl h-[80vh] flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -32,12 +36,13 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
                             <Shield className="w-6 h-6 text-slate-600 dark:text-slate-400" />
                         </div>
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('legal.pageTitle')}</h2>
+                            <h2 id="legal-modal-title" className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('legal.pageTitle')}</h2>
                             <p className="text-xs text-slate-500 dark:text-slate-400">{t('legal.projectSubtitle')}</p>
                         </div>
                     </div>
                     <button
                         onClick={onClose}
+                        aria-label="Close legal"
                         className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors text-slate-500"
                     >
                         <X className="w-6 h-6" />
@@ -45,10 +50,14 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
                 </div>
 
                 {/* Tabs */}
-                <div className="flex border-b border-slate-200 dark:border-slate-800">
+                <div role="tablist" aria-label="Legal sections" className="flex border-b border-slate-200 dark:border-slate-800">
                     {sections.map((s) => (
                         <button
                             key={s.id}
+                            role="tab"
+                            id={`tab-${s.id}`}
+                            aria-selected={activeSection === s.id}
+                            aria-controls={`tabpanel-${s.id}`}
                             onClick={() => setActiveSection(s.id)}
                             className={`flex-1 py-3 px-4 text-sm font-medium flex items-center justify-center gap-2 transition-all border-b-2 ${activeSection === s.id
                                 ? 'border-red-600 text-red-600 bg-red-50/10'
@@ -62,7 +71,12 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar">
+                <div
+                    role="tabpanel"
+                    id={`tabpanel-${activeSection}`}
+                    aria-labelledby={`tab-${activeSection}`}
+                    className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar"
+                >
                     <LegalContent section={activeSection} />
                 </div>
 
@@ -78,6 +92,12 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
             </div>
         </div>
     );
+};
+
+LegalModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    initialSection: PropTypes.oneOf(['privacy', 'legal'])
 };
 
 export default LegalModal;

@@ -15,7 +15,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     // Define fetchUserProfile here so it's available for the initial useEffect
     const fetchUserProfile = useCallback(async (accessToken) => {
         try {
-            const response = await fetch(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${accessToken}`, {
+            const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo', {
                 headers: {
                     Authorization: `Bearer ${accessToken}`,
                     Accept: 'application/json'
@@ -87,7 +87,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                     googleDriveService.setAccessToken(savedToken);
 
                     // Try to fetch profile - if it fails, token is invalid
-                    const response = await fetch(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${savedToken}`, {
+                    const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo', {
                         headers: {
                             Authorization: `Bearer ${savedToken}`,
                             Accept: 'application/json'

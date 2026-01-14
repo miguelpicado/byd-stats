@@ -2,8 +2,8 @@
     "name": "BYD Stats",
     "short_name": "BYD Stats",
     "description": "Analiza las estadísticas de tu vehículo BYD de forma local y privada",
-    "id": "/?v=1.2",
-    "start_url": "/?v=1.2",
+    "id": "/?v=1.3",
+    "start_url": "/?v=1.3",
     "scope": "/",
     "display": "standalone",
     "display_override": [
@@ -12,7 +12,10 @@
     "background_color": "#0f172a",
     "theme_color": "#0f172a",
     "orientation": "any",
-    "categories": ["utilities", "productivity"],
+    "categories": [
+        "utilities",
+        "productivity"
+    ],
     "lang": "es-ES",
     "dir": "ltr",
     "launch_handler": {
