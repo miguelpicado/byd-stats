@@ -43,15 +43,18 @@ const FilterModal = ({
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="filter-modal-title"
                 className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                         <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
+                        <h2 id="filter-modal-title" className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
                     </div>
-                    <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                    <button onClick={onClose} aria-label="Close filter" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         <Plus className="w-6 h-6 rotate-45" />
                     </button>
                 </div>
