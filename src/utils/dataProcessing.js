@@ -2,6 +2,7 @@
 
 import { BYD_RED } from './constants';
 import { formatMonth, formatDate } from './dateUtils';
+import { logger } from './logger';
 
 /**
  * Process raw trip data into statistics and aggregated data
@@ -57,7 +58,7 @@ export function processData(rows) {
                 }
             }
         } catch (e) {
-            console.warn('Skipping malformed trip:', trip, e);
+            logger.warn('Skipping malformed trip:', trip, e);
         }
     });
 

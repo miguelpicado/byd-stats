@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { processData } from '../utils/dataProcessing';
+import { logger } from '../utils/logger';
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -43,7 +44,7 @@ const useAppData = () => {
                 if (Array.isArray(history)) setTripHistory(history);
             }
         } catch (e) {
-            console.error('Error loading from localStorage:', e);
+            logger.error('Error loading from localStorage:', e);
         }
     }, []);
 
@@ -53,7 +54,7 @@ const useAppData = () => {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(rawTrips));
             } catch (e) {
-                console.error('Error saving to localStorage:', e);
+                logger.error('Error saving to localStorage:', e);
             }
         }
     }, [rawTrips]);
@@ -64,7 +65,7 @@ const useAppData = () => {
             try {
                 localStorage.setItem(TRIP_HISTORY_KEY, JSON.stringify(tripHistory));
             } catch (e) {
-                console.error('Error saving trip history:', e);
+                logger.error('Error saving trip history:', e);
             }
         }
     }, [tripHistory]);

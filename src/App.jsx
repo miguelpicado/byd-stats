@@ -224,7 +224,7 @@ export default function BYDStatsAnalyzer() {
   const toggleFullscreen = useCallback(() => {
     if (!document.fullscreenElement) {
       document.documentElement.requestFullscreen().catch((e) => {
-        console.error(`Error attempting to enable fullscreen mode: ${e.message} (${e.name})`);
+        logger.error(`Error attempting to enable fullscreen mode: ${e.message} (${e.name})`);
       });
     } else {
       if (document.exitFullscreen) {
@@ -240,7 +240,7 @@ export default function BYDStatsAnalyzer() {
     try {
       localStorage.setItem('byd_settings', JSON.stringify(settings));
     } catch (e) {
-      console.error('Error saving settings:', e);
+      logger.error('Error saving settings:', e);
     }
   }, [settings]);
 
@@ -312,7 +312,7 @@ export default function BYDStatsAnalyzer() {
       // 4. Native StatusBar (for Capacitor apps)
       if (isNative && window.StatusBar) {
         window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-          .catch(e => console.error('StatusBar error:', e));
+          .catch(e => logger.error('StatusBar error:', e));
       }
     };
 
@@ -373,7 +373,7 @@ export default function BYDStatsAnalyzer() {
 
         clearPendingFile();
       } catch (err) {
-        console.error('[FileHandling] Error processing file:', err);
+        logger.error('[FileHandling] Error processing file:', err);
         alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + err.message);
         clearPendingFile();
       }
@@ -1097,22 +1097,22 @@ export default function BYDStatsAnalyzer() {
       {showModal && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowModal(false)}>
           <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-            <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">Actualizar datos</h3>
+            <h3 className="text-xl font-bold mb-4 text-slate-900 dark:text-white">{t('settings.updateData')}</h3>
             <div className="space-y-3">
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
                 <input type="file" accept="*/*,image/*,.db,.jpg,.jpeg" className="hidden" onChange={(e) => onFile(e, true)} />
                 <Plus className="w-8 h-8 mx-auto mb-2 text-green-500" />
-                <p className="text-slate-900 dark:text-white">Combinar con existentes</p>
+                <p className="text-slate-900 dark:text-white">{t('upload.mergeExisting')}</p>
               </label>
               <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
                 <input type="file" accept="*/*,image/*,.db,.jpg,.jpeg" className="hidden" onChange={(e) => onFile(e, false)} />
                 <Upload className="w-8 h-8 mx-auto mb-2 text-amber-500" />
-                <p className="text-slate-900 dark:text-white">Reemplazar todo</p>
+                <p className="text-slate-900 dark:text-white">{t('upload.replaceAll')}</p>
               </label>
             </div>
             <div className="flex gap-3 mt-6">
-              <button onClick={() => setShowModal(false)} className="flex-1 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600">Cancelar</button>
-              <button onClick={clearData} className="py-2 px-4 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30">Borrar todo</button>
+              <button onClick={() => setShowModal(false)} className="flex-1 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-xl hover:bg-slate-300 dark:hover:bg-slate-600">{t('common.cancel')}</button>
+              <button onClick={clearData} className="py-2 px-4 bg-red-500/20 text-red-400 rounded-xl hover:bg-red-500/30">{t('upload.deleteAll')}</button>
             </div>
           </div>
         </div>
@@ -1304,10 +1304,13 @@ export default function BYDStatsAnalyzer() {
         {/* Horizontal Layout: Sidebar with tabs */}
         {layoutMode === 'horizontal' && (
           <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
-            <div className="p-4 space-y-2">
+            <div role="tablist" aria-label="Main navigation" className="p-4 space-y-2">
               {tabs.map((t) => (
                 <button
                   key={t.id}
+                  role="tab"
+                  aria-selected={activeTab === t.id}
+                  aria-controls={`tabpanel-${t.id}`}
                   onClick={() => handleTabClick(t.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${activeTab === t.id
                     ? 'text-white'
@@ -1354,7 +1357,7 @@ export default function BYDStatsAnalyzer() {
                 tabs.map((tab) => (
                   <div key={tab.id} className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
                     <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
-                    <p className="text-slate-400">No hay datos para mostrar</p>
+                    <p className="text-slate-400">{t('common.noData')}</p>
                   </div>
                 ))
               ) : (
@@ -1460,7 +1463,7 @@ export default function BYDStatsAnalyzer() {
               {!data ? (
                 <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
                   <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
-                  <p className="text-slate-400">No hay datos para mostrar</p>
+                  <p className="text-slate-400">{t('common.noData')}</p>
                 </div>
               ) : (
                 <>
@@ -1681,10 +1684,13 @@ export default function BYDStatsAnalyzer() {
           {layoutMode === 'vertical' && (
             <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
               <div className="max-w-7xl mx-auto px-2 py-2">
-                <div className="flex justify-around items-center">
+                <div role="tablist" aria-label="Main navigation" className="flex justify-around items-center">
                   {tabs.map((t) => (
                     <button
                       key={t.id}
+                      role="tab"
+                      aria-selected={activeTab === t.id}
+                      aria-controls={`tabpanel-${t.id}`}
                       onClick={() => handleTabClick(t.id)}
                       className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
                       style={{
