@@ -1,6 +1,7 @@
 // BYD Stats - Trip Card Component
 
 import React, { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { calculateScore, getScoreColor } from '../../utils/formatters';
 import { formatDate, formatTime } from '../../utils/dateUtils';
@@ -70,6 +71,19 @@ const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact }) => {
         </div>
     );
 });
+
+TripCard.propTypes = {
+    trip: PropTypes.shape({
+        trip: PropTypes.number,
+        electricity: PropTypes.number,
+        date: PropTypes.string,
+        start_timestamp: PropTypes.number
+    }).isRequired,
+    minEff: PropTypes.number.isRequired,
+    maxEff: PropTypes.number.isRequired,
+    onClick: PropTypes.func.isRequired,
+    isCompact: PropTypes.bool
+};
 
 TripCard.displayName = 'TripCard';
 
