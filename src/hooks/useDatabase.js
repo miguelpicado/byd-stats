@@ -1,6 +1,7 @@
 // BYD Stats - useDatabase Hook
 
 import { useState, useCallback } from 'react';
+import { logger } from '../utils/logger';
 
 /**
  * Custom hook for database operations
@@ -11,30 +12,20 @@ export function useDatabase() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Initialize SQL.js
+    // Initialize SQL.js using dynamic import
     const initSql = useCallback(async () => {
-        return new Promise((resolve, reject) => {
-            const sc = document.createElement('script');
-            sc.src = '/assets/sql/sql-wasm.min.js';
-            sc.onload = async () => {
-                try {
-                    window.SQL = await window.initSqlJs({
-                        locateFile: f => `/assets/sql/${f}`
-                    });
-                    setSqlReady(true);
-                    resolve(true);
-                } catch (e) {
-                    setError('Error cargando SQL.js');
-                    console.error('SQL.js load error:', e);
-                    reject(e);
-                }
-            };
-            sc.onerror = () => {
-                setError('Error cargando SQL.js');
-                reject(new Error('Failed to load SQL.js'));
-            };
-            document.head.appendChild(sc);
-        });
+        try {
+            const initSqlJs = (await import('sql.js')).default;
+            window.SQL = await initSqlJs({
+                locateFile: f => `/assets/sql/${f}`
+            });
+            setSqlReady(true);
+            return true;
+        } catch (e) {
+            setError('Error cargando SQL.js');
+            logger.error('SQL.js load error:', e);
+            throw e;
+        }
     }, []);
 
     // Process database file
@@ -83,7 +74,7 @@ export function useDatabase() {
             }
         } catch (e) {
             setError(e.message);
-            console.error('Database processing error:', e);
+            logger.error('Database processing error:', e);
             setLoading(false);
             return null;
         }
@@ -143,7 +134,7 @@ export function useDatabase() {
             db.close();
             return true;
         } catch (e) {
-            console.error('Error exporting database:', e);
+            logger.error('Error exporting database:', e);
             alert('Error al exportar la base de datos: ' + e.message);
             return false;
         }
