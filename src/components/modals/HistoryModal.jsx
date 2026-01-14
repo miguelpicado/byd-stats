@@ -3,7 +3,8 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { BYD_RED } from '../../utils/constants';
-import { Database, Plus } from '../Icons.jsx';
+import { Database } from '../Icons.jsx';
+import ModalHeader from '../common/ModalHeader';
 import { useTranslation } from 'react-i18next';
 
 /**
@@ -31,15 +32,13 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
                 className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                        <Database className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                        <h2 id="history-modal-title" className="text-xl font-bold text-slate-900 dark:text-white">{t('historyMod.title')}</h2>
-                    </div>
-                    <button onClick={onClose} aria-label="Close history" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                        <Plus className="w-6 h-6 rotate-45" />
-                    </button>
-                </div>
+                <ModalHeader
+                    title={t('historyMod.title')}
+                    Icon={Database}
+                    onClose={onClose}
+                    id="history-modal-title"
+                    iconClassName="w-5 h-5 text-slate-600 dark:text-slate-400"
+                />
 
                 <div className="space-y-4">
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4">

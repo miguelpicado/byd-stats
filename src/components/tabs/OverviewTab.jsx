@@ -295,15 +295,15 @@ const OverviewTab = React.memo(({
       </div>
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
-          <div style={{ width: '100%', height: smallChartHeight }}>
-            <LineJS options={lineChartOptionsHorizontal} data={lineChartData} />
+          <div key="line-container-h" style={{ width: '100%', height: smallChartHeight }}>
+            <LineJS key="overview-line-h" redraw={true} options={lineChartOptionsHorizontal} data={lineChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
           <div className="flex flex-row items-center gap-4">
             <div className="w-1/2">
-              <div style={{ width: '100%', height: smallChartHeight }}>
-                <PieJS options={PIE_CHART_OPTIONS} data={pieChartData} />
+              <div key="pie-container-h" style={{ width: '100%', height: smallChartHeight }}>
+                <PieJS key="overview-pie-h" redraw={true} options={PIE_CHART_OPTIONS} data={pieChartData} />
               </div>
             </div>
             <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
