@@ -68,7 +68,9 @@
         "kwhPerDay": "kWh/dia",
         "kWh100km": "kWh/100km",
         "kWhDay": "kWh/dia",
-        "currencyPerMonth": "€/mês"
+        "currencyPerMonth": "€/mês",
+        "exkwh": "kWh",
+        "kwh100": "kWh/100km"
     },
     "days": {
         "mon": "Segunda-feira",
@@ -132,7 +134,9 @@
         "initial": "Inicial",
         "final": "Final",
         "energyRecovered": "Energia recuperada",
-        "percentile": "Percentil"
+        "percentile": "Percentil",
+        "consumptionPerTrip": "Consumo/viagem",
+        "avgDistance": "Distância média"
     },
     "settings": {
         "title": "Configurações",
@@ -210,13 +214,32 @@
         "date": "Data",
         "efficiency": "Eficiência",
         "distance": "Distância",
-        "consumption": "Consumo"
+        "consumption": "Consumo",
+        "duration": "Duração"
     },
     "cloudSync": {
         "connected": "Nuvem conectada",
         "syncNow": "Sincronizar agora",
         "syncing": "A sincronizar...",
         "signInToSync": "Inicie sessão para sincronizar"
+    },
+    "weekdays": {
+        "mon": "Seg",
+        "tue": "Ter",
+        "wed": "Qua",
+        "thu": "Qui",
+        "fri": "Sex",
+        "sat": "Sáb",
+        "sun": "Dom"
+    },
+    "weekdaysFull": {
+        "monday": "Segunda-feira",
+        "tuesday": "Terça-feira",
+        "wednesday": "Quarta-feira",
+        "thursday": "Quinta-feira",
+        "friday": "Sexta-feira",
+        "saturday": "Sábado",
+        "sunday": "Domingo"
     },
     "history": {
         "title": "Histórico de viagens",
@@ -243,14 +266,64 @@
         "dbExported": "Base de dados exportada com sucesso"
     },
     "errors": {
-        "invalidFile": "Apenas ficheiros *.DB ou *.JPG (base de dados renomeada) são permitidos\nEncontre EC_Database.db na pasta \"Energydata\" do seu carro"
+        "invalidFile": "Apenas ficheiros *.DB o *.JPG (base de dados renomeada) são permitidos\nEncontre EC_Database.db na pasta \"Energydata\" do seu carro",
+        "somethingWentWrong": "Algo correu mal",
+        "unexpectedRenderError": "A aplicação encontrou um erro inesperado",
+        "resetAndClearCache": "Reiniciar e Limpar Cache"
     },
     "legal": {
-        "title": "Documentação Legal",
-        "subtitle": "BYD Stats Analyzer",
-        "privacy": "Privacidade",
-        "terms": "Aviso Legal",
-        "understood": "Entendido"
+        "pageTitle": "Documentação Legal",
+        "projectSubtitle": "BYD Stats Analyzer",
+        "privacyTab": "Política de Privacidade",
+        "termsTab": "Aviso Legal",
+        "understood": "Entendido",
+        "lastUpdate": "Última atualização: 8 de janeiro de 2026",
+        "footerRights": "© 2026 BYD Stats Community. Projeto de Código Aberto.",
+        "footerNote": "Esta página existe para fins de transparência e conformidade com as políticas do Google Play.",
+        "privacy": {
+            "title": "Política de Privacidade",
+            "summary": "Resumo: Os seus dados são **seus**. O BYD Stats funciona localmente e não vende nem envia a sua informação para servidores externos automaticamente.",
+            "sections": {
+                "collection": {
+                    "title": "1. Recolha de Dados",
+                    "text": "A aplicação processa exclusivamente os dados contidos no ficheiro EC_Database.db gerado pelo seu veículo BYD. Estes dados incluem registos de viagens, eficiência, consumos e localizações (coordenadas GPS de início/fim se as guardar)."
+                },
+                "usage": {
+                    "title": "2. Uso da Informação",
+                    "text": "A informação é utilizada unicamente para gerar as estatísticas, gráficos e relatórios que vê no ecrã. Não realizamos rastreamento de utilizador nem perfilagem publicitária."
+                },
+                "storage": {
+                    "title": "3. Armazenamento e Segurança",
+                    "local": "Local: Os dados são guardados no armazenamento local do seu navegador ou dispositivo (IndexedDB/LocalStorage).",
+                    "cloud": "Nuvem (Opcional): Se ativar a Sincronização com Google Drive, os dados serão carregados para a sua conta privada do Google Drive (na pasta de \"application data\"). Apenas você tem acesso a esses ficheiros."
+                },
+                "thirdParty": {
+                    "title": "4. Serviços de Terceiros",
+                    "text": "Utilizamos as APIs da Google apenas para a função de sincronização opcional. Pode consultar a política de privacidade da Google para saber como gerem a sua conta Google."
+                }
+            }
+        },
+        "terms": {
+            "title": "Aviso Legal",
+            "sections": {
+                "about": {
+                    "title": "Sobre o projeto",
+                    "text": "O BYD Stats Analyzer é uma ferramenta de código aberto (Open Source) desenvolvida pela comunidade e para a comunidade. Não temos qualquer relação oficial com a BYD Auto Co., Ltd. nem com as suas filiais."
+                },
+                "trademarks": {
+                    "title": "Uso de marcas",
+                    "text": "Os nomes \"BYD\", os logótipos dos veículos e outras marcas registadas mencionadas pertencem aos seus respetivos proprietários e são utilizados aqui apenas para fins descritivos e informativos."
+                },
+                "liability": {
+                    "title": "Limitação de responsabilidade",
+                    "text": "A aplicação é oferecida \"tal como está\" (as is), sem garantias de qualquer tipo. Não nos responsabilizamos por qualquer perda de dados, imprecisão nos cálculos ou mau uso da informação obtida. Os dados são extraídos de ficheiros gerados pelo software do veículo e podem conter erros alheios a esta aplicação."
+                },
+                "contributions": {
+                    "title": "Contribuições",
+                    "text": "Se deseja contribuir, reportar um erro ou rever o código fonte, pode fazê-lo no nosso repositório oficial do GitHub."
+                }
+            }
+        }
     },
     "historyMod": {
         "title": "Histórico de viagens",
@@ -269,6 +342,12 @@
         "viewOnGithub": "Ver no GitHub",
         "madeWith": "Feito com ❤️ para a comunidade BYD"
     },
+    "help": {
+        "title": "Ajuda",
+        "description": "Ajuda e Suporte",
+        "subtitle": "Encontrou um erro ou tem sugestões?",
+        "reportBug": "Reportar erro"
+    },
     "header": {
         "title": "Estatísticas BYD",
         "trips": "{{count}} viagens"
@@ -280,6 +359,13 @@
         "history": "Histórico de viagens",
         "settings": "Definições",
         "filters": "Filtros"
+    },
+    "sort": {
+        "label": "Ordenar:",
+        "newest": "Mais recentes",
+        "oldest": "Mais antigos",
+        "longest": "Mais longos",
+        "efficient": "Mais eficientes"
     },
     "landing": {
         "title": "Estatísticas BYD",
