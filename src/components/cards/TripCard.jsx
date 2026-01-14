@@ -1,6 +1,7 @@
 // BYD Stats - Trip Card Component
 
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { calculateScore, getScoreColor } from '../../utils/formatters';
 import { formatDate, formatTime } from '../../utils/dateUtils';
 
@@ -14,6 +15,8 @@ import { formatDate, formatTime } from '../../utils/dateUtils';
  * @param {boolean} props.isCompact - Compact mode flag
  */
 const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact }) => {
+    const { t } = useTranslation();
+
     const efficiency = useMemo(() => {
         if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
             return 0;
@@ -43,17 +46,17 @@ const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact }) => {
             </div>
             <div className="grid grid-cols-4 gap-2">
                 <div className="text-center">
-                    <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Distancia</p>
+                    <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.distance')}</p>
                     <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.trip?.toFixed(1)}</p>
                     <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>km</p>
                 </div>
                 <div className="text-center">
-                    <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Consumo</p>
+                    <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('tripDetail.consumption')}</p>
                     <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.electricity?.toFixed(2)}</p>
                     <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh</p>
                 </div>
                 <div className="text-center">
-                    <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Eficiencia</p>
+                    <p className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.efficiency')}</p>
                     <p className={`text-slate-900 dark:text-white font-bold ${isCompact ? 'text-sm' : 'text-base sm:text-xl'}`}>{efficiency.toFixed(2)}</p>
                     <p className={`text-slate-500 dark:text-slate-400 ${isCompact ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh/100km</p>
                 </div>
