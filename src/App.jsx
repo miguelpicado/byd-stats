@@ -8,6 +8,7 @@ import { Line as LineJS, Bar as BarJS, Pie as PieJS, Radar as RadarJS, Scatter a
 // Import extracted utilities (code splitting for utils)
 import { formatMonth, formatDate, formatTime } from './utils/dateUtils';
 import { processData } from './utils/dataProcessing';
+import { logger } from './utils/logger';
 // Formatters are defined locally in this file for performance
 import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
@@ -235,7 +236,7 @@ export default function BYDStatsAnalyzer() {
   const recordsListHeightHorizontal = isFullscreenBYD ? 'h-[389px]' : (isCompact ? 'h-[369px]' : 'h-[442px]');
 
   // DEBUG: Log to verify mode detection
-  console.log('[DEBUG] Mode detection:', {
+  logger.debug('[DEBUG] Mode detection:', {
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     isFullscreenBYD,
     isCompact,
@@ -403,7 +404,7 @@ export default function BYDStatsAnalyzer() {
 
     const handleSharedFile = async () => {
       try {
-        console.log('[FileHandling] Processing pending file from:', pendingFile.source);
+        logger.debug('[FileHandling] Processing pending file from:', pendingFile.source);
 
         // Read file using unified handler (works for both Android and PWA)
         const file = await readFile(pendingFile);
@@ -420,7 +421,7 @@ export default function BYDStatsAnalyzer() {
         const trips = await processDBHook(file, rawTrips, false);
         if (trips) {
           setRawTrips(trips);
-          console.log('[FileHandling] File processed successfully:', trips.length, 'trips');
+          logger.debug('[FileHandling] File processed successfully:', trips.length, 'trips');
 
           // Show success message
           alert(t('upload.success') || 'Archivo cargado correctamente');
@@ -447,7 +448,7 @@ export default function BYDStatsAnalyzer() {
       setRawTrips(trips);
       // Auto-sync if connected
       if (googleSync.isAuthenticated) {
-        console.log("Auto-syncing new data to cloud...");
+        logger.debug('Auto-syncing new data to cloud...');
         googleSync.syncNow(trips);
       }
       setShowModal(false);
