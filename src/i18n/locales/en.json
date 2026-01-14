@@ -243,9 +243,10 @@
     },
     "footer": {
         "privacy": "Privacy",
+        "madeWith": "Made with ❤️ by Miguel Picado",
         "legal": "Legal",
         "github": "GitHub",
-        "email": "Email",
+        "email": "Contact Email",
         "openSource": "Open Source Project",
         "viewOnGithub": "View on GitHub"
     },
