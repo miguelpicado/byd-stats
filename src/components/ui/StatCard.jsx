@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 import { BYD_RED } from '../Icons.jsx';
 
 const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub, isCompact, lowPadding, isLarger, isVerticalMode }) => (
@@ -15,5 +16,18 @@ const StatCard = React.memo(({ icon: Icon, label, value, unit, color, sub, isCom
         </div>
     </div>
 ));
+
+StatCard.propTypes = {
+    icon: PropTypes.elementType.isRequired,
+    label: PropTypes.string.isRequired,
+    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
+    unit: PropTypes.string,
+    color: PropTypes.string,
+    sub: PropTypes.string,
+    isCompact: PropTypes.bool,
+    lowPadding: PropTypes.bool,
+    isLarger: PropTypes.bool,
+    isVerticalMode: PropTypes.bool
+};
 
 export default StatCard;

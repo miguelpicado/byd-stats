@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 const ChartCard = React.memo(({ title, children, className = "", isCompact }) => (
     <div className={`bg-white dark:bg-slate-800/50 rounded-2xl border border-slate-200 dark:border-slate-700/50 ${className} ${isCompact ? 'p-2' : 'p-4 sm:p-6'}`}>
@@ -6,5 +7,12 @@ const ChartCard = React.memo(({ title, children, className = "", isCompact }) =>
         {children}
     </div>
 ));
+
+ChartCard.propTypes = {
+    title: PropTypes.string,
+    children: PropTypes.node.isRequired,
+    className: PropTypes.string,
+    isCompact: PropTypes.bool
+};
 
 export default ChartCard;
