@@ -5,6 +5,7 @@ import App from './App.jsx'
 
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { AppProvider } from './context/AppContext';
+import { LayoutProvider } from './context/LayoutContext';
 import ErrorBoundary from './components/ErrorBoundary';
 import './i18n';  // Initialize i18n
 
@@ -14,9 +15,11 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <GoogleOAuthProvider clientId={WEB_CLIENT_ID}>
       <AppProvider>
-        <ErrorBoundary>
-          <App />
-        </ErrorBoundary>
+        <LayoutProvider>
+          <ErrorBoundary>
+            <App />
+          </ErrorBoundary>
+        </LayoutProvider>
       </AppProvider>
     </GoogleOAuthProvider>
   </StrictMode>,
