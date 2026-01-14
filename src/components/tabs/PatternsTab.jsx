@@ -5,6 +5,7 @@ import { Bar as BarJS, Radar as RadarJS } from 'react-chartjs-2';
 import { Calendar, Clock, MapPin, TrendingUp, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
+import { useLayout } from '../../context/LayoutContext';
 
 // Static chart options
 const BAR_CHART_OPTIONS_VERTICAL = {
@@ -45,13 +46,11 @@ const PatternsTab = React.memo(({
   weekday,
   hourly,
   summary,
-  isCompact,
-  isLargerCard,
-  isVertical,
   patternsSpacing,
   patternsChartHeight
 }) => {
   const { t } = useTranslation();
+  const { isCompact, isLargerCard, isVertical } = useLayout();
 
   // Calculate top day and hour
   const topDay = useMemo(() =>

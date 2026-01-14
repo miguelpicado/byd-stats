@@ -5,6 +5,7 @@ import { Line as LineJS, Scatter as ScatterJS } from 'react-chartjs-2';
 import { Battery, Zap, MapPin, TrendingUp, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
+import { useLayout } from '../../context/LayoutContext';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
@@ -32,12 +33,10 @@ const EfficiencyTab = React.memo(({
   summary,
   monthly,
   effScatter,
-  isCompact,
-  isLargerCard,
-  isVertical,
   largeChartHeight
 }) => {
   const { t } = useTranslation();
+  const { isCompact, isLargerCard, isVertical } = useLayout();
 
   // Calculate consumption per trip
   const consumptionPerTrip = useMemo(() => {

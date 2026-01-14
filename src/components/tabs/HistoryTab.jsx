@@ -2,8 +2,8 @@
 import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MapPin, Zap, Battery, Clock, TrendingUp, BYD_RED } from '../Icons.jsx';
-import { formatDate, formatTime } from '../../utils/dateUtils';
-import { calculateScore, getScoreColor } from '../../utils/formatters';
+import TripCard from '../cards/TripCard';
+import { useLayout } from '../../context/LayoutContext';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
@@ -12,13 +12,11 @@ const COMPACT_SPACE_Y = 'space-y-3';
  */
 const HistoryTab = React.memo(({
   filtered,
-  isCompact,
-  isVertical,
   openTripDetail,
-  setShowAllTripsModal,
-  TripCard
+  setShowAllTripsModal
 }) => {
   const { t } = useTranslation();
+  const { isCompact, isVertical } = useLayout();
 
   // Memoize all calculations to avoid recalculating on every render
   const {
@@ -147,10 +145,7 @@ const HistoryTab = React.memo(({
                   minEff={minEff}
                   maxEff={maxEff}
                   onClick={openTripDetail}
-                  formatDate={formatDate}
-                  formatTime={formatTime}
-                  calculateScore={calculateScore}
-                  getScoreColor={getScoreColor}
+                  isCompact={isCompact}
                 />
               ))}
             </div>
@@ -162,10 +157,7 @@ const HistoryTab = React.memo(({
                   minEff={minEff}
                   maxEff={maxEff}
                   onClick={openTripDetail}
-                  formatDate={formatDate}
-                  formatTime={formatTime}
-                  calculateScore={calculateScore}
-                  getScoreColor={getScoreColor}
+                  isCompact={isCompact}
                 />
               ))}
             </div>
@@ -202,10 +194,7 @@ const HistoryTab = React.memo(({
                   minEff={minEff}
                   maxEff={maxEff}
                   onClick={openTripDetail}
-                  formatDate={formatDate}
-                  formatTime={formatTime}
-                  calculateScore={calculateScore}
-                  getScoreColor={getScoreColor}
+                  isCompact={isCompact}
                 />
               ))}
             </div>
@@ -217,10 +206,7 @@ const HistoryTab = React.memo(({
                   minEff={minEff}
                   maxEff={maxEff}
                   onClick={openTripDetail}
-                  formatDate={formatDate}
-                  formatTime={formatTime}
-                  calculateScore={calculateScore}
-                  getScoreColor={getScoreColor}
+                  isCompact={isCompact}
                 />
               ))}
             </div>

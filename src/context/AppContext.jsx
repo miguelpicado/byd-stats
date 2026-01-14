@@ -1,7 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+// BYD Stats - App Context
+// Manages application settings and theme (layout moved to LayoutContext)
+
+import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 
 const AppContext = createContext();
 
+/**
+ * Hook to access app context (settings and theme)
+ * @returns {Object} Settings state and utilities
+ */
 export const useApp = () => {
     const context = useContext(AppContext);
     if (!context) {
@@ -10,90 +17,37 @@ export const useApp = () => {
     return context;
 };
 
+// Default settings configuration
+const DEFAULT_SETTINGS = {
+    carModel: '',
+    licensePlate: '',
+    insurancePolicy: '',
+    batterySize: 60.48,
+    soh: 100,
+    electricityPrice: 0.15,
+    theme: 'auto'
+};
+
+/**
+ * Provider component for app settings
+ * Handles settings persistence and theme management
+ */
 export const AppProvider = ({ children }) => {
-    // --- Layout State ---
-    const [layoutMode, setLayoutMode] = useState('vertical');
-    const [isCompact, setIsCompact] = useState(false);
-    const [isFullscreenBYD, setIsFullscreenBYD] = useState(false);
-
-    useEffect(() => {
-        const checkCompact = () => {
-            const w = window.innerWidth;
-            const h = window.innerHeight;
-
-            // Layout Mode Logic
-            const isLandscape = w > h;
-            // Tablet is typically > 10 inches (600dp ~ 960px in landscape)
-            // Or smaller tablets > 768px in landscape
-            const isTablet = w >= 960 || (w >= 768 && isLandscape);
-
-            let newLayoutMode = 'vertical';
-            if (isTablet && isLandscape) {
-                newLayoutMode = 'horizontal';
-            }
-            setLayoutMode(newLayoutMode);
-
-            // Sub-modes (Compact / FullscreenBYD) - ONLY enabled in Horizontal Mode
-            if (newLayoutMode === 'horizontal') {
-                // Fullscreen BYD mode for car display (1280x720)
-                // Activates when height is between 680px and 740px
-                const isBYDFullscreen = h >= 680 && h <= 740;
-                setIsFullscreenBYD(isBYDFullscreen);
-
-                // Consider compact if width is large enough but height is restricted (e.g. 1280x720)
-                const isCompactSize = w >= 1024 && h <= 680;
-                setIsCompact(isCompactSize);
-
-                // Apply dense scale for compact mode
-                if (isCompactSize) {
-                    document.documentElement.style.fontSize = '13.5px';
-                } else {
-                    document.documentElement.style.fontSize = '';
-                }
-            } else {
-                // In vertical mode, strictly disable these
-                setIsFullscreenBYD(false);
-                setIsCompact(false);
-                document.documentElement.style.fontSize = '';
-            }
-        };
-
-        checkCompact();
-        window.addEventListener('resize', checkCompact);
-        window.addEventListener('orientationchange', checkCompact);
-        return () => {
-            window.removeEventListener('resize', checkCompact);
-            window.removeEventListener('orientationchange', checkCompact);
-        };
-    }, []);
-
     // --- Settings State ---
     const [settings, setSettings] = useState(() => {
         try {
             const saved = localStorage.getItem('byd_settings');
-            return saved ? JSON.parse(saved) : {
-                carModel: '',
-                licensePlate: '',
-                insurancePolicy: '',
-                batterySize: 60.48,
-                soh: 100,
-                electricityPrice: 0.15,
-                theme: 'auto'
-            };
+            return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
         } catch (e) {
             console.error('Error loading settings:', e);
-            return {
-                carModel: '',
-                licensePlate: '',
-                insurancePolicy: '',
-                batterySize: 60.48,
-                soh: 100,
-                electricityPrice: 0.15,
-                theme: 'auto'
-            };
+            return DEFAULT_SETTINGS;
         }
     });
 
+    /**
+     * Update settings with validation and persistence
+     * @param {Object|Function} newSettings - New settings object or updater function
+     */
     const updateSettings = (newSettings) => {
         setSettings(prev => {
             // Handle both functional updates and direct values
@@ -102,7 +56,7 @@ export const AppProvider = ({ children }) => {
             // Defensive: Ensure updated is a valid settings object
             if (!updated || typeof updated !== 'object' || Array.isArray(updated)) {
                 console.warn('updateSettings received invalid settings, ignoring:', updated);
-                return prev; // Keep previous valid settings
+                return prev;
             }
 
             // Merge with defaults to ensure all fields exist
@@ -145,14 +99,11 @@ export const AppProvider = ({ children }) => {
         return () => mediaQuery.removeEventListener('change', handleChange);
     }, [settings.theme]);
 
-    const value = {
+    // Memoize context value to prevent unnecessary re-renders
+    const value = useMemo(() => ({
         settings,
-        updateSettings, // Compatible with setSettings signature
-        layoutMode,
-        setLayoutMode,
-        isCompact,
-        isFullscreenBYD
-    };
+        updateSettings
+    }), [settings]);
 
     return (
         <AppContext.Provider value={value}>
@@ -160,3 +111,5 @@ export const AppProvider = ({ children }) => {
         </AppContext.Provider>
     );
 };
+
+export default AppContext;
