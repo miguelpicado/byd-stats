@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Download } from './Icons.jsx';
+import { logger } from '../utils/logger';
 
 // Simple icons for PWA Manager (not in Icons.jsx)
 const LogOut = ({ className }) => (
@@ -91,7 +92,7 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
                 });
 
             } catch (e) {
-                console.error('[PWA] Update check error:', e);
+                logger.error('[PWA] Update check error:', e);
             }
         };
 
@@ -117,7 +118,7 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
 
         // Check if event was already captured in global scope
         if (window.deferredPrompt) {
-            console.log('[PWA] Using globally captured prompt');
+            logger.debug('[PWA] Using globally captured prompt');
             setDeferredPrompt(window.deferredPrompt);
             setShowInstallBanner(true);
             window.deferredPrompt = null; // Clean up
