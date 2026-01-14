@@ -5,7 +5,8 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '../../utils/constants';
 import { formatMonth } from '../../utils/dateUtils';
-import { Filter, Plus } from '../Icons.jsx';
+import { Filter } from '../Icons.jsx';
+import ModalHeader from '../common/ModalHeader';
 
 /**
  * Filter modal for trip filtering
@@ -53,15 +54,13 @@ const FilterModal = ({
                 className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700"
                 onClick={(e) => e.stopPropagation()}
             >
-                <div className="flex items-center justify-between mb-6">
-                    <div className="flex items-center gap-2">
-                        <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                        <h2 id="filter-modal-title" className="text-xl font-bold text-slate-900 dark:text-white">{t('filter.title')}</h2>
-                    </div>
-                    <button onClick={onClose} aria-label="Close filter" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
-                        <Plus className="w-6 h-6 rotate-45" />
-                    </button>
-                </div>
+                <ModalHeader
+                    title={t('filter.title')}
+                    Icon={Filter}
+                    onClose={onClose}
+                    id="filter-modal-title"
+                    iconClassName="w-5 h-5 text-slate-600 dark:text-slate-400"
+                />
 
                 <div className="space-y-4">
                     {/* Filter Type Buttons */}

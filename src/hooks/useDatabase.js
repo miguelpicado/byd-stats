@@ -14,6 +14,11 @@ export function useDatabase() {
 
     // Initialize SQL.js using dynamic import
     const initSql = useCallback(async () => {
+        if (window.SQL) {
+            setSqlReady(true);
+            return true;
+        }
+
         try {
             const initSqlJs = (await import('sql.js')).default;
             window.SQL = await initSqlJs({
