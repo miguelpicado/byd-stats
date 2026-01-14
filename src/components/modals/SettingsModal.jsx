@@ -1,6 +1,7 @@
 // BYD Stats - Settings Modal Component
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
 import { BYD_RED } from '../../utils/constants';
@@ -255,6 +256,31 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
             </div>
         </div>
     );
+};
+
+SettingsModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    settings: PropTypes.shape({
+        carModel: PropTypes.string,
+        licensePlate: PropTypes.string,
+        insurancePolicy: PropTypes.string,
+        batterySize: PropTypes.number,
+        soh: PropTypes.number,
+        electricityPrice: PropTypes.number,
+        theme: PropTypes.string
+    }).isRequired,
+    onSettingsChange: PropTypes.func.isRequired,
+    googleSync: PropTypes.shape({
+        isAuthenticated: PropTypes.bool,
+        isSyncing: PropTypes.bool,
+        lastSyncTime: PropTypes.instanceOf(Date),
+        error: PropTypes.string,
+        userProfile: PropTypes.object,
+        login: PropTypes.func,
+        logout: PropTypes.func,
+        syncNow: PropTypes.func
+    })
 };
 
 export default SettingsModal;

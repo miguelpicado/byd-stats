@@ -1,6 +1,7 @@
 // BYD Stats - Trip Detail Modal Component
 
 import React, { useMemo } from 'react';
+import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED, dayNamesFull } from '../../utils/constants';
 import { formatDate, formatTime } from '../../utils/dateUtils';
@@ -45,6 +46,9 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="trip-detail-modal-title"
                 className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700"
                 onClick={(e) => e.stopPropagation()}
             >
@@ -52,7 +56,7 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-4">
                         <div>
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('tripDetail.title')}</h2>
+                            <h2 id="trip-detail-modal-title" className="text-lg font-bold text-slate-900 dark:text-white">{t('tripDetail.title')}</h2>
                             <p className="text-sm text-slate-600 dark:text-slate-400">
                                 {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
                             </p>
@@ -66,7 +70,7 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
                             </p>
                             <p className="text-slate-500 dark:text-slate-400 text-xs">/ 10</p>
                         </div>
-                        <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white ml-2">
+                        <button onClick={onClose} aria-label="Close trip detail" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white ml-2">
                             <Plus className="w-6 h-6 rotate-45" />
                         </button>
                     </div>
@@ -144,6 +148,25 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
             </div>
         </div>
     );
+};
+
+TripDetailModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    trip: PropTypes.shape({
+        trip: PropTypes.number,
+        electricity: PropTypes.number,
+        duration: PropTypes.number,
+        date: PropTypes.string,
+        start_timestamp: PropTypes.number
+    }),
+    allTrips: PropTypes.array,
+    summary: PropTypes.shape({
+        avgEff: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
+    }),
+    settings: PropTypes.shape({
+        electricityPrice: PropTypes.number
+    })
 };
 
 export default TripDetailModal;

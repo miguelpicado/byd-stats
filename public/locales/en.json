@@ -278,7 +278,13 @@
         "invalidFile": "Only *.DB or *.JPG files (renamed database) are allowed\nFind EC_Database.db in the \"Energydata\" folder of your car",
         "somethingWentWrong": "Something went wrong",
         "unexpectedRenderError": "The application encountered an unexpected rendering error.",
-        "resetAndClearCache": "Reset and Clear Cache"
+        "resetAndClearCache": "Reset and Clear Cache",
+        "loadingSqlJs": "Error loading SQL.js",
+        "sqlNotReady": "SQL is not ready",
+        "tableNotFound": "Table not found",
+        "noDataFound": "No data",
+        "noDataToExport": "No data to export",
+        "exportError": "Error exporting database"
     },
     "historyMod": {
         "title": "Trip History",

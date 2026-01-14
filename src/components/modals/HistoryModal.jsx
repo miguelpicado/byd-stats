@@ -1,6 +1,7 @@
 // BYD Stats - History Modal Component
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { BYD_RED } from '../../utils/constants';
 import { Database, Plus } from '../Icons.jsx';
 import { useTranslation } from 'react-i18next';
@@ -24,15 +25,18 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="history-modal-title"
                 className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700"
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                         <Database className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">{t('historyMod.title')}</h2>
+                        <h2 id="history-modal-title" className="text-xl font-bold text-slate-900 dark:text-white">{t('historyMod.title')}</h2>
                     </div>
-                    <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+                    <button onClick={onClose} aria-label="Close history" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         <Plus className="w-6 h-6 rotate-45" />
                     </button>
                 </div>
@@ -76,6 +80,15 @@ const HistoryModal = ({ isOpen, onClose, historyCount, onSave, onLoad, onClear }
             </div>
         </div>
     );
+};
+
+HistoryModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    historyCount: PropTypes.number.isRequired,
+    onSave: PropTypes.func.isRequired,
+    onLoad: PropTypes.func.isRequired,
+    onClear: PropTypes.func.isRequired
 };
 
 export default HistoryModal;

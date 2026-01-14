@@ -1,6 +1,8 @@
 // BYD Stats - Filter Modal Component
 
 import React from 'react';
+import PropTypes from 'prop-types';
+import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '../../utils/constants';
 import { formatMonth } from '../../utils/dateUtils';
 import { Filter, Plus } from '../Icons.jsx';
@@ -37,6 +39,8 @@ const FilterModal = ({
     rawTripsCount,
     filteredCount
 }) => {
+    const { t } = useTranslation();
+
     if (!isOpen) return null;
 
     return (
@@ -52,7 +56,7 @@ const FilterModal = ({
                 <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center gap-2">
                         <Filter className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                        <h2 id="filter-modal-title" className="text-xl font-bold text-slate-900 dark:text-white">Filtrar viajes</h2>
+                        <h2 id="filter-modal-title" className="text-xl font-bold text-slate-900 dark:text-white">{t('filter.title')}</h2>
                     </div>
                     <button onClick={onClose} aria-label="Close filter" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
                         <Plus className="w-6 h-6 rotate-45" />
@@ -62,7 +66,7 @@ const FilterModal = ({
                 <div className="space-y-4">
                     {/* Filter Type Buttons */}
                     <div className="space-y-2">
-                        <label className="text-slate-600 dark:text-slate-400 text-sm">Tipo de filtro:</label>
+                        <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</label>
                         <div className="flex flex-col gap-2">
                             <button
                                 onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
@@ -72,7 +76,7 @@ const FilterModal = ({
                                     }`}
                                 style={{ backgroundColor: filterType === 'all' ? BYD_RED : '' }}
                             >
-                                📊 Todos los viajes ({rawTripsCount})
+                                📊 {t('common.allTrips')} ({rawTripsCount})
                             </button>
                             <button
                                 onClick={() => setFilterType('month')}
@@ -82,7 +86,7 @@ const FilterModal = ({
                                     }`}
                                 style={{ backgroundColor: filterType === 'month' ? BYD_RED : '' }}
                             >
-                                📅 Por mes
+                                📅 {t('filter.byMonth')}
                             </button>
                             <button
                                 onClick={() => setFilterType('range')}
@@ -92,7 +96,7 @@ const FilterModal = ({
                                     }`}
                                 style={{ backgroundColor: filterType === 'range' ? BYD_RED : '' }}
                             >
-                                📆 Rango de fechas
+                                📆 {t('filter.byRange')}
                             </button>
                         </div>
                     </div>
@@ -100,13 +104,13 @@ const FilterModal = ({
                     {/* Month Selector */}
                     {filterType === 'month' && (
                         <div className="space-y-2">
-                            <label className="text-slate-600 dark:text-slate-400 text-sm">Seleccionar mes:</label>
+                            <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
                             <select
                                 value={selMonth}
                                 onChange={(e) => setSelMonth(e.target.value)}
                                 className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                             >
-                                <option value="">Todos los meses</option>
+                                <option value="">{t('filter.allMonths')}</option>
                                 {months.map((m) => (
                                     <option key={m} value={m}>{formatMonth(m)}</option>
                                 ))}
@@ -117,7 +121,7 @@ const FilterModal = ({
                     {/* Date Range Selector */}
                     {filterType === 'range' && (
                         <div className="space-y-2">
-                            <label className="text-slate-600 dark:text-slate-400 text-sm">Rango de fechas:</label>
+                            <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</label>
                             <div className="flex flex-col gap-2">
                                 <input
                                     type="date"
@@ -141,9 +145,9 @@ const FilterModal = ({
                     {filteredCount !== rawTripsCount && (
                         <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                             <p className="text-center text-sm">
-                                <span className="text-slate-400">Mostrando </span>
+                                <span className="text-slate-400">{t('filter.showing')} </span>
                                 <span className="font-bold" style={{ color: BYD_RED }}>{filteredCount}</span>
-                                <span className="text-slate-400"> de {rawTripsCount} viajes</span>
+                                <span className="text-slate-400"> {t('filter.of')} {rawTripsCount} {t('stats.trips').toLowerCase()}</span>
                             </p>
                         </div>
                     )}
@@ -155,11 +159,27 @@ const FilterModal = ({
                     className="w-full mt-6 py-3 rounded-xl font-medium text-white"
                     style={{ backgroundColor: BYD_RED }}
                 >
-                    Aplicar filtro
+                    {t('filter.apply')}
                 </button>
             </div>
         </div>
     );
+};
+
+FilterModal.propTypes = {
+    isOpen: PropTypes.bool.isRequired,
+    onClose: PropTypes.func.isRequired,
+    filterType: PropTypes.oneOf(['all', 'month', 'range']).isRequired,
+    setFilterType: PropTypes.func.isRequired,
+    selMonth: PropTypes.string,
+    setSelMonth: PropTypes.func.isRequired,
+    dateFrom: PropTypes.string,
+    setDateFrom: PropTypes.func.isRequired,
+    dateTo: PropTypes.string,
+    setDateTo: PropTypes.func.isRequired,
+    months: PropTypes.arrayOf(PropTypes.string),
+    rawTripsCount: PropTypes.number,
+    filteredCount: PropTypes.number
 };
 
 export default FilterModal;
