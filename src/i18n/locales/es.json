@@ -243,6 +243,7 @@
     },
     "footer": {
         "privacy": "Privacidad",
+        "madewith": "Hecho con ❤️ por Miguel Picado",
         "legal": "Legal",
         "github": "GitHub",
         "email": "Email de contacto",
