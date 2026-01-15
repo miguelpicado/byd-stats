@@ -20,7 +20,8 @@
         "patterns": "Patterns",
         "efficiency": "Efficiency",
         "records": "Records",
-        "history": "History"
+        "history": "History",
+        "charges": "Charges"
     },
     "stats": {
         "distance": "Distance",
@@ -401,5 +402,38 @@
     "patterns": {
         "tripsPerWeekday": "Trips per weekday",
         "tripsWord": "trips"
+    },
+    "charges": {
+        "title": "Charging Log",
+        "noCharges": "No charges recorded",
+        "addFirst": "Tap + to add your first charge",
+        "addCharge": "New charge",
+        "editCharge": "Edit charge",
+        "chargeDetail": "Charge Detail",
+        "odometer": "Odometer",
+        "kwhCharged": "Added kWh",
+        "chargerType": "Charger Type",
+        "pricePerKwh": "Price/kWh",
+        "totalCost": "Total Cost",
+        "date": "Date",
+        "time": "Time",
+        "finalPercentage": "End %",
+        "initialPercentage": "Start % (optional)",
+        "optional": "Optional",
+        "save": "Save",
+        "real": "Real",
+        "fillRequired": "Fill required fields",
+        "realKwh": "Real kWh (battery)",
+        "efficiency": "Charger efficiency",
+        "edit": "Edit",
+        "delete": "Delete",
+        "confirmDelete": "Delete this charge permanently?",
+        "summary": "Charging Summary",
+        "totalKwh": "Total kWh Charged",
+        "avgPrice": "Avg Price/kWh",
+        "chargeCount": "Total Charges",
+        "energyAnalysis": "Energy Analysis",
+        "realKwhExplanation": "Estimated energy after conversion losses",
+        "details": "Additional Details"
     }
 }

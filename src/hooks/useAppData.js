@@ -16,8 +16,31 @@ const useAppData = () => {
     const { t, i18n } = useTranslation();
 
     // --- Core Trip Data State ---
-    const [rawTrips, setRawTrips] = useState([]);
-    const [tripHistory, setTripHistory] = useState([]);
+    const [rawTrips, setRawTrips] = useState(() => {
+        try {
+            const s = localStorage.getItem(STORAGE_KEY);
+            if (s) {
+                const p = JSON.parse(s);
+                if (Array.isArray(p) && p.length > 0) return p;
+            }
+        } catch (e) {
+            logger.error('Error loading from localStorage:', e);
+        }
+        return [];
+    });
+
+    const [tripHistory, setTripHistory] = useState(() => {
+        try {
+            const h = localStorage.getItem(TRIP_HISTORY_KEY);
+            if (h) {
+                const history = JSON.parse(h);
+                if (Array.isArray(history)) return history;
+            }
+        } catch (e) {
+            logger.error('Error loading trip history:', e);
+        }
+        return [];
+    });
 
     // --- Filter State ---
     const [filterType, setFilterType] = useState('all');
@@ -26,27 +49,7 @@ const useAppData = () => {
     const [dateTo, setDateTo] = useState('');
 
     // --- Load data from localStorage on mount ---
-    useEffect(() => {
-        try {
-            // Load trips
-            const s = localStorage.getItem(STORAGE_KEY);
-            if (s) {
-                const p = JSON.parse(s);
-                if (Array.isArray(p) && p.length > 0) {
-                    setRawTrips(p);
-                }
-            }
-
-            // Load trip history
-            const h = localStorage.getItem(TRIP_HISTORY_KEY);
-            if (h) {
-                const history = JSON.parse(h);
-                if (Array.isArray(history)) setTripHistory(history);
-            }
-        } catch (e) {
-            logger.error('Error loading from localStorage:', e);
-        }
-    }, []);
+    // --- Load data from localStorage on mount - REMOVED (using lazy init) ---
 
     // --- Save trips to localStorage when changed ---
     useEffect(() => {
@@ -93,6 +96,7 @@ const useAppData = () => {
     // --- Computed: Process filtered data for charts and stats ---
     const data = useMemo(() => {
         return filtered.length > 0 ? processData(filtered) : null;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filtered, i18n.language]);
 
     // --- Action: Clear all trip data ---
