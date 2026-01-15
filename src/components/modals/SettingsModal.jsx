@@ -1,6 +1,6 @@
 // BYD Stats - Settings Modal Component
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
@@ -26,16 +26,13 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
     if (!isOpen) return null;
 
     // Calculate average electricity price from charges
-    const calculatedPrice = React.useMemo(() => {
+    const calculatedPrice = useMemo(() => {
         if (!charges || charges.length === 0) return 0;
         const totalCost = charges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
         const totalKwh = charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
         if (totalKwh === 0) return 0;
         return totalCost / totalKwh;
     }, [charges]);
-
-    // Determine which price to display
-    const displayPrice = settings.useCalculatedPrice ? calculatedPrice : settings.electricityPrice;
 
     const handleLanguageChange = (langCode) => {
         i18n.changeLanguage(langCode);
