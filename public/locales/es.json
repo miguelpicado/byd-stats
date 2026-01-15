@@ -161,17 +161,6 @@
         "lastSync": "Última sinc",
         "dataManagement": "Gestión de datos",
         "updateData": "Actualizar datos",
-        "exportDb": "Exportar BD",
-        "cloudSync": "Sincronización en la nube",
-        "historyManagement": "Gestión del historial",
-        "saveToHistory": "Guardar en historial",
-        "loadFromHistory": "Cargar historial",
-        "clearHistory": "Borrar historial",
-        "tripsInHistory": "viajes en historial",
-        "about": "Acerca de",
-        "version": "Versión",
-        "sourceCode": "Código fuente",
-        "reportBug": "Reportar error",
         "chargerTypes": "Tipos de cargadores",
         "chargerName": "Nombre",
         "chargerSpeed": "Velocidad (kW)",
@@ -369,10 +358,12 @@
         }
     },
     "help": {
-        "title": "Ayuda y Soporte",
-        "subtitle": "¿Encontraste un error o tienes sugerencias?",
-        "description": "Puedes reportar bugs, solicitar features o contribuir al proyecto en GitHub.",
-        "reportBug": "Reportar Bug"
+        "title": "Ayuda y Reportes",
+        "subtitle": "Información del proyecto",
+        "description": "Esta aplicación es de código abierto y está hecha para ayudar a la comunidad de usuarios de BYD.",
+        "reportBug": "Reportar un error",
+        "supportDev": "Apoya al desarrollador",
+        "buyMeCoffee": "Invítame a un café"
     },
     "sort": {
         "newest": "Más recientes",

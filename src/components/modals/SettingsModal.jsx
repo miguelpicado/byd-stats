@@ -245,6 +245,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         {/* Google Sync Section - Extracted */}
                         <GoogleSyncSettings googleSync={googleSync} />
                     </div>
+
                 </div>
 
                 <button

@@ -1,7 +1,7 @@
 import React, { Suspense } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { BYD_RED, Plus, Upload, HelpCircle, Bug, GitHub, Mail, Shield } from '../Icons.jsx';
+import { BYD_RED, Plus, Upload, HelpCircle, Bug, GitHub, Mail, Shield, Heart } from '../Icons.jsx';
 
 // Lazy loaded modals must be passed or imported here. 
 // Since we want to keep code splitting effective, we'll accept them as props or import them lazily here.
@@ -246,6 +246,27 @@ const ModalContainer = ({
                                     <Shield className="w-5 h-5" />
                                     {t('footer.legal')}
                                 </button>
+                            </div>
+
+                            {/* Ko-Fi Donation Section */}
+                            <div className="pt-4 mt-6 border-t border-slate-200 dark:border-slate-700">
+                                <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2 mb-3">
+                                    <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                                    {t('help.supportDev')}
+                                </h3>
+                                <a
+                                    href="https://ko-fi.com/miguelpicado"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex items-center justify-center gap-3 w-full py-3 px-4 bg-[#f69a1d] hover:bg-[#e08b1a] text-white rounded-xl font-bold transition-all shadow-sm hover:shadow-md active:scale-95 no-underline"
+                                >
+                                    <img
+                                        src="https://ko-fi.com/img/cup-border.png"
+                                        alt="Ko-fi"
+                                        className="w-5 h-auto brightness-0 invert"
+                                    />
+                                    <span>{t('help.buyMeCoffee')}</span>
+                                </a>
                             </div>
 
                             <div className="text-center text-xs text-slate-500 dark:text-slate-500 pt-2">
