@@ -45,6 +45,198 @@ const LegalPageLazy = lazy(() => import('./pages/LegalPage'));
 import ModalContainer from './components/common/ModalContainer';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
 
+const STORAGE_KEY = 'byd_stats_data';
+const TRIP_HISTORY_KEY = 'byd_trip_history';
+const TAB_PADDING = '12px 12px calc(96px + env(safe-area-inset-bottom)) 12px';
+const COMPACT_TAB_PADDING = '8px 10px calc(80px + env(safe-area-inset-bottom)) 10px';
+const COMPACT_SPACE_Y = 'space-y-3';
+
+// Helper to determine if a tab should have fade-in animation
+const getTabClassName = (tabId, activeTab, fadingTab, baseClass = 'tab-content-container') => {
+  const classes = [baseClass];
+  if (tabId === activeTab && tabId === fadingTab) {
+    classes.push('tab-fade-in');
+  }
+  return classes.join(' ');
+};
+
+
+const GitHubFooter = React.memo(() => (
+  <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+    <a
+      href="https://github.com/miguelpicado/byd-stats"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mx-auto w-fit"
+    >
+      <GitHub className="w-5 h-5" />
+      <span>Ver en GitHub</span>
+    </a>
+  </div>
+));
+
+
+function processData(rows) {
+  if (!rows || rows.length === 0) return null;
+  const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
+  if (trips.length === 0) return null;
+
+  const totalKm = trips.reduce((s, r) => s + (r.trip || 0), 0);
+  const totalKwh = trips.reduce((s, r) => s + (r.electricity || 0), 0);
+  const totalDuration = trips.reduce((s, r) => s + (r.duration || 0), 0);
+  if (totalKm === 0) return null;
+
+  const monthlyData = {};
+  const dailyData = {};
+  const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
+  const weekdayData = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => ({ day: d, trips: 0, km: 0 }));
+
+  trips.forEach(trip => {
+    try {
+      const m = trip.month || 'unknown';
+      if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
+      monthlyData[m].trips++;
+      monthlyData[m].km += trip.trip || 0;
+      monthlyData[m].kwh += trip.electricity || 0;
+
+      const d = trip.date || 'unknown';
+      if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
+      dailyData[d].trips++;
+      dailyData[d].km += trip.trip || 0;
+      dailyData[d].kwh += trip.electricity || 0;
+
+      if (trip.start_timestamp) {
+        const dt = new Date(trip.start_timestamp * 1000);
+        const h = dt.getHours();
+        const w = dt.getDay();
+
+        // Ensure h is a valid index (0-23)
+        if (!isNaN(h) && hourlyData[h]) {
+          hourlyData[h].trips++;
+          hourlyData[h].km += trip.trip || 0;
+        }
+
+        // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, 2 (Tue) -> 1, etc.
+        const weekdayIndex = (w + 6) % 7;
+        if (weekdayData[weekdayIndex]) {
+          weekdayData[weekdayIndex].trips++;
+          weekdayData[weekdayIndex].km += trip.trip || 0;
+        }
+      }
+    } catch (e) {
+      console.warn('Skipping malformed trip:', trip, e);
+    }
+  });
+
+
+  const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
+  monthlyArray.forEach(m => {
+    m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
+    m.monthLabel = formatMonth(m.month);
+  });
+
+  const dailyArray = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
+  dailyArray.forEach(d => {
+    d.efficiency = d.km > 0 ? (d.kwh / d.km * 100) : 0;
+    d.dateLabel = formatDate(d.date);
+  });
+
+  const tripDistribution = [
+    { range: '0-5', count: 0, color: '#06b6d4' },
+    { range: '5-15', count: 0, color: '#10b981' },
+    { range: '15-30', count: 0, color: '#f59e0b' },
+    { range: '30-50', count: 0, color: BYD_RED },
+    { range: '50+', count: 0, color: '#8b5cf6' }
+  ];
+  trips.forEach(t => {
+    const km = t.trip || 0;
+    if (km <= 5) tripDistribution[0].count++;
+    else if (km <= 15) tripDistribution[1].count++;
+    else if (km <= 30) tripDistribution[2].count++;
+    else if (km <= 50) tripDistribution[3].count++;
+    else tripDistribution[4].count++;
+  });
+
+  const efficiencyScatter = trips
+    .filter(t => t.trip > 0 && t.electricity > 0)
+    .map(t => ({ x: t.trip, y: (t.electricity / t.trip) * 100 }))
+    .filter(t => t.y > 0 && t.y < 50)
+    .sort((a, b) => a.x - b.x);
+
+  const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
+  const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
+  const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
+  const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
+  const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+
+  // Calculate total span of days in the database using timestamps
+  const firstTs = sorted[0]?.start_timestamp;
+  const lastTs = sorted[sorted.length - 1]?.start_timestamp;
+  const totalDays = (firstTs && lastTs)
+    ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
+    : daysActive;
+
+  return {
+    summary: {
+      totalTrips: trips.length,
+      totalKm: totalKm.toFixed(1),
+      totalKwh: totalKwh.toFixed(1),
+      totalHours: (totalDuration / 3600).toFixed(1),
+      avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
+      avgKm: (totalKm / trips.length).toFixed(1),
+      avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
+      avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
+      daysActive,
+      totalDays,
+      dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
+      maxKm: sortedByKm[0]?.trip?.toFixed(1) || '0',
+      minKm: sortedByKm[sortedByKm.length - 1]?.trip?.toFixed(1) || '0',
+      maxKwh: sortedByKwh[0]?.electricity?.toFixed(1) || '0',
+      maxMin: ((sortedByDur[0]?.duration || 0) / 60).toFixed(0),
+      tripsDay: (trips.length / daysActive).toFixed(1),
+      kmDay: (totalKm / daysActive).toFixed(1)
+    },
+    monthly: monthlyArray,
+    daily: dailyArray,
+    hourly: hourlyData,
+    weekday: weekdayData,
+    tripDist: tripDistribution,
+    effScatter: efficiencyScatter,
+    top: {
+      km: sortedByKm.slice(0, 10),
+      kwh: sortedByKwh.slice(0, 10),
+      dur: sortedByDur.slice(0, 10)
+    }
+  };
+}
+
+// Helper functions
+const calculateScore = (efficiency, minEff, maxEff) => {
+  if (!efficiency || maxEff === minEff) return 5;
+  // minEff is the best (lowest consumption), maxEff is the worst (highest consumption)
+  // Score should be 10 when efficiency equals minEff (best)
+  // Score should be 0 when efficiency equals maxEff (worst)
+  const normalized = (maxEff - efficiency) / (maxEff - minEff);
+  return Math.max(0, Math.min(10, normalized * 10));
+};
+
+// Get color based on score (0=red, 5=orange, 10=green)
+const getScoreColor = (score) => {
+  if (score >= 5) {
+    // Green to orange (score 5-10)
+    const ratio = (score - 5) / 5;
+    const r = Math.round(255 - ratio * 155);
+    const g = Math.round(165 + ratio * 90);
+    return `rgb(${r}, ${g}, 0)`;
+  } else {
+    // Red to orange (score 0-5)
+    const ratio = score / 5;
+    const r = Math.round(234 + ratio * 21);
+    const g = Math.round(ratio * 165);
+    return `rgb(${r}, ${g}, 41)`;
+  }
+};
+
 
 export default function BYDStatsAnalyzer() {
   const { t, i18n } = useTranslation();
@@ -74,6 +266,7 @@ export default function BYDStatsAnalyzer() {
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
+  const [fadingTab, setFadingTab] = useState(null); // Track which tab is fading in
   const [dragOver, setDragOver] = useState(false);
   // Centralized modal state management
   const { modals, openModal, closeModal, openLegalModal, legalInitialSection, setLegalInitialSection } = useModalState();
@@ -491,8 +684,11 @@ export default function BYDStatsAnalyzer() {
     // Use transitions for both vertical and horizontal modes
     setIsTransitioning(true);
     setActiveTab(tabId);
+    setFadingTab(tabId); // Mark this tab for fade-in animation
+
     setTimeout(() => {
       setIsTransitioning(false);
+      setFadingTab(null); // Clear animation after transition
     }, transitionDuration);
   }, [activeTab, isTransitioning, transitionDuration]);
 
@@ -1188,7 +1384,7 @@ export default function BYDStatsAnalyzer() {
               ) : (
                 <>
                   {/* Slide 1: Overview */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('overview', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     {(activeTab === 'overview' || backgroundLoad) && (
                       <OverviewTab
                         key={activeTab === 'overview' ? 'active' : 'bg'}
@@ -1202,7 +1398,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 2: Trends */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('trends', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'trends' || backgroundLoad) && (
                         <TrendsTab
@@ -1219,7 +1415,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 3: Patterns */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('patterns', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'patterns' || backgroundLoad) && (
                         <PatternsTab
@@ -1235,7 +1431,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 4: Efficiency */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('efficiency', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'efficiency' || backgroundLoad) && (
                         <EfficiencyTab
@@ -1250,7 +1446,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 5: Records */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('records', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'records' || backgroundLoad) && (
                         <RecordsTab
@@ -1266,7 +1462,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 6: History */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('history', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'history' || backgroundLoad) && (
                         <HistoryTab
@@ -1291,133 +1487,172 @@ export default function BYDStatsAnalyzer() {
                 </div>
               ) : (
                 <>
-                  {/* Overview - Always visible when active */}
-                  {(activeTab === 'overview' || backgroundLoad) && (
-                    <div className="horizontal-tab-transition" style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-                      <OverviewTab
-                        key={activeTab === 'overview' ? 'overview-active' : 'overview-bg'}
-                        summary={summary}
-                        monthly={monthly}
-                        tripDist={tripDist}
-                        smallChartHeight={smallChartHeight}
-                        overviewSpacing={overviewSpacingHorizontal}
-                      />
+<<<<<<< HEAD
+  {/* Overview - Always visible when active */ }
+  {
+    (activeTab === 'overview' || backgroundLoad) && (
+      <div className="horizontal-tab-transition" style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+=======
+                  <div className={activeTab === 'overview' && fadingTab === 'overview' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+          {(activeTab === 'overview' || backgroundLoad) && (
+>>>>>>> feature/code-splitting-tabs
+            <OverviewTab
+              key={activeTab === 'overview' ? 'overview-active' : 'overview-bg'}
+              summary={summary}
+              monthly={monthly}
+              tripDist={tripDist}
+              smallChartHeight={smallChartHeight}
+              overviewSpacing={overviewSpacingHorizontal}
+            />
                     </div>
                   )}
 
-                  {/* Trends - Background loaded */}
-                  <Suspense fallback={activeTab === 'trends' ? <TabFallback /> : null}>
-                    {(activeTab === 'trends' || backgroundLoad) && (
-                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
-                        <TrendsTab
-                          key={activeTab === 'trends' ? 'trends-active' : 'trends-bg'}
-                          filtered={filtered}
-                          summary={summary}
-                          monthly={monthly}
-                          daily={daily}
-                          settings={settings}
-                          largeChartHeight={largeChartHeight}
-                        />
+<<<<<<< HEAD
+    {/* Trends - Background loaded */ }
+    <Suspense fallback={activeTab === 'trends' ? <TabFallback /> : null}>
+      {(activeTab === 'trends' || backgroundLoad) && (
+        <div className="horizontal-tab-transition" style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
+=======
+                  <Suspense fallback={<TabFallback />}>
+            <div className={activeTab === 'trends' && fadingTab === 'trends' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
+              {(activeTab === 'trends' || backgroundLoad) && (
+>>>>>>> feature/code-splitting-tabs
+                <TrendsTab
+                  key={activeTab === 'trends' ? 'trends-active' : 'trends-bg'}
+                  filtered={filtered}
+                  summary={summary}
+                  monthly={monthly}
+                  daily={daily}
+                  settings={settings}
+                  largeChartHeight={largeChartHeight}
+                />
                       </div>
                     )}
-                  </Suspense>
+          </Suspense>
 
-                  {/* Patterns - Background loaded */}
-                  <Suspense fallback={activeTab === 'patterns' ? <TabFallback /> : null}>
-                    {(activeTab === 'patterns' || backgroundLoad) && (
-                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
-                        <PatternsTab
-                          key={activeTab === 'patterns' ? 'patterns-active' : 'patterns-bg'}
-                          weekday={weekday}
-                          hourly={hourly}
-                          summary={summary}
-                          patternsSpacing={patternsSpacing}
-                          patternsChartHeight={patternsChartHeight}
-                        />
+<<<<<<< HEAD
+    {/* Patterns - Background loaded */ }
+    <Suspense fallback={activeTab === 'patterns' ? <TabFallback /> : null}>
+      {(activeTab === 'patterns' || backgroundLoad) && (
+        <div className="horizontal-tab-transition" style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
+=======
+                  <Suspense fallback={<TabFallback />}>
+            <div className={activeTab === 'patterns' && fadingTab === 'patterns' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
+              {(activeTab === 'patterns' || backgroundLoad) && (
+>>>>>>> feature/code-splitting-tabs
+                <PatternsTab
+                  key={activeTab === 'patterns' ? 'patterns-active' : 'patterns-bg'}
+                  weekday={weekday}
+                  hourly={hourly}
+                  summary={summary}
+                  patternsSpacing={patternsSpacing}
+                  patternsChartHeight={patternsChartHeight}
+                />
                       </div>
                     )}
-                  </Suspense>
+          </Suspense>
 
-                  {/* Efficiency - Background loaded */}
-                  <Suspense fallback={activeTab === 'efficiency' ? <TabFallback /> : null}>
-                    {(activeTab === 'efficiency' || backgroundLoad) && (
-                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
-                        <EfficiencyTab
-                          key={activeTab === 'efficiency' ? 'efficiency-active' : 'efficiency-bg'}
-                          summary={summary}
-                          monthly={monthly}
-                          effScatter={effScatter}
-                          largeChartHeight={largeChartHeight}
-                        />
+<<<<<<< HEAD
+    {/* Efficiency - Background loaded */ }
+    <Suspense fallback={activeTab === 'efficiency' ? <TabFallback /> : null}>
+      {(activeTab === 'efficiency' || backgroundLoad) && (
+        <div className="horizontal-tab-transition" style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
+=======
+                  <Suspense fallback={<TabFallback />}>
+            <div className={activeTab === 'efficiency' && fadingTab === 'efficiency' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
+              {(activeTab === 'efficiency' || backgroundLoad) && (
+>>>>>>> feature/code-splitting-tabs
+                <EfficiencyTab
+                  key={activeTab === 'efficiency' ? 'efficiency-active' : 'efficiency-bg'}
+                  summary={summary}
+                  monthly={monthly}
+                  effScatter={effScatter}
+                  largeChartHeight={largeChartHeight}
+                />
                       </div>
                     )}
-                  </Suspense>
+          </Suspense>
 
-                  {/* Records - Background loaded */}
-                  <Suspense fallback={activeTab === 'records' ? <TabFallback /> : null}>
-                    {(activeTab === 'records' || backgroundLoad) && (
-                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
-                        <RecordsTab
-                          key={activeTab === 'records' ? 'records-active' : 'records-bg'}
-                          summary={summary}
-                          top={top}
-                          recordsItemPadding={recordsItemPadding}
-                          recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                          recordsListHeightHorizontal={recordsListHeightHorizontal}
-                        />
+<<<<<<< HEAD
+    {/* Records - Background loaded */ }
+    <Suspense fallback={activeTab === 'records' ? <TabFallback /> : null}>
+      {(activeTab === 'records' || backgroundLoad) && (
+        <div className="horizontal-tab-transition" style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
+=======
+                  <Suspense fallback={<TabFallback />}>
+            <div className={activeTab === 'records' && fadingTab === 'records' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
+              {(activeTab === 'records' || backgroundLoad) && (
+>>>>>>> feature/code-splitting-tabs
+                <RecordsTab
+                  key={activeTab === 'records' ? 'records-active' : 'records-bg'}
+                  summary={summary}
+                  top={top}
+                  recordsItemPadding={recordsItemPadding}
+                  recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                  recordsListHeightHorizontal={recordsListHeightHorizontal}
+                />
                       </div>
                     )}
-                  </Suspense>
+          </Suspense>
 
-                  {/* History - Background loaded */}
-                  <Suspense fallback={activeTab === 'history' ? <TabFallback /> : null}>
-                    {(activeTab === 'history' || backgroundLoad) && (
-                      <div className="horizontal-tab-transition" style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
-                        <HistoryTab
-                          key={activeTab === 'history' ? 'history-active' : 'history-bg'}
-                          filtered={filtered}
-                          openTripDetail={openTripDetail}
-                          setShowAllTripsModal={setShowAllTripsModal}
-                        />
+<<<<<<< HEAD
+    {/* History - Background loaded */ }
+    <Suspense fallback={activeTab === 'history' ? <TabFallback /> : null}>
+      {(activeTab === 'history' || backgroundLoad) && (
+        <div className="horizontal-tab-transition" style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
+=======
+                  <Suspense fallback={<TabFallback />}>
+            <div className={activeTab === 'history' && fadingTab === 'history' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
+              {(activeTab === 'history' || backgroundLoad) && (
+>>>>>>> feature/code-splitting-tabs
+                <HistoryTab
+                  key={activeTab === 'history' ? 'history-active' : 'history-bg'}
+                  filtered={filtered}
+                  openTripDetail={openTripDetail}
+                  setShowAllTripsModal={setShowAllTripsModal}
+                />
                       </div>
                     )}
-                  </Suspense>
-                </>
-              )}
-            </div>
-          )}
+          </Suspense>
+        </>
+      )}
+    </div>
+          )
+  }
 
-          {/* Bottom Navigation Bar - Only show in vertical mode */}
-          {layoutMode === 'vertical' && (
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-              <div className="max-w-7xl mx-auto px-2 py-2">
-                <div role="tablist" aria-label="Main navigation" className="flex justify-around items-center">
-                  {tabs.map((t) => (
-                    <button
-                      key={t.id}
-                      role="tab"
-                      aria-selected={activeTab === t.id}
-                      aria-controls={`tabpanel-${t.id}`}
-                      onClick={() => handleTabClick(t.id)}
-                      className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
-                      style={{
-                        backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
-                        color: activeTab === t.id ? BYD_RED : ''
-                      }}
-                    >
-                      <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
-                      <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+  {/* Bottom Navigation Bar - Only show in vertical mode */ }
+  {
+    layoutMode === 'vertical' && (
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <div className="max-w-7xl mx-auto px-2 py-2">
+          <div role="tablist" aria-label="Main navigation" className="flex justify-around items-center">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                role="tab"
+                aria-selected={activeTab === t.id}
+                aria-controls={`tabpanel-${t.id}`}
+                onClick={() => handleTabClick(t.id)}
+                className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
+                style={{
+                  backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
+                  color: activeTab === t.id ? BYD_RED : ''
+                }}
+              >
+                <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
+                <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
+              </button>
+            ))}
+          </div>
         </div>
+      </div>
+    )
+  }
+        </div >
       </div >
-      <Suspense fallback={null}>
-        <PWAManagerLazy layoutMode={layoutMode} isCompact={isCompact} />
-      </Suspense>
+    <Suspense fallback={null}>
+      <PWAManagerLazy layoutMode={layoutMode} isCompact={isCompact} />
+    </Suspense>
     </div >
   );
 }
