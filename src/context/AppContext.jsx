@@ -32,7 +32,7 @@ export const AppProvider = ({ children }) => {
 
             // Apply dense scale for compact mode
             if (isCompactSize) {
-                document.documentElement.style.fontSize = '13.5px';
+                document.documentElement.style.fontSize = '14px';
             } else {
                 document.documentElement.style.fontSize = '';
             }
