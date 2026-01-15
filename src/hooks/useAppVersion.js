@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 const CACHE_KEY = 'byd_app_version';
 const CACHE_EXPIRY_KEY = 'byd_app_version_expiry';
 const CACHE_DURATION = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const FALLBACK_VERSION = 'v1.2';
+const FALLBACK_VERSION = 'v1.4.0';
 
 /**
  * Custom hook to fetch the latest app version from GitHub releases
