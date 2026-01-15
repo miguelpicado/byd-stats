@@ -15,6 +15,7 @@ const TripDetailModalLazy = React.lazy(() => import('../modals/TripDetailModal')
 const DatabaseUploadModalLazy = React.lazy(() => import('../modals/DatabaseUploadModal'));
 const LegalModalLazy = React.lazy(() => import('../modals/LegalModal'));
 const AddChargeModalLazy = React.lazy(() => import('../modals/AddChargeModal'));
+const ChargeDetailModalLazy = React.lazy(() => import('../modals/ChargeDetailModal'));
 
 const ModalContainer = ({
     modals,
@@ -54,7 +55,11 @@ const ModalContainer = ({
     // Charges modal props
     onSaveCharge,
     editingCharge,
-    setEditingCharge
+    setEditingCharge,
+    selectedCharge,
+    setSelectedCharge,
+    onEditCharge,
+    onDeleteCharge
 }) => {
     const { t } = useTranslation();
 
@@ -67,29 +72,12 @@ const ModalContainer = ({
     const handleLegalClose = () => closeModal('legal');
     const handleHelpClose = () => closeModal('help');
     const handleAddChargeClose = () => { closeModal('addCharge'); if (setEditingCharge) setEditingCharge(null); };
+    const handleChargeDetailClose = () => { closeModal('chargeDetail'); if (setSelectedCharge) setSelectedCharge(null); };
 
     // Helper for showing history from upload modal
     const handleShowHistory = () => {
-        // This might need specific logic if we want to switch modals
-        // Currently App.jsx has `onShowHistory={() => { }}` empty for UploadModal?
-        // Let's implement switching:
         closeModal('upload');
         openModal('history');
-    };
-
-    const handleHistoryLoad = () => {
-        // Logic for loading history? Usually `loadFromHistory` is passed but App.jsx calls `onLoad` prop.
-        // Check HistoryModal props: onSave, onLoad, onClear.
-        // App.jsx passed: onSaveToHistory, clearHistory.
-        // Wait, HistoryModal props are: onSave, onLoad, onClear.
-        // App.jsx doesn't seem to pass onLoad to HistoryModal in the lines I saw?
-        // Ah, I need to check how HistoryModal was used in App.jsx.
-        // Line 1145: DatabaseUploadModalLazy seems to have `onShowHistory`.
-        // Line 1163: HistoryModal usage is missing in the snippet I saw?
-        // Let's check the snippet of App.jsx I have.
-        // I saw `DatabaseUploadModalLazy` usage (lines 1145-1161).
-        // I saw `HistoryModalLazy` lazy import.
-        // I need to be careful with props matching.
     };
 
     return (
@@ -140,13 +128,6 @@ const ModalContainer = ({
                 />
 
                 {/* Database History/Management Modal (Unified) */}
-                {/* Note: In App.jsx this was passed 'showHistoryModal' boolean to DatabaseUploadModalLazy but called it HistoryModal in the UI? 
-                    Let's check App.jsx lines 1145:
-                    DatabaseUploadModalLazy isOpen={showHistoryModal} ...
-                    So 'history' modal in state actually opens DatabaseUploadModal? 
-                    This naming is confusing in original code. 
-                    Let's stick to what App.jsx did: modals.history opens DatabaseUploadModal.
-                */}
                 <DatabaseUploadModalLazy
                     isOpen={modals.history}
                     onClose={handleHistoryClose}
@@ -194,6 +175,16 @@ const ModalContainer = ({
                     chargerTypes={settings?.chargerTypes || []}
                     defaultPricePerKwh={settings?.electricityPrice || 0.15}
                     editingCharge={editingCharge}
+                />
+
+                {/* Charge Detail Modal */}
+                <ChargeDetailModalLazy
+                    isOpen={modals.chargeDetail}
+                    onClose={handleChargeDetailClose}
+                    charge={selectedCharge}
+                    chargerTypes={settings?.chargerTypes || []}
+                    onEdit={onEditCharge}
+                    onDelete={onDeleteCharge}
                 />
             </Suspense>
 
@@ -309,7 +300,11 @@ ModalContainer.propTypes = {
     appVersion: PropTypes.string,
     onSaveCharge: PropTypes.func,
     editingCharge: PropTypes.object,
-    setEditingCharge: PropTypes.func
+    setEditingCharge: PropTypes.func,
+    selectedCharge: PropTypes.object,
+    setSelectedCharge: PropTypes.func,
+    onEditCharge: PropTypes.func,
+    onDeleteCharge: PropTypes.func
 };
 
 export default React.memo(ModalContainer);

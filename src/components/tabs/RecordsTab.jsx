@@ -20,7 +20,7 @@ const RecordsTab = React.memo(({
   recordsListHeightHorizontal
 }) => {
   const { t } = useTranslation();
-  const { isCompact, isLargerCard, isVertical, isFullscreenBYD } = useLayout();
+  const { isCompact, isLargerCard, isVertical } = useLayout();
 
   // Render vertical layout
   if (isVertical) {

@@ -107,7 +107,7 @@ describe('logger', () => {
 
     describe('production mode behavior', () => {
         it('should suppress debug/info logs in production', () => {
-            const originalMode = import.meta.env.MODE;
+
             // Note: Actual production mode testing would require mocking import.meta.env
             // This test serves as documentation of expected behavior
             expect(logger.debug).toBeDefined();
