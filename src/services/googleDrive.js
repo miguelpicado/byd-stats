@@ -186,8 +186,8 @@ export const googleDriveService = {
     const mergedTrips = Array.from(tripMap.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
     // 2. Merge Settings
-    // Strategy: Remote settings overlay local settings if they exist.
-    const mergedSettings = { ...localData.settings, ...remoteData.settings };
+    // Strategy: Local settings have priority. Remote settings fill in missing values.
+    const mergedSettings = { ...remoteData.settings, ...localData.settings };
 
     // 3. Merge Charges (Union by id, or timestamp if id not present)
     const localCharges = (localData && Array.isArray(localData.charges)) ? localData.charges : [];
