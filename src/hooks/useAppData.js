@@ -96,6 +96,7 @@ const useAppData = () => {
     // --- Computed: Process filtered data for charts and stats ---
     const data = useMemo(() => {
         return filtered.length > 0 ? processData(filtered) : null;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filtered, i18n.language]);
 
     // --- Action: Clear all trip data ---

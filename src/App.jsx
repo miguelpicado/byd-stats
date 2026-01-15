@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 
 
@@ -77,7 +77,7 @@ const GitHubFooter = React.memo(() => (
 
 
 export default function BYDStatsAnalyzer() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   // Data management hook - replaces rawTrips, filter states, and history
   const {
@@ -120,7 +120,6 @@ export default function BYDStatsAnalyzer() {
   const setShowSettingsModal = useCallback((value) => value ? openModal('settings') : closeModal('settings'), [openModal, closeModal]);
   const setShowHistoryModal = useCallback((value) => value ? openModal('history') : closeModal('history'), [openModal, closeModal]);
   const setShowHelpModal = useCallback((value) => value ? openModal('help') : closeModal('help'), [openModal, closeModal]);
-  const setShowLegalModal = useCallback((value) => value ? openModal('legal') : closeModal('legal'), [openModal, closeModal]);
   // setLegalInitialSection comes directly from useModalState hook
 
   // Background load state for "Render-Hidden" strategy
@@ -145,7 +144,7 @@ export default function BYDStatsAnalyzer() {
 
   // Context state - Settings from AppContext, Layout from LayoutContext
   const { settings, updateSettings } = useApp();
-  const { layoutMode, isCompact, isFullscreenBYD, isVertical, isLargerCard } = useLayout();
+  const { layoutMode, isCompact, isFullscreenBYD, isVertical } = useLayout();
 
   // Get dynamic app version from GitHub releases
   const { version: appVersion } = useAppVersion();
