@@ -152,6 +152,7 @@
         "priceCalculatedNoData": "No charge data available to calculate",
         "priceCalculatedAuto": "Automatically calculated",
         "priceCalculatedInfo": "Calculated from {{count}} charges ({{total}}€ / {{kwh}} kWh)",
+        "priceCalculatedNoCharges": "Add charges to calculate the price automatically",
         "language": "Language",
         "theme": "Theme",
         "themeAuto": "Auto",
