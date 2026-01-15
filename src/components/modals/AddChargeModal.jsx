@@ -46,6 +46,7 @@ const AddChargeModal = ({
     useEffect(() => {
         if (isOpen) {
             if (editingCharge) {
+                // eslint-disable-next-line react-hooks/set-state-in-effect
                 setFormData({
                     date: editingCharge.date || getCurrentDate(),
                     time: editingCharge.time || getCurrentTime(),

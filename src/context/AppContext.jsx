@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // BYD Stats - App Context
 // Manages application settings and theme (layout moved to LayoutContext)
 

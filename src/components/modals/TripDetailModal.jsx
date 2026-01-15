@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { BYD_RED, dayNamesFull } from '../../utils/constants';
+import { BYD_RED } from '../../utils/constants';
 import { formatDate, formatTime } from '../../utils/dateUtils';
 import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '../../utils/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons.jsx';
@@ -131,7 +131,7 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                             <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.comparedToAvg')}</span>
-                            <span className={`font-bold ${details.comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
+                            <span className={`font - bold ${details.comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'} `}>
                                 {details.comparisonPercent > 0 ? '+' : ''}{details.comparisonPercent.toFixed(1)}%
                             </span>
                         </div>
