@@ -20,7 +20,8 @@
         "patterns": "Patrones",
         "efficiency": "Eficiencia",
         "records": "Récords",
-        "history": "Histórico"
+        "history": "Histórico",
+        "charges": "Cargas"
     },
     "stats": {
         "distance": "Distancia",
@@ -170,7 +171,14 @@
         "about": "Acerca de",
         "version": "Versión",
         "sourceCode": "Código fuente",
-        "reportBug": "Reportar error"
+        "reportBug": "Reportar error",
+        "chargerTypes": "Tipos de cargadores",
+        "chargerName": "Nombre",
+        "chargerSpeed": "Velocidad (kW)",
+        "chargerEfficiency": "Eficiencia (0-1)",
+        "addChargerType": "Añadir tipo",
+        "deleteChargerType": "Eliminar",
+        "newChargerType": "Nuevo cargador"
     },
     "upload": {
         "title": "Estadísticas BYD",
@@ -401,5 +409,34 @@
     "patterns": {
         "tripsPerWeekday": "Viajes por día de la semana",
         "tripsWord": "viajes"
+    },
+    "charges": {
+        "title": "Registro de Cargas",
+        "noCharges": "No hay cargas registradas",
+        "addFirst": "Pulsa + para añadir tu primera carga",
+        "addCharge": "Nueva carga",
+        "editCharge": "Editar carga",
+        "chargeDetail": "Detalle de carga",
+        "odometer": "Cuentakilómetros",
+        "kwhCharged": "kWh recargados",
+        "chargerType": "Tipo de cargador",
+        "pricePerKwh": "Precio/kWh",
+        "totalCost": "Coste total",
+        "date": "Fecha",
+        "time": "Hora",
+        "finalPercentage": "% final de carga",
+        "initialPercentage": "% inicial (opcional)",
+        "optional": "opcional",
+        "save": "Guardar carga",
+        "fillRequired": "Completa los campos obligatorios",
+        "realKwh": "kWh reales (batería)",
+        "efficiency": "Eficiencia del cargador",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "confirmDelete": "¿Eliminar esta carga permanentemente?",
+        "summary": "Resumen de cargas",
+        "totalKwh": "Total kWh cargados",
+        "avgPrice": "Precio medio/kWh",
+        "chargeCount": "Número de cargas"
     }
 }

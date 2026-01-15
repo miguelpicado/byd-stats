@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
 import { BYD_RED } from '../../utils/constants';
-import { Settings } from '../Icons.jsx';
+import { Settings, Zap, Trash2 } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { GaliciaFlag, CataloniaFlag, BasqueFlag } from '../FlagIcons.jsx';
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
@@ -26,6 +26,29 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
 
     const handleLanguageChange = (langCode) => {
         i18n.changeLanguage(langCode);
+    };
+
+    // Charger types management
+    const handleChargerTypeChange = (index, field, value) => {
+        const updatedTypes = [...(settings.chargerTypes || [])];
+        updatedTypes[index] = { ...updatedTypes[index], [field]: value };
+        onSettingsChange({ ...settings, chargerTypes: updatedTypes });
+    };
+
+    const handleAddChargerType = () => {
+        const newType = {
+            id: `custom_${Date.now()}`,
+            name: t('settings.newChargerType'),
+            speedKw: 7.4,
+            efficiency: 0.90
+        };
+        const updatedTypes = [...(settings.chargerTypes || []), newType];
+        onSettingsChange({ ...settings, chargerTypes: updatedTypes });
+    };
+
+    const handleDeleteChargerType = (index) => {
+        const updatedTypes = (settings.chargerTypes || []).filter((_, i) => i !== index);
+        onSettingsChange({ ...settings, chargerTypes: updatedTypes });
     };
 
     return (
@@ -115,6 +138,66 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         />
                     </div>
 
+                    {/* Charger Types Section */}
+                    <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <Zap className="w-4 h-4" style={{ color: BYD_RED }} />
+                            {t('settings.chargerTypes')}
+                        </h3>
+
+                        {(settings.chargerTypes || []).map((charger, index) => (
+                            <div key={charger.id} className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        value={charger.name}
+                                        onChange={(e) => handleChargerTypeChange(index, 'name', e.target.value)}
+                                        className="flex-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                        placeholder={t('settings.chargerName')}
+                                    />
+                                    <button
+                                        onClick={() => handleDeleteChargerType(index)}
+                                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                        title={t('settings.deleteChargerType')}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div>
+                                        <label className="text-xs text-slate-500 dark:text-slate-400">{t('settings.chargerSpeed')}</label>
+                                        <input
+                                            type="number"
+                                            step="0.1"
+                                            value={charger.speedKw}
+                                            onChange={(e) => handleChargerTypeChange(index, 'speedKw', parseFloat(e.target.value) || 0)}
+                                            className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-slate-500 dark:text-slate-400">{t('settings.chargerEfficiency')}</label>
+                                        <input
+                                            type="number"
+                                            step="0.01"
+                                            min="0"
+                                            max="1"
+                                            value={charger.efficiency}
+                                            onChange={(e) => handleChargerTypeChange(index, 'efficiency', parseFloat(e.target.value) || 0)}
+                                            className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+
+                        <button
+                            onClick={handleAddChargerType}
+                            className="w-full py-2 rounded-xl border-2 border-dashed border-slate-300 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:border-slate-400 dark:hover:border-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-sm"
+                        >
+                            + {t('settings.addChargerType')}
+                        </button>
+                    </div>
+
                     <div>
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.language')}</label>
                         <div className="grid grid-cols-3 gap-2">
@@ -189,7 +272,13 @@ SettingsModal.propTypes = {
         batterySize: PropTypes.number,
         soh: PropTypes.number,
         electricityPrice: PropTypes.number,
-        theme: PropTypes.string
+        theme: PropTypes.string,
+        chargerTypes: PropTypes.arrayOf(PropTypes.shape({
+            id: PropTypes.string,
+            name: PropTypes.string,
+            speedKw: PropTypes.number,
+            efficiency: PropTypes.number
+        }))
     }).isRequired,
     onSettingsChange: PropTypes.func.isRequired,
     googleSync: PropTypes.shape({

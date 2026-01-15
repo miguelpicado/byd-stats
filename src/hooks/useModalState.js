@@ -15,7 +15,9 @@ const useModalState = () => {
     settings: false,
     history: false,
     help: false,
-    legal: false
+    legal: false,
+    addCharge: false,
+    chargeDetail: false
   });
 
   // Track additional modal-related state
@@ -57,7 +59,9 @@ const useModalState = () => {
       settings: false,
       history: false,
       help: false,
-      legal: false
+      legal: false,
+      addCharge: false,
+      chargeDetail: false
     });
   }, []);
 

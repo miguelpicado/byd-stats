@@ -14,6 +14,7 @@ const FilterModalLazy = React.lazy(() => import('../modals/FilterModal'));
 const TripDetailModalLazy = React.lazy(() => import('../modals/TripDetailModal'));
 const DatabaseUploadModalLazy = React.lazy(() => import('../modals/DatabaseUploadModal'));
 const LegalModalLazy = React.lazy(() => import('../modals/LegalModal'));
+const AddChargeModalLazy = React.lazy(() => import('../modals/AddChargeModal'));
 
 const ModalContainer = ({
     modals,
@@ -49,7 +50,11 @@ const ModalContainer = ({
     months,
     rawTripsCount,
     filteredCount,
-    appVersion = 'v1.2' // Dynamic version from GitHub releases
+    appVersion = 'v1.2', // Dynamic version from GitHub releases
+    // Charges modal props
+    onSaveCharge,
+    editingCharge,
+    setEditingCharge
 }) => {
     const { t } = useTranslation();
 
@@ -61,6 +66,7 @@ const ModalContainer = ({
     const handleTripDetailClose = () => { closeModal('tripDetail'); setSelectedTrip(null); };
     const handleLegalClose = () => closeModal('legal');
     const handleHelpClose = () => closeModal('help');
+    const handleAddChargeClose = () => { closeModal('addCharge'); if (setEditingCharge) setEditingCharge(null); };
 
     // Helper for showing history from upload modal
     const handleShowHistory = () => {
@@ -179,6 +185,16 @@ const ModalContainer = ({
                     onClose={handleLegalClose}
                     initialSection={legalInitialSection}
                 />
+
+                {/* Add/Edit Charge Modal */}
+                <AddChargeModalLazy
+                    isOpen={modals.addCharge}
+                    onClose={handleAddChargeClose}
+                    onSave={onSaveCharge}
+                    chargerTypes={settings?.chargerTypes || []}
+                    defaultPricePerKwh={settings?.electricityPrice || 0.15}
+                    editingCharge={editingCharge}
+                />
             </Suspense>
 
             {/* Help/Bug Report Modal */}
@@ -290,7 +306,10 @@ ModalContainer.propTypes = {
     months: PropTypes.array,
     rawTripsCount: PropTypes.number,
     filteredCount: PropTypes.number,
-    appVersion: PropTypes.string
+    appVersion: PropTypes.string,
+    onSaveCharge: PropTypes.func,
+    editingCharge: PropTypes.object,
+    setEditingCharge: PropTypes.func
 };
 
 export default React.memo(ModalContainer);
