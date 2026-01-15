@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // BYD Stats - App Context
 // Manages application settings and theme (layout moved to LayoutContext)
 
@@ -18,6 +19,14 @@ export const useApp = () => {
     return context;
 };
 
+// Default charger types configuration
+const DEFAULT_CHARGER_TYPES = [
+    { id: 'domestic', name: '240V (Doméstico)', speedKw: 2.4, efficiency: 0.85 },
+    { id: 'slow', name: 'Carga lenta', speedKw: 7.4, efficiency: 0.90 },
+    { id: 'fast', name: 'Carga rápida', speedKw: 50, efficiency: 0.92 },
+    { id: 'ultrafast', name: 'Carga ultrarrápida', speedKw: 150, efficiency: 0.95 }
+];
+
 // Default settings configuration
 const DEFAULT_SETTINGS = {
     carModel: '',
@@ -26,7 +35,8 @@ const DEFAULT_SETTINGS = {
     batterySize: 60.48,
     soh: 100,
     electricityPrice: 0.15,
-    theme: 'auto'
+    theme: 'auto',
+    chargerTypes: DEFAULT_CHARGER_TYPES
 };
 
 /**
@@ -69,7 +79,8 @@ export const AppProvider = ({ children }) => {
                 batterySize: updated.batterySize ?? prev.batterySize ?? 60.48,
                 soh: updated.soh ?? prev.soh ?? 100,
                 electricityPrice: updated.electricityPrice ?? prev.electricityPrice ?? 0.15,
-                theme: updated.theme ?? prev.theme ?? 'auto'
+                theme: updated.theme ?? prev.theme ?? 'auto',
+                chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES
             };
 
             localStorage.setItem('byd_settings', JSON.stringify(validated));

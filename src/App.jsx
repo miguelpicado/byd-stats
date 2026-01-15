@@ -1,19 +1,18 @@
-import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useVirtualizer } from '@tanstack/react-virtual';
+
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { formatMonth, formatDate, formatTime } from './utils/dateUtils';
-import { processData } from './utils/dataProcessing';
-import { calculateScore, getScoreColor } from './utils/formatters';
+import { formatMonth } from './utils/dateUtils';
+
 import { logger } from './utils/logger';
 import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPACT_SPACE_Y } from './constants/layout';
 import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, BYD_RED } from './components/Icons.jsx';
+import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
 import TripCard from './components/cards/TripCard';
 import TabFallback from './components/common/TabFallback';
 import VirtualizedTripList from './components/lists/VirtualizedTripList';
@@ -25,6 +24,7 @@ const RecordsTab = lazy(() => import('./components/tabs/RecordsTab'));
 const TrendsTab = lazy(() => import('./components/tabs/TrendsTab'));
 const PatternsTab = lazy(() => import('./components/tabs/PatternsTab'));
 const EfficiencyTab = lazy(() => import('./components/tabs/EfficiencyTab'));
+const ChargesTab = lazy(() => import('./components/tabs/ChargesTab'));
 // PWAManager lazy loaded for code splitting
 const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
 
@@ -35,6 +35,7 @@ import { useLayout } from './context/LayoutContext';
 import useModalState from './hooks/useModalState';
 import useAppData from './hooks/useAppData';
 import useAppVersion from './hooks/useAppVersion';
+import useChargesData from './hooks/useChargesData';
 
 
 
@@ -76,14 +77,13 @@ const GitHubFooter = React.memo(() => (
 
 
 export default function BYDStatsAnalyzer() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
 
   // Data management hook - replaces rawTrips, filter states, and history
   const {
     rawTrips,
     setRawTrips,
     tripHistory,
-    setTripHistory,
     filterType,
     setFilterType,
     selMonth,
@@ -97,26 +97,20 @@ export default function BYDStatsAnalyzer() {
     data,
     clearData,
     saveToHistory,
-    loadFromHistory,
     clearHistory
   } = useAppData();
-  const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
+  const { sqlReady, loading, error, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
   const [fadingTab, setFadingTab] = useState(null); // Track which tab is fading in
   const [dragOver, setDragOver] = useState(false);
   // Centralized modal state management
-  const { modals, openModal, closeModal, openLegalModal, legalInitialSection, setLegalInitialSection } = useModalState();
+  const { modals, openModal, closeModal, legalInitialSection, setLegalInitialSection } = useModalState();
 
   // Destructure for backwards compatibility with existing code
-  const showModal = modals.upload;
-  const showFilterModal = modals.filter;
   const showAllTripsModal = modals.allTrips;
   const showTripDetailModal = modals.tripDetail;
   const showSettingsModal = modals.settings;
-  const showHistoryModal = modals.history;
-  const showHelpModal = modals.help;
-  const showLegalModal = modals.legal;
 
   // Setter functions for backwards compatibility
   const setShowModal = useCallback((value) => value ? openModal('upload') : closeModal('upload'), [openModal, closeModal]);
@@ -126,7 +120,6 @@ export default function BYDStatsAnalyzer() {
   const setShowSettingsModal = useCallback((value) => value ? openModal('settings') : closeModal('settings'), [openModal, closeModal]);
   const setShowHistoryModal = useCallback((value) => value ? openModal('history') : closeModal('history'), [openModal, closeModal]);
   const setShowHelpModal = useCallback((value) => value ? openModal('help') : closeModal('help'), [openModal, closeModal]);
-  const setShowLegalModal = useCallback((value) => value ? openModal('legal') : closeModal('legal'), [openModal, closeModal]);
   // setLegalInitialSection comes directly from useModalState hook
 
   // Background load state for "Render-Hidden" strategy
@@ -143,29 +136,25 @@ export default function BYDStatsAnalyzer() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Detect paths like /legal or /privacidad
-  const isLegalPath = window.location.pathname.startsWith('/legal');
-  const isPrivacyPath = window.location.pathname.startsWith('/privacidad');
 
-  if (isLegalPath || isPrivacyPath) {
-    return (
-      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">{t('common.loading')}</div>}>
-        <LegalPageLazy forcedTab={isPrivacyPath ? 'privacy' : 'legal'} />
-      </Suspense>
-    );
-  }
 
   const [selectedTrip, setSelectedTrip] = useState(null);
-
-
+  const [selectedCharge, setSelectedCharge] = useState(null);
+  const [editingCharge, setEditingCharge] = useState(null);
 
   // Context state - Settings from AppContext, Layout from LayoutContext
   const { settings, updateSettings } = useApp();
-  const { layoutMode, isCompact, isFullscreenBYD, isVertical, isLargerCard } = useLayout();
+  const { layoutMode, isCompact, isFullscreenBYD, isVertical } = useLayout();
 
   // Get dynamic app version from GitHub releases
   const { version: appVersion } = useAppVersion();
 
+  // Charges data management
+  const {
+    charges,
+    addCharge,
+    deleteCharge
+  } = useChargesData();
 
   // Calculate chart heights based on mode - memoized to prevent recalculation
   const smallChartHeight = useMemo(() => {
@@ -246,8 +235,7 @@ export default function BYDStatsAnalyzer() {
 
   // Swipe gesture state
   const [isTransitioning, setIsTransitioning] = useState(false);
-  const touchStartRef = useRef(null);
-  const touchStartYRef = useRef(null);
+
   // Swipe gesture is now handled by useSwipeGesture hook
   // const [swipeContainer, setSwipeContainer] = useState(null); -> Removed, hook returns ref setter except when it doesn't? 
   // Wait, useSwipeGesture returns 'setSwipeContainer'. App.jsx used 'useState' for it.
@@ -486,21 +474,19 @@ export default function BYDStatsAnalyzer() {
   }, [exportDBHook, filtered, t]);
 
   // Memoized modal handlers to prevent unnecessary re-renders
-  const handleOpenSettingsModal = useCallback(() => setShowSettingsModal(true), []);
-  const handleCloseSettingsModal = useCallback(() => setShowSettingsModal(false), []);
-  const handleOpenFilterModal = useCallback(() => setShowFilterModal(true), []);
-  const handleCloseFilterModal = useCallback(() => setShowFilterModal(false), []);
-  // Help modal uses setShowHelpModal directly in JSX
-  const handleOpenModal = useCallback(() => setShowModal(true), []);
-  const handleCloseModal = useCallback(() => setShowModal(false), []);
-  const handleOpenHistoryModal = useCallback(() => setShowHistoryModal(true), []);
-  const handleCloseHistoryModal = useCallback(() => setShowHistoryModal(false), []);
-  const handleOpenAllTripsModal = useCallback(() => setShowAllTripsModal(true), []);
-  const handleCloseAllTripsModal = useCallback(() => setShowAllTripsModal(false), []);
-  const handleCloseTripDetailModal = useCallback(() => {
-    setShowTripDetailModal(false);
-    setSelectedTrip(null);
-  }, []);
+
+
+  const handleEditCharge = useCallback((charge) => {
+    setEditingCharge(charge);
+    closeModal('chargeDetail');
+    openModal('addCharge');
+  }, [closeModal, openModal]);
+
+  const handleDeleteCharge = useCallback((id) => {
+    deleteCharge(id);
+    closeModal('chargeDetail');
+    setSelectedCharge(null);
+  }, [deleteCharge, closeModal]);
 
   const tabs = useMemo(() => [
     { id: 'overview', label: t('tabs.overview'), icon: Activity },
@@ -508,7 +494,8 @@ export default function BYDStatsAnalyzer() {
     { id: 'patterns', label: t('tabs.patterns'), icon: Clock },
     { id: 'efficiency', label: t('tabs.efficiency'), icon: Zap },
     { id: 'records', label: t('tabs.records'), icon: BarChart3 },
-    { id: 'history', label: t('tabs.history'), icon: List }
+    { id: 'history', label: t('tabs.history'), icon: List },
+    { id: 'charges', label: t('tabs.charges'), icon: Battery }
   ], [t]);
 
   const minSwipeDistance = 30; // Distancia mínima en píxeles
@@ -553,32 +540,25 @@ export default function BYDStatsAnalyzer() {
 
   // TripCard imported from components/cards/TripCard.jsx
 
-  // Format duration in minutes/hours - memoized
-  const formatDuration = useCallback((seconds) => {
-    if (!seconds) return '0 min';
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    if (hours > 0) {
-      return `${hours}h ${minutes}min`;
-    }
-    return `${minutes} min`;
-  }, []);
 
-  // Calculate trip percentile - memoized
-  const calculatePercentile = useCallback((trip, allTrips) => {
-    if (!trip || !allTrips || allTrips.length === 0) return 50;
-    const tripEfficiency = trip.trip > 0 ? (trip.electricity / trip.trip) * 100 : 999;
-    const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
-    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-    const betterCount = efficiencies.filter(e => e < tripEfficiency).length;
-    return Math.round((betterCount / efficiencies.length) * 100);
-  }, []);
 
   // Open trip detail - memoized callback
   const openTripDetail = useCallback((trip) => {
     setSelectedTrip(trip);
     setShowTripDetailModal(true);
   }, []);
+
+  // Detect paths like /legal or /privacidad
+  const isLegalPath = window.location.pathname.startsWith('/legal');
+  const isPrivacyPath = window.location.pathname.startsWith('/privacidad');
+
+  if (isLegalPath || isPrivacyPath) {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">{t('common.loading')}</div>}>
+        <LegalPageLazy forcedTab={isPrivacyPath ? 'privacy' : 'legal'} />
+      </Suspense>
+    );
+  }
 
   if (loading) {
     return (
@@ -1100,6 +1080,13 @@ export default function BYDStatsAnalyzer() {
         rawTripsCount={rawTrips.length}
         filteredCount={filtered ? filtered.length : 0}
         appVersion={appVersion}
+        onSaveCharge={addCharge}
+        editingCharge={editingCharge}
+        setEditingCharge={setEditingCharge}
+        selectedCharge={selectedCharge}
+        setSelectedCharge={setSelectedCharge}
+        onEditCharge={handleEditCharge}
+        onDeleteCharge={handleDeleteCharge}
       />
 
       <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -1171,12 +1158,9 @@ export default function BYDStatsAnalyzer() {
                   aria-controls={`tabpanel-${t.id}`}
                   onClick={() => handleTabClick(t.id)}
                   className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${activeTab === t.id
-                    ? 'text-white'
-                    : 'text-slate-600 dark:text-slate-400'
+                    ? 'byd-active-item shadow-lg shadow-red-900/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
                     }`}
-                  style={{
-                    backgroundColor: activeTab === t.id ? BYD_RED : 'transparent'
-                  }}
                 >
                   <t.icon className="w-5 h-5 flex-shrink-0" />
                   <span className="font-medium">{t.label}</span>
@@ -1229,7 +1213,9 @@ export default function BYDStatsAnalyzer() {
                         monthly={monthly}
                         tripDist={tripDist}
                         smallChartHeight={smallChartHeight}
+
                         overviewSpacing={overviewSpacingVertical}
+                        onAddCharge={() => openModal('addCharge')}
                       />
                     )}
                   </div>
@@ -1307,6 +1293,24 @@ export default function BYDStatsAnalyzer() {
                           filtered={filtered}
                           openTripDetail={openTripDetail}
                           setShowAllTripsModal={setShowAllTripsModal}
+                        />
+                      )}
+                    </Suspense>
+                  </div>
+
+                  {/* Slide 7: Charges */}
+                  <div className={getTabClassName('charges', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    <Suspense fallback={<TabFallback />}>
+                      {(activeTab === 'charges' || backgroundLoad) && (
+                        <ChargesTab
+                          key={activeTab === 'charges' ? 'active' : 'bg'}
+                          charges={charges}
+                          chargerTypes={settings.chargerTypes || []}
+                          onChargeClick={(charge) => {
+                            setSelectedCharge(charge);
+                            openModal('chargeDetail');
+                          }}
+                          onAddClick={() => openModal('addCharge')}
                         />
                       )}
                     </Suspense>
@@ -1409,6 +1413,23 @@ export default function BYDStatsAnalyzer() {
                       )}
                     </div>
                   </Suspense>
+
+                  <Suspense fallback={<TabFallback />}>
+                    <div className={activeTab === 'charges' && fadingTab === 'charges' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'charges' ? 'block' : 'none' }}>
+                      {(activeTab === 'charges' || backgroundLoad) && (
+                        <ChargesTab
+                          key={activeTab === 'charges' ? 'charges-active' : 'charges-bg'}
+                          charges={charges}
+                          chargerTypes={settings.chargerTypes || []}
+                          onChargeClick={(charge) => {
+                            setSelectedCharge(charge);
+                            openModal('chargeDetail');
+                          }}
+                          onAddClick={() => openModal('addCharge')}
+                        />
+                      )}
+                    </div>
+                  </Suspense>
                 </>
               )}
             </div>
@@ -1428,14 +1449,10 @@ export default function BYDStatsAnalyzer() {
                         aria-selected={activeTab === t.id}
                         aria-controls={`tabpanel-${t.id}`}
                         onClick={() => handleTabClick(t.id)}
-                        className="flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1"
-                        style={{
-                          backgroundColor: activeTab === t.id ? BYD_RED + '20' : 'transparent',
-                          color: activeTab === t.id ? BYD_RED : ''
-                        }}
+                        className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1 ${activeTab === t.id ? 'byd-active-item shadow-lg shadow-red-900/20' : 'text-slate-600 dark:text-slate-400'}`}
                       >
-                        <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`} />
-                        <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : ''}`}>{t.label}</span>
+                        <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : 'text-white'}`} />
+                        <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : 'text-white'}`}>{t.label}</span>
                       </button>
                     ))}
                   </div>
