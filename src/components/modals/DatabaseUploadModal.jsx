@@ -3,7 +3,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { BYD_RED } from '../../utils/constants';
-import { Upload, Database, Download } from '../Icons.jsx';
+import { Upload, Database, Download, FileText } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { useTranslation } from 'react-i18next';
 
@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next';
  * @param {Function} props.onFileSelect - File selection handler
  * @param {Function} props.onExport - Export database handler
  * @param {Function} props.onClearData - Clear data handler
- * @param {Function} props.onShowHistory - Show history modal handler
+ * @param {Function} props.onLoadChargeRegistry - Load charge registry CSV handler
  * @param {boolean} props.hasData - Whether there is data loaded
  * @param {boolean} props.isNative - Native platform flag
  */
@@ -27,11 +27,8 @@ const DatabaseUploadModal = ({
     onFileSelect,
     onExport,
     onClearData,
-    onShowHistory,
-    onSaveToHistory,
-    onClearHistory,
+    onLoadChargeRegistry,
     hasData,
-    historyCount,
     isNative
 }) => {
     const { t } = useTranslation();
@@ -42,6 +39,15 @@ const DatabaseUploadModal = ({
         const file = e.target.files[0];
         if (file) {
             onFileSelect(file, merge);
+        }
+        e.target.value = '';
+    };
+
+    const handleChargeRegistryChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            onLoadChargeRegistry(file);
+            onClose();
         }
         e.target.value = '';
     };
@@ -66,53 +72,14 @@ const DatabaseUploadModal = ({
                 />
 
                 <div className="space-y-4">
-                    {/* Section 1: History Management */}
-                    <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
-                        <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
-                            <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                            {t('upload.historySection', { count: historyCount })}
-                        </h3>
-                        <div className="space-y-2">
-                            <button
-                                onClick={() => { onSaveToHistory(); onClose(); }}
-                                className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors"
-                                style={{ backgroundColor: BYD_RED }}
-                                disabled={!hasData}
-                            >
-                                {t('upload.saveCurrent')}
-                            </button>
-                            <button
-                                onClick={() => { onShowHistory(); onClose(); }}
-                                className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors"
-                            >
-                                {t('upload.viewLoad')}
-                            </button>
-                            {historyCount > 0 && (
-                                <div className="grid grid-cols-2 gap-2">
-                                    <button
-                                        onClick={() => { onExport(); onClose(); }}
-                                        className="py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
-                                    >
-                                        <Download className="w-4 h-4" /> {t('upload.export')}
-                                    </button>
-                                    <button
-                                        onClick={() => { onClearHistory(); onClose(); }}
-                                        className="py-2.5 px-4 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                                    >
-                                        {t('upload.clearHistory')}
-                                    </button>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Section 2: File Operations */}
+                    {/* File Operations Section */}
                     <div className="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-4 border border-slate-100 dark:border-slate-700">
                         <h3 className="text-sm font-semibold text-slate-900 dark:text-white mb-3 flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
                             {t('upload.filesSection')}
                         </h3>
                         <div className="space-y-2">
+                            {/* Replace existing trips */}
                             <div>
                                 <input
                                     type="file"
@@ -124,7 +91,8 @@ const DatabaseUploadModal = ({
                                 />
                                 <button
                                     onClick={() => document.getElementById('uploadNew')?.click()}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                    style={{ backgroundColor: BYD_RED }}
                                     disabled={!sqlReady}
                                 >
                                     <Upload className="w-4 h-4" />
@@ -132,6 +100,7 @@ const DatabaseUploadModal = ({
                                 </button>
                             </div>
 
+                            {/* Load only new trips (merge) */}
                             {hasData && (
                                 <div>
                                     <input
@@ -153,7 +122,25 @@ const DatabaseUploadModal = ({
                                 </div>
                             )}
 
-                            {/* Clear current view only */}
+                            {/* Load charge registry (CSV) */}
+                            <div>
+                                <input
+                                    type="file"
+                                    id="uploadChargeRegistry"
+                                    accept=".csv,text/csv"
+                                    className="hidden"
+                                    onChange={handleChargeRegistryChange}
+                                />
+                                <button
+                                    onClick={() => document.getElementById('uploadChargeRegistry')?.click()}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    {t('upload.loadChargeRegistry')}
+                                </button>
+                            </div>
+
+                            {/* Clear current view */}
                             {hasData && (
                                 <button
                                     onClick={() => { onClearData(); onClose(); }}
@@ -163,6 +150,7 @@ const DatabaseUploadModal = ({
                                 </button>
                             )}
 
+                            {/* Export trips */}
                             {hasData && (
                                 <button
                                     onClick={() => { onExport(); onClose(); }}
@@ -193,11 +181,8 @@ DatabaseUploadModal.propTypes = {
     onFileSelect: PropTypes.func.isRequired,
     onExport: PropTypes.func.isRequired,
     onClearData: PropTypes.func.isRequired,
-    onShowHistory: PropTypes.func.isRequired,
-    onSaveToHistory: PropTypes.func.isRequired,
-    onClearHistory: PropTypes.func.isRequired,
+    onLoadChargeRegistry: PropTypes.func.isRequired,
     hasData: PropTypes.bool,
-    historyCount: PropTypes.number,
     isNative: PropTypes.bool
 };
 
