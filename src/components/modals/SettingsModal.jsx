@@ -23,9 +23,7 @@ import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync, charges = [] }) => {
     const { t, i18n } = useTranslation();
 
-    if (!isOpen) return null;
-
-    // Calculate average electricity price from charges
+    // Calculate average electricity price from charges (must be before early return)
     const calculatedPrice = useMemo(() => {
         if (!charges || charges.length === 0) return 0;
         const totalCost = charges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
@@ -33,6 +31,8 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
         if (totalKwh === 0) return 0;
         return totalCost / totalKwh;
     }, [charges]);
+
+    if (!isOpen) return null;
 
     const handleLanguageChange = (langCode) => {
         i18n.changeLanguage(langCode);
