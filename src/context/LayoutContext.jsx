@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 // BYD Stats - Layout Context
 // Manages layout state separately from app settings to prevent unnecessary re-renders
 
