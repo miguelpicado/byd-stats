@@ -46,6 +46,15 @@ const TAB_PADDING = '12px 12px calc(96px + env(safe-area-inset-bottom)) 12px';
 const COMPACT_TAB_PADDING = '8px 10px calc(80px + env(safe-area-inset-bottom)) 10px';
 const COMPACT_SPACE_Y = 'space-y-3';
 
+// Helper to determine if a tab should have fade-in animation
+const getTabClassName = (tabId, activeTab, fadingTab, baseClass = 'tab-content-container') => {
+  const classes = [baseClass];
+  if (tabId === activeTab && tabId === fadingTab) {
+    classes.push('tab-fade-in');
+  }
+  return classes.join(' ');
+};
+
 
 const GitHubFooter = React.memo(() => (
   <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
@@ -241,6 +250,7 @@ export default function BYDStatsAnalyzer() {
   const { sqlReady, loading, error, setError, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
+  const [fadingTab, setFadingTab] = useState(null); // Track which tab is fading in
   const [dragOver, setDragOver] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [showFilterModal, setShowFilterModal] = useState(false);
@@ -728,8 +738,11 @@ export default function BYDStatsAnalyzer() {
     // Use transitions for both vertical and horizontal modes
     setIsTransitioning(true);
     setActiveTab(tabId);
+    setFadingTab(tabId); // Mark this tab for fade-in animation
+
     setTimeout(() => {
       setIsTransitioning(false);
+      setFadingTab(null); // Clear animation after transition
     }, transitionDuration);
   }, [activeTab, isTransitioning, transitionDuration]);
 
@@ -1676,7 +1689,7 @@ export default function BYDStatsAnalyzer() {
               ) : (
                 <>
                   {/* Slide 1: Overview */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('overview', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     {(activeTab === 'overview' || backgroundLoad) && (
                       <OverviewTab
                         key={activeTab === 'overview' ? 'active' : 'bg'}
@@ -1694,7 +1707,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 2: Trends */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('trends', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'trends' || backgroundLoad) && (
                         <TrendsTab
@@ -1714,7 +1727,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 3: Patterns */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('patterns', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'patterns' || backgroundLoad) && (
                         <PatternsTab
@@ -1733,7 +1746,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 4: Efficiency */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('efficiency', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'efficiency' || backgroundLoad) && (
                         <EfficiencyTab
@@ -1751,7 +1764,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 5: Records */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('records', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'records' || backgroundLoad) && (
                         <RecordsTab
@@ -1771,7 +1784,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   {/* Slide 6: History */}
-                  <div className="tab-content-container" style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                  <div className={getTabClassName('history', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
                     <Suspense fallback={<TabFallback />}>
                       {(activeTab === 'history' || backgroundLoad) && (
                         <HistoryTab
@@ -1799,7 +1812,7 @@ export default function BYDStatsAnalyzer() {
                 </div>
               ) : (
                 <>
-                  <div style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
+                  <div className={activeTab === 'overview' && fadingTab === 'overview' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
                     {(activeTab === 'overview' || backgroundLoad) && (
                       <OverviewTab
                         key={activeTab === 'overview' ? 'active' : 'bg'}
@@ -1817,7 +1830,7 @@ export default function BYDStatsAnalyzer() {
                   </div>
 
                   <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
+                    <div className={activeTab === 'trends' && fadingTab === 'trends' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
                       {(activeTab === 'trends' || backgroundLoad) && (
                         <TrendsTab
                           key={activeTab === 'trends' ? 'active' : 'bg'}
@@ -1836,7 +1849,7 @@ export default function BYDStatsAnalyzer() {
                   </Suspense>
 
                   <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
+                    <div className={activeTab === 'patterns' && fadingTab === 'patterns' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
                       {(activeTab === 'patterns' || backgroundLoad) && (
                         <PatternsTab
                           key={activeTab === 'patterns' ? 'active' : 'bg'}
@@ -1854,7 +1867,7 @@ export default function BYDStatsAnalyzer() {
                   </Suspense>
 
                   <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
+                    <div className={activeTab === 'efficiency' && fadingTab === 'efficiency' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
                       {(activeTab === 'efficiency' || backgroundLoad) && (
                         <EfficiencyTab
                           key={activeTab === 'efficiency' ? 'active' : 'bg'}
@@ -1871,7 +1884,7 @@ export default function BYDStatsAnalyzer() {
                   </Suspense>
 
                   <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
+                    <div className={activeTab === 'records' && fadingTab === 'records' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
                       {(activeTab === 'records' || backgroundLoad) && (
                         <RecordsTab
                           key={activeTab === 'records' ? 'active' : 'bg'}
@@ -1890,7 +1903,7 @@ export default function BYDStatsAnalyzer() {
                   </Suspense>
 
                   <Suspense fallback={<TabFallback />}>
-                    <div style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
+                    <div className={activeTab === 'history' && fadingTab === 'history' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
                       {(activeTab === 'history' || backgroundLoad) && (
                         <HistoryTab
                           key={activeTab === 'history' ? 'active' : 'bg'}
