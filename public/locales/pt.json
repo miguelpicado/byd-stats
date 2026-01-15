@@ -161,12 +161,8 @@
         "lastSync": "Última sinc",
         "dataManagement": "Gestão de dados",
         "updateData": "Atualizar dados",
-        "exportDb": "Exportar BD",
-        "cloudSync": "Sincronização na nuvem",
-        "historyManagement": "Gestão do histórico",
-        "saveToHistory": "Guardar no histórico",
-        "loadFromHistory": "Carregar histórico",
-        "clearHistory": "Limpar histórico",
+        "supportDev": "Apoie o desenvolvedor",
+        "buyMeCoffee": "Pague-me um café",
         "tripsInHistory": "viagens no histórico",
         "about": "Sobre",
         "version": "Versão",
@@ -344,10 +340,12 @@
         "madeWith": "Feito com ❤️ para a comunidade BYD"
     },
     "help": {
-        "title": "Ajuda",
-        "description": "Ajuda e Suporte",
-        "subtitle": "Encontrou um erro ou tem sugestões?",
-        "reportBug": "Reportar erro"
+        "title": "Ajuda e Relatórios",
+        "subtitle": "Informações do Projeto",
+        "description": "Este aplicativo é de código aberto e foi feito para ajudar a comunidade de usuários da BYD.",
+        "reportBug": "Reportar um erro",
+        "supportDev": "Apoie o desenvolvedor",
+        "buyMeCoffee": "Pague-me um café"
     },
     "header": {
         "title": "Estatísticas BYD",

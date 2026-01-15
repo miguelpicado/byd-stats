@@ -160,12 +160,8 @@
         "lastSync": "Azken sink",
         "dataManagement": "Datuen kudeaketa",
         "updateData": "Datuak eguneratu",
-        "exportDb": "DB esportatu",
-        "cloudSync": "Hodeian sinkronizazioa",
-        "historyManagement": "Historiaren kudeaketa",
-        "saveToHistory": "Historian gorde",
-        "loadFromHistory": "Historia kargatu",
-        "clearHistory": "Historia ezabatu",
+        "supportDev": "Garatzailea lagundu",
+        "buyMeCoffee": "Kafe bat gonbidatu nazazu",
         "tripsInHistory": "bidaia historian",
         "about": "Honi buruz",
         "version": "Bertsioa",
@@ -343,10 +339,12 @@
         "madeWith": "BYD komunitatearentzat ❤️ egina"
     },
     "help": {
-        "title": "Laguntza",
-        "description": "Laguntza eta Laguntza Teknikoa",
-        "subtitle": "Akatsen bat aurkitu duzu edo iradokizunik?",
-        "reportBug": "Akatsa jakinarazi"
+        "title": "Laguntza eta Txostenak",
+        "subtitle": "Proiektuari buruzko informazioa",
+        "description": "Aplikazio hau kode irekikoa da eta BYD erabiltzaileen komunitateari laguntzeko egina dago.",
+        "reportBug": "Errore baten berri eman",
+        "supportDev": "Garatzailea lagundu",
+        "buyMeCoffee": "Kafe bat gonbidatu nazazu"
     },
     "header": {
         "title": "BYD Estatistikak",
