@@ -197,12 +197,12 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                             {t('settings.chargerTypes')}
                         </h3>
 
-                        {(settings.chargerTypes || []).map((charger, index) => (
+                        {(settings?.chargerTypes || []).map((charger, index) => (
                             <div key={charger.id} className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 space-y-2">
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="text"
-                                        value={charger.name}
+                                        value={charger?.name || ''}
                                         onChange={(e) => handleChargerTypeChange(index, 'name', e.target.value)}
                                         className="flex-1 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
                                         placeholder={t('settings.chargerName')}
@@ -221,7 +221,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                         <input
                                             type="number"
                                             step="0.1"
-                                            value={charger.speedKw}
+                                            value={charger?.speedKw || 0}
                                             onChange={(e) => handleChargerTypeChange(index, 'speedKw', parseFloat(e.target.value) || 0)}
                                             className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
                                         />
@@ -233,7 +233,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                             step="0.01"
                                             min="0"
                                             max="1"
-                                            value={charger.efficiency}
+                                            value={charger?.efficiency || 0}
                                             onChange={(e) => handleChargerTypeChange(index, 'efficiency', parseFloat(e.target.value) || 0)}
                                             className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
                                         />
@@ -282,7 +282,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                 <button
                                     key={theme}
                                     onClick={() => onSettingsChange({ ...settings, theme })}
-                                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors border ${settings.theme === theme
+                                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors border ${settings?.theme === theme
                                         ? 'byd-active-item'
                                         : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
                                         }`}
