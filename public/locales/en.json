@@ -160,18 +160,7 @@
         "logout": "Logout",
         "lastSync": "Last sync",
         "dataManagement": "Data management",
-        "updateData": "Update data",
-        "exportDb": "Export DB",
-        "cloudSync": "Cloud sync",
-        "historyManagement": "History management",
-        "saveToHistory": "Save to history",
-        "loadFromHistory": "Load history",
-        "clearHistory": "Clear history",
-        "tripsInHistory": "trips in history",
-        "about": "About",
-        "version": "Version",
-        "sourceCode": "Source code",
-        "reportBug": "Report bug"
+        "updateData": "Update data"
     },
     "upload": {
         "title": "BYD Stats",
@@ -362,10 +351,12 @@
         }
     },
     "help": {
-        "title": "Help & Support",
-        "subtitle": "Found a bug or have suggestions?",
-        "description": "You can report bugs, request features, or contribute to the project on GitHub.",
-        "reportBug": "Report Bug"
+        "title": "Help & Reports",
+        "subtitle": "Project Information",
+        "description": "This application is open source and is made to help the BYD user community.",
+        "reportBug": "Report a bug",
+        "supportDev": "Support the developer",
+        "buyMeCoffee": "Buy me a coffee"
     },
     "sort": {
         "newest": "Newest",
