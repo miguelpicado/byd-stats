@@ -179,9 +179,10 @@
         "export": "Export",
         "clearHistory": "Clear history",
         "filesSection": "Files / BYD Database",
-        "loadNew": "Load new trips (Replace)",
-        "loadMerge": "Load only new trips (Merge)",
-        "clearView": "Clear current view (Does not clear history)",
+        "loadNew": "Replace existing trips",
+        "loadMerge": "Load only new trips",
+        "loadChargeRegistry": "Load charge registry",
+        "clearView": "Clear current view",
         "exportTrips": "Export trips"
     },
     "filter": {
@@ -425,6 +426,8 @@
         "chargeCount": "Total Charges",
         "energyAnalysis": "Energy Analysis",
         "realKwhExplanation": "Estimated energy after conversion losses",
-        "details": "Additional Details"
+        "details": "Additional Details",
+        "chargesImported": "{{count}} charges imported successfully",
+        "chargerTypesCreated": "New charger types created: {{types}}"
     }
 }

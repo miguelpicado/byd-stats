@@ -186,9 +186,10 @@
         "export": "Exportar",
         "clearHistory": "Borrar historial",
         "filesSection": "Archivos / Base de Datos BYD",
-        "loadNew": "Cargar nuevos viajes (Reemplazar)",
-        "loadMerge": "Cargar sólo viajes nuevos (Combinar)",
-        "clearView": "Limpiar vista actual (No borra historial)",
+        "loadNew": "Reemplazar viajes existentes",
+        "loadMerge": "Cargar sólo viajes nuevos",
+        "loadChargeRegistry": "Cargar registro de cargas",
+        "clearView": "Limpiar vista actual",
         "exportTrips": "Exportar viajes"
     },
     "filter": {
@@ -432,6 +433,8 @@
         "chargeCount": "Número de cargas",
         "energyAnalysis": "Análisis energético",
         "realKwhExplanation": "Energía estimada perdida por pérdidas de conversión",
-        "details": "Detalles adicionales"
+        "details": "Detalles adicionales",
+        "chargesImported": "{{count}} cargas importadas correctamente",
+        "chargerTypesCreated": "Nuevos tipos de cargador creados: {{types}}"
     }
 }

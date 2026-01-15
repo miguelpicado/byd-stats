@@ -185,9 +185,10 @@
         "export": "Esportatu",
         "clearHistory": "Ezabatu historia",
         "filesSection": "Fitxategiak / BYD Datu-basea",
-        "loadNew": "Kargatu bidaia berriak (Ordezkatu)",
-        "loadMerge": "Kargatu bidaia berriak soilik (Konbinatu)",
-        "clearView": "Garbitu uneko ikuspegia (Ez du historia ezabatzen)",
+        "loadNew": "Dauden bidaiak ordezkatu",
+        "loadMerge": "Kargatu bidaia berriak soilik",
+        "loadChargeRegistry": "Kargatu kargen erregistroa",
+        "clearView": "Garbitu uneko ikuspegia",
         "exportTrips": "Esportatu bidaiak"
     },
     "filter": {
@@ -425,6 +426,8 @@
         "chargeCount": "Karga kopurua",
         "energyAnalysis": "Energia analisia",
         "realKwhExplanation": "Bihurketa-galerengatik estimatutako energia",
-        "details": "Xehetasun gehigarriak"
+        "details": "Xehetasun gehigarriak",
+        "chargesImported": "{{count}} karga ondo inportatuta",
+        "chargerTypesCreated": "Kargagailu mota berriak sortuak: {{types}}"
     }
 }
