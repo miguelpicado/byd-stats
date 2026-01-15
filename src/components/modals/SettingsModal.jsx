@@ -157,7 +157,6 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                     ? 'byd-active-item'
                                     : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
                                     }`}
-                                disabled={!charges || charges.length === 0}
                                 title={!charges || charges.length === 0 ? t('settings.priceCalculatedNoData') : ''}
                             >
                                 {t('settings.priceCalculated')}
@@ -176,14 +175,20 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         />
 
                         {/* Info text */}
-                        {settings?.useCalculatedPrice && charges && charges.length > 0 && (
-                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                                {t('settings.priceCalculatedInfo', {
-                                    count: charges.length,
-                                    total: charges.reduce((sum, c) => sum + (c.totalCost || 0), 0).toFixed(2),
-                                    kwh: charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0).toFixed(2)
-                                })}
-                            </p>
+                        {settings?.useCalculatedPrice && (
+                            charges && charges.length > 0 ? (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    {t('settings.priceCalculatedInfo', {
+                                        count: charges.length,
+                                        total: charges.reduce((sum, c) => sum + (c.totalCost || 0), 0).toFixed(2),
+                                        kwh: charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0).toFixed(2)
+                                    })}
+                                </p>
+                            ) : (
+                                <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                    {t('settings.priceCalculatedNoCharges')}
+                                </p>
+                            )
                         )}
                     </div>
 
