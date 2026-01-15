@@ -159,14 +159,8 @@
         "syncing": "Sincronitzant...",
         "logout": "Sortir",
         "lastSync": "Última sinc",
-        "dataManagement": "Gestió de dades",
-        "updateData": "Actualitzar dades",
-        "exportDb": "Exportar BD",
-        "cloudSync": "Sincronització al núvol",
-        "historyManagement": "Gestió de l'històric",
-        "saveToHistory": "Desar a l'històric",
-        "loadFromHistory": "Carregar històric",
-        "clearHistory": "Esborrar històric",
+        "supportDev": "Dona suport al desenvolupador",
+        "buyMeCoffee": "Convida'm a un cafè",
         "tripsInHistory": "viatges a l'històric",
         "about": "Sobre",
         "version": "Versió",
@@ -344,10 +338,12 @@
         "madeWith": "Fet amb ❤️ per a la comunitat BYD"
     },
     "help": {
-        "title": "Ajuda",
-        "description": "Ajuda i Suport",
-        "subtitle": "¿Has trobat un error o tens suggeriments?",
-        "reportBug": "Reportar error"
+        "title": "Ajuda i Informes",
+        "subtitle": "Informació del projecte",
+        "description": "Aquesta aplicació és de codi obert i està feta per ajudar la comunitat d'usuaris de BYD.",
+        "reportBug": "Informar d'un error",
+        "supportDev": "Dona suport al desenvolupador",
+        "buyMeCoffee": "Convida'm a un cafè"
     },
     "header": {
         "title": "Estadístiques BYD",
