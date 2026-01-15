@@ -20,7 +20,8 @@
         "patterns": "Patrons",
         "efficiency": "Eficiència",
         "records": "Rècords",
-        "history": "Històric"
+        "history": "Històric",
+        "charges": "Càrregues"
     },
     "stats": {
         "distance": "Distància",
@@ -395,5 +396,38 @@
     "patterns": {
         "tripsPerWeekday": "Viatges per dia de la setmana",
         "tripsWord": "viatges"
+    },
+    "charges": {
+        "title": "Registre de Càrregues",
+        "noCharges": "No hi ha càrregues registrades",
+        "addFirst": "Prem + per afegir la teva primera càrrega",
+        "addCharge": "Nova càrrega",
+        "editCharge": "Editar càrrega",
+        "chargeDetail": "Detall de càrrega",
+        "odometer": "Comptakilòmetres",
+        "kwhCharged": "kWh recarregats",
+        "chargerType": "Tipus de carregador",
+        "pricePerKwh": "Preu/kWh",
+        "totalCost": "Cost total",
+        "date": "Data",
+        "time": "Hora",
+        "finalPercentage": "% final",
+        "initialPercentage": "% inicial (opcional)",
+        "optional": "Opcional",
+        "save": "Desa",
+        "real": "Real",
+        "fillRequired": "Completa els camps obligatoris",
+        "realKwh": "kWh reals (bateria)",
+        "efficiency": "Eficiència del carregador",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "confirmDelete": "Eliminar aquesta càrrega permanentment?",
+        "summary": "Resum de càrregues",
+        "totalKwh": "Total kWh carregats",
+        "avgPrice": "Preu mitjà/kWh",
+        "chargeCount": "Nombre de càrregues",
+        "energyAnalysis": "Anàlisi energètica",
+        "realKwhExplanation": "Energia estimada perduda per pèrdues de conversió",
+        "details": "Detalls addicionals"
     }
 }

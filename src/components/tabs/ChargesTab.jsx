@@ -77,6 +77,17 @@ const ChargesTab = React.memo(({
                     <p className="text-slate-400 dark:text-slate-500 text-sm text-center mt-1">
                         {t('charges.addFirst')}
                     </p>
+
+                    {!isVertical && onAddClick && (
+                        <button
+                            onClick={onAddClick}
+                            className="mt-6 py-2 px-6 rounded-xl text-white font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-lg"
+                            style={{ backgroundColor: BYD_RED }}
+                        >
+                            <Battery className="w-5 h-5" />
+                            {t('charges.addCharge')}
+                        </button>
+                    )}
                 </div>
                 {isVertical && onAddClick && (
                     <FloatingActionButton
@@ -99,7 +110,22 @@ const ChargesTab = React.memo(({
                 <span className="text-sm text-slate-500 dark:text-slate-400">
                     ({summary?.chargeCount || 0})
                 </span>
+
+                {/* Action Button - Visible in all modes, positioned in header for non-vertical */}
+                {!isVertical && onAddClick && (
+                    <button
+                        onClick={onAddClick}
+                        className="ml-auto py-2 px-4 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm"
+                        style={{ backgroundColor: BYD_RED }}
+                    >
+                        <Battery className="w-4 h-4" />
+                        {t('charges.addCharge')}
+                    </button>
+                )}
             </div>
+
+            {/* Header spacer to prevent overlap if needed, though absolute positioning puts it in corner */}
+            <div className="h-1"></div>
 
             {/* Summary Cards */}
             {summary && (

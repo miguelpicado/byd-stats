@@ -6,6 +6,7 @@ import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
+import FloatingActionButton from '../common/FloatingActionButton';
 import { useLayout } from '../../context/LayoutContext';
 
 // Static chart options that don't change
@@ -42,10 +43,12 @@ const OverviewTab = React.memo(({
   monthly,
   tripDist,
   smallChartHeight,
-  overviewSpacing
+
+  overviewSpacing,
+  onAddCharge
 }) => {
   const { t } = useTranslation();
-  const { isCompact, isLargerCard, isVertical, isFullscreenBYD } = useLayout();
+  const { isCompact, isLargerCard, isVertical } = useLayout();
 
   // Memoize chart options with scales
   const lineChartOptionsVertical = useMemo(() => ({
@@ -207,7 +210,18 @@ const OverviewTab = React.memo(({
             </div>
           </ChartCard>
         </div>
-      </div>
+
+
+        {
+          isVertical && onAddCharge && (
+            <FloatingActionButton
+              onClick={onAddCharge}
+              label={t('charges.addCharge')}
+              icon={Battery}
+            />
+          )
+        }
+      </div >
     );
   }
 
@@ -348,7 +362,9 @@ OverviewTab.propTypes = {
     color: PropTypes.string
   })).isRequired,
   smallChartHeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-  overviewSpacing: PropTypes.string.isRequired
+
+  overviewSpacing: PropTypes.string.isRequired,
+  onAddCharge: PropTypes.func
 };
 
 OverviewTab.displayName = 'OverviewTab';

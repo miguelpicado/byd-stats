@@ -20,7 +20,8 @@
         "patterns": "Patróns",
         "efficiency": "Eficiencia",
         "records": "Récords",
-        "history": "Histórico"
+        "history": "Histórico",
+        "charges": "Cargas"
     },
     "stats": {
         "distance": "Distancia",
@@ -395,5 +396,38 @@
     "patterns": {
         "tripsPerWeekday": "Viaxes por día da semana",
         "tripsWord": "viaxes"
+    },
+    "charges": {
+        "title": "Rexistro de Cargas",
+        "noCharges": "Non hai cargas rexistradas",
+        "addFirst": "Preme + para engadir a túa primeira carga",
+        "addCharge": "Nova carga",
+        "editCharge": "Editar carga",
+        "chargeDetail": "Detalle de carga",
+        "odometer": "Contakilómetros",
+        "kwhCharged": "kWh recargados",
+        "chargerType": "Tipo de cargador",
+        "pricePerKwh": "Prezo/kWh",
+        "totalCost": "Custo total",
+        "date": "Data",
+        "time": "Hora",
+        "finalPercentage": "% final",
+        "initialPercentage": "% inicial (opcional)",
+        "optional": "Opcional",
+        "save": "Gardar",
+        "real": "Real",
+        "fillRequired": "Completa os campos obrigatorios",
+        "realKwh": "kWh reais (batería)",
+        "efficiency": "Eficiencia do cargador",
+        "edit": "Editar",
+        "delete": "Eliminar",
+        "confirmDelete": "Eliminar esta carga permanentemente?",
+        "summary": "Resumo de cargas",
+        "totalKwh": "Total kWh cargados",
+        "avgPrice": "Prezo medio/kWh",
+        "chargeCount": "Número de cargas",
+        "energyAnalysis": "Análise enerxética",
+        "realKwhExplanation": "Enerxía estimada perdida por perdas de conversión",
+        "details": "Detalles adicionais"
     }
 }

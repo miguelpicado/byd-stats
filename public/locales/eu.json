@@ -20,7 +20,8 @@
         "patterns": "Ereduak",
         "efficiency": "Eraginkortasuna",
         "records": "Errekordak",
-        "history": "Historia"
+        "history": "Historia",
+        "charges": "Kargak"
     },
     "stats": {
         "distance": "Distantzia",
@@ -53,7 +54,6 @@
     "units": {
         "km": "km",
         "kwh": "kWh",
-        "kWh": "kWh",
         "hours": "h",
         "minutes": "min",
         "day": "eguna",
@@ -395,5 +395,38 @@
     "patterns": {
         "tripsPerWeekday": "Asteko eguneko bidaiak",
         "tripsWord": "bidaiak"
+    },
+    "charges": {
+        "title": "Kargen Erregistroa",
+        "noCharges": "Ez da kargarik erregistratu",
+        "addFirst": "Sakatu + zure lehen karga gehitzeko",
+        "addCharge": "Karga berria",
+        "editCharge": "Karga editatu",
+        "chargeDetail": "Kargaren xehetasunak",
+        "odometer": "Kilometro-kontagailua",
+        "kwhCharged": "Gehitutako kWh",
+        "chargerType": "Kargagailu mota",
+        "pricePerKwh": "Prezioa/kWh",
+        "totalCost": "Kostu osoa",
+        "date": "Data",
+        "time": "Ordua",
+        "finalPercentage": "Amaierako %",
+        "initialPercentage": "Hasierako % (opzionala)",
+        "optional": "Aukerakoa",
+        "save": "Gorde",
+        "real": "Reala",
+        "fillRequired": "Bete derrigorrezko eremuak",
+        "realKwh": "Benetako kWh (bateria)",
+        "efficiency": "Kargagailuaren eraginkortasuna",
+        "edit": "Editatu",
+        "delete": "Ezabatu",
+        "confirmDelete": "Karga hau behin betiko ezabatu?",
+        "summary": "Kargen laburpena",
+        "totalKwh": "Guztira kargatutako kWh",
+        "avgPrice": "Batez besteko prezioa/kWh",
+        "chargeCount": "Karga kopurua",
+        "energyAnalysis": "Energia analisia",
+        "realKwhExplanation": "Bihurketa-galerengatik estimatutako energia",
+        "details": "Xehetasun gehigarriak"
     }
 }

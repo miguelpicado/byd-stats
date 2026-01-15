@@ -64,20 +64,42 @@ const AddChargeModal = ({
     }, [isOpen, editingCharge, chargerTypes, defaultPricePerKwh, getInitialState]);
 
     // Auto-calculate total cost when kWh or price changes
-    useEffect(() => {
-        const kwh = parseFloat(formData.kwhCharged);
-        const price = parseFloat(formData.pricePerKwh);
-        if (!isNaN(kwh) && !isNaN(price) && kwh > 0 && price > 0) {
-            const cost = (kwh * price).toFixed(2);
-            // Only update if different to avoid infinite loop
-            if (formData.totalCost !== cost) {
-                setFormData(prev => ({ ...prev, totalCost: cost }));
-            }
-        }
-    }, [formData.kwhCharged, formData.pricePerKwh]);
+    // useEffect removed to avoid cascading renders
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => {
+            const newState = { ...prev, [field]: value };
+
+            // Auto-calculate total cost or price per kwh
+            if (field === 'kwhCharged' || field === 'pricePerKwh') {
+                const kwh = parseFloat(field === 'kwhCharged' ? value : prev.kwhCharged);
+                const price = parseFloat(field === 'pricePerKwh' ? value : prev.pricePerKwh);
+                if (!isNaN(kwh) && !isNaN(price) && kwh > 0 && price > 0) {
+                    newState.totalCost = (kwh * price).toFixed(2);
+                }
+            }
+            // Reverse calculation: if totalCost changes, update pricePerKwh (keeping kwh constant)
+            else if (field === 'totalCost') {
+                const cost = parseFloat(value);
+                const kwh = parseFloat(prev.kwhCharged);
+                if (!isNaN(cost) && !isNaN(kwh) && kwh > 0) {
+                    newState.pricePerKwh = (cost / kwh).toFixed(4); // higher precision for price
+                }
+            }
+
+            return newState;
+        });
+    };
+
+    // Calculate Real kWh based on efficiency
+    const getRealKwh = () => {
+        const kwh = parseFloat(formData.kwhCharged);
+        if (isNaN(kwh) || !formData.chargerTypeId) return null;
+
+        const type = chargerTypes.find(t => t.id === formData.chargerTypeId);
+        if (!type || !type.efficiency) return null;
+
+        return (kwh * type.efficiency).toFixed(2);
     };
 
     const handleSubmit = () => {
@@ -183,6 +205,11 @@ const AddChargeModal = ({
                                 placeholder="45.5"
                                 className={inputClass}
                             />
+                            {getRealKwh() && (
+                                <p className="text-xs text-slate-500 mt-1">
+                                    {t('charges.real')}: <span className="font-medium text-slate-700 dark:text-slate-300">{getRealKwh()} kWh</span>
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className={labelClass}>{t('charges.chargerType')}</label>

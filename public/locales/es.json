@@ -426,8 +426,9 @@
         "time": "Hora",
         "finalPercentage": "% final de carga",
         "initialPercentage": "% inicial (opcional)",
-        "optional": "opcional",
-        "save": "Guardar carga",
+        "optional": "Opcional",
+        "save": "Guardar",
+        "real": "Real",
         "fillRequired": "Completa los campos obligatorios",
         "realKwh": "kWh reales (batería)",
         "efficiency": "Eficiencia del cargador",
@@ -437,6 +438,9 @@
         "summary": "Resumen de cargas",
         "totalKwh": "Total kWh cargados",
         "avgPrice": "Precio medio/kWh",
-        "chargeCount": "Número de cargas"
+        "chargeCount": "Número de cargas",
+        "energyAnalysis": "Análisis energético",
+        "realKwhExplanation": "Energía estimada perdida por pérdidas de conversión",
+        "details": "Detalles adicionales"
     }
 }

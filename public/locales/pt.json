@@ -20,7 +20,8 @@
         "patterns": "Padrões",
         "efficiency": "Eficiência",
         "records": "Recordes",
-        "history": "Histórico"
+        "history": "Histórico",
+        "charges": "Carregamentos"
     },
     "stats": {
         "distance": "Distância",
@@ -395,5 +396,38 @@
     "patterns": {
         "tripsPerWeekday": "Viagens por dia da semana",
         "tripsWord": "viagens"
+    },
+    "charges": {
+        "title": "Registro de Carregamentos",
+        "noCharges": "Nenhum carregamento registrado",
+        "addFirst": "Toque em + para adicionar seu primeiro carregamento",
+        "addCharge": "Novo carregamento",
+        "editCharge": "Editar carregamento",
+        "chargeDetail": "Detalhe do carregamento",
+        "odometer": "Odômetro",
+        "kwhCharged": "kWh recarregados",
+        "chargerType": "Tipo de carregador",
+        "pricePerKwh": "Preço/kWh",
+        "totalCost": "Custo total",
+        "date": "Data",
+        "time": "Hora",
+        "finalPercentage": "% final",
+        "initialPercentage": "% inicial (opcional)",
+        "optional": "Opcional",
+        "save": "Guardar",
+        "real": "Real",
+        "fillRequired": "Preencha os campos obrigatórios",
+        "realKwh": "kWh reais (bateria)",
+        "efficiency": "Eficiência do carregador",
+        "edit": "Editar",
+        "delete": "Excluir",
+        "confirmDelete": "Excluir este carregamento permanentemente?",
+        "summary": "Resumo de carregamentos",
+        "totalKwh": "Total kWh carregados",
+        "avgPrice": "Preço médio/kWh",
+        "chargeCount": "Número de carregamentos",
+        "energyAnalysis": "Análise energética",
+        "realKwhExplanation": "Energia estimada perdida por perdas de conversão",
+        "details": "Detalhes adicionais"
     }
 }
