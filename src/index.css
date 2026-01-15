@@ -70,15 +70,27 @@ html:not(.dark) footer {
 /* Force light theme on input elements (critical for WebView) */
 html:not(.dark) input,
 html:not(.dark) textarea,
-html:not(.dark) select,
-html:not(.dark) button {
+html:not(.dark) select {
   color-scheme: light !important;
   background-color: white !important;
   color: #0f172a !important;
   border-color: #e2e8f0 !important;
 }
 
-/* Override any system-imposed dark backgrounds on light buttons */
+/* Permitir que los botones tengan fondo de color (como el rojo BYD) */
 html:not(.dark) button {
   color-scheme: light !important;
+  /* No forzamos background-color white aqui para permitir colores personalizados */
+}
+
+/* Remove global button override or make it less aggressive */
+/* html:not(.dark) button {
+  color-scheme: light !important;
+} */
+
+/* CLASE FORZADA PARA ELEMENTOS ACTIVOS (BYD RED) */
+.byd-active-item {
+  background-color: #EA0029 !important;
+  color: white !important;
+  border-color: #EA0029 !important;
 }

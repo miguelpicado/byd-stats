@@ -7,7 +7,7 @@ import { languages } from '../../i18n';
 import { BYD_RED } from '../../utils/constants';
 import { Settings, Zap, Trash2 } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
-import { GaliciaFlag, CataloniaFlag, BasqueFlag } from '../FlagIcons.jsx';
+import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag } from '../FlagIcons.jsx';
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 
 
@@ -205,18 +205,18 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                 <button
                                     key={lang.code}
                                     onClick={() => handleLanguageChange(lang.code)}
-                                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 ${i18n.language === lang.code || i18n.language?.startsWith(lang.code)
-                                        ? 'text-white'
-                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                    className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 border ${i18n.language === lang.code || i18n.language?.startsWith(lang.code)
+                                        ? 'byd-active-item'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
                                         }`}
-                                    style={{
-                                        backgroundColor: (i18n.language === lang.code || i18n.language?.startsWith(lang.code)) ? BYD_RED : ''
-                                    }}
                                 >
                                     {lang.code === 'gl' ? <GaliciaFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
                                         lang.code === 'ca' ? <CataloniaFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
                                             lang.code === 'eu' ? <BasqueFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
-                                                <span className="text-lg leading-none">{lang.flag}</span>}
+                                                lang.code === 'es' ? <SpainFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
+                                                    lang.code === 'en' ? <UKFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
+                                                        lang.code === 'pt' ? <PortugalFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
+                                                            <span className="text-lg leading-none">{lang.flag}</span>}
                                     {lang.name}
                                 </button>
                             ))}
@@ -230,13 +230,10 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                 <button
                                     key={theme}
                                     onClick={() => onSettingsChange({ ...settings, theme })}
-                                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors ${settings.theme === theme
-                                        ? 'text-white'
-                                        : 'bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                    className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors border ${settings.theme === theme
+                                        ? 'byd-active-item'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
                                         }`}
-                                    style={{
-                                        backgroundColor: settings.theme === theme ? BYD_RED : ''
-                                    }}
                                 >
                                     {theme === 'auto' ? t('settings.themeAuto') : theme === 'light' ? t('settings.themeLight') : t('settings.themeDark')}
                                 </button>
