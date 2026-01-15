@@ -35,9 +35,7 @@ const ModalContainer = ({
     processDB,
     exportDatabase,
     clearData,
-    saveToHistory,
-    clearHistory,
-    tripHistory,
+    onLoadChargeRegistry,
     isNative,
     onFile,
     setFilterType,
@@ -123,7 +121,7 @@ const ModalContainer = ({
                     googleSync={googleSync}
                 />
 
-                {/* Database History/Management Modal (Unified) */}
+                {/* Database Management Modal */}
                 <DatabaseUploadModalLazy
                     isOpen={modals.history}
                     onClose={handleHistoryClose}
@@ -131,11 +129,8 @@ const ModalContainer = ({
                     onFileSelect={processDB}
                     onExport={exportDatabase}
                     onClearData={clearData}
-                    onShowHistory={() => { /* intended to show list? */ }}
-                    onSaveToHistory={saveToHistory}
-                    onClearHistory={clearHistory}
+                    onLoadChargeRegistry={onLoadChargeRegistry}
                     hasData={rawTrips.length > 0}
-                    historyCount={tripHistory.length}
                     isNative={isNative}
                 />
 
@@ -298,9 +293,7 @@ ModalContainer.propTypes = {
     processDB: PropTypes.func,
     exportDatabase: PropTypes.func,
     clearData: PropTypes.func,
-    saveToHistory: PropTypes.func,
-    clearHistory: PropTypes.func,
-    tripHistory: PropTypes.array,
+    onLoadChargeRegistry: PropTypes.func,
     isNative: PropTypes.bool,
     onFile: PropTypes.func,
     setFilterType: PropTypes.func,
