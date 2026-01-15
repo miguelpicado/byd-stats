@@ -171,7 +171,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         <input
                             type="number"
                             step="0.001"
-                            value={settings.useCalculatedPrice ? calculatedPrice.toFixed(3) : settings.electricityPrice}
+                            value={settings.useCalculatedPrice ? calculatedPrice.toFixed(3) : (settings.electricityPrice || 0)}
                             onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
                             disabled={settings.useCalculatedPrice}
                             className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings.useCalculatedPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
