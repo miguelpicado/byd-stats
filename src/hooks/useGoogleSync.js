@@ -229,7 +229,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
     });
 
     // Common login success handler
-    const handleLoginSuccess = async (accessToken) => {
+    const handleLoginSuccess = useCallback(async (accessToken) => {
         googleDriveService.setAccessToken(accessToken);
         sessionStorage.setItem('google_access_token', accessToken);
 
@@ -241,7 +241,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);
         performSync();
-    };
+    }, [fetchUserProfile, performSync]);
 
     // Platform-aware login function
     const login = useCallback(async () => {
@@ -288,7 +288,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
             // Web - use @react-oauth/google
             webLogin();
         }
-    }, [webLogin, fetchUserProfile, performSync]);
+    }, [webLogin, handleLoginSuccess]);
 
 
     return {

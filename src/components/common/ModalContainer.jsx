@@ -74,11 +74,7 @@ const ModalContainer = ({
     const handleAddChargeClose = () => { closeModal('addCharge'); if (setEditingCharge) setEditingCharge(null); };
     const handleChargeDetailClose = () => { closeModal('chargeDetail'); if (setSelectedCharge) setSelectedCharge(null); };
 
-    // Helper for showing history from upload modal
-    const handleShowHistory = () => {
-        closeModal('upload');
-        openModal('history');
-    };
+
 
     return (
         <>

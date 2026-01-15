@@ -21,7 +21,6 @@ const HistoryTab = React.memo(({
 
   // Memoize all calculations to avoid recalculating on every render
   const {
-    allTrips,
     minEff,
     maxEff,
     firstColumn,
