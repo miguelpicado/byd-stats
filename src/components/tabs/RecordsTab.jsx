@@ -73,10 +73,10 @@ const RecordsTab = React.memo(({
             <div className="space-y-1">
               {top.km.map((trip, i) => (
                 <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPadding}`}>
-                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>
+                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
                     {i + 1}. {formatDate(trip.date)}
                   </span>
-                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>
+                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
                     {trip.trip?.toFixed(1)} km
                   </span>
                 </div>
@@ -87,10 +87,10 @@ const RecordsTab = React.memo(({
             <div className="space-y-1">
               {top.kwh.map((trip, i) => (
                 <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPadding}`}>
-                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>
+                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
                     {i + 1}. {formatDate(trip.date)}
                   </span>
-                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>
+                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
                     {trip.electricity?.toFixed(1)} kWh
                   </span>
                 </div>
@@ -101,10 +101,10 @@ const RecordsTab = React.memo(({
             <div className="space-y-1">
               {top.dur.map((trip, i) => (
                 <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPadding}`}>
-                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>
+                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
                     {i + 1}. {formatDate(trip.date)}
                   </span>
-                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>
+                  <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
                     {((trip.duration || 0) / 60).toFixed(0)} min
                   </span>
                 </div>
@@ -162,10 +162,10 @@ const RecordsTab = React.memo(({
           <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
             {top.km.map((trip, i) => (
               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPaddingHorizontal}`}>
-                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>
+                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
                   {i + 1}. {formatDate(trip.date)}
                 </span>
-                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>
+                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
                   {trip.trip?.toFixed(1)} km
                 </span>
               </div>
@@ -176,10 +176,10 @@ const RecordsTab = React.memo(({
           <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
             {top.kwh.map((trip, i) => (
               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPaddingHorizontal}`}>
-                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>
+                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
                   {i + 1}. {formatDate(trip.date)}
                 </span>
-                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>
+                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
                   {trip.electricity?.toFixed(1)} kWh
                 </span>
               </div>
@@ -190,10 +190,10 @@ const RecordsTab = React.memo(({
           <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
             {top.dur.map((trip, i) => (
               <div key={i} className={`flex justify-between border-b border-slate-200 dark:border-slate-700/50 last:border-0 ${recordsItemPaddingHorizontal}`}>
-                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[9px] truncate' : 'text-xs sm:text-sm'}`}>
+                <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
                   {i + 1}. {formatDate(trip.date)}
                 </span>
-                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[10px]' : 'text-sm sm:text-base'}`}>
+                <span className={`font-medium text-slate-900 dark:text-white ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
                   {((trip.duration || 0) / 60).toFixed(0)} min
                 </span>
               </div>

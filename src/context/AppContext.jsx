@@ -34,6 +34,7 @@ const DEFAULT_SETTINGS = {
  * Handles settings persistence and theme management
  */
 export const AppProvider = ({ children }) => {
+
     // --- Settings State ---
     const [settings, setSettings] = useState(() => {
         try {
