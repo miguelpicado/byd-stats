@@ -428,6 +428,10 @@
         "realKwhExplanation": "Estimated energy after conversion losses",
         "details": "Additional Details",
         "chargesImported": "{{count}} charges imported successfully",
-        "chargerTypesCreated": "New charger types created: {{types}}"
+        "chargerTypesCreated": "New charger types created: {{types}}",
+        "avgLast10": "Average last 10 charges",
+        "avgKwh": "Avg kWh",
+        "avgCost": "Avg Cost",
+        "last10Charges": "Last 10 charges"
     }
 }

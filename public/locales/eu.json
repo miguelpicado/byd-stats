@@ -428,6 +428,10 @@
         "realKwhExplanation": "Bihurketa-galerengatik estimatutako energia",
         "details": "Xehetasun gehigarriak",
         "chargesImported": "{{count}} karga ondo inportatuta",
-        "chargerTypesCreated": "Kargagailu mota berriak sortuak: {{types}}"
+        "chargerTypesCreated": "Kargagailu mota berriak sortuak: {{types}}",
+        "avgLast10": "Azken 10 kargen batez bestekoa",
+        "avgKwh": "Batez besteko kWh",
+        "avgCost": "Batez besteko kostua",
+        "last10Charges": "Azken 10 kargak"
     }
 }

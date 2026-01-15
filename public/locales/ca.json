@@ -427,6 +427,10 @@
         "realKwhExplanation": "Energia estimada perduda per pèrdues de conversió",
         "details": "Detalls addicionals",
         "chargesImported": "{{count}} càrregues importades correctament",
-        "chargerTypesCreated": "Nous tipus de carregador creats: {{types}}"
+        "chargerTypesCreated": "Nous tipus de carregador creats: {{types}}",
+        "avgLast10": "Mitjana últimes 10 càrregues",
+        "avgKwh": "Mitjana kWh",
+        "avgCost": "Cost mitjà",
+        "last10Charges": "Últimes 10 càrregues"
     }
 }

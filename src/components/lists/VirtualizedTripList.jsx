@@ -1,29 +1,24 @@
 // BYD Stats - Virtualized Trip List Component
 // Uses TanStack Virtual for efficient rendering of large trip lists
 import { memo, useRef } from 'react';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useWindowVirtualizer } from '@tanstack/react-virtual';
 import TripCard from '../cards/TripCard';
 import PropTypes from 'prop-types';
 
-const VirtualizedTripList = memo(({ trips, minEff, maxEff, onTripClick }) => {
-    const parentRef = useRef(null);
+const ITEM_SIZE = 120; // TripCard height + gap
 
-    const virtualizer = useVirtualizer({
+const VirtualizedTripList = memo(({ trips, minEff, maxEff, onTripClick }) => {
+    const listRef = useRef(null);
+
+    const virtualizer = useWindowVirtualizer({
         count: trips.length,
-        getScrollElement: () => parentRef.current,
-        estimateSize: () => 110, // TripCard height (100px) + gap (10px)
-        overscan: 20 // Render 20 extra items above/below for smooth scrolling
+        estimateSize: () => ITEM_SIZE,
+        overscan: 10,
+        scrollMargin: listRef.current?.offsetTop ?? 0,
     });
 
     return (
-        <div
-            ref={parentRef}
-            style={{
-                height: '600px',
-                overflow: 'auto',
-                contain: 'strict'
-            }}
-        >
+        <div ref={listRef}>
             <div
                 style={{
                     height: `${virtualizer.getTotalSize()}px`,
@@ -40,17 +35,18 @@ const VirtualizedTripList = memo(({ trips, minEff, maxEff, onTripClick }) => {
                             left: 0,
                             width: '100%',
                             height: `${virtualItem.size}px`,
-                            transform: `translateY(${virtualItem.start}px)`,
-                            paddingBottom: '12px'
+                            transform: `translateY(${virtualItem.start - virtualizer.options.scrollMargin}px)`,
                         }}
                     >
-                        <TripCard
-                            trip={trips[virtualItem.index]}
-                            minEff={minEff}
-                            maxEff={maxEff}
-                            onClick={onTripClick}
-                            isCompact={false}
-                        />
+                        <div style={{ paddingBottom: '12px' }}>
+                            <TripCard
+                                trip={trips[virtualItem.index]}
+                                minEff={minEff}
+                                maxEff={maxEff}
+                                onClick={onTripClick}
+                                isCompact={false}
+                            />
+                        </div>
                     </div>
                 ))}
             </div>
