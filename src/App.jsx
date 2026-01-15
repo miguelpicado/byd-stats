@@ -156,7 +156,8 @@ export default function BYDStatsAnalyzer() {
     charges,
     addCharge,
     addMultipleCharges,
-    deleteCharge
+    deleteCharge,
+    replaceCharges
   } = useChargesData();
 
   // Calculate chart heights based on mode - memoized to prevent recalculation
@@ -225,7 +226,8 @@ export default function BYDStatsAnalyzer() {
 
   // Google Sync Hook - Connect to Context Settings
   // Note: googleSync expects setSettings. updateSettings is compatible.
-  const googleSync = useGoogleSync(rawTrips, setRawTrips, settings, updateSettings);
+  // Also syncs charges data to cloud
+  const googleSync = useGoogleSync(rawTrips, setRawTrips, settings, updateSettings, charges, replaceCharges);
 
 
   // All trips view states

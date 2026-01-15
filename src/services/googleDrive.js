@@ -92,20 +92,21 @@ export const googleDriveService = {
       const result = await response.json();
       logger.debug('Download successful');
 
-      // Normalize to { trips: [], settings: {} }
+      // Normalize to { trips: [], settings: {}, charges: [] }
       if (Array.isArray(result)) {
         logger.debug('Migrating legacy array format to object...');
-        return { trips: result, settings: {} };
+        return { trips: result, settings: {}, charges: [] };
       }
 
       if (result && typeof result === 'object') {
         return {
           trips: Array.isArray(result.trips) ? result.trips : [],
-          settings: result.settings || {}
+          settings: result.settings || {},
+          charges: Array.isArray(result.charges) ? result.charges : []
         };
       }
 
-      return { trips: [], settings: {} };
+      return { trips: [], settings: {}, charges: [] };
     } catch (error) {
       logger.error('Error downloading file', error);
       throw error;
@@ -166,31 +167,51 @@ export const googleDriveService = {
 
   /**
    * Merge logic:
-   * Returns merged { trips, settings }
+   * Returns merged { trips, settings, charges }
    */
   mergeData: (localData, remoteData) => {
     // 1. Merge Trips (Union by date-timestamp)
     const localTrips = (localData && Array.isArray(localData.trips)) ? localData.trips : [];
     const remoteTrips = (remoteData && Array.isArray(remoteData.trips)) ? remoteData.trips : [];
 
-    const map = new Map();
-    localTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
+    const tripMap = new Map();
+    localTrips.forEach(t => tripMap.set(t.date + '-' + t.start_timestamp, t));
     remoteTrips.forEach(t => {
       const key = t.date + '-' + t.start_timestamp;
-      if (!map.has(key)) {
-        map.set(key, t);
+      if (!tripMap.has(key)) {
+        tripMap.set(key, t);
       }
     });
 
-    const mergedTrips = Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+    const mergedTrips = Array.from(tripMap.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
     // 2. Merge Settings
     // Strategy: Remote settings overlay local settings if they exist.
     const mergedSettings = { ...localData.settings, ...remoteData.settings };
 
+    // 3. Merge Charges (Union by id, or timestamp if id not present)
+    const localCharges = (localData && Array.isArray(localData.charges)) ? localData.charges : [];
+    const remoteCharges = (remoteData && Array.isArray(remoteData.charges)) ? remoteData.charges : [];
+
+    const chargeMap = new Map();
+    localCharges.forEach(c => {
+      // Use id as primary key, fallback to timestamp for legacy data
+      const key = c.id || `${c.date}-${c.time}-${c.timestamp}`;
+      chargeMap.set(key, c);
+    });
+    remoteCharges.forEach(c => {
+      const key = c.id || `${c.date}-${c.time}-${c.timestamp}`;
+      if (!chargeMap.has(key)) {
+        chargeMap.set(key, c);
+      }
+    });
+
+    const mergedCharges = Array.from(chargeMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+
     return {
       trips: mergedTrips,
-      settings: mergedSettings
+      settings: mergedSettings,
+      charges: mergedCharges
     };
   }
 };

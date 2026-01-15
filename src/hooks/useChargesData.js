@@ -158,6 +158,20 @@ const useChargesData = () => {
         logger.info('All charges cleared');
     }, []);
 
+    /**
+     * Replace all charges with a new array (for cloud sync)
+     * @param {Array} newCharges - Array of charge objects
+     */
+    const replaceCharges = useCallback((newCharges) => {
+        if (!Array.isArray(newCharges)) {
+            logger.error('replaceCharges: expected array, got:', typeof newCharges);
+            return;
+        }
+        const sorted = [...newCharges].sort((a, b) => b.timestamp - a.timestamp);
+        setCharges(sorted);
+        logger.info(`Charges replaced with ${newCharges.length} items`);
+    }, []);
+
     // Calculate summary statistics
     const summary = useMemo(() => {
         if (charges.length === 0) return null;
@@ -182,6 +196,7 @@ const useChargesData = () => {
         deleteCharge,
         getChargeById,
         clearCharges,
+        replaceCharges,
         summary
     };
 };

@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { logger } from '../utils/logger';
 
-export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) {
+export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, localCharges, setLocalCharges) {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [isSyncing, setIsSyncing] = useState(false);
     const [lastSyncTime, setLastSyncTime] = useState(null);
@@ -164,7 +164,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
             }
 
             // 2. Download Remote Data
-            let remoteData = { trips: [], settings: {} };
+            let remoteData = { trips: [], settings: {}, charges: [] };
             if (fileId) {
                 remoteData = await googleDriveService.downloadFile(fileId);
             }
@@ -179,21 +179,26 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
                 if (remoteData.settings && Object.keys(remoteData.settings).length > 0) {
                     setSettings(remoteData.settings);
                 }
+                if (remoteData.charges && Array.isArray(remoteData.charges) && remoteData.charges.length > 0) {
+                    setLocalCharges(remoteData.charges);
+                }
             } else {
                 // Standard Merge: Union of local + remote
                 logger.debug('Syncing: Merging local and cloud data.');
                 const currentTrips = newTripsData || localTrips;
+                const currentCharges = Array.isArray(localCharges) ? localCharges : [];
 
-                // Merge Data (Services handles Trips Union and Settings Overlay)
+                // Merge Data (Services handles Trips Union, Settings Overlay, and Charges Union)
                 const tripsToMerge = Array.isArray(currentTrips) ? currentTrips : [];
                 const merged = googleDriveService.mergeData(
-                    { trips: tripsToMerge, settings: settings },
+                    { trips: tripsToMerge, settings: settings, charges: currentCharges },
                     remoteData
                 );
 
                 // Update Local State
                 setLocalTrips(merged.trips);
                 setSettings(merged.settings);
+                setLocalCharges(merged.charges);
 
                 // Upload Merged State
                 await googleDriveService.uploadFile(merged, fileId);
@@ -213,7 +218,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings) 
         } finally {
             setIsSyncing(false);
         }
-    }, [localTrips, settings, setLocalTrips, setSettings, logout]); // Added logout to dependencies
+    }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout]); // Added charges to dependencies
 
     // Web login hook (only used on web)
     const webLogin = useGoogleLogin({
