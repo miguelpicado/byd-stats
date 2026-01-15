@@ -20,7 +20,7 @@ body,
   display: none;
 }
 
-/* Animation for horizontal mode tab transitions */
+/* Animation for tab transitions (both vertical and horizontal modes) */
 /* Using only fade-in to prevent scroll issues */
 @keyframes fadeIn {
   from {
@@ -32,8 +32,9 @@ body,
   }
 }
 
-.horizontal-tab-transition {
-  animation: fadeIn 0.3s ease-out;
+/* Applied to active tabs when switching */
+.tab-fade-in {
+  animation: fadeIn 400ms ease-out;
 }
 
 /* CRITICAL: Force light theme in WebView (prevent car system dark mode override) */
