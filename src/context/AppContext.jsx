@@ -35,6 +35,7 @@ const DEFAULT_SETTINGS = {
     batterySize: 60.48,
     soh: 100,
     electricityPrice: 0.15,
+    useCalculatedPrice: false,
     theme: 'auto',
     chargerTypes: DEFAULT_CHARGER_TYPES
 };
@@ -79,6 +80,7 @@ export const AppProvider = ({ children }) => {
                 batterySize: updated.batterySize ?? prev.batterySize ?? 60.48,
                 soh: updated.soh ?? prev.soh ?? 100,
                 electricityPrice: updated.electricityPrice ?? prev.electricityPrice ?? 0.15,
+                useCalculatedPrice: updated.useCalculatedPrice ?? prev.useCalculatedPrice ?? false,
                 theme: updated.theme ?? prev.theme ?? 'auto',
                 chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES
             };
