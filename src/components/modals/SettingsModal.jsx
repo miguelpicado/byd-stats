@@ -18,11 +18,24 @@ import GoogleSyncSettings from '../settings/GoogleSyncSettings';
  * @param {Function} props.onClose - Close handler
  * @param {Object} props.settings - Current settings object
  * @param {Function} props.onSettingsChange - Settings change handler
+ * @param {Array} props.charges - Charges data for calculating average price
  */
-const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync }) => {
+const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync, charges = [] }) => {
     const { t, i18n } = useTranslation();
 
     if (!isOpen) return null;
+
+    // Calculate average electricity price from charges
+    const calculatedPrice = React.useMemo(() => {
+        if (!charges || charges.length === 0) return 0;
+        const totalCost = charges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+        const totalKwh = charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
+        if (totalKwh === 0) return 0;
+        return totalCost / totalKwh;
+    }, [charges]);
+
+    // Determine which price to display
+    const displayPrice = settings.useCalculatedPrice ? calculatedPrice : settings.electricityPrice;
 
     const handleLanguageChange = (langCode) => {
         i18n.changeLanguage(langCode);
@@ -127,15 +140,54 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         />
                     </div>
 
-                    <div>
+                    <div className="space-y-2">
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.electricityPrice')} (€/kWh)</label>
+
+                        {/* Toggle between calculated and custom price */}
+                        <div className="flex gap-2 mb-2">
+                            <button
+                                onClick={() => onSettingsChange({ ...settings, useCalculatedPrice: false })}
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${!settings.useCalculatedPrice
+                                    ? 'byd-active-item'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                    }`}
+                            >
+                                {t('settings.priceCustom')}
+                            </button>
+                            <button
+                                onClick={() => onSettingsChange({ ...settings, useCalculatedPrice: true })}
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${settings.useCalculatedPrice
+                                    ? 'byd-active-item'
+                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                    }`}
+                                disabled={charges.length === 0}
+                                title={charges.length === 0 ? t('settings.priceCalculatedNoData') : ''}
+                            >
+                                {t('settings.priceCalculated')}
+                            </button>
+                        </div>
+
+                        {/* Price input */}
                         <input
                             type="number"
-                            step="0.01"
-                            value={settings.electricityPrice}
+                            step="0.001"
+                            value={settings.useCalculatedPrice ? calculatedPrice.toFixed(3) : settings.electricityPrice}
                             onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
-                            className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
+                            disabled={settings.useCalculatedPrice}
+                            className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings.useCalculatedPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            placeholder={settings.useCalculatedPrice ? t('settings.priceCalculatedAuto') : '0.15'}
                         />
+
+                        {/* Info text */}
+                        {settings.useCalculatedPrice && charges.length > 0 && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                {t('settings.priceCalculatedInfo', {
+                                    count: charges.length,
+                                    total: charges.reduce((sum, c) => sum + (c.totalCost || 0), 0).toFixed(2),
+                                    kwh: charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0).toFixed(2)
+                                })}
+                            </p>
+                        )}
                     </div>
 
                     {/* Charger Types Section */}
@@ -270,6 +322,7 @@ SettingsModal.propTypes = {
         batterySize: PropTypes.number,
         soh: PropTypes.number,
         electricityPrice: PropTypes.number,
+        useCalculatedPrice: PropTypes.bool,
         theme: PropTypes.string,
         chargerTypes: PropTypes.arrayOf(PropTypes.shape({
             id: PropTypes.string,
@@ -288,7 +341,15 @@ SettingsModal.propTypes = {
         login: PropTypes.func,
         logout: PropTypes.func,
         syncNow: PropTypes.func
-    })
+    }),
+    charges: PropTypes.arrayOf(PropTypes.shape({
+        id: PropTypes.string,
+        date: PropTypes.string,
+        time: PropTypes.string,
+        timestamp: PropTypes.number,
+        totalCost: PropTypes.number,
+        kwhCharged: PropTypes.number
+    }))
 };
 
 export default SettingsModal;
