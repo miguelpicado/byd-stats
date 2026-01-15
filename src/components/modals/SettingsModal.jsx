@@ -88,7 +88,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.carModel')}</label>
                         <input
                             type="text"
-                            value={settings.carModel}
+                            value={settings?.carModel || ''}
                             onChange={(e) => onSettingsChange({ ...settings, carModel: e.target.value })}
                             placeholder="BYD Seal"
                             className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
@@ -99,7 +99,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.licensePlate')}</label>
                         <input
                             type="text"
-                            value={settings.licensePlate}
+                            value={settings?.licensePlate || ''}
                             onChange={(e) => onSettingsChange({ ...settings, licensePlate: e.target.value.toUpperCase() })}
                             placeholder="1234ABC"
                             className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 uppercase"
@@ -110,7 +110,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.insurancePolicy')}</label>
                         <input
                             type="text"
-                            value={settings.insurancePolicy}
+                            value={settings?.insurancePolicy || ''}
                             onChange={(e) => onSettingsChange({ ...settings, insurancePolicy: e.target.value })}
                             placeholder="123456789"
                             className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
@@ -122,7 +122,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         <input
                             type="number"
                             step="0.01"
-                            value={settings.batterySize}
+                            value={settings?.batterySize || 0}
                             onChange={(e) => onSettingsChange({ ...settings, batterySize: parseFloat(e.target.value) || 0 })}
                             className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                         />
@@ -134,7 +134,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                             type="number"
                             min="0"
                             max="100"
-                            value={settings.soh}
+                            value={settings?.soh || 100}
                             onChange={(e) => onSettingsChange({ ...settings, soh: parseInt(e.target.value) || 100 })}
                             className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                         />
@@ -147,7 +147,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         <div className="flex gap-2 mb-2">
                             <button
                                 onClick={() => onSettingsChange({ ...settings, useCalculatedPrice: false })}
-                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${!settings.useCalculatedPrice
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${!settings?.useCalculatedPrice
                                     ? 'byd-active-item'
                                     : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
                                     }`}
@@ -156,12 +156,12 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                             </button>
                             <button
                                 onClick={() => onSettingsChange({ ...settings, useCalculatedPrice: true })}
-                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${settings.useCalculatedPrice
+                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${settings?.useCalculatedPrice
                                     ? 'byd-active-item'
                                     : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
                                     }`}
-                                disabled={charges.length === 0}
-                                title={charges.length === 0 ? t('settings.priceCalculatedNoData') : ''}
+                                disabled={!charges || charges.length === 0}
+                                title={!charges || charges.length === 0 ? t('settings.priceCalculatedNoData') : ''}
                             >
                                 {t('settings.priceCalculated')}
                             </button>
@@ -171,15 +171,15 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                         <input
                             type="number"
                             step="0.001"
-                            value={settings.useCalculatedPrice ? calculatedPrice.toFixed(3) : (settings.electricityPrice || 0)}
+                            value={settings?.useCalculatedPrice ? calculatedPrice.toFixed(3) : (settings?.electricityPrice || 0)}
                             onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
-                            disabled={settings.useCalculatedPrice}
-                            className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings.useCalculatedPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
-                            placeholder={settings.useCalculatedPrice ? t('settings.priceCalculatedAuto') : '0.15'}
+                            disabled={settings?.useCalculatedPrice}
+                            className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings?.useCalculatedPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
+                            placeholder={settings?.useCalculatedPrice ? t('settings.priceCalculatedAuto') : '0.15'}
                         />
 
                         {/* Info text */}
-                        {settings.useCalculatedPrice && charges.length > 0 && (
+                        {settings?.useCalculatedPrice && charges && charges.length > 0 && (
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                 {t('settings.priceCalculatedInfo', {
                                     count: charges.length,
