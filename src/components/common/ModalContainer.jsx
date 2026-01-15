@@ -50,7 +50,8 @@ const ModalContainer = ({
     rawTripsCount,
     filteredCount,
     appVersion = 'v1.2', // Dynamic version from GitHub releases
-    // Charges modal props
+    // Charges data and modal props
+    charges,
     onSaveCharge,
     editingCharge,
     setEditingCharge,
@@ -119,6 +120,7 @@ const ModalContainer = ({
                     settings={settings}
                     onSettingsChange={updateSettings}
                     googleSync={googleSync}
+                    charges={charges}
                 />
 
                 {/* Database Management Modal */}
@@ -308,6 +310,7 @@ ModalContainer.propTypes = {
     rawTripsCount: PropTypes.number,
     filteredCount: PropTypes.number,
     appVersion: PropTypes.string,
+    charges: PropTypes.array,
     onSaveCharge: PropTypes.func,
     editingCharge: PropTypes.object,
     setEditingCharge: PropTypes.func,
