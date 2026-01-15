@@ -13,7 +13,7 @@ import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
 
 // Components
-import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, BYD_RED } from './components/Icons.jsx';
+import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
 import TripCard from './components/cards/TripCard';
 import TabFallback from './components/common/TabFallback';
 import VirtualizedTripList from './components/lists/VirtualizedTripList';
@@ -25,6 +25,7 @@ const RecordsTab = lazy(() => import('./components/tabs/RecordsTab'));
 const TrendsTab = lazy(() => import('./components/tabs/TrendsTab'));
 const PatternsTab = lazy(() => import('./components/tabs/PatternsTab'));
 const EfficiencyTab = lazy(() => import('./components/tabs/EfficiencyTab'));
+const ChargesTab = lazy(() => import('./components/tabs/ChargesTab'));
 // PWAManager lazy loaded for code splitting
 const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
 
@@ -35,6 +36,7 @@ import { useLayout } from './context/LayoutContext';
 import useModalState from './hooks/useModalState';
 import useAppData from './hooks/useAppData';
 import useAppVersion from './hooks/useAppVersion';
+import useChargesData from './hooks/useChargesData';
 
 
 
@@ -156,8 +158,7 @@ export default function BYDStatsAnalyzer() {
   }
 
   const [selectedTrip, setSelectedTrip] = useState(null);
-
-
+  const [selectedCharge, setSelectedCharge] = useState(null);
 
   // Context state - Settings from AppContext, Layout from LayoutContext
   const { settings, updateSettings } = useApp();
@@ -166,6 +167,14 @@ export default function BYDStatsAnalyzer() {
   // Get dynamic app version from GitHub releases
   const { version: appVersion } = useAppVersion();
 
+  // Charges data management
+  const {
+    charges,
+    addCharge,
+    updateCharge,
+    deleteCharge,
+    getChargeById
+  } = useChargesData();
 
   // Calculate chart heights based on mode - memoized to prevent recalculation
   const smallChartHeight = useMemo(() => {
@@ -508,7 +517,8 @@ export default function BYDStatsAnalyzer() {
     { id: 'patterns', label: t('tabs.patterns'), icon: Clock },
     { id: 'efficiency', label: t('tabs.efficiency'), icon: Zap },
     { id: 'records', label: t('tabs.records'), icon: BarChart3 },
-    { id: 'history', label: t('tabs.history'), icon: List }
+    { id: 'history', label: t('tabs.history'), icon: List },
+    { id: 'charges', label: t('tabs.charges'), icon: Battery }
   ], [t]);
 
   const minSwipeDistance = 30; // Distancia mínima en píxeles
@@ -1100,6 +1110,9 @@ export default function BYDStatsAnalyzer() {
         rawTripsCount={rawTrips.length}
         filteredCount={filtered ? filtered.length : 0}
         appVersion={appVersion}
+        onSaveCharge={addCharge}
+        editingCharge={selectedCharge}
+        setEditingCharge={setSelectedCharge}
       />
 
       <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
@@ -1311,6 +1324,24 @@ export default function BYDStatsAnalyzer() {
                       )}
                     </Suspense>
                   </div>
+
+                  {/* Slide 7: Charges */}
+                  <div className={getTabClassName('charges', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
+                    <Suspense fallback={<TabFallback />}>
+                      {(activeTab === 'charges' || backgroundLoad) && (
+                        <ChargesTab
+                          key={activeTab === 'charges' ? 'active' : 'bg'}
+                          charges={charges}
+                          chargerTypes={settings.chargerTypes || []}
+                          onChargeClick={(charge) => {
+                            setSelectedCharge(charge);
+                            openModal('chargeDetail');
+                          }}
+                          onAddClick={() => openModal('addCharge')}
+                        />
+                      )}
+                    </Suspense>
+                  </div>
                 </>
               )}
             </div>
@@ -1405,6 +1436,23 @@ export default function BYDStatsAnalyzer() {
                           filtered={filtered}
                           openTripDetail={openTripDetail}
                           setShowAllTripsModal={setShowAllTripsModal}
+                        />
+                      )}
+                    </div>
+                  </Suspense>
+
+                  <Suspense fallback={<TabFallback />}>
+                    <div className={activeTab === 'charges' && fadingTab === 'charges' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'charges' ? 'block' : 'none' }}>
+                      {(activeTab === 'charges' || backgroundLoad) && (
+                        <ChargesTab
+                          key={activeTab === 'charges' ? 'charges-active' : 'charges-bg'}
+                          charges={charges}
+                          chargerTypes={settings.chargerTypes || []}
+                          onChargeClick={(charge) => {
+                            setSelectedCharge(charge);
+                            openModal('chargeDetail');
+                          }}
+                          onAddClick={() => openModal('addCharge')}
                         />
                       )}
                     </div>
