@@ -78,6 +78,35 @@ const useChargesData = () => {
     }, []);
 
     /**
+     * Add multiple charges at once (for CSV import)
+     * @param {Array} chargesArray - Array of charge data without id and timestamp
+     * @returns {number} Number of charges imported
+     */
+    const addMultipleCharges = useCallback((chargesArray) => {
+        if (!Array.isArray(chargesArray) || chargesArray.length === 0) {
+            return 0;
+        }
+
+        const newCharges = chargesArray.map(chargeData => ({
+            ...chargeData,
+            id: crypto.randomUUID(),
+            timestamp: new Date(`${chargeData.date}T${chargeData.time}`).getTime()
+        }));
+
+        setCharges(prev => {
+            // Combine existing and new, avoiding duplicates by timestamp
+            const existingTimestamps = new Set(prev.map(c => c.timestamp));
+            const uniqueNew = newCharges.filter(c => !existingTimestamps.has(c.timestamp));
+            const combined = [...prev, ...uniqueNew];
+            // Sort by timestamp descending
+            return combined.sort((a, b) => b.timestamp - a.timestamp);
+        });
+
+        logger.info(`${newCharges.length} charges imported`);
+        return newCharges.length;
+    }, []);
+
+    /**
      * Update an existing charge
      * @param {string} id - Charge ID to update
      * @param {Object} updates - Fields to update
@@ -148,6 +177,7 @@ const useChargesData = () => {
     return {
         charges,
         addCharge,
+        addMultipleCharges,
         updateCharge,
         deleteCharge,
         getChargeById,
