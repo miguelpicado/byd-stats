@@ -31,6 +31,7 @@ export const DEFAULT_SETTINGS = {
   batterySize: 60.48,
   soh: 100,
   electricityPrice: 0.15,
+  useCalculatedPrice: false,
   theme: 'auto'
 };
 
