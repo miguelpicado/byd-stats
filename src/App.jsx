@@ -848,6 +848,7 @@ export default function BYDStatsAnalyzer() {
           rawTripsCount={rawTrips.length}
           filteredCount={0}
           appVersion={appVersion}
+          charges={charges}
         />
 
         {/* Privacy & Legal links in bottom-left - Fixed positioning */}
@@ -976,6 +977,7 @@ export default function BYDStatsAnalyzer() {
           rawTripsCount={rawTrips.length}
           filteredCount={allTripsFiltered.length}
           appVersion={appVersion}
+          charges={charges}
         />
 
         {/* Header */}
@@ -1438,6 +1440,7 @@ export default function BYDStatsAnalyzer() {
           rawTripsCount={rawTrips.length}
           filteredCount={allChargesFiltered.length}
           appVersion={appVersion}
+          charges={charges}
         />
       </div>
     );
@@ -1480,6 +1483,7 @@ export default function BYDStatsAnalyzer() {
         rawTripsCount={rawTrips.length}
         filteredCount={filtered ? filtered.length : 0}
         appVersion={appVersion}
+        charges={charges}
         onSaveCharge={addCharge}
         editingCharge={editingCharge}
         setEditingCharge={setEditingCharge}
