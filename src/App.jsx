@@ -109,6 +109,7 @@ export default function BYDStatsAnalyzer() {
 
   // Destructure for backwards compatibility with existing code
   const showAllTripsModal = modals.allTrips;
+  const showAllChargesModal = modals.allCharges;
   const showTripDetailModal = modals.tripDetail;
   const showSettingsModal = modals.settings;
 
@@ -116,6 +117,7 @@ export default function BYDStatsAnalyzer() {
   const setShowModal = useCallback((value) => value ? openModal('upload') : closeModal('upload'), [openModal, closeModal]);
   const setShowFilterModal = useCallback((value) => value ? openModal('filter') : closeModal('filter'), [openModal, closeModal]);
   const setShowAllTripsModal = useCallback((value) => value ? openModal('allTrips') : closeModal('allTrips'), [openModal, closeModal]);
+  const setShowAllChargesModal = useCallback((value) => value ? openModal('allCharges') : closeModal('allCharges'), [openModal, closeModal]);
   const setShowTripDetailModal = useCallback((value) => value ? openModal('tripDetail') : closeModal('tripDetail'), [openModal, closeModal]);
   const setShowSettingsModal = useCallback((value) => value ? openModal('settings') : closeModal('settings'), [openModal, closeModal]);
   const setShowHistoryModal = useCallback((value) => value ? openModal('history') : closeModal('history'), [openModal, closeModal]);
@@ -233,6 +235,14 @@ export default function BYDStatsAnalyzer() {
   const [allTripsDateTo, setAllTripsDateTo] = useState('');
   const [allTripsSortBy, setAllTripsSortBy] = useState('date'); // 'date', 'efficiency', 'distance', 'consumption'
   const [allTripsSortOrder, setAllTripsSortOrder] = useState('desc'); // 'asc' or 'desc'
+
+  // All Charges view state
+  const [allChargesFilterType, setAllChargesFilterType] = useState('all');
+  const [allChargesMonth, setAllChargesMonth] = useState('');
+  const [allChargesDateFrom, setAllChargesDateFrom] = useState('');
+  const [allChargesDateTo, setAllChargesDateTo] = useState('');
+  const [allChargesSortBy, setAllChargesSortBy] = useState('date'); // 'date', 'kwh', 'cost'
+  const [allChargesSortOrder, setAllChargesSortOrder] = useState('desc');
 
   // Swipe gesture state
   const [isTransitioning, setIsTransitioning] = useState(false);
@@ -1156,6 +1166,281 @@ export default function BYDStatsAnalyzer() {
     );
   }
 
+  // If showing all charges view, render full screen view
+  if (showAllChargesModal) {
+    // Get unique months from charges
+    const chargeMonths = [...new Set(charges.map(c => c.date?.substring(0, 7)))].filter(Boolean).sort().reverse();
+
+    // Filter and sort charges
+    let allChargesFiltered = [...charges];
+
+    if (allChargesFilterType === 'month' && allChargesMonth) {
+      allChargesFiltered = allChargesFiltered.filter(c => c.date?.startsWith(allChargesMonth));
+    } else if (allChargesFilterType === 'range') {
+      if (allChargesDateFrom) allChargesFiltered = allChargesFiltered.filter(c => c.date >= allChargesDateFrom);
+      if (allChargesDateTo) allChargesFiltered = allChargesFiltered.filter(c => c.date <= allChargesDateTo);
+    }
+
+    // Sort charges
+    allChargesFiltered.sort((a, b) => {
+      let comparison = 0;
+      if (allChargesSortBy === 'date') {
+        comparison = (b.timestamp || 0) - (a.timestamp || 0);
+      } else if (allChargesSortBy === 'kwh') {
+        comparison = (b.kwhCharged || 0) - (a.kwhCharged || 0);
+      } else if (allChargesSortBy === 'cost') {
+        comparison = (b.totalCost || 0) - (a.totalCost || 0);
+      }
+      return allChargesSortOrder === 'asc' ? -comparison : comparison;
+    });
+
+    const getChargerTypeName = (chargerTypeId) => {
+      const chargerType = (settings.chargerTypes || []).find(ct => ct.id === chargerTypeId);
+      return chargerType?.name || chargerTypeId || '-';
+    };
+
+    const formatDate = (dateStr) => {
+      if (!dateStr) return '';
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    };
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white">
+        {/* Header */}
+        <div className="sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <button
+                  onClick={() => setShowAllChargesModal(false)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 dark:text-white hover:bg-white dark:bg-slate-800"
+                >
+                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="19" y1="12" x2="5" y2="12" />
+                    <polyline points="12 19 5 12 12 5" />
+                  </svg>
+                </button>
+                <div>
+                  <h1 className="text-sm sm:text-base md:text-lg font-bold">{t('charges.title')}</h1>
+                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allChargesFiltered.length} {t('charges.chargeCount').toLowerCase()}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => openModal('addCharge')}
+                className="py-2 px-4 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm"
+                style={{ backgroundColor: BYD_RED }}
+              >
+                + {t('charges.addCharge')}
+              </button>
+            </div>
+
+            {/* Filters and Sort */}
+            <div className="mt-4 space-y-3">
+              {/* Filter Type */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <button
+                  onClick={() => { setAllChargesFilterType('all'); setAllChargesMonth(''); setAllChargesDateFrom(''); setAllChargesDateTo(''); }}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allChargesFilterType === "all" ? BYD_RED : undefined,
+                    color: allChargesFilterType === 'all' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  {t('filter.all')}
+                </button>
+                <button
+                  onClick={() => setAllChargesFilterType('month')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allChargesFilterType === 'month' ? BYD_RED : undefined,
+                    color: allChargesFilterType === 'month' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  {t('filter.byMonth')}
+                </button>
+                <button
+                  onClick={() => setAllChargesFilterType('range')}
+                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
+                  style={{
+                    backgroundColor: allChargesFilterType === 'range' ? BYD_RED : undefined,
+                    color: allChargesFilterType === 'range' ? 'white' : '#94a3b8'
+                  }}
+                >
+                  {t('filter.byRange')}
+                </button>
+              </div>
+
+              {/* Month Selector */}
+              {allChargesFilterType === 'month' && (
+                <select
+                  value={allChargesMonth}
+                  onChange={(e) => setAllChargesMonth(e.target.value)}
+                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                >
+                  <option value="">{t('filter.selectMonth')}</option>
+                  {chargeMonths.map((m) => (
+                    <option key={m} value={m}>{formatMonth(m)}</option>
+                  ))}
+                </select>
+              )}
+
+              {/* Date Range */}
+              {allChargesFilterType === 'range' && (
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={allChargesDateFrom}
+                    onChange={(e) => setAllChargesDateFrom(e.target.value)}
+                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                  />
+                  <input
+                    type="date"
+                    value={allChargesDateTo}
+                    onChange={(e) => setAllChargesDateTo(e.target.value)}
+                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
+                  />
+                </div>
+              )}
+
+              {/* Sort Options */}
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                <span className="text-xs text-slate-600 dark:text-slate-400 px-2 py-1.5">{t('sort.label')}</span>
+                <button
+                  onClick={() => {
+                    if (allChargesSortBy === 'date') {
+                      setAllChargesSortOrder(allChargesSortOrder === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setAllChargesSortBy('date');
+                      setAllChargesSortOrder('desc');
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allChargesSortBy === 'date' ? 'text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
+                  style={allChargesSortBy === 'date' ? { backgroundColor: BYD_RED } : {}}
+                >
+                  {t('allTrips.date')}
+                  {allChargesSortBy === 'date' && <span>{allChargesSortOrder === 'desc' ? '↓' : '↑'}</span>}
+                </button>
+                <button
+                  onClick={() => {
+                    if (allChargesSortBy === 'kwh') {
+                      setAllChargesSortOrder(allChargesSortOrder === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setAllChargesSortBy('kwh');
+                      setAllChargesSortOrder('desc');
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allChargesSortBy === 'kwh' ? 'text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
+                  style={allChargesSortBy === 'kwh' ? { backgroundColor: BYD_RED } : {}}
+                >
+                  kWh
+                  {allChargesSortBy === 'kwh' && <span>{allChargesSortOrder === 'desc' ? '↓' : '↑'}</span>}
+                </button>
+                <button
+                  onClick={() => {
+                    if (allChargesSortBy === 'cost') {
+                      setAllChargesSortOrder(allChargesSortOrder === 'desc' ? 'asc' : 'desc');
+                    } else {
+                      setAllChargesSortBy('cost');
+                      setAllChargesSortOrder('desc');
+                    }
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allChargesSortBy === 'cost' ? 'text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
+                  style={allChargesSortBy === 'cost' ? { backgroundColor: BYD_RED } : {}}
+                >
+                  {t('charges.totalCost')}
+                  {allChargesSortBy === 'cost' && <span>{allChargesSortOrder === 'desc' ? '↓' : '↑'}</span>}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Charge List */}
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
+          <div className="space-y-3">
+            {allChargesFiltered.map(charge => (
+              <div
+                key={charge.id}
+                onClick={() => {
+                  setSelectedCharge(charge);
+                  openModal('chargeDetail');
+                }}
+                className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+              >
+                <div className="flex justify-between items-center">
+                  <div className="flex-1">
+                    <p className="text-sm text-slate-500 dark:text-slate-400">
+                      {formatDate(charge.date)} - {charge.time}
+                    </p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-white">
+                      {charge.kwhCharged?.toFixed(2) || '0.00'} kWh
+                    </p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">
+                      {getChargerTypeName(charge.chargerTypeId)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-amber-600 dark:text-amber-400 font-semibold">
+                      {charge.totalCost?.toFixed(2) || '0.00'} €
+                    </p>
+                    {charge.finalPercentage && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {charge.initialPercentage ? `${charge.initialPercentage}% → ` : ''}
+                        {charge.finalPercentage}%
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ModalContainer for charge detail */}
+        <ModalContainer
+          modals={modals}
+          closeModal={closeModal}
+          openModal={openModal}
+          setLegalInitialSection={setLegalInitialSection}
+          legalInitialSection={legalInitialSection}
+          settings={settings}
+          updateSettings={updateSettings}
+          googleSync={googleSync}
+          rawTrips={rawTrips}
+          selectedTrip={selectedTrip}
+          setSelectedTrip={setSelectedTrip}
+          selectedCharge={selectedCharge}
+          setSelectedCharge={setSelectedCharge}
+          editingCharge={editingCharge}
+          setEditingCharge={setEditingCharge}
+          onSaveCharge={addCharge}
+          onDeleteCharge={deleteCharge}
+          data={data}
+          sqlReady={sqlReady}
+          processDB={processDB}
+          exportDatabase={exportDatabase}
+          clearData={clearData}
+          onLoadChargeRegistry={loadChargeRegistry}
+          isNative={isNative}
+          onFile={onFile}
+          setFilterType={setFilterType}
+          setSelMonth={setSelMonth}
+          setDateFrom={setDateFrom}
+          setDateTo={setDateTo}
+          filterType={filterType}
+          selMonth={selMonth}
+          dateFrom={dateFrom}
+          dateTo={dateTo}
+          months={months}
+          rawTripsCount={rawTrips.length}
+          filteredCount={allChargesFiltered.length}
+          appVersion={appVersion}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       ref={setSwipeContainer}
@@ -1424,6 +1709,7 @@ export default function BYDStatsAnalyzer() {
                             openModal('chargeDetail');
                           }}
                           onAddClick={() => openModal('addCharge')}
+                          setShowAllChargesModal={setShowAllChargesModal}
                         />
                       )}
                     </Suspense>
@@ -1539,6 +1825,7 @@ export default function BYDStatsAnalyzer() {
                             openModal('chargeDetail');
                           }}
                           onAddClick={() => openModal('addCharge')}
+                          setShowAllChargesModal={setShowAllChargesModal}
                         />
                       )}
                     </div>

@@ -429,6 +429,10 @@
         "realKwhExplanation": "Enerxía estimada perdida por perdas de conversión",
         "details": "Detalles adicionais",
         "chargesImported": "{{count}} cargas importadas correctamente",
-        "chargerTypesCreated": "Novos tipos de cargador creados: {{types}}"
+        "chargerTypesCreated": "Novos tipos de cargador creados: {{types}}",
+        "avgLast10": "Media últimas 10 cargas",
+        "avgKwh": "Media kWh",
+        "avgCost": "Custo medio",
+        "last10Charges": "Últimas 10 cargas"
     }
 }
