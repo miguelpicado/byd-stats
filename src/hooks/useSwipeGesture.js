@@ -19,7 +19,8 @@ export const useSwipeGesture = ({
     isTransitioning,
     tabs,
     layoutMode,
-    minSwipeDistance = 30
+    minSwipeDistance = 30,
+    isModalOpen = false
 }) => {
     const [swipeContainer, setSwipeContainer] = useState(null);
     const touchStartRef = useRef(null);
@@ -37,6 +38,10 @@ export const useSwipeGesture = ({
     useEffect(() => { handleTabClickRef.current = handleTabClick; }, [handleTabClick]);
     useEffect(() => { layoutModeRef.current = layoutMode; }, [layoutMode]);
 
+    // Ref for modal state
+    const isModalOpenRef = useRef(isModalOpen);
+    useEffect(() => { isModalOpenRef.current = isModalOpen; }, [isModalOpen]);
+
     useEffect(() => {
         // Require container to be available
         if (!swipeContainer) return;
@@ -46,6 +51,8 @@ export const useSwipeGesture = ({
         let initialScrollTop = 0;
 
         const handleTouchStart = (e) => {
+            // Disable swipe when modal is open
+            if (isModalOpenRef.current) return;
             if (isTransitioningRef.current) return;
             const touch = e.touches[0];
             touchStartRef.current = touch.clientX;
