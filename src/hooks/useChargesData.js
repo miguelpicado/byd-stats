@@ -2,7 +2,7 @@
 // Manages charging session data persistence and CRUD operations
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { CHARGES_STORAGE_KEY } from '../constants/layout';
+import { CHARGES_STORAGE_KEY } from '../utils/constants';
 import { logger } from '../utils/logger';
 
 /**
