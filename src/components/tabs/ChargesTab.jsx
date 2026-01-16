@@ -99,7 +99,7 @@ const ChargesTab = React.memo(({
     ), [isCompact, isFullscreenBYD, statCardPadding, statIconSize, statIconInner, statLabelText, statValueText]);
 
     // Charge card padding: Compact tight, Fullscreen slightly relaxed
-    const chargeCardPadding = isCompact ? 'p-2.5' : (isFullscreenBYD ? 'p-3' : 'p-3');
+    const chargeCardPadding = isCompact ? 'p-[13px]' : (isFullscreenBYD ? 'p-[15px]' : 'p-[15px]');
     const dateText = isCompact ? 'text-xs' : 'text-sm';
     const kwhText = isCompact ? 'text-base' : (isFullscreenBYD ? 'text-[17px]' : 'text-lg');
 
@@ -176,21 +176,11 @@ const ChargesTab = React.memo(({
     if (isVertical) {
         return (
             <div className="space-y-4">
-                {/* Header with title and add button */}
+                {/* Header with title */}
                 <div className="flex items-center justify-between">
                     <h2 className="font-bold text-slate-900 dark:text-white text-xl">
                         {t('charges.last10Charges')}
                     </h2>
-                    {onAddClick && (
-                        <button
-                            onClick={onAddClick}
-                            className="py-2 px-4 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm"
-                            style={{ backgroundColor: ELECTRIC_BLUE }}
-                        >
-                            <Battery className="w-4 h-4" />
-                            {t('charges.addCharge')}
-                        </button>
-                    )}
                 </div>
 
                 {/* Stats grid */}

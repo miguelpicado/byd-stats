@@ -15,6 +15,7 @@ import { useGoogleSync } from './hooks/useGoogleSync';
 import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
 import TripCard from './components/cards/TripCard';
 import TabFallback from './components/common/TabFallback';
+import FloatingActionButton from './components/common/FloatingActionButton';
 import VirtualizedTripList from './components/lists/VirtualizedTripList';
 // Keep OverviewTab static (initial tab)
 import OverviewTab from './components/tabs/OverviewTab';
@@ -105,7 +106,7 @@ export default function BYDStatsAnalyzer() {
   const [fadingTab, setFadingTab] = useState(null); // Track which tab is fading in
   const [dragOver, setDragOver] = useState(false);
   // Centralized modal state management
-  const { modals, openModal, closeModal, legalInitialSection, setLegalInitialSection } = useModalState();
+  const { modals, openModal, closeModal, legalInitialSection, setLegalInitialSection, isAnyModalOpen } = useModalState();
 
   // Destructure for backwards compatibility with existing code
   const showAllTripsModal = modals.allTrips;
@@ -656,8 +657,21 @@ export default function BYDStatsAnalyzer() {
     handleTabClick,
     isTransitioning,
     tabs,
-    layoutMode
+    layoutMode,
+    isModalOpen: isAnyModalOpen
   });
+
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isAnyModalOpen]);
 
   // Scroll to top Effect - Reset all containers when activeTab changes
   useEffect(() => {
@@ -1841,6 +1855,14 @@ export default function BYDStatsAnalyzer() {
             </div>
           )
           }
+
+          {/* Floating Action Button for Overview tab in vertical mode */}
+          {layoutMode === 'vertical' && activeTab === 'overview' && (
+            <FloatingActionButton
+              onClick={() => openModal('addCharge')}
+              label={t('charges.addCharge')}
+            />
+          )}
 
           {/* Bottom Navigation Bar - Only show in vertical mode */}
           {
