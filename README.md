@@ -1,7 +1,7 @@
 # 🚗 BYD Stats — Analizador de estadísticas de BYD
 
 [![Android Build](https://github.com/miguelpicado/byd-stats/actions/workflows/android-build.yml/badge.svg)](https://github.com/miguelpicado/byd-stats/actions/workflows/android-build.yml)
-[![Manual APK Build](https://github.com/miguelpicado/byd-stats/actions/workflows/manual-build.yml/badge.svg)](https://github.com/miguelpicado/byd-stats/actions/workflows/manual-build.yml)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/miguelpicado)
 [![Release](https://img.shields.io/github/v/release/miguelpicado/byd-stats?style=flat-square)](https://github.com/miguelpicado/byd-stats/releases)
 [![License](https://img.shields.io/github/license/miguelpicado/byd-stats?style=flat-square)](LICENSE)
 [![Website](https://img.shields.io/website?url=https%3A%2F%2Fbydstats.com)](https://bydstats.com)
@@ -51,12 +51,34 @@ Gráficos de evolución de eficiencia mensual y diagrama de dispersión de efici
 
 ---
 
+## 🚘 Compatibilidad de modelos
+
+Esta tabla refleja el estado actual de compatibilidad con los modelos BYD a la venta en España.
+
+| Modelo | Estado | Notas |
+| :--- | :--- | :--- |
+| **BYD Seal** | ✅ Compatible | Garantizado |
+| **BYD Seal U** | ✅ Compatible | Garantizado |
+| **BYD Atto 3** | ✅ Compatible | Garantizado |
+| **BYD Atto 2** | ✅ Compatible | Garantizado |
+| **BYD Dolphin** (Comfort/Design) | ❓ Pendiente | Se requiere confirmación |
+| **BYD Han** | ❓ Pendiente | Se requiere confirmación |
+| **BYD Tang** | ❓ Pendiente | Se requiere confirmación |
+| **BYD ETP3** | ❓ Pendiente | Se requiere confirmación |
+| **BYD Dolphin Surf** | ❌ No compatible | Encriptación/Formato distinto |
+| **BYD Sealion 7** | ❌ No compatible | Encriptación/Formato distinto |
+
+> **Nota:** Si tienes un modelo marcado como "Pendiente" y logras cargar tus datos, por favor abre un issue para actualizar esta tabla.
+
+---
+
 ## 🗂️ Cómo obtener tus datos (EC_Database.db)
 1. Introduce un pendrive en el puerto USB del vehículo BYD.
-2. Abre la carpeta `EnergyData` en la unidad USB.
-3. Copia `EC_Database.db` y arrástralo a la aplicación web (o selecciónalo desde la app Android).
+2. Abre la carpeta `EnergyData` en el coche y copia el fichero EC_Database.db (/Local/energydata/EC_database.db/).
+3. Pega ese fichero en tu pendrive.
+4. Extrae el pendrive de tu coche y cópialo a la aplicación web (o selecciónalo desde la app Android).
 
-> **Privacidad:** Por defecto, todos los datos se procesan en tu dispositivo con `sql.js`. La sincronización con **Google Drive** es completamente opcional y utiliza tu propia cuenta personal; nosotros no tenemos acceso a tus datos.
+> **Privacidad:** Todos los datos se procesan en tu dispositivo con `sql.js`. La sincronización con **Google Drive** es completamente opcional y utiliza tu propia cuenta personal; nosotros no tenemos acceso a tus datos.
 
 ### 🔧 Workaround para navegadores restrictivos (Chrome 113 del BYD)
 
@@ -65,8 +87,8 @@ Algunos navegadores integrados en vehículos BYD (específicamente Chrome 113) n
 #### Método del renombrado a .jpg
 
 **Paso 1: Copiar el archivo desde el pendrive**
-1. Con el pendrive conectado al vehículo, abre el explorador de archivos del navegador o sistema
-2. Navega a la carpeta `EnergyData` en el pendrive
+1. Abre el explorador de archivos del coche
+2. Navega a la carpeta `EnergyData`
 3. Localiza el archivo `EC_Database.db`
 4. Copia el archivo a una ubicación accesible (por ejemplo, la carpeta `Downloads` o cualquier carpeta del almacenamiento interno)
 
@@ -94,7 +116,6 @@ El navegador Chrome 113 del BYD restringe los tipos de archivo que se pueden sel
 Después de cargar el archivo, deberías ver:
 - Un mensaje de confirmación indicando que la base de datos se cargó correctamente
 - Las estadísticas y gráficos generados a partir de tus datos de conducción
-- El nombre del archivo cargado en la interfaz (mostrará "EC_Database.jpg")
 
 #### Solución alternativa: Usar la app Android
 
