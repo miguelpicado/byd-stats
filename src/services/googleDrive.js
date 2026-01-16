@@ -187,20 +187,41 @@ export const googleDriveService = {
 
     // 2. Merge Settings
     // Strategy: Local settings have priority. Remote settings fill in missing values.
-    const mergedSettings = { ...remoteData.settings, ...localData.settings };
+    // Special handling for chargerTypes array - merge by id instead of replacing
+    const localSettings = localData.settings || {};
+    const remoteSettings = remoteData.settings || {};
 
-    // 3. Merge Charges (Union by id, or timestamp if id not present)
+    // Merge chargerTypes arrays by id (local wins for same id)
+    const localChargerTypes = localSettings.chargerTypes || [];
+    const remoteChargerTypes = remoteSettings.chargerTypes || [];
+    const chargerTypeMap = new Map();
+
+    // Remote first, then local overwrites (local wins for same id)
+    remoteChargerTypes.forEach(ct => chargerTypeMap.set(ct.id, ct));
+    localChargerTypes.forEach(ct => chargerTypeMap.set(ct.id, ct));
+
+    const mergedChargerTypes = Array.from(chargerTypeMap.values());
+
+    // Merge other settings (local wins)
+    const mergedSettings = { ...remoteSettings, ...localSettings };
+    // Override with properly merged chargerTypes
+    if (mergedChargerTypes.length > 0) {
+      mergedSettings.chargerTypes = mergedChargerTypes;
+    }
+
+    // 3. Merge Charges (Union by timestamp - unique per charge session)
+    // Note: id can differ between devices (each generates UUID), but timestamp is consistent
     const localCharges = (localData && Array.isArray(localData.charges)) ? localData.charges : [];
     const remoteCharges = (remoteData && Array.isArray(remoteData.charges)) ? remoteData.charges : [];
 
     const chargeMap = new Map();
+    // Use timestamp as primary key for deduplication
     localCharges.forEach(c => {
-      // Use id as primary key, fallback to timestamp for legacy data
-      const key = c.id || `${c.date}-${c.time}-${c.timestamp}`;
+      const key = c.timestamp || `${c.date}T${c.time}`;
       chargeMap.set(key, c);
     });
     remoteCharges.forEach(c => {
-      const key = c.id || `${c.date}-${c.time}-${c.timestamp}`;
+      const key = c.timestamp || `${c.date}T${c.time}`;
       if (!chargeMap.has(key)) {
         chargeMap.set(key, c);
       }
