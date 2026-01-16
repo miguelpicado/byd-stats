@@ -101,17 +101,15 @@ const useAppData = () => {
 
     // --- Action: Clear all trip data ---
     const clearData = useCallback(() => {
-        if (window.confirm(t('confirmations.deleteAllData'))) {
-            setRawTrips([]);
-            localStorage.removeItem(STORAGE_KEY);
-        }
-    }, [t]);
+        setRawTrips([]);
+        localStorage.removeItem(STORAGE_KEY);
+        return true;
+    }, []);
 
     // --- Action: Save current trips to history ---
     const saveToHistory = useCallback(() => {
         if (rawTrips.length === 0) {
-            alert(t('confirmations.noTripsToSave'));
-            return;
+            return { success: false, reason: 'no_trips' };
         }
 
         // Merge current trips with existing history using unique key
@@ -128,29 +126,28 @@ const useAppData = () => {
         );
 
         setTripHistory(newHistory);
-        alert(t('confirmations.historySaved', { total: newHistory.length, new: newHistory.length - tripHistory.length }));
-    }, [rawTrips, tripHistory, t]);
+        return {
+            success: true,
+            total: newHistory.length,
+            added: newHistory.length - tripHistory.length
+        };
+    }, [rawTrips, tripHistory]);
 
     // --- Action: Load history as current trips ---
     const loadFromHistory = useCallback(() => {
         if (tripHistory.length === 0) {
-            alert(t('confirmations.noHistory'));
-            return;
+            return { success: false, reason: 'no_history' };
         }
-
-        if (window.confirm(t('confirmations.loadHistory', { count: tripHistory.length }))) {
-            setRawTrips(tripHistory);
-        }
-    }, [tripHistory, t]);
+        setRawTrips(tripHistory);
+        return { success: true, count: tripHistory.length };
+    }, [tripHistory]);
 
     // --- Action: Clear trip history ---
     const clearHistory = useCallback(() => {
-        if (window.confirm(t('confirmations.clearHistory'))) {
-            setTripHistory([]);
-            localStorage.removeItem(TRIP_HISTORY_KEY);
-            alert(t('confirmations.historyCleared'));
-        }
-    }, [t]);
+        setTripHistory([]);
+        localStorage.removeItem(TRIP_HISTORY_KEY);
+        return true;
+    }, []);
 
     return {
         // Trip data

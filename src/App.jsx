@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 
 
@@ -7,16 +7,18 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { formatMonth } from './utils/dateUtils';
 
 import { logger } from './utils/logger';
-import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPACT_SPACE_Y } from './constants/layout';
+import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPACT_SPACE_Y } from './utils/constants';
 import './utils/chartSetup'; // Register Chart.js components
 import { useGoogleSync } from './hooks/useGoogleSync';
+
+import { Toaster, toast } from 'react-hot-toast';
+import ConfirmationModal from './components/common/ConfirmationModal';
 
 // Components
 import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
 import TripCard from './components/cards/TripCard';
 import TabFallback from './components/common/TabFallback';
 import FloatingActionButton from './components/common/FloatingActionButton';
-import VirtualizedTripList from './components/lists/VirtualizedTripList';
 // Keep OverviewTab static (initial tab)
 import OverviewTab from './components/tabs/OverviewTab';
 // Lazy load other tabs for code splitting
@@ -37,6 +39,8 @@ import useModalState from './hooks/useModalState';
 import useAppData from './hooks/useAppData';
 import useAppVersion from './hooks/useAppVersion';
 import useChargesData from './hooks/useChargesData';
+import VirtualizedTripList from './components/lists/VirtualizedTripList';
+import VirtualizedChargeList from './components/lists/VirtualizedChargeList';
 
 
 
@@ -58,27 +62,49 @@ const getTabClassName = (tabId, activeTab, fadingTab, baseClass = 'tab-content-c
 
 
 const GitHubFooter = React.memo(() => (
-  <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700/50">
+  <div className="flex justify-center pb-6 pt-2">
     <a
       href="https://github.com/miguelpicado/byd-stats"
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors mx-auto w-fit"
+      className="flex items-center gap-2 text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors text-xs"
     >
-      <GitHub className="w-5 h-5" />
-      <span>Ver en GitHub</span>
+      <GitHub className="w-4 h-4" />
+      <span>View source on GitHub</span>
     </a>
   </div>
 ));
 
-
-
-
-
-
+GitHubFooter.displayName = 'GitHubFooter';
 
 export default function BYDStatsAnalyzer() {
   const { t } = useTranslation();
+
+  // Confirmation Modal State
+  const [confirmModalState, setConfirmModalState] = useState({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => { },
+    isDangerous: false
+  });
+
+  const showConfirmation = useCallback((title, message, onConfirm, isDangerous = false) => {
+    setConfirmModalState({
+      isOpen: true,
+      title,
+      message,
+      onConfirm,
+      isDangerous
+    });
+  }, []);
+
+  const allTripsScrollRef = useRef(null);
+  const allChargesScrollRef = useRef(null);
+
+  const closeConfirmation = useCallback(() => {
+    setConfirmModalState(prev => ({ ...prev, isOpen: false }));
+  }, []);
 
   // Data management hook - replaces rawTrips, filter states, and history
   const {
@@ -96,11 +122,92 @@ export default function BYDStatsAnalyzer() {
     months,
     filtered,
     data,
-    clearData,
-    saveToHistory,
-    clearHistory
+    clearData: rawClearData,
+    saveToHistory: rawSaveToHistory,
+    clearHistory: rawClearHistory,
+    loadFromHistory: rawLoadFromHistory
   } = useAppData();
+
+  // Wrap actions with Confirmation UI
+  const clearData = useCallback(() => {
+    showConfirmation(
+      t('settings.dangerZone'),
+      t('confirmations.deleteAllData'),
+      () => {
+        rawClearData();
+        toast.success(t('upload.success', 'Datos eliminados correctamente'));
+      },
+      true
+    );
+  }, [showConfirmation, rawClearData, t]);
+
+  const saveToHistory = useCallback(() => {
+    const result = rawSaveToHistory();
+    if (!result.success) {
+      if (result.reason === 'no_trips') {
+        toast.error(t('confirmations.noTripsToSave'));
+      }
+      return;
+    }
+    toast.success(t('confirmations.historySaved', {
+      total: result.total,
+      new: result.added
+    }));
+  }, [rawSaveToHistory, t]);
+
+  const loadFromHistory = useCallback(() => {
+    const result = rawLoadFromHistory(); // Check if history exists
+    if (!result.success && result.reason === 'no_history') {
+      toast.error(t('confirmations.noHistory'));
+      return;
+    }
+
+    // If we are here, logic needs to be split: rawLoadFromHistory in useAppData 
+    // should ideally just LOAD, but we need to check count first before confirming.
+    // However, existing hook returns result AFTER action.
+    // We should peek into tripHistory directly here.
+
+    showConfirmation(
+      t('settings.history'),
+      t('confirmations.loadHistory', { count: tripHistory.length }),
+      () => {
+        const res = rawLoadFromHistory();
+        if (res.success) {
+          toast.success(t('upload.success', 'Historial cargado correctamente'));
+        }
+      }
+    );
+  }, [tripHistory, rawLoadFromHistory, showConfirmation, t]);
+
+  const clearHistory = useCallback(() => {
+    showConfirmation(
+      t('settings.clearHistory'),
+      t('confirmations.clearHistory'),
+      () => {
+        rawClearHistory();
+        toast.success(t('confirmations.historyCleared'));
+      },
+      true
+    );
+  }, [showConfirmation, rawClearHistory, t]);
+
+
   const { sqlReady, loading, error, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
+
+  // Wrapper for export database to show toasts
+  const handleExportDatabase = useCallback(async (trips) => {
+    const result = await exportDBHook(trips);
+    if (result.success) {
+      toast.success(t('confirmations.dbExported', 'Base de datos exportada correctamente'));
+    } else {
+      if (result.reason === 'no_data') {
+        toast.error(t('errors.noDataFound', 'No hay datos para exportar'));
+      } else {
+        toast.error(t('errors.exportFailed', 'Error al exportar: ') + (result.message || 'Error desconocido'));
+      }
+    }
+  }, [exportDBHook, t]);
+
   const { pendingFile, clearPendingFile, readFile } = useFileHandling();
   const [activeTab, setActiveTab] = useState('overview');
   const [fadingTab, setFadingTab] = useState(null); // Track which tab is fading in
@@ -285,14 +392,7 @@ export default function BYDStatsAnalyzer() {
 
   const isNative = Capacitor.isNativePlatform();
 
-  // Save settings to localStorage
-  useEffect(() => {
-    try {
-      localStorage.setItem('byd_settings', JSON.stringify(settings));
-    } catch (e) {
-      logger.error('Error saving settings:', e);
-    }
-  }, [settings]);
+  // Handle Android back button
 
   // Handle Android back button
   useEffect(() => {
@@ -630,7 +730,7 @@ export default function BYDStatsAnalyzer() {
     { id: 'records', label: t('tabs.records'), icon: BarChart3 },
     { id: 'history', label: t('tabs.history'), icon: List },
     { id: 'charges', label: t('tabs.charges'), icon: Battery }
-  ], [t]);
+  ].filter(t => t.id === 'overview' || !(settings.hiddenTabs || []).includes(t.id)), [t, settings.hiddenTabs]);
 
   const minSwipeDistance = 30; // Distancia mínima en píxeles
   const transitionDuration = 500;
@@ -957,7 +1057,10 @@ export default function BYDStatsAnalyzer() {
     const maxEff = efficiencies.length > 0 ? Math.max(...efficiencies) : 0;
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white">
+      <div
+        ref={allTripsScrollRef}
+        className="fixed inset-0 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white"
+      >
         {/* Trip Detail Modal (using ModalContainer) */}
         <ModalContainer
           modals={modals}
@@ -1178,6 +1281,7 @@ export default function BYDStatsAnalyzer() {
             minEff={minEff}
             maxEff={maxEff}
             onTripClick={openTripDetail}
+            scrollRef={allTripsScrollRef}
           />
         </div>
       </div >
@@ -1224,7 +1328,10 @@ export default function BYDStatsAnalyzer() {
     };
 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white">
+      <div
+        ref={allChargesScrollRef}
+        className="fixed inset-0 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white"
+      >
         {/* Header */}
         <div className="sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
           <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
@@ -1374,45 +1481,18 @@ export default function BYDStatsAnalyzer() {
           </div>
         </div>
 
-        {/* Charge List */}
+        {/* Charge List - Virtualized */}
         <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
-          <div className="space-y-3">
-            {allChargesFiltered.map(charge => (
-              <div
-                key={charge.id}
-                onClick={() => {
-                  setSelectedCharge(charge);
-                  openModal('chargeDetail');
-                }}
-                className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
-              >
-                <div className="flex justify-between items-center">
-                  <div className="flex-1">
-                    <p className="text-sm text-slate-500 dark:text-slate-400">
-                      {formatDate(charge.date)} - {charge.time}
-                    </p>
-                    <p className="text-lg font-bold text-slate-900 dark:text-white">
-                      {charge.kwhCharged?.toFixed(2) || '0.00'} kWh
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
-                      {getChargerTypeName(charge.chargerTypeId)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-amber-600 dark:text-amber-400 font-semibold">
-                      {charge.totalCost?.toFixed(2) || '0.00'} €
-                    </p>
-                    {charge.finalPercentage && (
-                      <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {charge.initialPercentage ? `${charge.initialPercentage}% → ` : ''}
-                        {charge.finalPercentage}%
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <VirtualizedChargeList
+            charges={allChargesFiltered}
+            onChargeClick={(charge) => {
+              setSelectedCharge(charge);
+              openModal('chargeDetail');
+            }}
+            scrollRef={allChargesScrollRef}
+            formatDate={formatDate}
+            getChargerTypeName={getChargerTypeName}
+          />
         </div>
 
         {/* ModalContainer for charge detail */}
@@ -1436,8 +1516,8 @@ export default function BYDStatsAnalyzer() {
           onDeleteCharge={deleteCharge}
           data={data}
           sqlReady={sqlReady}
-          processDB={processDB}
-          exportDatabase={exportDatabase}
+          processDB={processDBHook}
+          exportDatabase={handleExportDatabase}
           clearData={clearData}
           onLoadChargeRegistry={loadChargeRegistry}
           isNative={isNative}
@@ -1622,121 +1702,98 @@ export default function BYDStatsAnalyzer() {
                 ))
               ) : (
                 <>
-                  {/* Slide 1: Overview */}
-                  <div className={getTabClassName('overview', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    {(activeTab === 'overview' || backgroundLoad) && (
-                      <OverviewTab
-                        key={activeTab === 'overview' ? 'active' : 'bg'}
-                        summary={summary}
-                        monthly={monthly}
-                        tripDist={tripDist}
-                        smallChartHeight={smallChartHeight}
-
-                        overviewSpacing={overviewSpacingVertical}
-                        onAddCharge={() => openModal('addCharge')}
-                        trips={rawTrips}
-                        settings={settings}
-                      />
-                    )}
-                  </div>
-
-                  {/* Slide 2: Trends */}
-                  <div className={getTabClassName('trends', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <Suspense fallback={<TabFallback />}>
-                      {(activeTab === 'trends' || backgroundLoad) && (
-                        <TrendsTab
-                          key={activeTab === 'trends' ? 'active' : 'bg'}
-                          filtered={filtered}
-                          summary={summary}
-                          monthly={monthly}
-                          daily={daily}
-                          settings={settings}
-                          largeChartHeight={largeChartHeight}
-                        />
+                  {tabs.map((tab) => (
+                    <div
+                      key={tab.id}
+                      className={getTabClassName(tab.id, activeTab, fadingTab)}
+                      style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}
+                    >
+                      {(activeTab === tab.id || backgroundLoad) && (
+                        <>
+                          {tab.id === 'overview' && (
+                            <OverviewTab
+                              summary={summary}
+                              monthly={monthly}
+                              tripDist={tripDist}
+                              smallChartHeight={smallChartHeight}
+                              overviewSpacing={overviewSpacingVertical}
+                              onAddCharge={() => openModal('addCharge')}
+                              trips={rawTrips}
+                              settings={settings}
+                            />
+                          )}
+                          {tab.id === 'trends' && (
+                            <Suspense fallback={<TabFallback />}>
+                              <TrendsTab
+                                filtered={filtered}
+                                summary={summary}
+                                monthly={monthly}
+                                daily={daily}
+                                settings={settings}
+                                largeChartHeight={largeChartHeight}
+                              />
+                            </Suspense>
+                          )}
+                          {tab.id === 'patterns' && (
+                            <Suspense fallback={<TabFallback />}>
+                              <PatternsTab
+                                weekday={weekday}
+                                hourly={hourly}
+                                summary={summary}
+                                patternsSpacing={patternsSpacing}
+                                patternsChartHeight={patternsChartHeight}
+                              />
+                            </Suspense>
+                          )}
+                          {tab.id === 'efficiency' && (
+                            <Suspense fallback={<TabFallback />}>
+                              <EfficiencyTab
+                                summary={summary}
+                                monthly={monthly}
+                                effScatter={effScatter}
+                                largeChartHeight={largeChartHeight}
+                              />
+                            </Suspense>
+                          )}
+                          {tab.id === 'records' && (
+                            <Suspense fallback={<TabFallback />}>
+                              <RecordsTab
+                                summary={summary}
+                                top={top}
+                                recordsItemPadding={recordsItemPadding}
+                                recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                                recordsListHeightHorizontal={recordsListHeightHorizontal}
+                              />
+                            </Suspense>
+                          )}
+                          {tab.id === 'history' && (
+                            <Suspense fallback={<TabFallback />}>
+                              <HistoryTab
+                                filtered={filtered}
+                                openTripDetail={openTripDetail}
+                                setShowAllTripsModal={setShowAllTripsModal}
+                              />
+                            </Suspense>
+                          )}
+                          {tab.id === 'charges' && (
+                            <Suspense fallback={<TabFallback />}>
+                              <ChargesTab
+                                charges={charges}
+                                chargerTypes={settings.chargerTypes || []}
+                                onChargeClick={(charge) => {
+                                  setSelectedCharge(charge);
+                                  openModal('chargeDetail');
+                                }}
+                                onAddClick={() => openModal('addCharge')}
+                                setShowAllChargesModal={setShowAllChargesModal}
+                                batterySize={settings.batterySize}
+                              />
+                            </Suspense>
+                          )}
+                        </>
                       )}
-                    </Suspense>
-                  </div>
-
-                  {/* Slide 3: Patterns */}
-                  <div className={getTabClassName('patterns', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <Suspense fallback={<TabFallback />}>
-                      {(activeTab === 'patterns' || backgroundLoad) && (
-                        <PatternsTab
-                          key={activeTab === 'patterns' ? 'active' : 'bg'}
-                          weekday={weekday}
-                          hourly={hourly}
-                          summary={summary}
-                          patternsSpacing={patternsSpacing}
-                          patternsChartHeight={patternsChartHeight}
-                        />
-                      )}
-                    </Suspense>
-                  </div>
-
-                  {/* Slide 4: Efficiency */}
-                  <div className={getTabClassName('efficiency', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <Suspense fallback={<TabFallback />}>
-                      {(activeTab === 'efficiency' || backgroundLoad) && (
-                        <EfficiencyTab
-                          key={activeTab === 'efficiency' ? 'active' : 'bg'}
-                          summary={summary}
-                          monthly={monthly}
-                          effScatter={effScatter}
-                          largeChartHeight={largeChartHeight}
-                        />
-                      )}
-                    </Suspense>
-                  </div>
-
-                  {/* Slide 5: Records */}
-                  <div className={getTabClassName('records', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <Suspense fallback={<TabFallback />}>
-                      {(activeTab === 'records' || backgroundLoad) && (
-                        <RecordsTab
-                          key={activeTab === 'records' ? 'active' : 'bg'}
-                          summary={summary}
-                          top={top}
-                          recordsItemPadding={recordsItemPadding}
-                          recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                          recordsListHeightHorizontal={recordsListHeightHorizontal}
-                        />
-                      )}
-                    </Suspense>
-                  </div>
-
-                  {/* Slide 6: History */}
-                  <div className={getTabClassName('history', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <Suspense fallback={<TabFallback />}>
-                      {(activeTab === 'history' || backgroundLoad) && (
-                        <HistoryTab
-                          key={activeTab === 'history' ? 'active' : 'bg'}
-                          filtered={filtered}
-                          openTripDetail={openTripDetail}
-                          setShowAllTripsModal={setShowAllTripsModal}
-                        />
-                      )}
-                    </Suspense>
-                  </div>
-
-                  {/* Slide 7: Charges */}
-                  <div className={getTabClassName('charges', activeTab, fadingTab)} style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}>
-                    <Suspense fallback={<TabFallback />}>
-                      {(activeTab === 'charges' || backgroundLoad) && (
-                        <ChargesTab
-                          key={activeTab === 'charges' ? 'active' : 'bg'}
-                          charges={charges}
-                          chargerTypes={settings.chargerTypes || []}
-                          onChargeClick={(charge) => {
-                            setSelectedCharge(charge);
-                            openModal('chargeDetail');
-                          }}
-                          onAddClick={() => openModal('addCharge')}
-                          setShowAllChargesModal={setShowAllChargesModal}
-                          batterySize={settings.batterySize}
-                        />
-                      )}
-                    </Suspense>
-                  </div>
+                    </div>
+                  ))}
                 </>
               )}
             </div>
@@ -1750,112 +1807,108 @@ export default function BYDStatsAnalyzer() {
                 </div>
               ) : (
                 <>
-                  <div className={activeTab === 'overview' && fadingTab === 'overview' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'overview' ? 'block' : 'none' }}>
-                    {(activeTab === 'overview' || backgroundLoad) && (
-                      <OverviewTab
-                        key={activeTab === 'overview' ? 'overview-active' : 'overview-bg'}
-                        summary={summary}
-                        monthly={monthly}
-                        tripDist={tripDist}
-                        smallChartHeight={smallChartHeight}
-                        overviewSpacing={overviewSpacingHorizontal}
-                        trips={rawTrips}
-                        settings={settings}
-                      />
-                    )}
-                  </div>
+                  {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    const isFading = fadingTab === tab.id;
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div className={activeTab === 'trends' && fadingTab === 'trends' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'trends' ? 'block' : 'none' }}>
-                      {(activeTab === 'trends' || backgroundLoad) && (
-                        <TrendsTab
-                          key={activeTab === 'trends' ? 'trends-active' : 'trends-bg'}
-                          filtered={filtered}
-                          summary={summary}
-                          monthly={monthly}
-                          daily={daily}
-                          settings={settings}
-                          largeChartHeight={largeChartHeight}
-                        />
-                      )}
-                    </div>
-                  </Suspense>
+                    const content = (
+                      <>
+                        {tab.id === 'overview' && (
+                          <OverviewTab
+                            key={isActive ? 'overview-active' : 'overview-bg'}
+                            summary={summary}
+                            monthly={monthly}
+                            tripDist={tripDist}
+                            smallChartHeight={smallChartHeight}
+                            overviewSpacing={overviewSpacingHorizontal}
+                            trips={rawTrips}
+                            settings={settings}
+                          />
+                        )}
+                        {tab.id === 'trends' && (
+                          <TrendsTab
+                            key={isActive ? 'trends-active' : 'trends-bg'}
+                            filtered={filtered}
+                            summary={summary}
+                            monthly={monthly}
+                            daily={daily}
+                            settings={settings}
+                            largeChartHeight={largeChartHeight}
+                          />
+                        )}
+                        {tab.id === 'patterns' && (
+                          <PatternsTab
+                            key={isActive ? 'patterns-active' : 'patterns-bg'}
+                            weekday={weekday}
+                            hourly={hourly}
+                            summary={summary}
+                            patternsSpacing={patternsSpacing}
+                            patternsChartHeight={patternsChartHeight}
+                          />
+                        )}
+                        {tab.id === 'efficiency' && (
+                          <EfficiencyTab
+                            key={isActive ? 'efficiency-active' : 'efficiency-bg'}
+                            summary={summary}
+                            monthly={monthly}
+                            effScatter={effScatter}
+                            largeChartHeight={largeChartHeight}
+                          />
+                        )}
+                        {tab.id === 'records' && (
+                          <RecordsTab
+                            key={isActive ? 'records-active' : 'records-bg'}
+                            summary={summary}
+                            top={top}
+                            recordsItemPadding={recordsItemPadding}
+                            recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                            recordsListHeightHorizontal={recordsListHeightHorizontal}
+                          />
+                        )}
+                        {tab.id === 'history' && (
+                          <HistoryTab
+                            key={isActive ? 'history-active' : 'history-bg'}
+                            filtered={filtered}
+                            openTripDetail={openTripDetail}
+                            setShowAllTripsModal={setShowAllTripsModal}
+                          />
+                        )}
+                        {tab.id === 'charges' && (
+                          <ChargesTab
+                            key={isActive ? 'charges-active' : 'charges-bg'}
+                            charges={charges}
+                            chargerTypes={settings.chargerTypes || []}
+                            onChargeClick={(charge) => {
+                              setSelectedCharge(charge);
+                              openModal('chargeDetail');
+                            }}
+                            onAddClick={() => openModal('addCharge')}
+                            setShowAllChargesModal={setShowAllChargesModal}
+                            batterySize={settings.batterySize}
+                          />
+                        )}
+                      </>
+                    );
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div className={activeTab === 'patterns' && fadingTab === 'patterns' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'patterns' ? 'block' : 'none' }}>
-                      {(activeTab === 'patterns' || backgroundLoad) && (
-                        <PatternsTab
-                          key={activeTab === 'patterns' ? 'patterns-active' : 'patterns-bg'}
-                          weekday={weekday}
-                          hourly={hourly}
-                          summary={summary}
-                          patternsSpacing={patternsSpacing}
-                          patternsChartHeight={patternsChartHeight}
-                        />
-                      )}
-                    </div>
-                  </Suspense>
+                    const container = (
+                      <div
+                        className={isActive && isFading ? 'tab-fade-in' : ''}
+                        style={{ display: isActive ? 'block' : 'none' }}
+                      >
+                        {(isActive || backgroundLoad) && content}
+                      </div>
+                    );
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div className={activeTab === 'efficiency' && fadingTab === 'efficiency' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'efficiency' ? 'block' : 'none' }}>
-                      {(activeTab === 'efficiency' || backgroundLoad) && (
-                        <EfficiencyTab
-                          key={activeTab === 'efficiency' ? 'efficiency-active' : 'efficiency-bg'}
-                          summary={summary}
-                          monthly={monthly}
-                          effScatter={effScatter}
-                          largeChartHeight={largeChartHeight}
-                        />
-                      )}
-                    </div>
-                  </Suspense>
+                    if (tab.id === 'overview') {
+                      return <div key={tab.id}>{container}</div>;
+                    }
 
-                  <Suspense fallback={<TabFallback />}>
-                    <div className={activeTab === 'records' && fadingTab === 'records' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'records' ? 'block' : 'none' }}>
-                      {(activeTab === 'records' || backgroundLoad) && (
-                        <RecordsTab
-                          key={activeTab === 'records' ? 'records-active' : 'records-bg'}
-                          summary={summary}
-                          top={top}
-                          recordsItemPadding={recordsItemPadding}
-                          recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                          recordsListHeightHorizontal={recordsListHeightHorizontal}
-                        />
-                      )}
-                    </div>
-                  </Suspense>
-
-                  <Suspense fallback={<TabFallback />}>
-                    <div className={activeTab === 'history' && fadingTab === 'history' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'history' ? 'block' : 'none' }}>
-                      {(activeTab === 'history' || backgroundLoad) && (
-                        <HistoryTab
-                          key={activeTab === 'history' ? 'history-active' : 'history-bg'}
-                          filtered={filtered}
-                          openTripDetail={openTripDetail}
-                          setShowAllTripsModal={setShowAllTripsModal}
-                        />
-                      )}
-                    </div>
-                  </Suspense>
-
-                  <Suspense fallback={<TabFallback />}>
-                    <div className={activeTab === 'charges' && fadingTab === 'charges' ? 'tab-fade-in' : ''} style={{ display: activeTab === 'charges' ? 'block' : 'none' }}>
-                      {(activeTab === 'charges' || backgroundLoad) && (
-                        <ChargesTab
-                          key={activeTab === 'charges' ? 'charges-active' : 'charges-bg'}
-                          charges={charges}
-                          chargerTypes={settings.chargerTypes || []}
-                          onChargeClick={(charge) => {
-                            setSelectedCharge(charge);
-                            openModal('chargeDetail');
-                          }}
-                          onAddClick={() => openModal('addCharge')}
-                          setShowAllChargesModal={setShowAllChargesModal}
-                          batterySize={settings.batterySize}
-                        />
-                      )}
-                    </div>
-                  </Suspense>
+                    return (
+                      <Suspense key={tab.id} fallback={<TabFallback />}>
+                        {container}
+                      </Suspense>
+                    );
+                  })}
                 </>
               )}
             </div>
@@ -1899,6 +1952,27 @@ export default function BYDStatsAnalyzer() {
       <Suspense fallback={null}>
         <PWAManagerLazy layoutMode={layoutMode} isCompact={isCompact} />
       </Suspense>
+
+      <Toaster
+        position="bottom-center"
+        toastOptions={{
+          className: 'dark:bg-slate-800 dark:text-white',
+          duration: 3000,
+          style: {
+            borderRadius: '12px',
+            background: '#333',
+            color: '#fff',
+          },
+        }}
+      />
+      <ConfirmationModal
+        isOpen={confirmModalState.isOpen}
+        onClose={closeConfirmation}
+        onConfirm={confirmModalState.onConfirm}
+        title={confirmModalState.title}
+        message={confirmModalState.message}
+        isDangerous={confirmModalState.isDangerous}
+      />
     </div >
   );
 }

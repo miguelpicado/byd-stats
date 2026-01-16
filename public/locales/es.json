@@ -158,6 +158,8 @@
         "themeAuto": "Automático",
         "themeDark": "Oscuro",
         "themeLight": "Claro",
+        "customizeTabs": "Personalizar pestañas",
+        "visibleTabs": "Pestañas visibles",
         "googleDrive": "Nube y Sincronización (Google Drive)",
         "signInWithGoogle": "Iniciar sesión con Google",
         "connected": "Conectado",

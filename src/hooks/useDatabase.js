@@ -68,10 +68,8 @@ export function useDatabase() {
                     const map = new Map();
                     existingTrips.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
                     rows.forEach(t => map.set(t.date + '-' + t.start_timestamp, t));
-                    setLoading(false);
                     return Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
                 } else {
-                    setLoading(false);
                     return rows;
                 }
             } else {
@@ -80,16 +78,16 @@ export function useDatabase() {
         } catch (e) {
             setError(e.message);
             logger.error('Database processing error:', e);
-            setLoading(false);
             return null;
+        } finally {
+            setLoading(false);
         }
     }, []);
 
     // Export database
     const exportDatabase = useCallback(async (trips) => {
         if (!window.SQL || trips.length === 0) {
-            alert('No hay datos para exportar');
-            return false;
+            return { success: false, reason: 'no_data' };
         }
 
         try {
@@ -137,11 +135,10 @@ export function useDatabase() {
             URL.revokeObjectURL(url);
 
             db.close();
-            return true;
+            return { success: true };
         } catch (e) {
             logger.error('Error exporting database:', e);
-            alert('Error al exportar la base de datos: ' + e.message);
-            return false;
+            return { success: false, reason: 'error', message: e.message };
         }
     }, []);
 

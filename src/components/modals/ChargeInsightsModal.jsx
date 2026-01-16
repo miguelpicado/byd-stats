@@ -2,10 +2,11 @@
 // Displays advanced statistics for charges when clicking on stat cards
 
 import React, { useMemo } from 'react';
-import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { X, Zap, Euro, TrendingUp, Calendar, Battery, BarChart3 } from '../Icons.jsx';
+import StatItem from '../ui/StatItem';
+import ModalPortal from '../common/ModalPortal';
 
 /**
  * Calculate advanced charge statistics
@@ -118,25 +119,6 @@ const useChargeInsights = (charges, batterySize, type) => {
             }
         };
     }, [charges, batterySize, type]);
-};
-
-/**
- * Stat item component for consistent styling
- */
-const StatItem = ({ label, value, unit, highlight = false }) => (
-    <div className={`p-3 rounded-xl ${highlight ? 'bg-gradient-to-br from-red-500/10 to-red-600/5 border border-red-200 dark:border-red-900/30' : 'bg-slate-50 dark:bg-slate-700/30'}`}>
-        <p className="text-xs text-slate-500 dark:text-slate-400">{label}</p>
-        <p className={`text-lg font-bold ${highlight ? 'text-red-600 dark:text-red-400' : 'text-slate-900 dark:text-white'}`}>
-            {value} {unit && <span className="text-sm font-normal text-slate-500">{unit}</span>}
-        </p>
-    </div>
-);
-
-StatItem.propTypes = {
-    label: PropTypes.string.isRequired,
-    value: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-    unit: PropTypes.string,
-    highlight: PropTypes.bool
 };
 
 /**
@@ -381,42 +363,43 @@ const ChargeInsightsModal = ({
         }
     };
 
-    // Use portal to render modal at document.body level, avoiding transform stacking context issues
-    return ReactDOM.createPortal(
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+    // Render using Portal
+    return (
+        <ModalPortal>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+                <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
-            <div
-                role="dialog"
-                aria-modal="true"
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-0 max-w-sm w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700 shadow-2xl"
-                onClick={(e) => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700">
-                    <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentConfig.bgColor}`}>
-                            <Icon className={`w-5 h-5 ${currentConfig.color}`} />
+                <div
+                    role="dialog"
+                    aria-modal="true"
+                    className="relative bg-white dark:bg-slate-800 rounded-2xl p-0 max-w-sm w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700 shadow-2xl"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {/* Header */}
+                    <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${currentConfig.bgColor}`}>
+                                <Icon className={`w-5 h-5 ${currentConfig.color}`} />
+                            </div>
+                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+                                {currentConfig.title}
+                            </h2>
                         </div>
-                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                            {currentConfig.title}
-                        </h2>
+                        <button
+                            onClick={onClose}
+                            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                        >
+                            <X className="w-5 h-5 text-slate-500" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                    >
-                        <X className="w-5 h-5 text-slate-500" />
-                    </button>
-                </div>
 
-                {/* Content */}
-                <div className="p-5">
-                    {renderContent()}
+                    {/* Content */}
+                    <div className="p-5">
+                        {renderContent()}
+                    </div>
                 </div>
             </div>
-        </div>,
-        document.body
+        </ModalPortal>
     );
 };
 

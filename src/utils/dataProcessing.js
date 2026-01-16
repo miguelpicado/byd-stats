@@ -14,54 +14,105 @@ export function processData(rows) {
     const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
     if (trips.length === 0) return null;
 
-    const totalKm = trips.reduce((s, r) => s + (r.trip || 0), 0);
-    const totalKwh = trips.reduce((s, r) => s + (r.electricity || 0), 0);
-    const totalDuration = trips.reduce((s, r) => s + (r.duration || 0), 0);
-    if (totalKm === 0) return null;
+    // Initialize structures
+    let totalKm = 0;
+    let totalKwh = 0;
+    let totalDuration = 0;
+
+    // Tracking min/max without sorting
+    let maxKmVal = -Infinity;
+    let minKmVal = Infinity;
+    let maxKwhVal = -Infinity;
+    let maxDurVal = -Infinity;
 
     const monthlyData = {};
     const dailyData = {};
     const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
-    // Use translation keys for weekdays (i18n compatible)
+    // 0=Mon...6=Sun logic matching the original
     const weekdayData = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => ({ day: d, trips: 0, km: 0 }));
 
-    trips.forEach(trip => {
-        try {
-            const m = trip.month || 'unknown';
-            if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
-            monthlyData[m].trips++;
-            monthlyData[m].km += trip.trip || 0;
-            monthlyData[m].kwh += trip.electricity || 0;
+    const tripDistribution = [
+        { range: '0-5', count: 0, color: '#06b6d4' },
+        { range: '5-15', count: 0, color: '#10b981' },
+        { range: '15-30', count: 0, color: '#f59e0b' },
+        { range: '30-50', count: 0, color: BYD_RED },
+        { range: '50+', count: 0, color: '#8b5cf6' }
+    ];
 
-            const d = trip.date || 'unknown';
-            if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
-            dailyData[d].trips++;
-            dailyData[d].km += trip.trip || 0;
-            dailyData[d].kwh += trip.electricity || 0;
+    const uniqueDates = new Set();
+    const efficiencyScatter = [];
 
-            if (trip.start_timestamp) {
-                const dt = new Date(trip.start_timestamp * 1000);
-                const h = dt.getHours();
-                const w = dt.getDay();
+    // Single pass for all aggregations
+    // Using for...of loop for better performance/readability over reduce/forEach
+    for (const trip of trips) {
+        const tTrip = trip.trip || 0;
+        const tElec = trip.electricity || 0;
+        const tDur = trip.duration || 0;
 
-                // Ensure h is a valid index (0-23)
-                if (!isNaN(h) && hourlyData[h]) {
-                    hourlyData[h].trips++;
-                    hourlyData[h].km += trip.trip || 0;
-                }
+        // Totals
+        totalKm += tTrip;
+        totalKwh += tElec;
+        totalDuration += tDur;
 
-                // Reorder weekday index: 0 (Sun) -> 6, 1 (Mon) -> 0, etc.
-                const weekdayIndex = (w + 6) % 7;
-                if (weekdayData[weekdayIndex]) {
-                    weekdayData[weekdayIndex].trips++;
-                    weekdayData[weekdayIndex].km += trip.trip || 0;
-                }
+        // Min/Max tracking
+        if (tTrip > maxKmVal) maxKmVal = tTrip;
+        if (tTrip < minKmVal) minKmVal = tTrip;
+        if (tElec > maxKwhVal) maxKwhVal = tElec;
+        if (tDur > maxDurVal) maxDurVal = tDur;
+
+        // Monthly
+        const m = trip.month || 'unknown';
+        if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
+        monthlyData[m].trips++;
+        monthlyData[m].km += tTrip;
+        monthlyData[m].kwh += tElec;
+
+        // Daily
+        const d = trip.date || 'unknown';
+        uniqueDates.add(d);
+        if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
+        dailyData[d].trips++;
+        dailyData[d].km += tTrip;
+        dailyData[d].kwh += tElec;
+
+        // Hourly & Weekday
+        if (trip.start_timestamp) {
+            const dt = new Date(trip.start_timestamp * 1000);
+            const h = dt.getHours();
+            const w = dt.getDay(); // 0=Sun
+
+            if (!isNaN(h) && hourlyData[h]) {
+                hourlyData[h].trips++;
+                hourlyData[h].km += tTrip;
             }
-        } catch (e) {
-            logger.warn('Skipping malformed trip:', trip, e);
-        }
-    });
 
+            // Weekday: 0(Sun)->6, 1(Mon)->0, etc.
+            const weekdayIndex = (w + 6) % 7;
+            if (weekdayData[weekdayIndex]) {
+                weekdayData[weekdayIndex].trips++;
+                weekdayData[weekdayIndex].km += tTrip;
+            }
+        }
+
+        // Trip Distribution
+        if (tTrip <= 5) tripDistribution[0].count++;
+        else if (tTrip <= 15) tripDistribution[1].count++;
+        else if (tTrip <= 30) tripDistribution[2].count++;
+        else if (tTrip <= 50) tripDistribution[3].count++;
+        else tripDistribution[4].count++;
+
+        // Scatter Data
+        if (tTrip > 0 && tElec > 0) {
+            const y = (tElec / tTrip) * 100;
+            if (y > 0 && y < 50) {
+                efficiencyScatter.push({ x: tTrip, y });
+            }
+        }
+    }
+
+    if (totalKm === 0) return null;
+
+    // Post-process aggregations
     const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
     monthlyArray.forEach(m => {
         m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
@@ -74,36 +125,19 @@ export function processData(rows) {
         d.dateLabel = formatDate(d.date);
     });
 
-    const tripDistribution = [
-        { range: '0-5', count: 0, color: '#06b6d4' },
-        { range: '5-15', count: 0, color: '#10b981' },
-        { range: '15-30', count: 0, color: '#f59e0b' },
-        { range: '30-50', count: 0, color: BYD_RED },
-        { range: '50+', count: 0, color: '#8b5cf6' }
-    ];
-    trips.forEach(t => {
-        const km = t.trip || 0;
-        if (km <= 5) tripDistribution[0].count++;
-        else if (km <= 15) tripDistribution[1].count++;
-        else if (km <= 30) tripDistribution[2].count++;
-        else if (km <= 50) tripDistribution[3].count++;
-        else tripDistribution[4].count++;
-    });
+    // Sort scatter
+    efficiencyScatter.sort((a, b) => a.x - b.x);
 
-    // Use x/y format for Chart.js Scatter compatibility
-    const efficiencyScatter = trips
-        .filter(t => t.trip > 0 && t.electricity > 0)
-        .map(t => ({ x: t.trip, y: (t.electricity / t.trip) * 100 }))
-        .filter(t => t.y > 0 && t.y < 50)
-        .sort((a, b) => a.x - b.x);
-
+    // Sorts for Top/Charts (Unavoidable for "Top 10" and Charts usually)
+    // We do these specifically.
     const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
     const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
     const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
-    const daysActive = new Set(trips.map(t => t.date).filter(Boolean)).size || 1;
     const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
 
-    // Calculate total span of days in the database using timestamps
+    const daysActive = uniqueDates.size || 1;
+
+    // Calculate total span
     const firstTs = sorted[0]?.start_timestamp;
     const lastTs = sorted[sorted.length - 1]?.start_timestamp;
     const totalDays = (firstTs && lastTs)
@@ -123,10 +157,10 @@ export function processData(rows) {
             daysActive,
             totalDays,
             dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
-            maxKm: sortedByKm[0]?.trip?.toFixed(1) || '0',
-            minKm: sortedByKm[sortedByKm.length - 1]?.trip?.toFixed(1) || '0',
-            maxKwh: sortedByKwh[0]?.electricity?.toFixed(1) || '0',
-            maxMin: ((sortedByDur[0]?.duration || 0) / 60).toFixed(0),
+            maxKm: maxKmVal.toFixed(1), // Uses tracked val
+            minKm: minKmVal.toFixed(1), // Uses tracked val
+            maxKwh: maxKwhVal.toFixed(1), // Uses tracked val
+            maxMin: (maxDurVal / 60).toFixed(0), // Uses tracked val
             tripsDay: (trips.length / daysActive).toFixed(1),
             kmDay: (totalKm / daysActive).toFixed(1)
         },
