@@ -1635,6 +1635,7 @@ export default function BYDStatsAnalyzer() {
                         overviewSpacing={overviewSpacingVertical}
                         onAddCharge={() => openModal('addCharge')}
                         trips={rawTrips}
+                        settings={settings}
                       />
                     )}
                   </div>
@@ -1759,6 +1760,7 @@ export default function BYDStatsAnalyzer() {
                         smallChartHeight={smallChartHeight}
                         overviewSpacing={overviewSpacingHorizontal}
                         trips={rawTrips}
+                        settings={settings}
                       />
                     )}
                   </div>
