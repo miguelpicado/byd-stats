@@ -2,6 +2,7 @@
 // Displays advanced statistics for charges when clicking on stat cards
 
 import React, { useMemo } from 'react';
+import ReactDOM from 'react-dom';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { X, Zap, Euro, TrendingUp, Calendar, Battery, BarChart3 } from '../Icons.jsx';
@@ -43,10 +44,10 @@ const useChargeInsights = (charges, batterySize, type) => {
             c.finalPercentage !== undefined
         );
 
-        const fullCharges = chargesWithPercentages.filter(c => c.finalPercentage >= 95);
-        const completeCharges = chargesWithBothPercentages.filter(c =>
-            c.initialPercentage <= 20 && c.finalPercentage >= 95
-        );
+        // Full charges = reached exactly 100%
+        const fullCharges = chargesWithPercentages.filter(c => c.finalPercentage === 100);
+        // Complete charges = also reached 100% (same definition for clarity)
+        const completeCharges = fullCharges;
 
         const avgPercentageRecovered = chargesWithBothPercentages.length > 0
             ? chargesWithBothPercentages.reduce((sum, c) =>
@@ -367,7 +368,8 @@ const ChargeInsightsModal = ({
         }
     };
 
-    return (
+    // Use portal to render modal at document.body level, avoiding transform stacking context issues
+    return ReactDOM.createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
 
@@ -400,7 +402,8 @@ const ChargeInsightsModal = ({
                     {renderContent()}
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 };
 
