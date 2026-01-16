@@ -37,7 +37,8 @@ const DEFAULT_SETTINGS = {
     electricityPrice: 0.15,
     useCalculatedPrice: false,
     theme: 'auto',
-    chargerTypes: DEFAULT_CHARGER_TYPES
+    chargerTypes: DEFAULT_CHARGER_TYPES,
+    hiddenTabs: []
 };
 
 /**
@@ -50,7 +51,8 @@ export const AppProvider = ({ children }) => {
     const [settings, setSettings] = useState(() => {
         try {
             const saved = localStorage.getItem('byd_settings');
-            return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+            // Merge saved settings with defaults to ensure new keys (like hiddenTabs) exist
+            return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
         } catch (e) {
             logger.error('Error loading settings:', e);
             return DEFAULT_SETTINGS;
@@ -82,7 +84,8 @@ export const AppProvider = ({ children }) => {
                 electricityPrice: updated.electricityPrice ?? prev.electricityPrice ?? 0.15,
                 useCalculatedPrice: updated.useCalculatedPrice ?? prev.useCalculatedPrice ?? false,
                 theme: updated.theme ?? prev.theme ?? 'auto',
-                chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES
+                chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES,
+                hiddenTabs: updated.hiddenTabs ?? prev.hiddenTabs ?? []
             };
 
             localStorage.setItem('byd_settings', JSON.stringify(validated));

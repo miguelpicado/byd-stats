@@ -53,10 +53,7 @@ const OverviewTab = React.memo(({
   const { isCompact, isLargerCard, isVertical } = useLayout();
   const [insightType, setInsightType] = useState(null);
 
-  console.log('OverviewTab render:', { tripsLength: trips?.length, insightType });
-
   const handleCardClick = (type) => {
-    console.log('Card clicked:', type);
     setInsightType(type);
   };
 
@@ -374,6 +371,7 @@ const OverviewTab = React.memo(({
         onClose={() => setInsightType(null)}
         type={insightType || 'distance'}
         trips={trips}
+        settings={settings}
       />
     </div>
   );
