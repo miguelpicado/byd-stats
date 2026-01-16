@@ -225,6 +225,15 @@ const ChargesTab = React.memo(({
                 {isVertical && onAddClick && (
                     <FloatingActionButton onClick={onAddClick} label={t('charges.addCharge')} />
                 )}
+
+                {/* Charge Insights Modal */}
+                <ChargeInsightsModal
+                    isOpen={!!insightType}
+                    onClose={() => setInsightType(null)}
+                    type={insightType || 'kwh'}
+                    charges={charges}
+                    batterySize={batterySize}
+                />
             </div>
         );
     }
