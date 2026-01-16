@@ -27,7 +27,6 @@ const StatCard = React.memo(({
     isCompact,
     lowPadding,
     isLarger,
-    isLarger,
     isVerticalMode,
     onClick
 }) => (
@@ -36,7 +35,7 @@ const StatCard = React.memo(({
         onClick={onClick}
     >
         <div className={`flex items-center justify-center shrink-0 ${isCompact ? (isLarger ? 'w-14' : 'w-10') : (isVerticalMode ? 'w-14' : 'w-14 sm:w-16')} ${color}`} >
-            <Icon className={`${isCompact ? (isLarger ? 'w-6 h-6' : 'w-5 h-5') : (isVerticalMode ? 'w-6 h-6' : 'w-6 h-6 sm:w-7 sm:h-7')}`} />
+            {Icon && <Icon className={`${isCompact ? (isLarger ? 'w-6 h-6' : 'w-5 h-5') : (isVerticalMode ? 'w-6 h-6' : 'w-6 h-6 sm:w-7 sm:h-7')}`} />}
         </div>
         <div className="flex-1 flex flex-col items-center justify-center text-center px-2 py-1 min-w-0">
             <p className="text-slate-600 dark:text-slate-400 leading-tight uppercase tracking-wider font-semibold truncate w-full" style={{ fontSize: isCompact ? (isLarger ? '9.5px' : '8px') : (isVerticalMode ? '9px' : '11px') }}>{label}</p>

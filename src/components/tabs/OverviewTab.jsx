@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from '../Icons.jsx';
-import StatCard from '../ui/StatCard';
+import StatCard from '../cards/StatCard';
 import ChartCard from '../ui/ChartCard';
 import FloatingActionButton from '../common/FloatingActionButton';
 import TripInsightsModal from '../modals/TripInsightsModal'; // NEW
@@ -44,14 +44,21 @@ const OverviewTab = React.memo(({
   monthly,
   tripDist,
   smallChartHeight,
-
   overviewSpacing,
   onAddCharge,
-  trips = [] // NEW
+  trips = [],
+  settings
 }) => {
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
-  const [insightType, setInsightType] = useState(null); // NEW
+  const [insightType, setInsightType] = useState(null);
+
+  console.log('OverviewTab render:', { tripsLength: trips?.length, insightType });
+
+  const handleCardClick = (type) => {
+    console.log('Card clicked:', type);
+    setInsightType(type);
+  };
 
   // Memoize chart options with scales
   const lineChartOptionsVertical = useMemo(() => ({
@@ -110,7 +117,7 @@ const OverviewTab = React.memo(({
             unit={t('units.km')}
             color="bg-red-500/20 text-red-400"
             sub={`${summary.kmDay} ${t('units.km')}/${t('units.day')}`}
-            onClick={() => setInsightType('distance')}
+            onClick={() => handleCardClick('distance')}
           />
           <StatCard
             isVerticalMode={true}
@@ -121,7 +128,7 @@ const OverviewTab = React.memo(({
             value={summary.totalKwh}
             unit={t('units.kWh')}
             color="bg-cyan-500/20 text-cyan-400"
-            onClick={() => setInsightType('energy')}
+            onClick={() => handleCardClick('energy')}
           />
           <StatCard
             isVerticalMode={true}
@@ -133,7 +140,7 @@ const OverviewTab = React.memo(({
             unit=""
             color="bg-amber-500/20 text-amber-400"
             sub={`${summary.tripsDay}/${t('units.day')}`}
-            onClick={() => setInsightType('trips')}
+            onClick={() => handleCardClick('trips')}
           />
           <StatCard
             isVerticalMode={true}
@@ -144,7 +151,7 @@ const OverviewTab = React.memo(({
             value={summary.totalHours}
             unit="h"
             color="bg-purple-500/20 text-purple-400"
-            onClick={() => setInsightType('time')}
+            onClick={() => handleCardClick('time')}
           />
         </div>
         <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
@@ -157,7 +164,7 @@ const OverviewTab = React.memo(({
             value={summary.avgEff}
             unit={t('units.kWh100km')}
             color="bg-green-500/20 text-green-400"
-            onClick={() => setInsightType('efficiency')}
+            onClick={() => handleCardClick('efficiency')}
           />
           <StatCard
             isVerticalMode={true}
@@ -168,7 +175,7 @@ const OverviewTab = React.memo(({
             value={summary.avgSpeed}
             unit={t('units.kmh')}
             color="bg-blue-500/20 text-blue-400"
-            onClick={() => setInsightType('speed')}
+            onClick={() => handleCardClick('speed')}
           />
           <StatCard
             isVerticalMode={true}
@@ -180,7 +187,7 @@ const OverviewTab = React.memo(({
             unit={t('units.km')}
             color="bg-orange-500/20 text-orange-400"
             sub={`${summary.avgMin} min`}
-            onClick={() => setInsightType('avgTrip')}
+            onClick={() => handleCardClick('avgTrip')}
           />
           <StatCard
             isVerticalMode={true}
@@ -191,7 +198,7 @@ const OverviewTab = React.memo(({
             value={summary.daysActive}
             unit=""
             color="bg-pink-500/20 text-pink-400"
-            onClick={() => setInsightType('activeDays')}
+            onClick={() => handleCardClick('activeDays')}
           />
         </div>
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
@@ -238,6 +245,7 @@ const OverviewTab = React.memo(({
           onClose={() => setInsightType(null)}
           type={insightType || 'distance'}
           trips={trips}
+          settings={settings}
         />
       </div >
     );
@@ -256,7 +264,7 @@ const OverviewTab = React.memo(({
           unit={t('units.km')}
           color="bg-red-500/20 text-red-400"
           sub={`${summary.kmDay} ${t('units.km')}/${t('units.day')}`}
-          onClick={() => setInsightType('distance')}
+          onClick={() => handleCardClick('distance')}
         />
         <StatCard
           isLarger={isLargerCard}
@@ -266,7 +274,7 @@ const OverviewTab = React.memo(({
           value={summary.totalKwh}
           unit={t('units.kWh')}
           color="bg-cyan-500/20 text-cyan-400"
-          onClick={() => setInsightType('energy')}
+          onClick={() => handleCardClick('energy')}
         />
         <StatCard
           isLarger={isLargerCard}
@@ -277,7 +285,7 @@ const OverviewTab = React.memo(({
           unit=""
           color="bg-amber-500/20 text-amber-400"
           sub={`${summary.tripsDay}/${t('units.day')}`}
-          onClick={() => setInsightType('trips')}
+          onClick={() => handleCardClick('trips')}
         />
         <StatCard
           isLarger={isLargerCard}
@@ -287,7 +295,7 @@ const OverviewTab = React.memo(({
           value={summary.totalHours}
           unit="h"
           color="bg-purple-500/20 text-purple-400"
-          onClick={() => setInsightType('time')}
+          onClick={() => handleCardClick('time')}
         />
       </div>
       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
@@ -299,7 +307,7 @@ const OverviewTab = React.memo(({
           value={summary.avgEff}
           unit={t('units.kWh100km')}
           color="bg-green-500/20 text-green-400"
-          onClick={() => setInsightType('efficiency')}
+          onClick={() => handleCardClick('efficiency')}
         />
         <StatCard
           isLarger={isLargerCard}
@@ -309,7 +317,7 @@ const OverviewTab = React.memo(({
           value={summary.avgSpeed}
           unit={t('units.kmh')}
           color="bg-blue-500/20 text-blue-400"
-          onClick={() => setInsightType('speed')}
+          onClick={() => handleCardClick('speed')}
         />
         <StatCard
           isLarger={isLargerCard}
@@ -320,7 +328,7 @@ const OverviewTab = React.memo(({
           unit={t('units.km')}
           color="bg-orange-500/20 text-orange-400"
           sub={`${summary.avgMin} min`}
-          onClick={() => setInsightType('avgTrip')}
+          onClick={() => handleCardClick('avgTrip')}
         />
         <StatCard
           isLarger={isLargerCard}
@@ -330,7 +338,7 @@ const OverviewTab = React.memo(({
           value={summary.daysActive}
           unit=""
           color="bg-pink-500/20 text-pink-400"
-          onClick={() => setInsightType('activeDays')}
+          onClick={() => handleCardClick('activeDays')}
         />
       </div>
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
@@ -398,7 +406,10 @@ OverviewTab.propTypes = {
 
   overviewSpacing: PropTypes.string.isRequired,
   onAddCharge: PropTypes.func,
-  trips: PropTypes.array // NEW
+  trips: PropTypes.array,
+  settings: PropTypes.shape({
+    electricityPrice: PropTypes.number
+  })
 };
 
 OverviewTab.displayName = 'OverviewTab';

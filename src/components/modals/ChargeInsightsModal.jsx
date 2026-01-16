@@ -60,6 +60,19 @@ const useChargeInsights = (charges, batterySize, type) => {
         // Free charges
         const freeCharges = charges.filter(c => !c.totalCost || c.totalCost === 0);
 
+        // Calculate cost of last complete month
+        const now = new Date();
+        const lastMonthDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        const lastMonthYear = lastMonthDate.getFullYear();
+        const lastMonth = lastMonthDate.getMonth(); // 0-11
+
+        const lastMonthCharges = charges.filter(c => {
+            if (!c.timestamp) return false;
+            const chargeDate = new Date(c.timestamp);
+            return chargeDate.getFullYear() === lastMonthYear && chargeDate.getMonth() === lastMonth;
+        });
+        const lastMonthCost = lastMonthCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+
         return {
             // kWh insights
             kwh: {
@@ -74,10 +87,10 @@ const useChargeInsights = (charges, batterySize, type) => {
             // Cost insights
             cost: {
                 avg: totalCost / len,
-                min: Math.min(...costValues),
                 max: Math.max(...costValues),
                 total: totalCost,
                 monthlyAvg: totalCost / monthsDiff,
+                lastMonthCost: lastMonthCost,
                 freeCount: freeCharges.length,
                 freePercent: (freeCharges.length / len * 100).toFixed(1)
             },
@@ -238,8 +251,8 @@ const ChargeInsightsModal = ({
                                 unit="€"
                             />
                             <StatItem
-                                label={t('chargeInsights.minCost', 'Coste mínimo')}
-                                value={insights.cost.min.toFixed(2)}
+                                label={t('chargeInsights.lastMonthCost', 'Último mes')}
+                                value={insights.cost.lastMonthCost.toFixed(2)}
                                 unit="€"
                             />
                             <StatItem
