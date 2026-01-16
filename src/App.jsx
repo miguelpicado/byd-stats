@@ -1634,6 +1634,8 @@ export default function BYDStatsAnalyzer() {
 
                         overviewSpacing={overviewSpacingVertical}
                         onAddCharge={() => openModal('addCharge')}
+                        trips={rawTrips}
+                        settings={settings}
                       />
                     )}
                   </div>
@@ -1730,6 +1732,7 @@ export default function BYDStatsAnalyzer() {
                           }}
                           onAddClick={() => openModal('addCharge')}
                           setShowAllChargesModal={setShowAllChargesModal}
+                          batterySize={settings.batterySize}
                         />
                       )}
                     </Suspense>
@@ -1756,6 +1759,8 @@ export default function BYDStatsAnalyzer() {
                         tripDist={tripDist}
                         smallChartHeight={smallChartHeight}
                         overviewSpacing={overviewSpacingHorizontal}
+                        trips={rawTrips}
+                        settings={settings}
                       />
                     )}
                   </div>
@@ -1846,6 +1851,7 @@ export default function BYDStatsAnalyzer() {
                           }}
                           onAddClick={() => openModal('addCharge')}
                           setShowAllChargesModal={setShowAllChargesModal}
+                          batterySize={settings.batterySize}
                         />
                       )}
                     </div>
