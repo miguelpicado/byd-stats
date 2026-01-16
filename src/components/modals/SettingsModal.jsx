@@ -4,8 +4,8 @@ import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
-import { BYD_RED } from '../../utils/constants';
-import { Settings, Zap, Trash2 } from '../Icons.jsx';
+import { BYD_RED, TAB_ORDER } from '../../utils/constants';
+import { Settings, Zap, Trash2, Eye, EyeOff } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag } from '../FlagIcons.jsx';
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
@@ -292,6 +292,34 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                     {theme === 'auto' ? t('settings.themeAuto') : theme === 'light' ? t('settings.themeLight') : t('settings.themeDark')}
                                 </button>
                             ))}
+                        </div>
+
+                        <div>
+                            <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.customizeTabs')}</label>
+                            <div className="grid grid-cols-2 gap-2">
+                                {TAB_ORDER.filter(tab => tab !== 'overview').map(tabId => {
+                                    const isHidden = (settings.hiddenTabs || []).includes(tabId);
+                                    return (
+                                        <button
+                                            key={tabId}
+                                            onClick={() => {
+                                                const currentHidden = settings.hiddenTabs || [];
+                                                const newHidden = isHidden
+                                                    ? currentHidden.filter(id => id !== tabId)
+                                                    : [...currentHidden, tabId];
+                                                onSettingsChange({ ...settings, hiddenTabs: newHidden });
+                                            }}
+                                            className={`flex items-center justify-between px-3 py-2 rounded-xl text-sm font-medium transition-colors border ${!isHidden
+                                                ? 'byd-active-item'
+                                                : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-600'
+                                                }`}
+                                        >
+                                            <span>{t(`tabs.${tabId}`)}</span>
+                                            {!isHidden ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 

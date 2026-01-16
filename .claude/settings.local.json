@@ -9,7 +9,8 @@
       "Bash(find:*)",
       "Bash(grep:*)",
       "Bash(git status:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git log:*)"
     ]
   }
 }

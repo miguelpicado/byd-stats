@@ -1,6 +1,7 @@
 // BYD Stats - Chart Tooltip Component
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { BYD_RED } from '../../utils/constants';
 
 /**
@@ -24,6 +25,16 @@ const ChartTip = React.memo(({ active, payload, label }) => {
     }
     return null;
 });
+
+ChartTip.propTypes = {
+    active: PropTypes.bool,
+    payload: PropTypes.arrayOf(PropTypes.shape({
+        color: PropTypes.string,
+        name: PropTypes.string,
+        value: PropTypes.oneOfType([PropTypes.number, PropTypes.string])
+    })),
+    label: PropTypes.string
+};
 
 ChartTip.displayName = 'ChartTip';
 

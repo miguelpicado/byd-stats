@@ -39,37 +39,34 @@ const ChargesTab = React.memo(({
     // State for insights modal
     const [insightType, setInsightType] = useState(null);
 
-    // Sort charges by timestamp descending (newest first)
-    const sortedCharges = useMemo(() => {
-        return [...charges].sort((a, b) => b.timestamp - a.timestamp);
-    }, [charges]);
-
-    // Get last 10 charges split into columns
+    // Get last 10 charges split into columns (assuming charges are already sorted descending by useChargesData)
     const { firstColumn, secondColumn, last10 } = useMemo(() => {
-        const last = sortedCharges.slice(0, 10);
+        const last = charges.slice(0, 10);
         return {
             last10: last,
             firstColumn: last.slice(0, 5),
             secondColumn: last.slice(5, 10)
         };
-    }, [sortedCharges]);
+    }, [charges]);
 
     // Calculate summary statistics for last 10 charges
     const summary = useMemo(() => {
         if (last10.length === 0) return null;
 
         const len = last10.length;
-        const totalKwh = last10.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
-        const totalCost = last10.reduce((sum, c) => sum + (c.totalCost || 0), 0);
-        const avgKwh = totalKwh / len;
-        const avgCost = totalCost / len;
-        const avgPricePerKwh = last10.reduce((sum, c) => sum + (c.pricePerKwh || 0), 0) / len;
+
+        // Single pass reduction
+        const { totalKwh, totalCost, totalPrice } = last10.reduce((acc, c) => ({
+            totalKwh: acc.totalKwh + (c.kwhCharged || 0),
+            totalCost: acc.totalCost + (c.totalCost || 0),
+            totalPrice: acc.totalPrice + (c.pricePerKwh || 0)
+        }), { totalKwh: 0, totalCost: 0, totalPrice: 0 });
 
         return {
             chargeCount: charges.length,
-            avgKwh,
-            avgCost,
-            avgPricePerKwh
+            avgKwh: totalKwh / len,
+            avgCost: totalCost / len,
+            avgPricePerKwh: totalPrice / len
         };
     }, [last10, charges.length]);
 
