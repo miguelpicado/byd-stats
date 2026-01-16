@@ -1,6 +1,7 @@
 // BYD Stats - Loading Spinner Component
 
 import React from 'react';
+import PropTypes from 'prop-types';
 import { BYD_RED } from '../../utils/constants';
 
 /**
@@ -44,5 +45,14 @@ export const InlineSpinner = ({ className = 'w-5 h-5' }) => (
         style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }}
     />
 );
+
+LoadingSpinner.propTypes = {
+    message: PropTypes.string,
+    size: PropTypes.oneOf(['sm', 'md', 'lg'])
+};
+
+InlineSpinner.propTypes = {
+    className: PropTypes.string
+};
 
 export default LoadingSpinner;
