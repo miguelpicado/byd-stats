@@ -7,6 +7,7 @@ export default defineConfig({
   base: '/',
   build: {
     rollupOptions: {
+      external: ['fs', 'path', 'crypto'], // Externalize node built-ins
       output: {
         manualChunks: {
           'react-vendor': ['react', 'react-dom'],
@@ -16,5 +17,8 @@ export default defineConfig({
       }
     },
     chunkSizeWarningLimit: 1000 // Increase limit slightly to avoid warnings for reasonable chunks
+  },
+  optimizeDeps: {
+    exclude: ['fs'] // Exclude fs from optimization
   }
 })
