@@ -4,7 +4,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from '../Icons.jsx';
-import StatCard from '../cards/StatCard';
+import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 import FloatingActionButton from '../common/FloatingActionButton';
 import TripInsightsModal from '../modals/TripInsightsModal'; // NEW
