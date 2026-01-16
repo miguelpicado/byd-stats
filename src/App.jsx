@@ -1730,6 +1730,7 @@ export default function BYDStatsAnalyzer() {
                           }}
                           onAddClick={() => openModal('addCharge')}
                           setShowAllChargesModal={setShowAllChargesModal}
+                          batterySize={settings.batterySize}
                         />
                       )}
                     </Suspense>
@@ -1846,6 +1847,7 @@ export default function BYDStatsAnalyzer() {
                           }}
                           onAddClick={() => openModal('addCharge')}
                           setShowAllChargesModal={setShowAllChargesModal}
+                          batterySize={settings.batterySize}
                         />
                       )}
                     </div>

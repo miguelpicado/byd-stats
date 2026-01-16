@@ -1,13 +1,14 @@
 // BYD Stats - Charges Tab Component
 // Displays last 10 charges with insights, similar to HistoryTab
 
-import React, { useMemo, useCallback } from 'react';
+import React, { useMemo, useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useLayout } from '../../context/LayoutContext';
 import { BYD_RED } from '../../utils/constants';
 import { Battery, Zap, Calendar, Euro, TrendingUp } from '../Icons.jsx';
 import FloatingActionButton from '../common/FloatingActionButton';
+import ChargeInsightsModal from '../modals/ChargeInsightsModal';
 
 // Electric blue color for the "New charge" button
 const ELECTRIC_BLUE = '#0ea5e9';
@@ -29,10 +30,14 @@ const ChargesTab = React.memo(({
     chargerTypes = [],
     onChargeClick,
     onAddClick,
-    setShowAllChargesModal
+    setShowAllChargesModal,
+    batterySize = 60.48
 }) => {
     const { t } = useTranslation();
     const { isCompact, isVertical, isFullscreenBYD } = useLayout();
+
+    // State for insights modal
+    const [insightType, setInsightType] = useState(null);
 
     // Sort charges by timestamp descending (newest first)
     const sortedCharges = useMemo(() => {
@@ -81,9 +86,12 @@ const ChargesTab = React.memo(({
     const statLabelText = isCompact ? 'text-[10px]' : 'text-xs';
     const statValueText = isCompact ? 'text-xl' : (isFullscreenBYD ? 'text-[22px]' : 'text-2xl');
 
-    // Render stat card helper
-    const renderStatCard = useCallback((icon, label, value, unit, color) => (
-        <div className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 flex-1 flex items-center justify-center ${statCardPadding}`}>
+    // Render stat card helper - now with onClick support
+    const renderStatCard = useCallback((icon, label, value, unit, color, onClick) => (
+        <div
+            className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 flex-1 flex items-center justify-center ${statCardPadding} ${onClick ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 hover:border-slate-300 dark:hover:border-slate-600 transition-all active:scale-[0.98]' : ''}`}
+            onClick={onClick}
+        >
             <div className="flex flex-col items-center text-center gap-1">
                 <div className={`rounded-lg ${color} flex items-center justify-center ${statIconSize}`}>
                     {React.createElement(icon, { className: statIconInner })}
@@ -186,10 +194,10 @@ const ChargesTab = React.memo(({
                 {/* Stats grid */}
                 {summary && (
                     <div className="grid grid-cols-2 gap-3">
-                        {renderStatCard(Zap, t('charges.avgKwh'), summary.avgKwh.toFixed(2), 'kWh', 'bg-emerald-500/20 text-emerald-400')}
-                        {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-amber-500/20 text-amber-400')}
-                        {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPricePerKwh.toFixed(3), '€/kWh', 'bg-purple-500/20 text-purple-400')}
-                        {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-blue-500/20 text-blue-400')}
+                        {renderStatCard(Zap, t('charges.avgKwh'), summary.avgKwh.toFixed(2), 'kWh', 'bg-emerald-500/20 text-emerald-400', () => setInsightType('kwh'))}
+                        {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-amber-500/20 text-amber-400', () => setInsightType('cost'))}
+                        {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPricePerKwh.toFixed(3), '€/kWh', 'bg-purple-500/20 text-purple-400', () => setInsightType('price'))}
+                        {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-blue-500/20 text-blue-400', () => setInsightType('count'))}
                     </div>
                 )}
 
@@ -264,14 +272,23 @@ const ChargesTab = React.memo(({
                 <div className={`lg:col-span-2 flex flex-col ${cardGap}`}>
                     {summary && (
                         <>
-                            {renderStatCard(Zap, t('charges.avgKwh'), summary.avgKwh.toFixed(2), 'kWh', 'bg-emerald-500/20 text-emerald-400')}
-                            {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-amber-500/20 text-amber-400')}
-                            {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPricePerKwh.toFixed(3), '€/kWh', 'bg-purple-500/20 text-purple-400')}
-                            {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-blue-500/20 text-blue-400')}
+                            {renderStatCard(Zap, t('charges.avgKwh'), summary.avgKwh.toFixed(2), 'kWh', 'bg-emerald-500/20 text-emerald-400', () => setInsightType('kwh'))}
+                            {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-amber-500/20 text-amber-400', () => setInsightType('cost'))}
+                            {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPricePerKwh.toFixed(3), '€/kWh', 'bg-purple-500/20 text-purple-400', () => setInsightType('price'))}
+                            {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-blue-500/20 text-blue-400', () => setInsightType('count'))}
                         </>
                     )}
                 </div>
             </div>
+
+            {/* Charge Insights Modal */}
+            <ChargeInsightsModal
+                isOpen={!!insightType}
+                onClose={() => setInsightType(null)}
+                type={insightType || 'kwh'}
+                charges={charges}
+                batterySize={batterySize}
+            />
 
             {/* Bottom row: Buttons aligned with columns above */}
             <div className={`grid lg:grid-cols-8 ${columnGap}`}>
@@ -328,7 +345,8 @@ ChargesTab.propTypes = {
     })),
     onChargeClick: PropTypes.func,
     onAddClick: PropTypes.func,
-    setShowAllChargesModal: PropTypes.func
+    setShowAllChargesModal: PropTypes.func,
+    batterySize: PropTypes.number
 };
 
 ChargesTab.displayName = 'ChargesTab';
