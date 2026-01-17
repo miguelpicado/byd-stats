@@ -254,7 +254,7 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
 
                     <div>
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.language')}</label>
-                        <div className="grid grid-cols-3 gap-2">
+                        <div className="flex flex-wrap gap-2">
                             {languages.map(lang => (
                                 <button
                                     key={lang.code}
@@ -264,13 +264,15 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
                                         : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
                                         }`}
                                 >
-                                    {lang.code === 'gl' ? <GaliciaFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
-                                        lang.code === 'ca' ? <CataloniaFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
-                                            lang.code === 'eu' ? <BasqueFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
-                                                lang.code === 'es' ? <SpainFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
-                                                    lang.code === 'en' ? <UKFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
-                                                        lang.code === 'pt' ? <PortugalFlag className="w-5 h-auto rounded-sm overflow-hidden" /> :
-                                                            <span className="text-lg leading-none">{lang.flag}</span>}
+                                    <span className="inline-flex items-center justify-center" style={{ width: '20px', height: '15px' }}>
+                                        {lang.code === 'gl' ? <GaliciaFlag className="w-full h-full rounded-sm" /> :
+                                            lang.code === 'ca' ? <CataloniaFlag className="w-full h-full rounded-sm" /> :
+                                                lang.code === 'eu' ? <BasqueFlag className="w-full h-full rounded-sm" /> :
+                                                    lang.code === 'es' ? <SpainFlag className="w-full h-full rounded-sm" /> :
+                                                        lang.code === 'en' ? <UKFlag className="w-full h-full rounded-sm" /> :
+                                                            lang.code === 'pt' ? <PortugalFlag className="w-full h-full rounded-sm" /> :
+                                                                <span className="text-lg leading-none">{lang.flag}</span>}
+                                    </span>
                                     {lang.name}
                                 </button>
                             ))}
