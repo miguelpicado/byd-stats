@@ -188,7 +188,7 @@
         "loadNew": "Replace existing trips",
         "loadMerge": "Load only new trips",
         "loadChargeRegistry": "Load charge registry",
-        "clearView": "Clear current view",
+        "clearView": "Clear current data",
         "exportTrips": "Export trips"
     },
     "filter": {

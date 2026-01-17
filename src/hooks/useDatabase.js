@@ -12,7 +12,7 @@ export function useDatabase() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    // Initialize SQL.js using dynamic import
+    // Initialize SQL.js using browser-ready version from public/assets/sql
     const initSql = useCallback(async () => {
         if (window.SQL) {
             setSqlReady(true);
@@ -20,8 +20,19 @@ export function useDatabase() {
         }
 
         try {
-            const initSqlJs = (await import('sql.js')).default;
-            window.SQL = await initSqlJs({
+            // Load SQL.js from the browser-ready build in public/assets/sql
+            // This avoids the npm package which contains Node.js-specific code (fs, path)
+            if (!window.initSqlJs) {
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = '/assets/sql/sql-wasm.min.js';
+                    script.onload = resolve;
+                    script.onerror = () => reject(new Error('Failed to load SQL.js script'));
+                    document.head.appendChild(script);
+                });
+            }
+            
+            window.SQL = await window.initSqlJs({
                 locateFile: f => `/assets/sql/${f}`
             });
             setSqlReady(true);
