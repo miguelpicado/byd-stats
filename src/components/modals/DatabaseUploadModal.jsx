@@ -3,9 +3,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { BYD_RED } from '../../utils/constants';
-import { Upload, Database, Download, FileText } from '../Icons.jsx';
+import { Upload, Download, FileText, Trash2, Database } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { useTranslation } from 'react-i18next';
+
+// Electric blue color for accent buttons
+const ELECTRIC_BLUE = '#3b82f6';
 
 /**
  * Database upload/management modal
@@ -79,50 +82,28 @@ const DatabaseUploadModal = ({
                             {t('upload.filesSection')}
                         </h3>
                         <div className="space-y-2">
-                            {/* Replace existing trips */}
+                            {/* 1. Load only new trips (merge) - RED */}
                             <div>
                                 <input
                                     type="file"
-                                    id="uploadNew"
+                                    id="uploadMerge"
                                     accept="*/*,image/*,.db,.jpg,.jpeg"
                                     className="hidden"
-                                    onChange={(e) => handleFileChange(e, false)}
+                                    onChange={(e) => handleFileChange(e, true)}
                                     disabled={!sqlReady}
                                 />
                                 <button
-                                    onClick={() => document.getElementById('uploadNew')?.click()}
+                                    onClick={() => document.getElementById('uploadMerge')?.click()}
                                     className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
                                     style={{ backgroundColor: BYD_RED }}
                                     disabled={!sqlReady}
                                 >
                                     <Upload className="w-4 h-4" />
-                                    {t('upload.loadNew')}
+                                    {t('upload.loadMerge')}
                                 </button>
                             </div>
 
-                            {/* Load only new trips (merge) */}
-                            {hasData && (
-                                <div>
-                                    <input
-                                        type="file"
-                                        id="uploadMerge"
-                                        accept="*/*,image/*,.db,.jpg,.jpeg"
-                                        className="hidden"
-                                        onChange={(e) => handleFileChange(e, true)}
-                                        disabled={!sqlReady}
-                                    />
-                                    <button
-                                        onClick={() => document.getElementById('uploadMerge')?.click()}
-                                        className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
-                                        disabled={!sqlReady}
-                                    >
-                                        <Database className="w-4 h-4" />
-                                        {t('upload.loadMerge')}
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* Load charge registry (CSV) */}
+                            {/* 2. Load charge registry (CSV) - ELECTRIC BLUE */}
                             <div>
                                 <input
                                     type="file"
@@ -133,24 +114,26 @@ const DatabaseUploadModal = ({
                                 />
                                 <button
                                     onClick={() => document.getElementById('uploadChargeRegistry')?.click()}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                    style={{ backgroundColor: ELECTRIC_BLUE }}
                                 >
                                     <FileText className="w-4 h-4" />
                                     {t('upload.loadChargeRegistry')}
                                 </button>
                             </div>
 
-                            {/* Clear current view */}
+                            {/* 3. Clear current data */}
                             {hasData && (
                                 <button
                                     onClick={() => { onClearData(); onClose(); }}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-2"
                                 >
+                                    <Trash2 className="w-4 h-4" />
                                     {t('upload.clearView')}
                                 </button>
                             )}
 
-                            {/* Export trips */}
+                            {/* 4. Export trips */}
                             {hasData && (
                                 <button
                                     onClick={() => { onExport(); onClose(); }}
