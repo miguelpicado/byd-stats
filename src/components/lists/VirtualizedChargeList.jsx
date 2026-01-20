@@ -9,7 +9,7 @@ const ITEM_SIZE = 100; // Estimated height for Charge Card
 const VirtualizedChargeList = memo(({
     charges,
     onChargeClick,
-    scrollRef,
+    scrollElement,
     formatDate,
     getChargerTypeName
 }) => {
@@ -17,7 +17,7 @@ const VirtualizedChargeList = memo(({
 
     const virtualizer = useVirtualizer({
         count: charges.length,
-        getScrollElement: () => scrollRef.current,
+        getScrollElement: () => scrollElement,
         estimateSize: () => ITEM_SIZE,
         overscan: 5,
     });
@@ -82,10 +82,7 @@ VirtualizedChargeList.displayName = 'VirtualizedChargeList';
 VirtualizedChargeList.propTypes = {
     charges: PropTypes.array.isRequired,
     onChargeClick: PropTypes.func.isRequired,
-    scrollRef: PropTypes.oneOfType([
-        PropTypes.func,
-        PropTypes.shape({ current: PropTypes.instanceOf(Element) })
-    ]),
+    scrollElement: PropTypes.instanceOf(Element),
     formatDate: PropTypes.func.isRequired,
     getChargerTypeName: PropTypes.func.isRequired
 };

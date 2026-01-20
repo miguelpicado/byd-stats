@@ -7,12 +7,12 @@ import PropTypes from 'prop-types';
 
 const ITEM_SIZE = 150; // Increased to prevent overlap
 
-const VirtualizedTripList = memo(({ trips, minEff, maxEff, onTripClick, scrollRef }) => {
+const VirtualizedTripList = memo(({ trips, minEff, maxEff, onTripClick, scrollElement }) => {
     const listRef = useRef(null);
 
     const virtualizer = useVirtualizer({
         count: trips.length,
-        getScrollElement: () => scrollRef.current,
+        getScrollElement: () => scrollElement,
         estimateSize: () => ITEM_SIZE,
         overscan: 5,
     });
@@ -53,10 +53,7 @@ VirtualizedTripList.propTypes = {
     minEff: PropTypes.number.isRequired,
     maxEff: PropTypes.number.isRequired,
     onTripClick: PropTypes.func.isRequired,
-    scrollRef: PropTypes.oneOfType([
-        PropTypes.func,
-        PropTypes.shape({ current: PropTypes.instanceOf(Element) })
-    ])
+    scrollElement: PropTypes.instanceOf(Element)
 };
 
 export default VirtualizedTripList;

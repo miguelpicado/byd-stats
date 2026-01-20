@@ -3,6 +3,15 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
     plugins: [react()],
+    resolve: {
+        alias: {
+            '@': '/src',
+            '@components': '/src/components',
+            '@hooks': '/src/hooks',
+            '@utils': '/src/utils',
+            '@features': '/src/features',
+        },
+    },
     test: {
         environment: 'jsdom',
         setupFiles: './src/setupTests.js',
