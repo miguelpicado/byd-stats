@@ -8,39 +8,34 @@ import { formatMonth } from '../../utils/dateUtils';
 import { Filter } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 
+import { useData } from '../../providers/DataProvider';
+
 /**
  * Filter modal for trip filtering
- * @param {Object} props - Component props
- * @param {boolean} props.isOpen - Modal visibility
- * @param {Function} props.onClose - Close handler
- * @param {string} props.filterType - Current filter type
- * @param {Function} props.setFilterType - Filter type setter
- * @param {string} props.selMonth - Selected month
- * @param {Function} props.setSelMonth - Month setter
- * @param {string} props.dateFrom - Start date
- * @param {Function} props.setDateFrom - Start date setter
- * @param {string} props.dateTo - End date
- * @param {Function} props.setDateTo - End date setter
- * @param {Array} props.months - Available months
- * @param {number} props.rawTripsCount - Total trips count
- * @param {number} props.filteredCount - Filtered trips count
+ * Now consumes DataProvider directly
  */
 const FilterModal = ({
     isOpen,
-    onClose,
-    filterType,
-    setFilterType,
-    selMonth,
-    setSelMonth,
-    dateFrom,
-    setDateFrom,
-    dateTo,
-    setDateTo,
-    months,
-    rawTripsCount,
-    filteredCount
+    onClose
 }) => {
     const { t } = useTranslation();
+    const {
+        filterType,
+        setFilterType,
+        selMonth,
+        setSelMonth,
+        dateFrom,
+        setDateFrom,
+        dateTo,
+        setDateTo,
+        months,
+        trips: rawTrips,
+        filtered
+    } = useData();
+
+    const rawTripsCount = rawTrips ? rawTrips.length : 0;
+    const filteredCount = filtered ? filtered.length : 0;
+
 
     if (!isOpen) return null;
 
@@ -167,18 +162,7 @@ const FilterModal = ({
 
 FilterModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    filterType: PropTypes.oneOf(['all', 'month', 'range']).isRequired,
-    setFilterType: PropTypes.func.isRequired,
-    selMonth: PropTypes.string,
-    setSelMonth: PropTypes.func.isRequired,
-    dateFrom: PropTypes.string,
-    setDateFrom: PropTypes.func.isRequired,
-    dateTo: PropTypes.string,
-    setDateTo: PropTypes.func.isRequired,
-    months: PropTypes.arrayOf(PropTypes.string),
-    rawTripsCount: PropTypes.number,
-    filteredCount: PropTypes.number
+    onClose: PropTypes.func.isRequired
 };
 
 export default FilterModal;

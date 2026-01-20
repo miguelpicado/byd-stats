@@ -140,17 +140,6 @@ const ModalContainer = ({
                 <FilterModalLazy
                     isOpen={modals.filter}
                     onClose={handleFilterClose}
-                    filterType={filterType}
-                    setFilterType={setFilterType}
-                    selMonth={selMonth}
-                    setSelMonth={setSelMonth}
-                    dateFrom={dateFrom}
-                    setDateFrom={setDateFrom}
-                    dateTo={dateTo}
-                    setDateTo={setDateTo}
-                    months={months}
-                    rawTripsCount={rawTripsCount || (rawTrips ? rawTrips.length : 0)}
-                    filteredCount={filteredCount || 0}
                 />
 
                 {/* Legal Modal */}
