@@ -85,7 +85,7 @@ describe('TripCard', () => {
         const { container } = render(<TripCard {...defaultProps} isCompact={true} />);
 
         const card = container.firstChild;
-        expect(card.className).toContain('p-2');
+        expect(card.className).toContain('p-[7px]');
     });
 
     it('applies normal styling when isCompact is false', () => {

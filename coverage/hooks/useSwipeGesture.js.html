@@ -25,28 +25,28 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>0/85</span>
+                <span class='fraction'>0/90</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/61</span>
+                <span class='fraction'>0/64</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/11</span>
+                <span class='fraction'>0/12</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">0% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>0/74</span>
+                <span class='fraction'>0/77</span>
             </div>
         
             
@@ -221,7 +221,14 @@
 <a name='L156'></a><a href='#L156'>156</a>
 <a name='L157'></a><a href='#L157'>157</a>
 <a name='L158'></a><a href='#L158'>158</a>
-<a name='L159'></a><a href='#L159'>159</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -244,6 +251,7 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -260,12 +268,18 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -400,7 +414,8 @@ export const useSwipeGesture = <span class="cstat-no" title="statement not cover
     isTransitioning,
     tabs,
     layoutMode,
-    minSwipeDistance = <span class="branch-0 cbranch-no" title="branch not covered" >30</span>
+    minSwipeDistance = <span class="branch-0 cbranch-no" title="branch not covered" >30,</span>
+    isModalOpen = <span class="branch-0 cbranch-no" title="branch not covered" >false</span>
 }) =&gt; {
     const [swipeContainer, setSwipeContainer] =<span class="cstat-no" title="statement not covered" > useState(null);</span>
     const touchStartRef =<span class="cstat-no" title="statement not covered" > useRef(null);</span>
@@ -418,6 +433,10 @@ export const useSwipeGesture = <span class="cstat-no" title="statement not cover
 <span class="cstat-no" title="statement not covered" >    useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; { <span class="cstat-no" title="statement not covered" >handleTabClickRef.current = handleTabClick; </span>}, [handleTabClick]);</span>
 <span class="cstat-no" title="statement not covered" >    useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; { <span class="cstat-no" title="statement not covered" >layoutModeRef.current = layoutMode; </span>}, [layoutMode]);</span>
 &nbsp;
+    // Ref for modal state
+    const isModalOpenRef =<span class="cstat-no" title="statement not covered" > useRef(isModalOpen);</span>
+<span class="cstat-no" title="statement not covered" >    useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; { <span class="cstat-no" title="statement not covered" >isModalOpenRef.current = isModalOpen; </span>}, [isModalOpen]);</span>
+&nbsp;
 <span class="cstat-no" title="statement not covered" >    useEffect(<span class="fstat-no" title="function not covered" >()</span> =&gt; {</span>
         // Require container to be available
 <span class="cstat-no" title="statement not covered" >        if (!swipeContainer) <span class="cstat-no" title="statement not covered" >return;</span></span>
@@ -427,6 +446,8 @@ export const useSwipeGesture = <span class="cstat-no" title="statement not cover
         let initialScrollTop = <span class="cstat-no" title="statement not covered" >0;</span>
 &nbsp;
         const handleTouchStart = <span class="cstat-no" title="statement not covered" ><span class="fstat-no" title="function not covered" >(e</span>) =&gt; {</span>
+            // Disable swipe when modal is open
+<span class="cstat-no" title="statement not covered" >            if (isModalOpenRef.current) <span class="cstat-no" title="statement not covered" >return;</span></span>
 <span class="cstat-no" title="statement not covered" >            if (isTransitioningRef.current) <span class="cstat-no" title="statement not covered" >return;</span></span>
             const touch = <span class="cstat-no" title="statement not covered" >e.touches[0];</span>
 <span class="cstat-no" title="statement not covered" >            touchStartRef.current = touch.clientX;</span>
@@ -544,7 +565,7 @@ export const useSwipeGesture = <span class="cstat-no" title="statement not cover
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2026-01-14T21:16:01.914Z
+                at 2026-01-20T21:26:37.941Z
             </div>
         <script src="../prettify.js"></script>
         <script>

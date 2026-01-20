@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo, useRef, Suspense, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Link } from 'react-router-dom';
 
 
 import { Capacitor } from '@capacitor/core';
@@ -9,56 +10,44 @@ import { formatMonth } from './utils/dateUtils';
 import { logger } from './utils/logger';
 import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPACT_SPACE_Y } from './utils/constants';
 import './utils/chartSetup'; // Register Chart.js components
-import { useGoogleSync } from './hooks/useGoogleSync';
 
 import { Toaster, toast } from 'react-hot-toast';
 import ConfirmationModal from './components/common/ConfirmationModal';
 
 // Components
-import { BYDLogo, Zap, Clock, TrendingUp, Upload, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Cloud, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
-import TripCard from './components/cards/TripCard';
-import TabFallback from './components/common/TabFallback';
-import FloatingActionButton from './components/common/FloatingActionButton';
-// Keep OverviewTab static (initial tab)
-import OverviewTab from './components/tabs/OverviewTab';
-// Lazy load other tabs for code splitting
-const HistoryTab = lazy(() => import('./components/tabs/HistoryTab'));
-const RecordsTab = lazy(() => import('./components/tabs/RecordsTab'));
-const TrendsTab = lazy(() => import('./components/tabs/TrendsTab'));
-const PatternsTab = lazy(() => import('./components/tabs/PatternsTab'));
-const EfficiencyTab = lazy(() => import('./components/tabs/EfficiencyTab'));
-const ChargesTab = lazy(() => import('./components/tabs/ChargesTab'));
-// PWAManager lazy loaded for code splitting
-const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
-
-import useDatabase from './hooks/useDatabase';
-import { useFileHandling } from './hooks/useFileHandling';
+import { Zap, Clock, TrendingUp, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
+import useModalState from './hooks/useModalState';
+import useAppVersion from './hooks/useAppVersion'; // Default export
 import { useApp } from './context/AppContext';
 import { useLayout } from './context/LayoutContext';
-import useModalState from './hooks/useModalState';
-import useAppData from './hooks/useAppData';
-import useAppVersion from './hooks/useAppVersion';
-import useChargesData from './hooks/useChargesData';
+import { useData } from './providers/DataProvider';
 import VirtualizedTripList from './components/lists/VirtualizedTripList';
 import VirtualizedChargeList from './components/lists/VirtualizedChargeList';
 
-
+// New Extracted Hooks
+import { useChartDimensions } from './hooks/useChartDimensions';
+import { useTabNavigation } from './hooks/useTabNavigation';
+import { useChargeImporter } from './hooks/useChargeImporter';
 
 // Lazy load modals for code splitting
-// Modals moved to ModalContainer, except LegalPage which is a page
-const LegalPageLazy = lazy(() => import('./pages/LegalPage'));
+const LandingPageLazy = lazy(() => import('./pages/LandingPage'));
+const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
 
 import ModalContainer from './components/common/ModalContainer';
+import MainLayout from './components/layout/MainLayout';
+// New Feature Components
+import Header from './features/navigation/Header';
+import TabNavigation from './features/navigation/TabNavigation';
+import DashboardLayout from './features/dashboard/DashboardLayout';
+import DesktopSidebar from './components/layout/DesktopSidebar'; // Restored
+
+import ErrorBoundary from './components/common/ErrorBoundary';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
+import AllTripsView from './features/dashboard/AllTripsView';
+import AllChargesView from './features/dashboard/AllChargesView';
 
 // Helper to determine if a tab should have fade-in animation
-const getTabClassName = (tabId, activeTab, fadingTab, baseClass = 'tab-content-container') => {
-  const classes = [baseClass];
-  if (tabId === activeTab && tabId === fadingTab) {
-    classes.push('tab-fade-in');
-  }
-  return classes.join(' ');
-};
+// Removed: getTabClassName moved to TabsManager
 
 
 const GitHubFooter = React.memo(() => (
@@ -80,37 +69,19 @@ GitHubFooter.displayName = 'GitHubFooter';
 export default function BYDStatsAnalyzer() {
   const { t } = useTranslation();
 
-  // Confirmation Modal State
-  const [confirmModalState, setConfirmModalState] = useState({
-    isOpen: false,
-    title: '',
-    message: '',
-    onConfirm: () => { },
-    isDangerous: false
-  });
+  // Confirmation Modal Logic (Extracted Hook)
+  // Logic will be initialized after useAppData
 
-  const showConfirmation = useCallback((title, message, onConfirm, isDangerous = false) => {
-    setConfirmModalState({
-      isOpen: true,
-      title,
-      message,
-      onConfirm,
-      isDangerous
-    });
-  }, []);
 
-  const allTripsScrollRef = useRef(null);
-  const allChargesScrollRef = useRef(null);
-
-  const closeConfirmation = useCallback(() => {
-    setConfirmModalState(prev => ({ ...prev, isOpen: false }));
-  }, []);
-
-  // Data management hook - replaces rawTrips, filter states, and history
+  // Data Management via DataProvider
   const {
-    rawTrips,
-    setRawTrips,
+    // Data State
+    trips: rawTrips,
+    stats: data,
+    charges,
     tripHistory,
+
+    // Filtering State
     filterType,
     setFilterType,
     selMonth,
@@ -120,79 +91,35 @@ export default function BYDStatsAnalyzer() {
     dateTo,
     setDateTo,
     months,
-    filtered,
-    data,
-    clearData: rawClearData,
-    saveToHistory: rawSaveToHistory,
-    clearHistory: rawClearHistory,
-    loadFromHistory: rawLoadFromHistory
-  } = useAppData();
+    filtered, // { trips, stats }
 
-  // Wrap actions with Confirmation UI
-  const clearData = useCallback(() => {
-    showConfirmation(
-      t('settings.dangerZone'),
-      t('confirmations.deleteAllData'),
-      () => {
-        rawClearData();
-        toast.success(t('upload.success', 'Datos eliminados correctamente'));
-      },
-      true
-    );
-  }, [showConfirmation, rawClearData, t]);
+    // Actions (Direct Setters)
+    setRawTrips,
+    replaceCharges,
+    addCharge,
+    addMultipleCharges,
+    deleteCharge,
 
-  const saveToHistory = useCallback(() => {
-    const result = rawSaveToHistory();
-    if (!result.success) {
-      if (result.reason === 'no_trips') {
-        toast.error(t('confirmations.noTripsToSave'));
-      }
-      return;
-    }
-    toast.success(t('confirmations.historySaved', {
-      total: result.total,
-      new: result.added
-    }));
-  }, [rawSaveToHistory, t]);
+    // Safe Actions
+    clearData,
+    saveToHistory,
+    clearHistory,
+    loadFromHistory,
 
-  const loadFromHistory = useCallback(() => {
-    const result = rawLoadFromHistory(); // Check if history exists
-    if (!result.success && result.reason === 'no_history') {
-      toast.error(t('confirmations.noHistory'));
-      return;
-    }
+    // Sub-Contexts
+    database,
+    fileHandling,
+    googleSync,
 
-    // If we are here, logic needs to be split: rawLoadFromHistory in useAppData 
-    // should ideally just LOAD, but we need to check count first before confirming.
-    // However, existing hook returns result AFTER action.
-    // We should peek into tripHistory directly here.
+    // Confirmation UI State
+    confirmModalState,
+    closeConfirmation,
+    showConfirmation
+  } = useData();
 
-    showConfirmation(
-      t('settings.history'),
-      t('confirmations.loadHistory', { count: tripHistory.length }),
-      () => {
-        const res = rawLoadFromHistory();
-        if (res.success) {
-          toast.success(t('upload.success', 'Historial cargado correctamente'));
-        }
-      }
-    );
-  }, [tripHistory, rawLoadFromHistory, showConfirmation, t]);
-
-  const clearHistory = useCallback(() => {
-    showConfirmation(
-      t('settings.clearHistory'),
-      t('confirmations.clearHistory'),
-      () => {
-        rawClearHistory();
-        toast.success(t('confirmations.historyCleared'));
-      },
-      true
-    );
-  }, [showConfirmation, rawClearHistory, t]);
-
-
-  const { sqlReady, loading, error, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = useDatabase();
+  // Destructure sub-contexts for compatibility
+  const { sqlReady, loading, error, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = database;
+  const { pendingFile, clearPendingFile, readFile } = fileHandling;
 
   // Wrapper for export database to show toasts
   const handleExportDatabase = useCallback(async (trips) => {
@@ -208,20 +135,26 @@ export default function BYDStatsAnalyzer() {
     }
   }, [exportDBHook, t]);
 
-  const { pendingFile, clearPendingFile, readFile } = useFileHandling();
-  const [activeTab, setActiveTab] = useState('overview');
-  const [fadingTab, setFadingTab] = useState(null); // Track which tab is fading in
-  const [dragOver, setDragOver] = useState(false);
-  // Centralized modal state management
-  const { modals, openModal, closeModal, legalInitialSection, setLegalInitialSection, isAnyModalOpen } = useModalState();
+  // Modal State Management (Now global in DataProvider)
+  const {
+    modals,
+    openModal,
+    closeModal,
+    setLegalInitialSection,
+    legalInitialSection,
+    isAnyModalOpen
+  } = useData();
+
+
 
   // Destructure for backwards compatibility with existing code
+  // Modal visibility flags from global state
   const showAllTripsModal = modals.allTrips;
   const showAllChargesModal = modals.allCharges;
   const showTripDetailModal = modals.tripDetail;
   const showSettingsModal = modals.settings;
 
-  // Setter functions for backwards compatibility
+  // Helper setters for compatibility with existing code structure
   const setShowModal = useCallback((value) => value ? openModal('upload') : closeModal('upload'), [openModal, closeModal]);
   const setShowFilterModal = useCallback((value) => value ? openModal('filter') : closeModal('filter'), [openModal, closeModal]);
   const setShowAllTripsModal = useCallback((value) => value ? openModal('allTrips') : closeModal('allTrips'), [openModal, closeModal]);
@@ -230,112 +163,56 @@ export default function BYDStatsAnalyzer() {
   const setShowSettingsModal = useCallback((value) => value ? openModal('settings') : closeModal('settings'), [openModal, closeModal]);
   const setShowHistoryModal = useCallback((value) => value ? openModal('history') : closeModal('history'), [openModal, closeModal]);
   const setShowHelpModal = useCallback((value) => value ? openModal('help') : closeModal('help'), [openModal, closeModal]);
-  // setLegalInitialSection comes directly from useModalState hook
 
-  // Background load state for "Render-Hidden" strategy
+  // Background load state
   const [backgroundLoad, setBackgroundLoad] = useState(false);
 
-  // Trigger background rendering of all tabs after initial mount
   useEffect(() => {
     const timer = setTimeout(() => {
-      // This will cause all tabs to mount (hidden or off-screen)
-      // handling both the network request AND component initialization
       setBackgroundLoad(true);
-    }, 1500); // 1.5s delay to strictly prioritize first paint and interaction
-
+    }, 1500);
     return () => clearTimeout(timer);
   }, []);
 
-
-
   const [selectedTrip, setSelectedTrip] = useState(null);
+  // Charges state managed by DataProvider, but selected/editing is UI state
   const [selectedCharge, setSelectedCharge] = useState(null);
   const [editingCharge, setEditingCharge] = useState(null);
 
-  // Context state - Settings from AppContext, Layout from LayoutContext
+  // Scroll Container Refs (Required for virtualized lists in modals)
+  const allTripsScrollRef = useRef(null);
+  const allChargesScrollRef = useRef(null);
+
+
+  // Context state
   const { settings, updateSettings } = useApp();
   const { layoutMode, isCompact, isFullscreenBYD, isVertical } = useLayout();
 
-  // Get dynamic app version from GitHub releases
+  // App Version
   const { version: appVersion } = useAppVersion();
 
-  // Charges data management
+  // Calculate chart heights
+  const chartDimensions = useChartDimensions({ isVertical, isFullscreenBYD, isCompact });
+
   const {
-    charges,
-    addCharge,
-    addMultipleCharges,
-    deleteCharge,
-    replaceCharges
-  } = useChargesData();
+    smallChartHeight,
+    patternsChartHeight,
+    largeChartHeight,
+    overviewSpacingVertical,
+    overviewSpacingHorizontal,
+    patternsSpacing,
+    recordsItemPadding,
+    recordsItemPaddingHorizontal,
+    recordsListHeightHorizontal
+  } = chartDimensions;
 
-  // Calculate chart heights based on mode - memoized to prevent recalculation
-  const smallChartHeight = useMemo(() => {
-    if (isVertical) return 350;
-    if (isFullscreenBYD) return 271;
-    if (isCompact) return 295;
-    return 326;
-  }, [isVertical, isFullscreenBYD, isCompact]);
-
-  const patternsChartHeight = useMemo(() => {
-    if (isVertical) return 350;
-    if (isFullscreenBYD) return 289;
-    if (isCompact) return 303;
-    return 336;
-  }, [isVertical, isFullscreenBYD, isCompact]);
-
-  const largeChartHeight = useMemo(() => {
-    if (isVertical) return 350;
-    if (isFullscreenBYD) return 387;
-    if (isCompact) return 369;
-    return 442;
-  }, [isVertical, isFullscreenBYD, isCompact]);
-
-  // Spacing adjustments for different modes - memoized
-  const unifiedVerticalSpacing = 'space-y-4';
-
-  const overviewSpacingVertical = useMemo(() =>
-    isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[14px]' : (isCompact ? 'space-y-2.5' : 'space-y-3.5 sm:space-y-5')),
-    [isVertical, isFullscreenBYD, isCompact]
-  );
-
-  const overviewSpacingHorizontal = useMemo(() =>
-    isFullscreenBYD ? 'space-y-[22px]' : (isCompact ? 'space-y-2.5' : 'space-y-5 sm:space-y-6.5'),
-    [isFullscreenBYD, isCompact]
-  );
-
-  const patternsSpacing = useMemo(() =>
-    isVertical ? unifiedVerticalSpacing : (isFullscreenBYD ? 'space-y-[21px]' : (isCompact ? 'space-y-3' : 'space-y-[22px]')),
-    [isVertical, isFullscreenBYD, isCompact]
-  );
-
-  const recordsItemPadding = useMemo(() =>
-    isFullscreenBYD ? 'py-0.5' : (isCompact ? 'py-[1px]' : 'py-1.5'),
-    [isFullscreenBYD, isCompact]
-  );
-
-  const recordsItemPaddingHorizontal = useMemo(() =>
-    isFullscreenBYD ? 'py-1' : (isCompact ? 'py-[1.5px]' : 'py-2'),
-    [isFullscreenBYD, isCompact]
-  );
-
-  const recordsListHeightHorizontal = useMemo(() =>
-    isFullscreenBYD ? 'h-[389px]' : (isCompact ? 'h-[369px]' : 'h-[442px]'),
-    [isFullscreenBYD, isCompact]
-  );
-
-  // DEBUG: Log to verify mode detection
+  // DEBUG LOGS
   logger.debug('[DEBUG] Mode detection:', {
     viewport: `${window.innerWidth}x${window.innerHeight}`,
     isFullscreenBYD,
-    isCompact,
-    smallChartHeight,
-    largeChartHeight
+    isCompact
   });
 
-  // Google Sync Hook - Connect to Context Settings
-  // Note: googleSync expects setSettings. updateSettings is compatible.
-  // Also syncs charges data to cloud
-  const googleSync = useGoogleSync(rawTrips, setRawTrips, settings, updateSettings, charges, replaceCharges);
 
 
   // All trips view states
@@ -355,7 +232,8 @@ export default function BYDStatsAnalyzer() {
   const [allChargesSortOrder, setAllChargesSortOrder] = useState('desc');
 
   // Swipe gesture state
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  // Swipe gesture state
+  // const [isTransitioning, setIsTransitioning] = useState(false); // Managed by hook now
 
   // Swipe gesture is now handled by useSwipeGesture hook
   // const [swipeContainer, setSwipeContainer] = useState(null); -> Removed, hook returns ref setter except when it doesn't? 
@@ -427,62 +305,8 @@ export default function BYDStatsAnalyzer() {
     };
   }, [showTripDetailModal, showSettingsModal, showAllTripsModal, isNative]);
 
-  // Theme management - UNIFIED AND ROBUST
-  useEffect(() => {
-    const applyTheme = (isDark) => {
-      // 1. CSS Classes
-      if (isDark) {
-        document.documentElement.classList.add('dark');
-      } else {
-        document.documentElement.classList.remove('dark');
-      }
+  // Theme management moved to ThemeManager component
 
-      // 2. Browser color-scheme (prevents system override)
-      document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
-
-      // 2.1 Force meta tag to match active theme (critical for car systems)
-      // This prevents the car's dark mode from overriding app's light theme
-      let colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
-      if (!colorSchemeMeta) {
-        colorSchemeMeta = document.createElement('meta');
-        colorSchemeMeta.name = 'color-scheme';
-        document.head.appendChild(colorSchemeMeta);
-      }
-      // Set to ONLY the active theme, not "light dark" which allows system override
-      colorSchemeMeta.content = isDark ? 'dark' : 'light';
-
-      // 3. PWA theme-color meta tag (for status bar in PWA)
-      let themeColorMeta = document.querySelector('meta[name="theme-color"]');
-      if (themeColorMeta) {
-        // Dark theme: dark slate background
-        // Light theme: light background
-        themeColorMeta.setAttribute('content', isDark ? '#0f172a' : '#f8fafc');
-      }
-
-      // 4. Native StatusBar (for Capacitor apps)
-      if (isNative && window.StatusBar) {
-        window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-          .catch(e => logger.error('StatusBar error:', e));
-      }
-    };
-
-    const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
-
-    if (settings.theme === 'auto') {
-      // Apply initial theme
-      applyTheme(getSystemTheme());
-
-      // Listen for system changes
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      const handler = (e) => applyTheme(e.matches);
-
-      mediaQuery.addEventListener('change', handler);
-      return () => mediaQuery.removeEventListener('change', handler);
-    } else {
-      // Manual theme
-      applyTheme(settings.theme === 'dark');
-    }
-  }, [settings.theme, isNative]);
 
   // localStorage loading/saving is now handled by useAppData hook
 
@@ -545,39 +369,13 @@ export default function BYDStatsAnalyzer() {
         logger.debug('Auto-syncing new data to cloud...');
         googleSync.syncNow(trips);
       }
-      setShowModal(false);
+      // Close any open database modals
+      closeModal('upload');
+      closeModal('history');
     }
-  }, [processDBHook, rawTrips, googleSync]);
+  }, [processDBHook, rawTrips, googleSync, closeModal]);
 
-  const onDrop = useCallback((e, merge) => {
-    e.preventDefault();
-    setDragOver(false);
-    const f = e.dataTransfer.files[0];
-    if (f) {
-      // Validate that the file is a .DB or image file (renamed .db to .jpg)
-      const fileName = f.name.toLowerCase();
-      if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-        alert(t('errors.invalidFile'));
-        return;
-      }
-      processDB(f, merge);
-    }
-  }, [processDB, t]);
 
-  const onFile = useCallback((e, merge) => {
-    const f = e.target.files[0];
-    if (f) {
-      // Validate that the file is a .DB or image file (renamed .db to .jpg)
-      const fileName = f.name.toLowerCase();
-      if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-        alert(t('errors.invalidFile'));
-        e.target.value = '';
-        return;
-      }
-      processDB(f, merge);
-    }
-    e.target.value = '';
-  }, [processDB, t]);
 
   // clearData, saveToHistory, loadFromHistory, clearHistory now provided by useAppData hook
 
@@ -606,149 +404,28 @@ export default function BYDStatsAnalyzer() {
     }
   }, [deleteCharge, closeModal, googleSync]);
 
+  // Handler for charge selection (UI state)
+  const handleChargeSelect = useCallback((charge) => {
+    setSelectedCharge(charge);
+    openModal('chargeDetail');
+  }, [openModal]);
+
   /**
    * Load charges from a CSV file with REGISTRO_CARGAS.csv format
    * Auto-creates missing charger types with default values
    */
-  const loadChargeRegistry = useCallback(async (file) => {
-    try {
-      const text = await file.text();
-      const lines = text.split('\n').filter(line => line.trim());
+  const { loadChargeRegistry } = useChargeImporter();
 
-      if (lines.length < 2) {
-        alert(t('errors.noDataFound'));
-        return;
-      }
-
-      const charges = [];
-      const newChargerTypes = [];
-      const existingChargerNames = new Set(
-        (settings.chargerTypes || []).map(ct => ct.name.toLowerCase())
-      );
-
-      // Parse each line (skip header)
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i];
-        // Parse CSV respecting quoted fields
-        const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
-
-        if (!values || values.length < 8) continue;
-
-        const [fechaHora, kmTotales, kwhFacturados, precioTotal, , tipoCargador, precioKw, porcentajeFinal] = values;
-
-        // Validate date format - stop if we hit non-charge data
-        if (!fechaHora || !fechaHora.match(/^\d{4}-\d{2}-\d{2}/)) {
-          break;
-        }
-
-        // Parse date and time
-        const dateMatch = fechaHora.match(/(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
-        if (!dateMatch) continue;
-
-        const date = dateMatch[1];
-        const time = dateMatch[2];
-
-        // Find or create charger type
-        let chargerTypeId = null;
-        const chargerName = tipoCargador?.trim();
-
-        if (chargerName) {
-          const existing = (settings.chargerTypes || []).find(
-            ct => ct.name.toLowerCase() === chargerName.toLowerCase()
-          );
-
-          if (existing) {
-            chargerTypeId = existing.id;
-          } else if (!existingChargerNames.has(chargerName.toLowerCase())) {
-            // Create new charger type
-            const newId = `csv_${Date.now()}_${i}`;
-            newChargerTypes.push({
-              id: newId,
-              name: chargerName,
-              speedKw: 11,
-              efficiency: 1
-            });
-            chargerTypeId = newId;
-            existingChargerNames.add(chargerName.toLowerCase());
-          } else {
-            // Already queued for creation
-            chargerTypeId = newChargerTypes.find(
-              ct => ct.name.toLowerCase() === chargerName.toLowerCase()
-            )?.id;
-          }
-        }
-
-        charges.push({
-          date,
-          time,
-          odometer: parseFloat(kmTotales) || 0,
-          kwhCharged: parseFloat(kwhFacturados) || 0,
-          totalCost: parseFloat(precioTotal) || 0,
-          chargerTypeId,
-          pricePerKwh: parseFloat(precioKw) || 0,
-          finalPercentage: parseFloat(porcentajeFinal) || 0
-        });
-      }
-
-      // Add new charger types to settings
-      if (newChargerTypes.length > 0) {
-        const updatedChargerTypes = [...(settings.chargerTypes || []), ...newChargerTypes];
-        updateSettings({ ...settings, chargerTypes: updatedChargerTypes });
-      }
-
-      // Import charges
-      if (charges.length > 0) {
-        const count = addMultipleCharges(charges);
-
-        // Show success message
-        let message = t('charges.chargesImported', { count });
-        if (newChargerTypes.length > 0) {
-          message += '\n' + t('charges.chargerTypesCreated', {
-            types: newChargerTypes.map(ct => ct.name).join(', ')
-          });
-        }
-        alert(message);
-
-        // Auto-sync after import
-        if (googleSync.isAuthenticated) {
-          googleSync.syncNow();
-        }
-      } else {
-        alert(t('errors.noDataFound'));
-      }
-    } catch (error) {
-      console.error('Error loading charge registry:', error);
-      alert(t('errors.processingFile') || 'Error processing file');
-    }
-  }, [settings, updateSettings, addMultipleCharges, googleSync, t]);
-
-  const tabs = useMemo(() => [
-    { id: 'overview', label: t('tabs.overview'), icon: Activity },
-    { id: 'trends', label: t('tabs.trends'), icon: TrendingUp },
-    { id: 'patterns', label: t('tabs.patterns'), icon: Clock },
-    { id: 'efficiency', label: t('tabs.efficiency'), icon: Zap },
-    { id: 'records', label: t('tabs.records'), icon: BarChart3 },
-    { id: 'history', label: t('tabs.history'), icon: List },
-    { id: 'charges', label: t('tabs.charges'), icon: Battery }
-  ].filter(t => t.id === 'overview' || !(settings.hiddenTabs || []).includes(t.id)), [t, settings.hiddenTabs]);
-
-  const minSwipeDistance = 30; // Distancia mínima en píxeles
-  const transitionDuration = 500;
-
-  const handleTabClick = useCallback((tabId) => {
-    if (tabId === activeTab) return;
-    if (isTransitioning) return;
-
-    // Use transitions for both vertical and horizontal modes
-    setIsTransitioning(true);
-    setActiveTab(tabId);
-    setFadingTab(tabId); // Mark this tab for fade-in animation
-
-    setTimeout(() => {
-      setIsTransitioning(false);
-      setFadingTab(null); // Clear animation after transition
-    }, transitionDuration);
-  }, [activeTab, isTransitioning, transitionDuration]);
+  // Tab Navigation (Extracted Hook)
+  // Replaces tabs definition and handleTabClick
+  const {
+    activeTab,
+    setActiveTab,
+    fadingTab,
+    isTransitioning,
+    handleTabClick,
+    tabs
+  } = useTabNavigation({ settings });
 
 
   // Swipe gesture - using extracted hook
@@ -795,21 +472,11 @@ export default function BYDStatsAnalyzer() {
     setShowTripDetailModal(true);
   }, []);
 
-  // Detect paths like /legal or /privacidad
-  const isLegalPath = window.location.pathname.startsWith('/legal');
-  const isPrivacyPath = window.location.pathname.startsWith('/privacidad');
 
-  if (isLegalPath || isPrivacyPath) {
-    return (
-      <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center text-white">{t('common.loading')}</div>}>
-        <LegalPageLazy forcedTab={isPrivacyPath ? 'privacy' : 'legal'} />
-      </Suspense>
-    );
-  }
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center px-4">
+      <div className="fixed inset-0 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-center justify-center px-4 overflow-hidden">
         <div className="text-center">
           <div className="w-16 h-16 border-4 rounded-full animate-spin mx-auto mb-4" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
           <p className="text-slate-900 dark:text-white text-lg md:text-xl">Procesando...</p>
@@ -820,114 +487,17 @@ export default function BYDStatsAnalyzer() {
 
   if (rawTrips.length === 0) {
     return (
-      <div className="relative min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-800 flex items-start justify-center p-4 pt-8 pb-4">
-        <div className="w-full max-w-xl">
-          <div className="text-center mb-6">
-            <img src="app_icon_v2.png" className={`h-auto mx-auto mb-3 md:mb-4 ${isCompact ? 'w-24 sm:w-32' : 'w-32 sm:w-40 md:w-48'}`} alt="App Logo" />
-            <h1 className={`${isCompact ? 'text-xl sm:text-2xl' : 'text-2xl sm:text-3xl md:text-4xl'} font-bold text-white mb-1`}>{t('landing.title')}</h1>
-            <p className="text-xs sm:text-sm text-slate-400">{t('landing.subtitle')}</p>
-          </div>
-
-          {!sqlReady && !error && (
-            <div className="text-center mb-6">
-              <div className="inline-flex items-center gap-3 px-4 py-2 bg-white dark:bg-slate-800/50 rounded-xl">
-                <div className="w-5 h-5 border-2 rounded-full animate-spin" style={{ borderColor: BYD_RED, borderTopColor: 'transparent' }} />
-                <span className="text-slate-400">{t('landing.loading')}</span>
-              </div>
-            </div>
-          )}
-
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
-              <p style={{ color: BYD_RED }}>{error}</p>
-            </div>
-          )}
-
-          <div
-            className={`border-2 border-dashed rounded-3xl text-center transition-all cursor-pointer ${isCompact ? 'p-6' : 'p-8 sm:p-12'}`}
-            style={{
-              borderColor: dragOver ? BYD_RED : '#475569',
-              backgroundColor: dragOver ? 'rgba(234,0,41,0.1)' : 'transparent'
-            }}
-            onDragOver={(e) => { if (sqlReady && !isNative) { e.preventDefault(); setDragOver(true); } }}
-            onDragLeave={() => !isNative && setDragOver(false)}
-            onDrop={(e) => !isNative && sqlReady && onDrop(e, false)}
-            onClick={() => sqlReady && document.getElementById('fileInput')?.click()}
-          >
-            <input
-              id="fileInput"
-              type="file"
-              accept="*/*,image/*,.db,.jpg,.jpeg"
-              className="hidden"
-              onChange={(e) => onFile(e, false)}
-              disabled={!sqlReady}
-            />
-            <div
-              className={`${isCompact ? 'w-12 h-12 mb-4' : 'w-16 h-16 mb-6'} rounded-2xl mx-auto flex items-center justify-center`}
-              style={{ backgroundColor: dragOver ? BYD_RED : '#334155' }}
-            >
-              <Upload className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'}`} style={{ color: dragOver ? 'white' : BYD_RED }} />
-            </div>
-            <p className={`text-white mb-2 ${isCompact ? 'text-base' : 'text-lg sm:text-xl'}`}>
-              {sqlReady ? (isNative ? t('landing.tapToSelect') : t('landing.clickToSelect')) : t('landing.preparing')}
-            </p>
-            <p className="text-slate-400 text-xs mt-4">
-              {t('landing.hint')}
-            </p>
-            <p className="text-slate-500 text-xs mt-2">
-              {t('landing.tip')}
-            </p>
-          </div>
-
-          {/* Divider */}
-          <div className="flex items-center w-full my-6">
-            <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
-            <span className="px-4 text-slate-500 text-sm font-medium">{t('common.or')}</span>
-            <div className="h-px bg-slate-700 flex-1 opacity-50"></div>
-          </div>
-
-          {/* Compact Cloud Sync Section */}
-          <div className="flex justify-center">
-            {googleSync.isAuthenticated ? (
-              <button
-                onClick={() => googleSync.syncNow()}
-                disabled={googleSync.isSyncing}
-                className="flex items-center gap-3 px-5 py-2.5 rounded-xl bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-all text-white shadow-lg"
-              >
-                <div className="relative">
-                  {googleSync.userProfile?.imageUrl ? (
-                    <img src={googleSync.userProfile.imageUrl} className="w-6 h-6 rounded-full" alt="User" />
-                  ) : (
-                    <div className="w-6 h-6 rounded-full bg-slate-600 flex items-center justify-center text-xs font-bold">
-                      {googleSync.userProfile?.name?.charAt(0) || 'U'}
-                    </div>
-                  )}
-                  {googleSync.isSyncing && (
-                    <div className="absolute -right-1 -bottom-1 w-3 h-3 bg-slate-800 rounded-full flex items-center justify-center">
-                      <div className="w-2 h-2 border-[1.5px] border-white/30 border-t-white rounded-full animate-spin" />
-                    </div>
-                  )}
-                </div>
-                <div className="text-left">
-                  <p className="text-xs text-slate-400 leading-none mb-0.5">{t('landing.cloudConnected')}</p>
-                  <p className="text-sm font-medium leading-none">{googleSync.isSyncing ? t('landing.syncing') : t('landing.syncNow')}</p>
-                </div>
-                {!googleSync.isSyncing && <Cloud className="w-4 h-4 text-slate-400 ml-1" />}
-              </button>
-            ) : (
-              <button
-                onClick={() => googleSync.login()}
-                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors bg-slate-800/50 hover:bg-slate-800 px-4 py-2 rounded-xl text-sm"
-              >
-                <span className="flex items-center justify-center w-5 h-5 bg-white rounded-full">
-                  <img src="https://www.google.com/favicon.ico" alt="G" className="w-3 h-3" />
-                </span>
-                {t('landing.signInToSync')}
-              </button>
-            )}
-          </div>
-
-        </div>
+      <>
+        <Suspense fallback={null}>
+          <LandingPageLazy
+            isCompact={isCompact}
+            sqlReady={sqlReady}
+            error={error}
+            googleSync={googleSync}
+            isNative={isNative}
+            onFileProcess={processDB}
+          />
+        </Suspense>
 
         {/* ModalContainer for Legal Modal available on Landing Page */}
         <ModalContainer
@@ -949,7 +519,11 @@ export default function BYDStatsAnalyzer() {
           clearData={clearData}
           onLoadChargeRegistry={loadChargeRegistry}
           isNative={isNative}
-          onFile={onFile}
+          onFile={(e) => {
+            const f = e.target.files[0];
+            if (f) processDB(f, false);
+          }}
+          charges={charges}
           setFilterType={setFilterType}
           setSelMonth={setSelMonth}
           setDateFrom={setDateFrom}
@@ -962,106 +536,215 @@ export default function BYDStatsAnalyzer() {
           rawTripsCount={rawTrips.length}
           filteredCount={0}
           appVersion={appVersion}
-          charges={charges}
         />
 
         {/* Privacy & Legal links in bottom-left - Fixed positioning */}
-        <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1.5 items-start">
-          <div className="flex items-center gap-3">
-            <a
-              href="/privacidad/"
+        <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1.5 items-start pointer-events-none">
+          <div className="flex items-center gap-3 pointer-events-auto">
+            <Link
+              to="/privacidad"
               className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
             >
               <Shield className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
               <span>{t('footer.privacy')}</span>
-            </a>
+            </Link>
             <div className="w-px h-3 bg-slate-800"></div>
-            <a
-              href="/legal/"
+            <Link
+              to="/legal"
               className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
             >
               <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
               <span>{t('footer.legal')}</span>
-            </a>
+            </Link>
           </div>
           <p className="text-[10px] text-slate-600 pl-1">BYD Stats {appVersion}</p>
         </div>
 
         {/* GitHub link in bottom-right - Fixed positioning */}
-        <div className="absolute right-6 bottom-6 z-10 flex flex-col gap-1.5 items-end">
+        <div className="absolute right-6 bottom-6 z-10 flex flex-col gap-1.5 items-end pointer-events-none">
           <a
             href="https://github.com/miguelpicado/byd-stats"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
+            className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1 pointer-events-auto"
           >
             <span>GitHub</span>
             <GitHub className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
           </a>
           <p className="text-[10px] text-slate-600 pr-1">Open Source Project</p>
         </div>
-      </div>
+      </>
     );
   }
 
   const { summary, monthly, daily, hourly, weekday, tripDist, effScatter, top } = data || {};
 
+
+
+
+
   // If showing all trips view, render full screen view
   if (showAllTripsModal) {
-    // Filter and sort trips for the all trips view
-    let allTripsFiltered = [...rawTrips];
-
-    // Apply filters
-    if (allTripsFilterType === 'month' && allTripsMonth) {
-      allTripsFiltered = allTripsFiltered.filter(t => t.month === allTripsMonth);
-    } else if (allTripsFilterType === 'range') {
-      if (allTripsDateFrom) allTripsFiltered = allTripsFiltered.filter(t => t.date >= allTripsDateFrom.replace(/-/g, ''));
-      if (allTripsDateTo) allTripsFiltered = allTripsFiltered.filter(t => t.date <= allTripsDateTo.replace(/-/g, ''));
-    }
-
-    // Sort trips
-    allTripsFiltered.sort((a, b) => {
-      let comparison = 0;
-
-      if (allTripsSortBy === 'date') {
-        const dateCompare = (b.date || '').localeCompare(a.date || '');
-        if (dateCompare !== 0) {
-          comparison = dateCompare;
-        } else {
-          comparison = (b.start_timestamp || 0) - (a.start_timestamp || 0);
-        }
-      } else if (allTripsSortBy === 'efficiency') {
-        // Calcular eficiencia permitiendo valores negativos (regeneración)
-        const effA = a.trip > 0 && a.electricity !== undefined && a.electricity !== null && a.electricity !== 0
-          ? (a.electricity / a.trip) * 100
-          : Infinity;
-        const effB = b.trip > 0 && b.electricity !== undefined && b.electricity !== null && b.electricity !== 0
-          ? (b.electricity / b.trip) * 100
-          : Infinity;
-        comparison = effA - effB; // Valores más bajos (incluyendo negativos) primero
-      } else if (allTripsSortBy === 'distance') {
-        comparison = (b.trip || 0) - (a.trip || 0); // Descending by default
-      } else if (allTripsSortBy === 'consumption') {
-        comparison = (b.electricity || 0) - (a.electricity || 0); // Descending by default
-      }
-
-      // Apply sort order
-      return allTripsSortOrder === 'asc' ? -comparison : comparison;
-    });
-
-    // Filter trips >= 1km for scoring calculation
-    // Incluir eficiencias negativas (regeneración) que son las MEJORES
-    const validTrips = allTripsFiltered.filter(t => t.trip >= 1 && t.electricity !== 0);
-    const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
-    const minEff = efficiencies.length > 0 ? Math.min(...efficiencies) : 0;
-    const maxEff = efficiencies.length > 0 ? Math.max(...efficiencies) : 0;
-
     return (
-      <div
-        ref={allTripsScrollRef}
-        className="fixed inset-0 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white"
-      >
-        {/* Trip Detail Modal (using ModalContainer) */}
+      <AllTripsView
+        rawTrips={rawTrips}
+        filterType={allTripsFilterType}
+        month={allTripsMonth}
+        dateFrom={allTripsDateFrom}
+        dateTo={allTripsDateTo}
+        sortBy={allTripsSortBy}
+        sortOrder={allTripsSortOrder}
+        setFilterType={setAllTripsFilterType}
+        setMonth={setAllTripsMonth}
+        setDateFrom={setAllTripsDateFrom}
+        setDateTo={setAllTripsDateTo}
+        setSortBy={setAllTripsSortBy}
+        setSortOrder={setAllTripsSortOrder}
+        modals={modals}
+        openModal={openModal}
+        closeModal={closeModal}
+        openTripDetail={openTripDetail}
+        scrollRef={allTripsScrollRef}
+        setLegalInitialSection={setLegalInitialSection}
+        legalInitialSection={legalInitialSection}
+        settings={settings}
+        updateSettings={updateSettings}
+        googleSync={googleSync}
+        selectedTrip={selectedTrip}
+        setSelectedTrip={setSelectedTrip}
+        data={data}
+        sqlReady={sqlReady}
+        processDB={processDB}
+        exportDatabase={exportDatabase}
+        clearData={clearData}
+        loadChargeRegistry={loadChargeRegistry}
+        isNative={isNative}
+        onFile={(e) => {
+          const f = e.target.files[0];
+          if (f) processDB(f, false);
+        }}
+        charges={charges}
+      />
+    );
+  }
+
+  // If showing all charges view, render full screen view
+  if (showAllChargesModal) {
+    return (
+      <AllChargesView
+        charges={charges}
+        chargerTypes={settings.chargerTypes || []}
+        filterType={allChargesFilterType}
+        month={allChargesMonth}
+        dateFrom={allChargesDateFrom}
+        dateTo={allChargesDateTo}
+        sortBy={allChargesSortBy}
+        sortOrder={allChargesSortOrder}
+        setFilterType={setAllChargesFilterType}
+        setMonth={setAllChargesMonth}
+        setDateFrom={setAllChargesDateFrom}
+        setDateTo={setAllChargesDateTo}
+        setSortBy={setAllChargesSortBy}
+        setSortOrder={setAllChargesSortOrder}
+        modals={modals}
+        openModal={openModal}
+        closeModal={closeModal}
+        setSelectedCharge={setSelectedCharge}
+        selectedCharge={selectedCharge}
+        scrollRef={allChargesScrollRef}
+        setLegalInitialSection={setLegalInitialSection}
+        legalInitialSection={legalInitialSection}
+        settings={settings}
+        updateSettings={updateSettings}
+        googleSync={googleSync}
+        rawTrips={rawTrips}
+        selectedTrip={selectedTrip}
+        setSelectedTrip={setSelectedTrip}
+        data={data}
+        sqlReady={sqlReady}
+        processDB={processDB}
+        exportDatabase={exportDatabase}
+        clearData={clearData}
+        loadChargeRegistry={loadChargeRegistry}
+        isNative={isNative}
+        onFile={(e) => {
+          const f = e.target.files[0];
+          if (f) processDB(f, false);
+        }}
+      />
+    );
+  }
+
+
+  return (
+    <MainLayout setSwipeContainer={setSwipeContainer}>
+      <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+
+        {/* Header Feature */}
+        <Header />
+
+        {/* Content Area with Conditional Sidebar */}
+        <div className="flex-1 overflow-hidden" style={{ display: layoutMode === 'horizontal' ? 'flex' : 'block' }}>
+
+          {/* Horizontal Layout: Sidebar */}
+          {layoutMode === 'horizontal' && (
+            <DesktopSidebar
+              tabs={tabs}
+              activeTab={activeTab}
+              handleTabClick={handleTabClick}
+            />
+          )}
+
+          {/* Main Content (Dashboard) */}
+          <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto' : 'max-w-7xl mx-auto h-full w-full'}>
+            <ErrorBoundary>
+              <DashboardLayout
+                activeTab={activeTab}
+                tabs={tabs}
+                isTransitioning={isTransitioning}
+                fadingTab={fadingTab}
+                backgroundLoad={backgroundLoad}
+                onTripSelect={openTripDetail}
+                onChargeSelect={handleChargeSelect}
+              />
+            </ErrorBoundary>
+          </div>
+        </div>
+
+        {/* Vertical Layout: Bottom Navigation */}
+        {layoutMode === 'vertical' && (
+          <TabNavigation
+            tabs={tabs}
+            activeTab={activeTab}
+            handleTabClick={handleTabClick}
+          />
+        )}
+
+        {/* Swipe Gesture Handler (Overlay) */}
+        <div
+          ref={setSwipeContainer}
+          className="absolute inset-0 z-30 pointer-events-none"
+          style={{ touchAction: 'pan-y' }}
+        />
+
+        <Toaster position="bottom-center" />
+
+        {/* PWA Manager */}
+        <Suspense fallback={null}>
+          <PWAManagerLazy />
+        </Suspense>
+
+        <ConfirmationModal
+          isOpen={confirmModalState.isOpen}
+          onClose={closeConfirmation}
+          onConfirm={confirmModalState.onConfirm}
+          title={confirmModalState.title}
+          message={confirmModalState.message}
+          confirmText={confirmModalState.confirmText}
+          isWarning={confirmModalState.isWarning}
+        />
+
+        {/* Modals Container */}
         <ModalContainer
           modals={modals}
           closeModal={closeModal}
@@ -1080,899 +763,17 @@ export default function BYDStatsAnalyzer() {
           exportDatabase={exportDatabase}
           clearData={clearData}
           onLoadChargeRegistry={loadChargeRegistry}
-          isNative={isNative}
-          onFile={onFile}
-          setFilterType={setFilterType}
-          setSelMonth={setSelMonth}
-          setDateFrom={setDateFrom}
-          setDateTo={setDateTo}
-          filterType={filterType}
-          selMonth={selMonth}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          months={months}
-          rawTripsCount={rawTrips.length}
-          filteredCount={allTripsFiltered.length}
-          appVersion={appVersion}
-          charges={charges}
-        />
-
-        {/* Header */}
-        <div className="sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <button
-                  onClick={() => setShowAllTripsModal(false)}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 dark:text-white hover:bg-white dark:bg-slate-800"
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="19" y1="12" x2="5" y2="12" />
-                    <polyline points="12 19 5 12 12 5" />
-                  </svg>
-                </button>
-                <div>
-                  <h1 className="text-sm sm:text-base md:text-lg font-bold">{t('allTrips.title')}</h1>
-                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allTripsFiltered.length} {t('stats.trips').toLowerCase()}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Filters and Sort */}
-            <div className="mt-4 space-y-3">
-              {/* Filter Type */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                <button
-                  onClick={() => { setAllTripsFilterType('all'); setAllTripsMonth(''); setAllTripsDateFrom(''); setAllTripsDateTo(''); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                  style={{
-                    backgroundColor: allTripsFilterType === "all" ? BYD_RED : undefined,
-                    color: allTripsFilterType === 'all' ? 'white' : '#94a3b8'
-                  }}
-                >
-                  {t('filter.all')}
-                </button>
-                <button
-                  onClick={() => setAllTripsFilterType('month')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                  style={{
-                    backgroundColor: allTripsFilterType === 'month' ? BYD_RED : undefined,
-                    color: allTripsFilterType === 'month' ? 'white' : '#94a3b8'
-                  }}
-                >
-                  {t('filter.byMonth')}
-                </button>
-                <button
-                  onClick={() => setAllTripsFilterType('range')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                  style={{
-                    backgroundColor: allTripsFilterType === 'range' ? BYD_RED : undefined,
-                    color: allTripsFilterType === 'range' ? 'white' : '#94a3b8'
-                  }}
-                >
-                  {t('filter.byRange')}
-                </button>
-              </div>
-
-              {/* Month Selector */}
-              {allTripsFilterType === 'month' && (
-                <select
-                  value={allTripsMonth}
-                  onChange={(e) => setAllTripsMonth(e.target.value)}
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
-                >
-                  <option value="">{t('filter.selectMonth')}</option>
-                  {months.map((m) => (
-                    <option key={m} value={m}>{formatMonth(m)}</option>
-                  ))}
-                </select>
-              )}
-
-              {/* Date Range */}
-              {allTripsFilterType === 'range' && (
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={allTripsDateFrom}
-                    onChange={(e) => setAllTripsDateFrom(e.target.value)}
-                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
-                  />
-                  <input
-                    type="date"
-                    value={allTripsDateTo}
-                    onChange={(e) => setAllTripsDateTo(e.target.value)}
-                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
-                  />
-                </div>
-              )}
-
-              {/* Sort Options */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                <span className="text-xs text-slate-600 dark:text-slate-400 px-2 py-1.5">{t('sort.label')}</span>
-                <button
-                  onClick={() => {
-                    if (allTripsSortBy === 'date') {
-                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setAllTripsSortBy('date');
-                      setAllTripsSortOrder('desc');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allTripsSortBy === 'date'
-                    ? 'text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  style={allTripsSortBy === 'date' ? { backgroundColor: BYD_RED } : {}}
-                >
-                  {t('allTrips.date')}
-                  {allTripsSortBy === 'date' && (
-                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    if (allTripsSortBy === 'efficiency') {
-                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setAllTripsSortBy('efficiency');
-                      setAllTripsSortOrder('desc');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allTripsSortBy === 'efficiency'
-                    ? 'text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  style={allTripsSortBy === 'efficiency' ? { backgroundColor: BYD_RED } : {}}
-                >
-                  {t('allTrips.efficiency')}
-                  {allTripsSortBy === 'efficiency' && (
-                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    if (allTripsSortBy === 'distance') {
-                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setAllTripsSortBy('distance');
-                      setAllTripsSortOrder('desc');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allTripsSortBy === 'distance'
-                    ? 'text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  style={allTripsSortBy === 'distance' ? { backgroundColor: BYD_RED } : {}}
-                >
-                  {t('allTrips.distance')}
-                  {allTripsSortBy === 'distance' && (
-                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </button>
-                <button
-                  onClick={() => {
-                    if (allTripsSortBy === 'consumption') {
-                      setAllTripsSortOrder(allTripsSortOrder === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setAllTripsSortBy('consumption');
-                      setAllTripsSortOrder('desc');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allTripsSortBy === 'consumption'
-                    ? 'text-white'
-                    : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'
-                    }`}
-                  style={allTripsSortBy === 'consumption' ? { backgroundColor: BYD_RED } : {}}
-                >
-                  {t('allTrips.consumption')}
-                  {allTripsSortBy === 'consumption' && (
-                    <span>{allTripsSortOrder === 'desc' ? '↓' : '↑'}</span>
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Trip List - Virtualized with TanStack Virtual */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
-          <VirtualizedTripList
-            trips={allTripsFiltered}
-            minEff={minEff}
-            maxEff={maxEff}
-            onTripClick={openTripDetail}
-            scrollRef={allTripsScrollRef}
-          />
-        </div>
-      </div >
-    );
-  }
-
-  // If showing all charges view, render full screen view
-  if (showAllChargesModal) {
-    // Get unique months from charges
-    const chargeMonths = [...new Set(charges.map(c => c.date?.substring(0, 7)))].filter(Boolean).sort().reverse();
-
-    // Filter and sort charges
-    let allChargesFiltered = [...charges];
-
-    if (allChargesFilterType === 'month' && allChargesMonth) {
-      allChargesFiltered = allChargesFiltered.filter(c => c.date?.startsWith(allChargesMonth));
-    } else if (allChargesFilterType === 'range') {
-      if (allChargesDateFrom) allChargesFiltered = allChargesFiltered.filter(c => c.date >= allChargesDateFrom);
-      if (allChargesDateTo) allChargesFiltered = allChargesFiltered.filter(c => c.date <= allChargesDateTo);
-    }
-
-    // Sort charges
-    allChargesFiltered.sort((a, b) => {
-      let comparison = 0;
-      if (allChargesSortBy === 'date') {
-        comparison = (b.timestamp || 0) - (a.timestamp || 0);
-      } else if (allChargesSortBy === 'kwh') {
-        comparison = (b.kwhCharged || 0) - (a.kwhCharged || 0);
-      } else if (allChargesSortBy === 'cost') {
-        comparison = (b.totalCost || 0) - (a.totalCost || 0);
-      }
-      return allChargesSortOrder === 'asc' ? -comparison : comparison;
-    });
-
-    const getChargerTypeName = (chargerTypeId) => {
-      const chargerType = (settings.chargerTypes || []).find(ct => ct.id === chargerTypeId);
-      return chargerType?.name || chargerTypeId || '-';
-    };
-
-    const formatDate = (dateStr) => {
-      if (!dateStr) return '';
-      const [year, month, day] = dateStr.split('-');
-      return `${day}/${month}/${year}`;
-    };
-
-    return (
-      <div
-        ref={allChargesScrollRef}
-        className="fixed inset-0 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white"
-      >
-        {/* Header */}
-        <div className="sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top, 24px)' }}>
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 sm:py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 sm:gap-3">
-                <button
-                  onClick={() => setShowAllChargesModal(false)}
-                  className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-900 dark:text-white hover:bg-white dark:bg-slate-800"
-                >
-                  <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="19" y1="12" x2="5" y2="12" />
-                    <polyline points="12 19 5 12 12 5" />
-                  </svg>
-                </button>
-                <div>
-                  <h1 className="text-sm sm:text-base md:text-lg font-bold">{t('charges.title')}</h1>
-                  <p className="text-slate-500 dark:text-slate-500 text-xs sm:text-sm">{allChargesFiltered.length} {t('charges.chargeCount').toLowerCase()}</p>
-                </div>
-              </div>
-              <button
-                onClick={() => openModal('addCharge')}
-                className="py-2 px-4 rounded-xl text-white text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm"
-                style={{ backgroundColor: BYD_RED }}
-              >
-                + {t('charges.addCharge')}
-              </button>
-            </div>
-
-            {/* Filters and Sort */}
-            <div className="mt-4 space-y-3">
-              {/* Filter Type */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                <button
-                  onClick={() => { setAllChargesFilterType('all'); setAllChargesMonth(''); setAllChargesDateFrom(''); setAllChargesDateTo(''); }}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                  style={{
-                    backgroundColor: allChargesFilterType === "all" ? BYD_RED : undefined,
-                    color: allChargesFilterType === 'all' ? 'white' : '#94a3b8'
-                  }}
-                >
-                  {t('filter.all')}
-                </button>
-                <button
-                  onClick={() => setAllChargesFilterType('month')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                  style={{
-                    backgroundColor: allChargesFilterType === 'month' ? BYD_RED : undefined,
-                    color: allChargesFilterType === 'month' ? 'white' : '#94a3b8'
-                  }}
-                >
-                  {t('filter.byMonth')}
-                </button>
-                <button
-                  onClick={() => setAllChargesFilterType('range')}
-                  className="px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors"
-                  style={{
-                    backgroundColor: allChargesFilterType === 'range' ? BYD_RED : undefined,
-                    color: allChargesFilterType === 'range' ? 'white' : '#94a3b8'
-                  }}
-                >
-                  {t('filter.byRange')}
-                </button>
-              </div>
-
-              {/* Month Selector */}
-              {allChargesFilterType === 'month' && (
-                <select
-                  value={allChargesMonth}
-                  onChange={(e) => setAllChargesMonth(e.target.value)}
-                  className="w-full bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
-                >
-                  <option value="">{t('filter.selectMonth')}</option>
-                  {chargeMonths.map((m) => (
-                    <option key={m} value={m}>{formatMonth(m)}</option>
-                  ))}
-                </select>
-              )}
-
-              {/* Date Range */}
-              {allChargesFilterType === 'range' && (
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={allChargesDateFrom}
-                    onChange={(e) => setAllChargesDateFrom(e.target.value)}
-                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
-                  />
-                  <input
-                    type="date"
-                    value={allChargesDateTo}
-                    onChange={(e) => setAllChargesDateTo(e.target.value)}
-                    className="flex-1 bg-slate-700 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-600 text-sm"
-                  />
-                </div>
-              )}
-
-              {/* Sort Options */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
-                <span className="text-xs text-slate-600 dark:text-slate-400 px-2 py-1.5">{t('sort.label')}</span>
-                <button
-                  onClick={() => {
-                    if (allChargesSortBy === 'date') {
-                      setAllChargesSortOrder(allChargesSortOrder === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setAllChargesSortBy('date');
-                      setAllChargesSortOrder('desc');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allChargesSortBy === 'date' ? 'text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                  style={allChargesSortBy === 'date' ? { backgroundColor: BYD_RED } : {}}
-                >
-                  {t('allTrips.date')}
-                  {allChargesSortBy === 'date' && <span>{allChargesSortOrder === 'desc' ? '↓' : '↑'}</span>}
-                </button>
-                <button
-                  onClick={() => {
-                    if (allChargesSortBy === 'kwh') {
-                      setAllChargesSortOrder(allChargesSortOrder === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setAllChargesSortBy('kwh');
-                      setAllChargesSortOrder('desc');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allChargesSortBy === 'kwh' ? 'text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                  style={allChargesSortBy === 'kwh' ? { backgroundColor: BYD_RED } : {}}
-                >
-                  kWh
-                  {allChargesSortBy === 'kwh' && <span>{allChargesSortOrder === 'desc' ? '↓' : '↑'}</span>}
-                </button>
-                <button
-                  onClick={() => {
-                    if (allChargesSortBy === 'cost') {
-                      setAllChargesSortOrder(allChargesSortOrder === 'desc' ? 'asc' : 'desc');
-                    } else {
-                      setAllChargesSortBy('cost');
-                      setAllChargesSortOrder('desc');
-                    }
-                  }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors flex items-center gap-1 ${allChargesSortBy === 'cost' ? 'text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400'}`}
-                  style={allChargesSortBy === 'cost' ? { backgroundColor: BYD_RED } : {}}
-                >
-                  {t('charges.totalCost')}
-                  {allChargesSortBy === 'cost' && <span>{allChargesSortOrder === 'desc' ? '↓' : '↑'}</span>}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Charge List - Virtualized */}
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 py-4 pb-8">
-          <VirtualizedChargeList
-            charges={allChargesFiltered}
-            onChargeClick={(charge) => {
-              setSelectedCharge(charge);
-              openModal('chargeDetail');
-            }}
-            scrollRef={allChargesScrollRef}
-            formatDate={formatDate}
-            getChargerTypeName={getChargerTypeName}
-          />
-        </div>
-
-        {/* ModalContainer for charge detail */}
-        <ModalContainer
-          modals={modals}
-          closeModal={closeModal}
-          openModal={openModal}
-          setLegalInitialSection={setLegalInitialSection}
-          legalInitialSection={legalInitialSection}
-          settings={settings}
-          updateSettings={updateSettings}
-          googleSync={googleSync}
-          rawTrips={rawTrips}
-          selectedTrip={selectedTrip}
-          setSelectedTrip={setSelectedTrip}
+          /* Charge specific props */
           selectedCharge={selectedCharge}
           setSelectedCharge={setSelectedCharge}
           editingCharge={editingCharge}
           setEditingCharge={setEditingCharge}
-          onSaveCharge={addCharge}
-          onDeleteCharge={deleteCharge}
-          data={data}
-          sqlReady={sqlReady}
-          processDB={processDBHook}
-          exportDatabase={handleExportDatabase}
-          clearData={clearData}
-          onLoadChargeRegistry={loadChargeRegistry}
-          isNative={isNative}
-          onFile={onFile}
-          setFilterType={setFilterType}
-          setSelMonth={setSelMonth}
-          setDateFrom={setDateFrom}
-          setDateTo={setDateTo}
-          filterType={filterType}
-          selMonth={selMonth}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          months={months}
-          rawTripsCount={rawTrips.length}
-          filteredCount={allChargesFiltered.length}
-          appVersion={appVersion}
           charges={charges}
+          handleDeleteCharge={handleDeleteCharge}
+          handleEditCharge={handleEditCharge}
+          addCharge={addCharge}
         />
       </div>
-    );
-  }
-
-  return (
-    <div
-      ref={setSwipeContainer}
-      className="fixed inset-0 flex flex-col bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-slate-900 dark:text-white overflow-hidden transition-colors"
-    >
-      <ModalContainer
-        modals={modals}
-        closeModal={closeModal}
-        openModal={openModal}
-        setLegalInitialSection={setLegalInitialSection}
-        legalInitialSection={legalInitialSection}
-        settings={settings}
-        updateSettings={updateSettings}
-        googleSync={googleSync}
-        rawTrips={rawTrips}
-        selectedTrip={selectedTrip}
-        setSelectedTrip={setSelectedTrip}
-        data={data}
-        sqlReady={sqlReady}
-        processDB={processDB}
-        exportDatabase={exportDatabase}
-        clearData={clearData}
-        onLoadChargeRegistry={loadChargeRegistry}
-        isNative={isNative}
-        onFile={onFile}
-        setFilterType={setFilterType}
-        setSelMonth={setSelMonth}
-        setDateFrom={setDateFrom}
-        setDateTo={setDateTo}
-        filterType={filterType}
-        selMonth={selMonth}
-        dateFrom={dateFrom}
-        dateTo={dateTo}
-        months={months}
-        rawTripsCount={rawTrips.length}
-        filteredCount={filtered ? filtered.length : 0}
-        appVersion={appVersion}
-        charges={charges}
-        onSaveCharge={addCharge}
-        editingCharge={editingCharge}
-        setEditingCharge={setEditingCharge}
-        selectedCharge={selectedCharge}
-        setSelectedCharge={setSelectedCharge}
-        onEditCharge={handleEditCharge}
-        onDeleteCharge={handleDeleteCharge}
-      />
-
-      <div className="flex-shrink-0 sticky top-0 z-40 bg-slate-100 dark:bg-slate-900/90 backdrop-blur border-b border-slate-200 dark:border-slate-700/50" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-        <div className={`${layoutMode === 'horizontal' ? 'px-3 sm:px-4' : 'max-w-7xl mx-auto px-3 sm:px-4'} py-3 sm:py-4`}>
-          <div className="flex items-center justify-between">
-            {/* Logo y título */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <img
-                src="app_logo.png"
-                className={`${layoutMode === 'horizontal' ? 'h-10 w-auto' : 'w-12 sm:w-16 md:w-20'} object-contain`}
-                alt="BYD Logo"
-              />
-              <div>
-                <h1 className="text-sm sm:text-base md:text-lg font-bold text-slate-900 dark:text-white">{t('header.title')}</h1>
-                <p className="text-slate-500 dark:text-slate-400 text-xs sm:text-sm">{t('header.trips', { count: rawTrips.length })}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowHelpModal(true)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                title={t('tooltips.help')}
-              >
-                <HelpCircle className="w-5 h-5" />
-              </button>
-              <button
-                onClick={toggleFullscreen}
-                className={`w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors ${layoutMode === 'vertical' ? 'hidden' : ''}`}
-                title={isFullscreen ? t('tooltips.exitFullscreen') : t('tooltips.fullscreen')}
-              >
-                {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
-              </button>
-              <button
-                onClick={() => setShowHistoryModal(true)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                title={t('tooltips.history')}
-              >
-                <Database className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setShowSettingsModal(true)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                title={t('tooltips.settings')}
-              >
-                <Settings className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setShowFilterModal(true)}
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
-                title={t('tooltips.filters')}
-              >
-                <Filter className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="flex-1 overflow-hidden" style={{ display: layoutMode === 'horizontal' ? 'flex' : 'block' }}>
-        {/* Horizontal Layout: Sidebar with tabs */}
-        {layoutMode === 'horizontal' && (
-          <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
-            <div role="tablist" aria-label="Main navigation" className="p-4 space-y-2">
-              {tabs.map((t) => (
-                <button
-                  key={t.id}
-                  role="tab"
-                  aria-selected={activeTab === t.id}
-                  aria-controls={`tabpanel-${t.id}`}
-                  onClick={() => handleTabClick(t.id)}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-left ${activeTab === t.id
-                    ? 'byd-active-item shadow-lg shadow-red-900/20'
-                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
-                    }`}
-                >
-                  <t.icon className="w-5 h-5 flex-shrink-0" />
-                  <span className="font-medium">{t.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Content container */}
-        <div className={layoutMode === 'horizontal' ? 'flex-1 overflow-y-auto' : 'max-w-7xl mx-auto h-full'}>
-          {layoutMode === 'vertical' ? (
-            // Vertical layout: sliding tabs with transitions
-            <div
-              ref={setSwipeContainer}
-              style={{
-                display: 'flex',
-                height: '100%',
-                width: `${tabs.length * 100}%`,
-                transform: `translate3d(-${tabs.findIndex(t => t.id === activeTab) * (100 / tabs.length)}%, 0, 0)`,
-                transition: isTransitioning ? `transform ${transitionDuration}ms cubic-bezier(0.33, 1, 0.68, 1)` : 'none',
-                willChange: 'transform',
-                backfaceVisibility: 'hidden',
-                WebkitBackfaceVisibility: 'hidden',
-                perspective: 1000,
-                WebkitPerspective: 1000,
-                transformStyle: 'preserve-3d',
-                WebkitTransformStyle: 'preserve-3d',
-                userSelect: 'none',
-                touchAction: 'pan-y',
-                overscrollBehavior: 'none'
-              }}
-            >
-              {!data ? (
-                // Show error message on all slides
-                tabs.map((tab) => (
-                  <div key={tab.id} className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl mx-3 sm:mx-4" style={{ width: `${100 / tabs.length}%`, flexShrink: 0 }}>
-                    <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
-                    <p className="text-slate-400">{t('common.noData')}</p>
-                  </div>
-                ))
-              ) : (
-                <>
-                  {tabs.map((tab) => (
-                    <div
-                      key={tab.id}
-                      className={getTabClassName(tab.id, activeTab, fadingTab)}
-                      style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}
-                    >
-                      {(activeTab === tab.id || backgroundLoad) && (
-                        <>
-                          {tab.id === 'overview' && (
-                            <OverviewTab
-                              summary={summary}
-                              monthly={monthly}
-                              tripDist={tripDist}
-                              smallChartHeight={smallChartHeight}
-                              overviewSpacing={overviewSpacingVertical}
-                              onAddCharge={() => openModal('addCharge')}
-                              trips={rawTrips}
-                              settings={settings}
-                            />
-                          )}
-                          {tab.id === 'trends' && (
-                            <Suspense fallback={<TabFallback />}>
-                              <TrendsTab
-                                filtered={filtered}
-                                summary={summary}
-                                monthly={monthly}
-                                daily={daily}
-                                settings={settings}
-                                largeChartHeight={largeChartHeight}
-                              />
-                            </Suspense>
-                          )}
-                          {tab.id === 'patterns' && (
-                            <Suspense fallback={<TabFallback />}>
-                              <PatternsTab
-                                weekday={weekday}
-                                hourly={hourly}
-                                summary={summary}
-                                patternsSpacing={patternsSpacing}
-                                patternsChartHeight={patternsChartHeight}
-                              />
-                            </Suspense>
-                          )}
-                          {tab.id === 'efficiency' && (
-                            <Suspense fallback={<TabFallback />}>
-                              <EfficiencyTab
-                                summary={summary}
-                                monthly={monthly}
-                                effScatter={effScatter}
-                                largeChartHeight={largeChartHeight}
-                              />
-                            </Suspense>
-                          )}
-                          {tab.id === 'records' && (
-                            <Suspense fallback={<TabFallback />}>
-                              <RecordsTab
-                                summary={summary}
-                                top={top}
-                                recordsItemPadding={recordsItemPadding}
-                                recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                                recordsListHeightHorizontal={recordsListHeightHorizontal}
-                              />
-                            </Suspense>
-                          )}
-                          {tab.id === 'history' && (
-                            <Suspense fallback={<TabFallback />}>
-                              <HistoryTab
-                                filtered={filtered}
-                                openTripDetail={openTripDetail}
-                                setShowAllTripsModal={setShowAllTripsModal}
-                              />
-                            </Suspense>
-                          )}
-                          {tab.id === 'charges' && (
-                            <Suspense fallback={<TabFallback />}>
-                              <ChargesTab
-                                charges={charges}
-                                chargerTypes={settings.chargerTypes || []}
-                                onChargeClick={(charge) => {
-                                  setSelectedCharge(charge);
-                                  openModal('chargeDetail');
-                                }}
-                                onAddClick={() => openModal('addCharge')}
-                                setShowAllChargesModal={setShowAllChargesModal}
-                                batterySize={settings.batterySize}
-                              />
-                            </Suspense>
-                          )}
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </>
-              )}
-            </div>
-          ) : (
-            // Horizontal layout: show only active tab content (tabs unmount/remount for animations)
-            <div ref={setSwipeContainer} className="tab-content-container horizontal-tab-transition" style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}>
-              {!data ? (
-                <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
-                  <AlertCircle className="w-12 h-12 text-slate-500 dark:text-slate-500 mx-auto mb-4" />
-                  <p className="text-slate-400">{t('common.noData')}</p>
-                </div>
-              ) : (
-                <>
-                  {tabs.map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    const isFading = fadingTab === tab.id;
-
-                    const content = (
-                      <>
-                        {tab.id === 'overview' && (
-                          <OverviewTab
-                            key={isActive ? 'overview-active' : 'overview-bg'}
-                            summary={summary}
-                            monthly={monthly}
-                            tripDist={tripDist}
-                            smallChartHeight={smallChartHeight}
-                            overviewSpacing={overviewSpacingHorizontal}
-                            trips={rawTrips}
-                            settings={settings}
-                          />
-                        )}
-                        {tab.id === 'trends' && (
-                          <TrendsTab
-                            key={isActive ? 'trends-active' : 'trends-bg'}
-                            filtered={filtered}
-                            summary={summary}
-                            monthly={monthly}
-                            daily={daily}
-                            settings={settings}
-                            largeChartHeight={largeChartHeight}
-                          />
-                        )}
-                        {tab.id === 'patterns' && (
-                          <PatternsTab
-                            key={isActive ? 'patterns-active' : 'patterns-bg'}
-                            weekday={weekday}
-                            hourly={hourly}
-                            summary={summary}
-                            patternsSpacing={patternsSpacing}
-                            patternsChartHeight={patternsChartHeight}
-                          />
-                        )}
-                        {tab.id === 'efficiency' && (
-                          <EfficiencyTab
-                            key={isActive ? 'efficiency-active' : 'efficiency-bg'}
-                            summary={summary}
-                            monthly={monthly}
-                            effScatter={effScatter}
-                            largeChartHeight={largeChartHeight}
-                          />
-                        )}
-                        {tab.id === 'records' && (
-                          <RecordsTab
-                            key={isActive ? 'records-active' : 'records-bg'}
-                            summary={summary}
-                            top={top}
-                            recordsItemPadding={recordsItemPadding}
-                            recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                            recordsListHeightHorizontal={recordsListHeightHorizontal}
-                          />
-                        )}
-                        {tab.id === 'history' && (
-                          <HistoryTab
-                            key={isActive ? 'history-active' : 'history-bg'}
-                            filtered={filtered}
-                            openTripDetail={openTripDetail}
-                            setShowAllTripsModal={setShowAllTripsModal}
-                          />
-                        )}
-                        {tab.id === 'charges' && (
-                          <ChargesTab
-                            key={isActive ? 'charges-active' : 'charges-bg'}
-                            charges={charges}
-                            chargerTypes={settings.chargerTypes || []}
-                            onChargeClick={(charge) => {
-                              setSelectedCharge(charge);
-                              openModal('chargeDetail');
-                            }}
-                            onAddClick={() => openModal('addCharge')}
-                            setShowAllChargesModal={setShowAllChargesModal}
-                            batterySize={settings.batterySize}
-                          />
-                        )}
-                      </>
-                    );
-
-                    const container = (
-                      <div
-                        className={isActive && isFading ? 'tab-fade-in' : ''}
-                        style={{ display: isActive ? 'block' : 'none' }}
-                      >
-                        {(isActive || backgroundLoad) && content}
-                      </div>
-                    );
-
-                    if (tab.id === 'overview') {
-                      return <div key={tab.id}>{container}</div>;
-                    }
-
-                    return (
-                      <Suspense key={tab.id} fallback={<TabFallback />}>
-                        {container}
-                      </Suspense>
-                    );
-                  })}
-                </>
-              )}
-            </div>
-          )
-          }
-
-          {/* Floating Action Button for Overview tab in vertical mode */}
-          {layoutMode === 'vertical' && activeTab === 'overview' && (
-            <FloatingActionButton
-              onClick={() => openModal('addCharge')}
-              label={t('charges.addCharge')}
-            />
-          )}
-
-          {/* Bottom Navigation Bar - Only show in vertical mode */}
-          {
-            layoutMode === 'vertical' && (
-              <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
-                <div className="max-w-7xl mx-auto px-2 py-2">
-                  <div role="tablist" aria-label="Main navigation" className="flex justify-around items-center">
-                    {tabs.map((t) => (
-                      <button
-                        key={t.id}
-                        role="tab"
-                        aria-selected={activeTab === t.id}
-                        aria-controls={`tabpanel-${t.id}`}
-                        onClick={() => handleTabClick(t.id)}
-                        className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1 ${activeTab === t.id ? 'byd-active-item shadow-lg shadow-red-900/20' : 'text-slate-600 dark:text-slate-400'}`}
-                      >
-                        <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : 'text-white'}`} />
-                        <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : 'text-white'}`}>{t.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )
-          }
-        </div >
-      </div >
-      <Suspense fallback={null}>
-        <PWAManagerLazy layoutMode={layoutMode} isCompact={isCompact} />
-      </Suspense>
-
-      <Toaster
-        position="bottom-center"
-        toastOptions={{
-          className: 'dark:bg-slate-800 dark:text-white',
-          duration: 3000,
-          style: {
-            borderRadius: '12px',
-            background: '#333',
-            color: '#fff',
-          },
-        }}
-      />
-      <ConfirmationModal
-        isOpen={confirmModalState.isOpen}
-        onClose={closeConfirmation}
-        onConfirm={confirmModalState.onConfirm}
-        title={confirmModalState.title}
-        message={confirmModalState.message}
-        isDangerous={confirmModalState.isDangerous}
-      />
-    </div >
+    </MainLayout>
   );
 }

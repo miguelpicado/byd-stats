@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Shield, FileText, ChevronLeft } from '../components/Icons.jsx';
 import LegalContent from '../components/LegalContent.jsx';
@@ -13,13 +14,13 @@ const LegalPage = ({ forcedTab }) => {
             <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-10 transition-colors">
                 <div className="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <a
-                            href="/"
+                        <Link
+                            to="/"
                             className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl text-slate-500 transition-colors"
                             title={t('common.close')}
                         >
                             <ChevronLeft className="w-6 h-6" />
-                        </a>
+                        </Link>
                         <div>
                             <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight">{t('legal.pageTitle')}</h1>
                             <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">{t('legal.projectSubtitle')}</p>
