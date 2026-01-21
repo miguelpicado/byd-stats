@@ -1,4 +1,4 @@
-// BYD Stats - Settings Modal Component
+// BYD Stats - SettingsModal Component
 
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
@@ -9,19 +9,20 @@ import { Settings, Zap, Trash2, Eye, EyeOff } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag } from '../FlagIcons.jsx';
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
-
+import { useApp } from '../../context/AppContext';
+import { useData } from '../../providers/DataProvider';
 
 /**
  * Settings modal for app configuration
- * @param {Object} props - Component props
- * @param {boolean} props.isOpen - Modal visibility
- * @param {Function} props.onClose - Close handler
- * @param {Object} props.settings - Current settings object
- * @param {Function} props.onSettingsChange - Settings change handler
- * @param {Array} props.charges - Charges data for calculating average price
  */
-const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync, charges = [] }) => {
+const SettingsModal = () => {
     const { t, i18n } = useTranslation();
+    const { settings, updateSettings: onSettingsChange } = useApp();
+    const { googleSync, charges = [], modals, closeModal } = useData();
+
+    // Derived State
+    const isOpen = modals.settings;
+    const onClose = () => closeModal('settings');
 
     // Calculate average electricity price from charges (must be before early return)
     const calculatedPrice = useMemo(() => {
@@ -344,45 +345,6 @@ const SettingsModal = ({ isOpen, onClose, settings, onSettingsChange, googleSync
     );
 };
 
-SettingsModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    settings: PropTypes.shape({
-        carModel: PropTypes.string,
-        licensePlate: PropTypes.string,
-        insurancePolicy: PropTypes.string,
-        batterySize: PropTypes.number,
-        soh: PropTypes.number,
-        electricityPrice: PropTypes.number,
-        useCalculatedPrice: PropTypes.bool,
-        theme: PropTypes.string,
-        chargerTypes: PropTypes.arrayOf(PropTypes.shape({
-            id: PropTypes.string,
-            name: PropTypes.string,
-            speedKw: PropTypes.number,
-            efficiency: PropTypes.number
-        }))
-    }).isRequired,
-    onSettingsChange: PropTypes.func.isRequired,
-    googleSync: PropTypes.shape({
-        isAuthenticated: PropTypes.bool,
-        isSyncing: PropTypes.bool,
-        lastSyncTime: PropTypes.instanceOf(Date),
-        error: PropTypes.string,
-        userProfile: PropTypes.object,
-        login: PropTypes.func,
-        logout: PropTypes.func,
-        syncNow: PropTypes.func
-    }),
-    charges: PropTypes.arrayOf(PropTypes.shape({
-        id: PropTypes.string,
-        date: PropTypes.string,
-        time: PropTypes.string,
-        timestamp: PropTypes.number,
-        totalCost: PropTypes.number,
-        kwhCharged: PropTypes.number
-    }))
-};
+SettingsModal.propTypes = {};
 
 export default SettingsModal;
-

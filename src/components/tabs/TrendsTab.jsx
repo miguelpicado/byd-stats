@@ -40,7 +40,8 @@ const TrendsTab = React.memo(({
   monthly,
   daily,
   settings,
-  largeChartHeight
+  largeChartHeight,
+  isActive = true // Default to true if not provided (e.g. desktop)
 }) => {
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -154,12 +155,12 @@ const TrendsTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.monthlyKmKwh')}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <BarJS options={BAR_CHART_OPTIONS} data={barChartData} />
+              <BarJS key={`trends-bar-v-${isActive}`} options={BAR_CHART_OPTIONS} data={barChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.last60Days')}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <LineJS options={LINE_CHART_OPTIONS} data={lineChartData} />
+              <LineJS key={`trends-line-v-${isActive}`} options={LINE_CHART_OPTIONS} data={lineChartData} />
             </div>
           </ChartCard>
         </div>

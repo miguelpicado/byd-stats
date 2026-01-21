@@ -1,4 +1,4 @@
-// BYD Stats - Trip Detail Modal Component
+// BYD Stats - TripDetailModal Component
 
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
@@ -8,18 +8,23 @@ import { formatDate, formatTime } from '../../utils/dateUtils';
 import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '../../utils/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons.jsx';
 
+import { useApp } from '../../context/AppContext';
+import { useData } from '../../providers/DataProvider';
+
 /**
  * Trip detail modal showing full trip information
- * @param {Object} props - Component props
- * @param {boolean} props.isOpen - Modal visibility
- * @param {Function} props.onClose - Close handler
- * @param {Object} props.trip - Trip data object
- * @param {Array} props.allTrips - All trips for comparison
- * @param {Object} props.summary - Summary statistics
- * @param {Object} props.settings - App settings
  */
-const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings }) => {
+const TripDetailModal = () => {
     const { t } = useTranslation();
+    const { settings } = useApp();
+    const { selectedTrip: trip, trips: allTrips, stats, modals, closeModal, setSelectedTrip } = useData();
+    const summary = stats?.summary;
+
+    const isOpen = modals.tripDetail;
+    const onClose = () => {
+        closeModal('tripDetail');
+        setSelectedTrip(null);
+    };
 
     const details = useMemo(() => {
         if (!trip) return { efficiency: 0, score: 0, scoreColor: '', comparisonPercent: 0, percentile: 0, cost: 0, dayName: '' };
@@ -150,23 +155,6 @@ const TripDetailModal = ({ isOpen, onClose, trip, allTrips, summary, settings })
     );
 };
 
-TripDetailModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    trip: PropTypes.shape({
-        trip: PropTypes.number,
-        electricity: PropTypes.number,
-        duration: PropTypes.number,
-        date: PropTypes.string,
-        start_timestamp: PropTypes.number
-    }),
-    allTrips: PropTypes.array,
-    summary: PropTypes.shape({
-        avgEff: PropTypes.oneOfType([PropTypes.string, PropTypes.number])
-    }),
-    settings: PropTypes.shape({
-        electricityPrice: PropTypes.number
-    })
-};
+TripDetailModal.propTypes = {};
 
 export default TripDetailModal;
