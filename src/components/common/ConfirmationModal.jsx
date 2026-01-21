@@ -1,22 +1,29 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { X, AlertTriangle } from '../Icons.jsx';
 import ModalPortal from './ModalPortal';
+import { useData } from '../../providers/DataProvider';
 
-const ConfirmationModal = ({
-    isOpen,
-    onClose,
-    onConfirm,
-    title,
-    message,
-    confirmText,
-    cancelText,
-    isDangerous = false
-}) => {
+const ConfirmationModal = () => {
     const { t } = useTranslation();
+    const { confirmModalState, closeConfirmation } = useData();
+
+    const {
+        isOpen,
+        onConfirm,
+        title,
+        message,
+        confirmText,
+        cancelText,
+        isWarning
+    } = confirmModalState;
+
+    const onClose = closeConfirmation;
 
     if (!isOpen) return null;
+
+    // isDangerous check
+    const isDangerous = isWarning;
 
     return (
         <ModalPortal>
@@ -62,12 +69,12 @@ const ConfirmationModal = ({
                         </button>
                         <button
                             onClick={() => {
-                                onConfirm();
+                                if (onConfirm) onConfirm();
                                 onClose();
                             }}
                             className={`px-4 py-2 rounded-xl text-white font-medium shadow-lg transition-all active:scale-95 ${isDangerous
-                                    ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
-                                    : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/20'
+                                ? 'bg-red-500 hover:bg-red-600 shadow-red-500/20'
+                                : 'bg-blue-500 hover:bg-blue-600 shadow-blue-500/20'
                                 }`}
                         >
                             {confirmText || t('common.confirm', 'Confirmar')}
@@ -77,17 +84,6 @@ const ConfirmationModal = ({
             </div>
         </ModalPortal>
     );
-};
-
-ConfirmationModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    onConfirm: PropTypes.func.isRequired,
-    title: PropTypes.string,
-    message: PropTypes.string.isRequired,
-    confirmText: PropTypes.string,
-    cancelText: PropTypes.string,
-    isDangerous: PropTypes.bool
 };
 
 export default ConfirmationModal;

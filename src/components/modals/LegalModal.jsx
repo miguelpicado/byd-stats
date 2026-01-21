@@ -1,12 +1,27 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { X, Shield, FileText } from '../Icons.jsx';
 import LegalContent from '../LegalContent.jsx';
 import { useTranslation } from 'react-i18next';
+import { useData } from '../../providers/DataProvider';
 
-const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
+const LegalModal = () => {
     const { t } = useTranslation();
-    const [activeSection, setActiveSection] = React.useState(initialSection);
+    const { modals, closeModal, legalInitialSection } = useData();
+
+    // Props derived from context
+    const isOpen = modals.legal;
+    const onClose = () => closeModal('legal');
+
+    // State
+    const [activeSection, setActiveSection] = useState(legalInitialSection || 'privacy');
+
+    // Update active section if global initial section changes (and modal re-opens)
+    useEffect(() => {
+        if (isOpen && legalInitialSection) {
+            setActiveSection(legalInitialSection);
+        }
+    }, [isOpen, legalInitialSection]);
 
     if (!isOpen) return null;
 
@@ -94,10 +109,6 @@ const LegalModal = ({ isOpen, onClose, initialSection = 'privacy' }) => {
     );
 };
 
-LegalModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    initialSection: PropTypes.oneOf(['privacy', 'legal'])
-};
+LegalModal.propTypes = {};
 
 export default LegalModal;

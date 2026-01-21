@@ -47,7 +47,8 @@ const PatternsTab = React.memo(({
   hourly,
   summary,
   patternsSpacing,
-  patternsChartHeight
+  patternsChartHeight,
+  isActive = true
 }) => {
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -145,12 +146,12 @@ const PatternsTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
             <div style={{ width: '100%', height: patternsChartHeight }}>
-              <BarJS options={BAR_CHART_OPTIONS_VERTICAL} data={barChartData} />
+              <BarJS key={`patterns-bar-v-${isActive}`} options={BAR_CHART_OPTIONS_VERTICAL} data={barChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
             <div style={{ width: '100%', height: patternsChartHeight }}>
-              <RadarJS options={RADAR_CHART_OPTIONS_VERTICAL} data={radarChartDataVertical} />
+              <RadarJS key={`patterns-radar-v-${isActive}`} options={RADAR_CHART_OPTIONS_VERTICAL} data={radarChartDataVertical} />
             </div>
           </ChartCard>
         </div>

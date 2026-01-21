@@ -42,8 +42,9 @@ import DesktopSidebar from './components/layout/DesktopSidebar'; // Restored
 
 import ErrorBoundary from './components/common/ErrorBoundary';
 import { useSwipeGesture } from './hooks/useSwipeGesture';
-import AllTripsView from './features/dashboard/AllTripsView';
-import AllChargesView from './features/dashboard/AllChargesView';
+// Lazy load heavy views to optimize bundle size
+const AllTripsViewLazy = lazy(() => import('./features/dashboard/AllTripsView'));
+const AllChargesViewLazy = lazy(() => import('./features/dashboard/AllChargesView'));
 
 // Helper to determine if a tab should have fade-in animation
 // Removed: getTabClassName moved to TabsManager
@@ -503,43 +504,8 @@ export default function BYDStatsAnalyzer() {
         </Suspense>
 
         {/* ModalContainer for Legal Modal available on Landing Page */}
-        <ModalContainer
-          modals={modals}
-          closeModal={closeModal}
-          openModal={openModal}
-          setLegalInitialSection={setLegalInitialSection}
-          legalInitialSection={legalInitialSection}
-          settings={settings}
-          updateSettings={updateSettings}
-          googleSync={googleSync}
-          rawTrips={rawTrips}
-          selectedTrip={null}
-          setSelectedTrip={setSelectedTrip}
-          data={null}
-          sqlReady={sqlReady}
-          processDB={processDB}
-          exportDatabase={exportDatabase}
-          clearData={clearData}
-          onLoadChargeRegistry={loadChargeRegistry}
-          isNative={isNative}
-          onFile={(e) => {
-            const f = e.target.files[0];
-            if (f) processDB(f, false);
-          }}
-          charges={charges}
-          setFilterType={setFilterType}
-          setSelMonth={setSelMonth}
-          setDateFrom={setDateFrom}
-          setDateTo={setDateTo}
-          filterType={filterType}
-          selMonth={selMonth}
-          dateFrom={dateFrom}
-          dateTo={dateTo}
-          months={months}
-          rawTripsCount={rawTrips.length}
-          filteredCount={0}
-          appVersion={appVersion}
-        />
+        {/* ModalCoordinator - centralized modal handling with lazy loading context support */}
+        <ModalCoordinator />
 
         {/* Privacy & Legal links in bottom-left - Fixed positioning */}
         <div className="absolute left-6 bottom-6 z-10 flex flex-col gap-1.5 items-start pointer-events-none">
@@ -589,92 +555,104 @@ export default function BYDStatsAnalyzer() {
   // If showing all trips view, render full screen view
   if (showAllTripsModal) {
     return (
-      <AllTripsView
-        rawTrips={rawTrips}
-        filterType={allTripsFilterType}
-        month={allTripsMonth}
-        dateFrom={allTripsDateFrom}
-        dateTo={allTripsDateTo}
-        sortBy={allTripsSortBy}
-        sortOrder={allTripsSortOrder}
-        setFilterType={setAllTripsFilterType}
-        setMonth={setAllTripsMonth}
-        setDateFrom={setAllTripsDateFrom}
-        setDateTo={setAllTripsDateTo}
-        setSortBy={setAllTripsSortBy}
-        setSortOrder={setAllTripsSortOrder}
-        modals={modals}
-        openModal={openModal}
-        closeModal={closeModal}
-        openTripDetail={openTripDetail}
-        scrollRef={allTripsScrollRef}
-        setLegalInitialSection={setLegalInitialSection}
-        legalInitialSection={legalInitialSection}
-        settings={settings}
-        updateSettings={updateSettings}
-        googleSync={googleSync}
-        selectedTrip={selectedTrip}
-        setSelectedTrip={setSelectedTrip}
-        data={data}
-        sqlReady={sqlReady}
-        processDB={processDB}
-        exportDatabase={exportDatabase}
-        clearData={clearData}
-        loadChargeRegistry={loadChargeRegistry}
-        isNative={isNative}
-        onFile={(e) => {
-          const f = e.target.files[0];
-          if (f) processDB(f, false);
-        }}
-        charges={charges}
-      />
+      <Suspense fallback={
+        <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        </div>
+      }>
+        <AllTripsViewLazy
+          rawTrips={rawTrips}
+          filterType={allTripsFilterType}
+          month={allTripsMonth}
+          dateFrom={allTripsDateFrom}
+          dateTo={allTripsDateTo}
+          sortBy={allTripsSortBy}
+          sortOrder={allTripsSortOrder}
+          setFilterType={setAllTripsFilterType}
+          setMonth={setAllTripsMonth}
+          setDateFrom={setAllTripsDateFrom}
+          setDateTo={setAllTripsDateTo}
+          setSortBy={setAllTripsSortBy}
+          setSortOrder={setAllTripsSortOrder}
+          modals={modals}
+          openModal={openModal}
+          closeModal={closeModal}
+          openTripDetail={openTripDetail}
+          scrollRef={allTripsScrollRef}
+          setLegalInitialSection={setLegalInitialSection}
+          legalInitialSection={legalInitialSection}
+          settings={settings}
+          updateSettings={updateSettings}
+          googleSync={googleSync}
+          selectedTrip={selectedTrip}
+          setSelectedTrip={setSelectedTrip}
+          data={data}
+          sqlReady={sqlReady}
+          processDB={processDB}
+          exportDatabase={exportDatabase}
+          clearData={clearData}
+          loadChargeRegistry={loadChargeRegistry}
+          isNative={isNative}
+          onFile={(e) => {
+            const f = e.target.files[0];
+            if (f) processDB(f, false);
+          }}
+          charges={charges}
+        />
+      </Suspense>
     );
   }
 
   // If showing all charges view, render full screen view
   if (showAllChargesModal) {
     return (
-      <AllChargesView
-        charges={charges}
-        chargerTypes={settings.chargerTypes || []}
-        filterType={allChargesFilterType}
-        month={allChargesMonth}
-        dateFrom={allChargesDateFrom}
-        dateTo={allChargesDateTo}
-        sortBy={allChargesSortBy}
-        sortOrder={allChargesSortOrder}
-        setFilterType={setAllChargesFilterType}
-        setMonth={setAllChargesMonth}
-        setDateFrom={setAllChargesDateFrom}
-        setDateTo={setAllChargesDateTo}
-        setSortBy={setAllChargesSortBy}
-        setSortOrder={setAllChargesSortOrder}
-        modals={modals}
-        openModal={openModal}
-        closeModal={closeModal}
-        setSelectedCharge={setSelectedCharge}
-        selectedCharge={selectedCharge}
-        scrollRef={allChargesScrollRef}
-        setLegalInitialSection={setLegalInitialSection}
-        legalInitialSection={legalInitialSection}
-        settings={settings}
-        updateSettings={updateSettings}
-        googleSync={googleSync}
-        rawTrips={rawTrips}
-        selectedTrip={selectedTrip}
-        setSelectedTrip={setSelectedTrip}
-        data={data}
-        sqlReady={sqlReady}
-        processDB={processDB}
-        exportDatabase={exportDatabase}
-        clearData={clearData}
-        loadChargeRegistry={loadChargeRegistry}
-        isNative={isNative}
-        onFile={(e) => {
-          const f = e.target.files[0];
-          if (f) processDB(f, false);
-        }}
-      />
+      <Suspense fallback={
+        <div className="flex h-screen items-center justify-center bg-slate-50 dark:bg-slate-900">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600"></div>
+        </div>
+      }>
+        <AllChargesViewLazy
+          charges={charges}
+          chargerTypes={settings.chargerTypes || []}
+          filterType={allChargesFilterType}
+          month={allChargesMonth}
+          dateFrom={allChargesDateFrom}
+          dateTo={allChargesDateTo}
+          sortBy={allChargesSortBy}
+          sortOrder={allChargesSortOrder}
+          setFilterType={setAllChargesFilterType}
+          setMonth={setAllChargesMonth}
+          setDateFrom={setAllChargesDateFrom}
+          setDateTo={setAllChargesDateTo}
+          setSortBy={setAllChargesSortBy}
+          setSortOrder={setAllChargesSortOrder}
+          modals={modals}
+          openModal={openModal}
+          closeModal={closeModal}
+          setSelectedCharge={setSelectedCharge}
+          selectedCharge={selectedCharge}
+          scrollRef={allChargesScrollRef}
+          setLegalInitialSection={setLegalInitialSection}
+          legalInitialSection={legalInitialSection}
+          settings={settings}
+          updateSettings={updateSettings}
+          googleSync={googleSync}
+          rawTrips={rawTrips}
+          selectedTrip={selectedTrip}
+          setSelectedTrip={setSelectedTrip}
+          data={data}
+          sqlReady={sqlReady}
+          processDB={processDB}
+          exportDatabase={exportDatabase}
+          clearData={clearData}
+          loadChargeRegistry={loadChargeRegistry}
+          isNative={isNative}
+          onFile={(e) => {
+            const f = e.target.files[0];
+            if (f) processDB(f, false);
+          }}
+        />
+      </Suspense>
     );
   }
 

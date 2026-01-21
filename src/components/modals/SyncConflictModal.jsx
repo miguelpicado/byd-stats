@@ -1,12 +1,17 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Cloud, Database, AlertTriangle } from '../Icons';
+import { useData } from '../../providers/DataProvider';
 
 /**
  * Modal for resolving sync conflicts between local and cloud data
  */
-const SyncConflictModal = ({ isOpen, onClose, conflict, onResolve }) => {
+const SyncConflictModal = () => {
     const { t } = useTranslation();
+    const { googleSync } = useData();
+
+    const { pendingConflict: conflict, resolveConflict: onResolve, dismissConflict: onClose } = googleSync || {};
+    const isOpen = !!conflict;
 
     if (!isOpen || !conflict) return null;
 

@@ -14,10 +14,7 @@ import { useData } from '../../providers/DataProvider';
  * Filter modal for trip filtering
  * Now consumes DataProvider directly
  */
-const FilterModal = ({
-    isOpen,
-    onClose
-}) => {
+const FilterModal = () => {
     const { t } = useTranslation();
     const {
         filterType,
@@ -30,8 +27,13 @@ const FilterModal = ({
         setDateTo,
         months,
         trips: rawTrips,
-        filtered
+        filtered,
+        modals,
+        closeModal
     } = useData();
+
+    const isOpen = modals.filter;
+    const onClose = () => closeModal('filter');
 
     const rawTripsCount = rawTrips ? rawTrips.length : 0;
     const filteredCount = filtered ? filtered.length : 0;
@@ -160,9 +162,6 @@ const FilterModal = ({
     );
 };
 
-FilterModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired
-};
+FilterModal.propTypes = {};
 
 export default FilterModal;
