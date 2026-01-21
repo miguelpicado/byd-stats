@@ -89,111 +89,122 @@ const MobileDashboardView = memo(({
                         </div>
                     ))
                 ) : (
-                    tabs.map((tab) => (
-                        <div
-                            key={tab.id}
-                            className={getTabClassName(tab.id, activeTab === tab.id, fadingTab === tab.id)}
-                            style={{
-                                width: `${100 / tabs.length}%`,
-                                flexShrink: 0,
-                                height: '100%',
-                                overflow: 'hidden',
-                                padding: 0
-                            }}
-                        >
+                    tabs.map((tab) => {
+                        const isActive = activeTab === tab.id;
+
+                        return (
                             <div
+                                key={tab.id}
+                                className={getTabClassName(tab.id, activeTab === tab.id, fadingTab === tab.id)}
                                 style={{
+                                    width: `${100 / tabs.length}%`,
+                                    flexShrink: 0,
                                     height: '100%',
-                                    width: '100%',
-                                    overflowY: 'auto',
-                                    display: activeTab === tab.id ? 'block' : 'none',
-                                    padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING
+                                    overflow: 'hidden', // Outer container NEVER scrolls
+                                    padding: 0
                                 }}
                             >
-                                {(activeTab === tab.id || backgroundLoad) && (
-                                    <>
-                                        {tab.id === 'overview' && (
-                                            <OverviewTab
-                                                summary={summary}
-                                                monthly={monthly}
-                                                tripDist={tripDist}
-                                                smallChartHeight={smallChartHeight}
-                                                overviewSpacing={overviewSpacingVertical}
-                                                onAddCharge={handleAddCharge}
-                                                trips={rawTrips}
-                                                settings={settings}
-                                            />
-                                        )}
-                                        {tab.id === 'trends' && (
-                                            <Suspense fallback={<TabFallback />}>
-                                                <TrendsTab
-                                                    filtered={filtered}
+                                <div
+                                    style={{
+                                        height: '100%',
+                                        width: '100%',
+                                        overflowY: 'auto',
+                                        display: isActive ? 'block' : 'none', // Truly hide background content from layout if inactive
+                                        padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING
+                                    }}
+                                >
+                                    {(isActive || backgroundLoad) && (
+                                        <>
+                                            {tab.id === 'overview' && (
+                                                <OverviewTab
                                                     summary={summary}
                                                     monthly={monthly}
-                                                    daily={daily}
+                                                    tripDist={tripDist}
+                                                    smallChartHeight={smallChartHeight}
+                                                    overviewSpacing={overviewSpacingVertical}
+                                                    onAddCharge={handleAddCharge}
+                                                    trips={rawTrips}
                                                     settings={settings}
-                                                    largeChartHeight={largeChartHeight}
+                                                    isActive={isActive}
                                                 />
-                                            </Suspense>
-                                        )}
-                                        {tab.id === 'patterns' && (
-                                            <Suspense fallback={<TabFallback />}>
-                                                <PatternsTab
-                                                    weekday={weekday}
-                                                    hourly={hourly}
-                                                    summary={summary}
-                                                    patternsSpacing={patternsSpacing}
-                                                    patternsChartHeight={patternsChartHeight}
-                                                />
-                                            </Suspense>
-                                        )}
-                                        {tab.id === 'efficiency' && (
-                                            <Suspense fallback={<TabFallback />}>
-                                                <EfficiencyTab
-                                                    summary={summary}
-                                                    monthly={monthly}
-                                                    effScatter={effScatter}
-                                                    largeChartHeight={largeChartHeight}
-                                                />
-                                            </Suspense>
-                                        )}
-                                        {tab.id === 'records' && (
-                                            <Suspense fallback={<TabFallback />}>
-                                                <RecordsTab
-                                                    summary={summary}
-                                                    top={top}
-                                                    recordsItemPadding={recordsItemPadding}
-                                                    recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                                                    recordsListHeightHorizontal={recordsListHeightHorizontal}
-                                                />
-                                            </Suspense>
-                                        )}
-                                        {tab.id === 'history' && (
-                                            <Suspense fallback={<TabFallback />}>
-                                                <HistoryTab
-                                                    filtered={filtered}
-                                                    openTripDetail={onTripSelect}
-                                                    setShowAllTripsModal={handleShowAllTrips}
-                                                />
-                                            </Suspense>
-                                        )}
-                                        {tab.id === 'charges' && (
-                                            <Suspense fallback={<TabFallback />}>
-                                                <ChargesTab
-                                                    charges={charges}
-                                                    chargerTypes={settings.chargerTypes || []}
-                                                    onChargeClick={onChargeSelect}
-                                                    onAddClick={handleAddCharge}
-                                                    setShowAllChargesModal={handleShowAllCharges}
-                                                    batterySize={settings.batterySize}
-                                                />
-                                            </Suspense>
-                                        )}
-                                    </>
-                                )}
+                                            )}
+                                            {tab.id === 'trends' && (
+                                                <Suspense fallback={<TabFallback />}>
+                                                    <TrendsTab
+                                                        filtered={filtered}
+                                                        summary={summary}
+                                                        monthly={monthly}
+                                                        daily={daily}
+                                                        settings={settings}
+                                                        largeChartHeight={largeChartHeight}
+                                                        isActive={isActive}
+                                                    />
+                                                </Suspense>
+                                            )}
+                                            {tab.id === 'patterns' && (
+                                                <Suspense fallback={<TabFallback />}>
+                                                    <PatternsTab
+                                                        weekday={weekday}
+                                                        hourly={hourly}
+                                                        summary={summary}
+                                                        patternsSpacing={patternsSpacing}
+                                                        patternsChartHeight={patternsChartHeight}
+                                                        isActive={isActive}
+                                                    />
+                                                </Suspense>
+                                            )}
+                                            {tab.id === 'efficiency' && (
+                                                <Suspense fallback={<TabFallback />}>
+                                                    <EfficiencyTab
+                                                        summary={summary}
+                                                        monthly={monthly}
+                                                        effScatter={effScatter}
+                                                        largeChartHeight={largeChartHeight}
+                                                        isActive={isActive}
+                                                    />
+                                                </Suspense>
+                                            )}
+                                            {tab.id === 'records' && (
+                                                <Suspense fallback={<TabFallback />}>
+                                                    <RecordsTab
+                                                        summary={summary}
+                                                        top={top}
+                                                        recordsItemPadding={recordsItemPadding}
+                                                        recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                                                        recordsListHeightHorizontal={recordsListHeightHorizontal}
+                                                        isActive={isActive}
+                                                    />
+                                                </Suspense>
+                                            )}
+                                            {tab.id === 'history' && (
+                                                <Suspense fallback={<TabFallback />}>
+                                                    <HistoryTab
+                                                        filtered={filtered}
+                                                        openTripDetail={onTripSelect}
+                                                        setShowAllTripsModal={handleShowAllTrips}
+                                                        isActive={isActive}
+                                                    />
+                                                </Suspense>
+                                            )}
+                                            {tab.id === 'charges' && (
+                                                <Suspense fallback={<TabFallback />}>
+                                                    <ChargesTab
+                                                        charges={charges}
+                                                        chargerTypes={settings.chargerTypes || []}
+                                                        onChargeClick={onChargeSelect}
+                                                        onAddClick={handleAddCharge}
+                                                        setShowAllChargesModal={handleShowAllCharges}
+                                                        batterySize={settings.batterySize}
+                                                        isActive={isActive}
+                                                    />
+                                                </Suspense>
+                                            )}
+                                        </>
+                                    )}
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 )}
             </div>
 
