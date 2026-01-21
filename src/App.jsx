@@ -12,7 +12,6 @@ import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPAC
 import './utils/chartSetup'; // Register Chart.js components
 
 import { Toaster, toast } from 'react-hot-toast';
-import ConfirmationModal from './components/common/ConfirmationModal';
 
 // Components
 import { Zap, Clock, TrendingUp, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
@@ -33,7 +32,7 @@ import { useChargeImporter } from './hooks/useChargeImporter';
 const LandingPageLazy = lazy(() => import('./pages/LandingPage'));
 const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
 
-import ModalContainer from './components/common/ModalContainer';
+import ModalCoordinator from './components/common/ModalCoordinator';
 import MainLayout from './components/layout/MainLayout';
 // New Feature Components
 import Header from './features/navigation/Header';
@@ -114,7 +113,15 @@ export default function BYDStatsAnalyzer() {
     // Confirmation UI State
     confirmModalState,
     closeConfirmation,
-    showConfirmation
+    showConfirmation,
+
+    // Selected items for detail modals (from useModalState via DataProvider)
+    selectedTrip,
+    setSelectedTrip,
+    selectedCharge,
+    setSelectedCharge,
+    editingCharge,
+    setEditingCharge
   } = useData();
 
   // Destructure sub-contexts for compatibility
@@ -160,10 +167,6 @@ export default function BYDStatsAnalyzer() {
   const setShowAllTripsModal = useCallback((value) => value ? openModal('allTrips') : closeModal('allTrips'), [openModal, closeModal]);
   const setShowAllChargesModal = useCallback((value) => value ? openModal('allCharges') : closeModal('allCharges'), [openModal, closeModal]);
   const setShowTripDetailModal = useCallback((value) => value ? openModal('tripDetail') : closeModal('tripDetail'), [openModal, closeModal]);
-  const setShowSettingsModal = useCallback((value) => value ? openModal('settings') : closeModal('settings'), [openModal, closeModal]);
-  const setShowHistoryModal = useCallback((value) => value ? openModal('history') : closeModal('history'), [openModal, closeModal]);
-  const setShowHelpModal = useCallback((value) => value ? openModal('help') : closeModal('help'), [openModal, closeModal]);
-
   // Background load state
   const [backgroundLoad, setBackgroundLoad] = useState(false);
 
@@ -174,10 +177,10 @@ export default function BYDStatsAnalyzer() {
     return () => clearTimeout(timer);
   }, []);
 
-  const [selectedTrip, setSelectedTrip] = useState(null);
-  // Charges state managed by DataProvider, but selected/editing is UI state
-  const [selectedCharge, setSelectedCharge] = useState(null);
-  const [editingCharge, setEditingCharge] = useState(null);
+
+
+  // Selected items come from shared modal state in DataProvider (useModalState)
+  // Access via: const { selectedTrip, setSelectedTrip, selectedCharge, setSelectedCharge } = useData();
 
   // Scroll Container Refs (Required for virtualized lists in modals)
   const allTripsScrollRef = useRef(null);
@@ -734,45 +737,8 @@ export default function BYDStatsAnalyzer() {
           <PWAManagerLazy />
         </Suspense>
 
-        <ConfirmationModal
-          isOpen={confirmModalState.isOpen}
-          onClose={closeConfirmation}
-          onConfirm={confirmModalState.onConfirm}
-          title={confirmModalState.title}
-          message={confirmModalState.message}
-          confirmText={confirmModalState.confirmText}
-          isWarning={confirmModalState.isWarning}
-        />
-
-        {/* Modals Container */}
-        <ModalContainer
-          modals={modals}
-          closeModal={closeModal}
-          openModal={openModal}
-          setLegalInitialSection={setLegalInitialSection}
-          legalInitialSection={legalInitialSection}
-          settings={settings}
-          updateSettings={updateSettings}
-          googleSync={googleSync}
-          rawTrips={rawTrips}
-          selectedTrip={selectedTrip}
-          setSelectedTrip={setSelectedTrip}
-          data={data}
-          sqlReady={sqlReady}
-          processDB={processDB}
-          exportDatabase={exportDatabase}
-          clearData={clearData}
-          onLoadChargeRegistry={loadChargeRegistry}
-          /* Charge specific props */
-          selectedCharge={selectedCharge}
-          setSelectedCharge={setSelectedCharge}
-          editingCharge={editingCharge}
-          setEditingCharge={setEditingCharge}
-          charges={charges}
-          handleDeleteCharge={handleDeleteCharge}
-          handleEditCharge={handleEditCharge}
-          addCharge={addCharge}
-        />
+        {/* Modal Coordinator - handles all modals centrally */}
+        <ModalCoordinator />
       </div>
     </MainLayout>
   );

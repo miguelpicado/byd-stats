@@ -5,9 +5,75 @@ import { formatMonth, formatDate } from './dateUtils';
 import { logger } from './logger';
 
 /**
+ * @typedef {Object} Trip
+ * @property {string} date - Date in YYYYMMDD format
+ * @property {number} trip - Distance in km
+ * @property {number} electricity - Energy consumed in kWh
+ * @property {number} duration - Duration in minutes
+ * @property {number} start_timestamp - Unix timestamp of trip start
+ * @property {number} end_timestamp - Unix timestamp of trip end
+ * @property {string} [month] - Month string for filtering (YYYYMM)
+ * @property {number} [start_soc] - Starting battery percentage
+ * @property {number} [end_soc] - Ending battery percentage
+ */
+
+/**
+ * @typedef {Object} Charge
+ * @property {string} id - Unique identifier
+ * @property {string} date - Date in YYYYMMDD format
+ * @property {string} time - Time in HH:MM format
+ * @property {number} kwhCharged - Energy charged in kWh
+ * @property {number} totalCost - Total cost in currency
+ * @property {number} pricePerKwh - Price per kWh
+ * @property {string} chargerTypeId - ID of the charger type used
+ * @property {number} [initialPercentage] - Starting battery percentage
+ * @property {number} [finalPercentage] - Final battery percentage
+ * @property {number} [odometer] - Odometer reading in km
+ */
+
+/**
+ * @typedef {Object} ChartDataPoint
+ * @property {string|number} label - X-axis label
+ * @property {number} value - Y-axis value
+ */
+
+/**
+ * @typedef {Object} MonthlyData
+ * @property {string} month - Month label (e.g., "Jan 2024")
+ * @property {number} km - Total km for month
+ * @property {number} kwh - Total kWh for month
+ * @property {number} trips - Trip count for month
+ */
+
+/**
+ * @typedef {Object} Summary
+ * @property {number} totalKm - Total distance traveled
+ * @property {number} totalKwh - Total energy consumed
+ * @property {number} totalDuration - Total time in minutes
+ * @property {number} avgEfficiency - Average kWh/100km
+ * @property {number} avgSpeed - Average speed in km/h
+ * @property {number} tripCount - Number of trips
+ * @property {number} activeDays - Number of unique driving days
+ * @property {number} minEfficiency - Minimum efficiency value
+ * @property {number} maxEfficiency - Maximum efficiency value
+ */
+
+/**
+ * @typedef {Object} ProcessedData
+ * @property {Summary} summary - Aggregated statistics
+ * @property {MonthlyData[]} monthly - Monthly aggregated data
+ * @property {Object[]} daily - Daily aggregated data
+ * @property {Object[]} hourly - Hourly trip distribution
+ * @property {Object[]} weekday - Weekday trip distribution
+ * @property {Object[]} tripDist - Trip distance distribution buckets
+ * @property {Object[]} effScatter - Efficiency scatter plot data
+ * @property {Object} top - Top records (distance, consumption, duration)
+ */
+
+/**
  * Process raw trip data into statistics and aggregated data
- * @param {Array} rows - Array of raw trip objects
- * @returns {Object|null} Processed data object or null if invalid
+ * @param {Trip[]} rows - Array of raw trip objects
+ * @returns {ProcessedData|null} Processed data object or null if invalid
  */
 export function processData(rows) {
     if (!rows || rows.length === 0) return null;

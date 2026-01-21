@@ -11,6 +11,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     const [lastSyncTime, setLastSyncTime] = useState(null);
     const [error, setError] = useState(null);
     const [userProfile, setUserProfile] = useState(null);
+    const [pendingConflict, setPendingConflict] = useState(null);
 
     // Define fetchUserProfile here so it's available for the initial useEffect
     const fetchUserProfile = useCallback(async (accessToken) => {
@@ -145,6 +146,119 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, []);
 
     /**
+     * Detect settings conflicts between local and remote
+     * Returns null if no conflicts, or an object with differences array
+     */
+    const detectSettingsConflict = useCallback((localSettings, remoteSettings) => {
+        const differences = [];
+
+        // Check chargerTypes
+        const localChargers = localSettings.chargerTypes || [];
+        const remoteChargers = remoteSettings.chargerTypes || [];
+
+        const localChargerIds = new Set(localChargers.map(c => c.id));
+        const remoteChargerIds = new Set(remoteChargers.map(c => c.id));
+
+        const extraInCloud = remoteChargers.filter(c => !localChargerIds.has(c.id));
+        const extraInLocal = localChargers.filter(c => !remoteChargerIds.has(c.id));
+
+        if (extraInCloud.length > 0 || extraInLocal.length > 0) {
+            differences.push({
+                key: 'chargerTypes',
+                label: 'Tipos de Cargador',
+                local: `${localChargers.length} tipos`,
+                cloud: `${remoteChargers.length} tipos`,
+                extraLocal: extraInLocal.length,
+                extraCloud: extraInCloud.length
+            });
+        }
+
+        // Check theme
+        if (localSettings.theme && remoteSettings.theme && localSettings.theme !== remoteSettings.theme) {
+            differences.push({
+                key: 'theme',
+                label: 'Tema',
+                local: localSettings.theme,
+                cloud: remoteSettings.theme
+            });
+        }
+
+        // Check battery size
+        if (localSettings.batterySize && remoteSettings.batterySize &&
+            localSettings.batterySize !== remoteSettings.batterySize) {
+            differences.push({
+                key: 'batterySize',
+                label: 'Capacidad Batería',
+                local: `${localSettings.batterySize} kWh`,
+                cloud: `${remoteSettings.batterySize} kWh`
+            });
+        }
+
+        // Check electricity price
+        if (localSettings.electricityPrice !== undefined && remoteSettings.electricityPrice !== undefined &&
+            localSettings.electricityPrice !== remoteSettings.electricityPrice) {
+            differences.push({
+                key: 'electricityPrice',
+                label: 'Precio Electricidad',
+                local: `${localSettings.electricityPrice} €/kWh`,
+                cloud: `${remoteSettings.electricityPrice} €/kWh`
+            });
+        }
+
+        return differences.length > 0 ? { differences, localSettings, remoteSettings } : null;
+    }, []);
+
+    /**
+     * Resolve a pending conflict with user's choice
+     */
+    const resolveConflict = useCallback(async (choice) => {
+        if (!pendingConflict) return;
+
+        const { localData, remoteData, fileId } = pendingConflict;
+
+        let finalSettings;
+        let finalTrips;
+        let finalCharges;
+
+        if (choice === 'local') {
+            // Keep local data, upload to cloud
+            finalSettings = settings;
+            finalTrips = localTrips;
+            finalCharges = localCharges;
+        } else if (choice === 'cloud') {
+            // Use cloud data
+            finalSettings = remoteData.settings;
+            finalTrips = remoteData.trips;
+            finalCharges = remoteData.charges || [];
+        } else {
+            // Merge both
+            const merged = googleDriveService.mergeData(localData, remoteData);
+            finalSettings = merged.settings;
+            finalTrips = merged.trips;
+            finalCharges = merged.charges;
+        }
+
+        // Apply changes
+        setSettings(finalSettings);
+        setLocalTrips(finalTrips);
+        setLocalCharges(finalCharges);
+
+        // Upload result to cloud
+        try {
+            await googleDriveService.uploadFile(
+                { trips: finalTrips, settings: finalSettings, charges: finalCharges },
+                fileId
+            );
+            setLastSyncTime(new Date());
+        } catch (e) {
+            logger.error('Error uploading after conflict resolution:', e);
+            setError(e.message);
+        }
+
+        setPendingConflict(null);
+    }, [pendingConflict, settings, localTrips, localCharges, setSettings, setLocalTrips, setLocalCharges]);
+
+    /**
      * Core Sync Logic
      * @param {Array} newTripsData - Optional. If provided, represents the latest local trips state (e.g. after file load).
      */
@@ -177,18 +291,49 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 logger.debug('Fresh login detected: Loading data from Cloud.');
                 setLocalTrips(remoteData.trips);
                 if (remoteData.settings && Object.keys(remoteData.settings).length > 0) {
-                    setSettings(remoteData.settings);
+                    // Merge remote settings with local defaults, especially for chargerTypes
+                    const mergedSettings = { ...settings, ...remoteData.settings };
+
+                    // For chargerTypes, we need to properly merge by ID (remote wins for same ID)
+                    const localChargerTypes = settings.chargerTypes || [];
+                    const remoteChargerTypes = remoteData.settings.chargerTypes || [];
+
+                    if (remoteChargerTypes.length > 0 || localChargerTypes.length > 0) {
+                        const chargerTypeMap = new Map();
+                        localChargerTypes.forEach(ct => chargerTypeMap.set(ct.id, ct));
+                        remoteChargerTypes.forEach(ct => chargerTypeMap.set(ct.id, ct)); // Remote overwrites for same ID
+                        mergedSettings.chargerTypes = Array.from(chargerTypeMap.values());
+                    }
+
+                    setSettings(mergedSettings);
                 }
                 if (remoteData.charges && Array.isArray(remoteData.charges) && remoteData.charges.length > 0) {
                     setLocalCharges(remoteData.charges);
                 }
             } else {
-                // Standard Merge: Union of local + remote
-                logger.debug('Syncing: Merging local and cloud data.');
+                // Standard Sync: Check for conflicts before merging
+                logger.debug('Syncing: Checking for conflicts...');
                 const currentTrips = newTripsData || localTrips;
                 const currentCharges = Array.isArray(localCharges) ? localCharges : [];
+                const localData = { trips: currentTrips, settings: settings, charges: currentCharges };
 
-                // Merge Data (Services handles Trips Union, Settings Overlay, and Charges Union)
+                // Detect settings conflicts
+                const conflict = detectSettingsConflict(settings, remoteData.settings || {});
+
+                if (conflict && Object.keys(remoteData.settings || {}).length > 0) {
+                    // Conflict detected - pause and ask user
+                    logger.debug('Conflict detected, waiting for user resolution:', conflict.differences);
+                    setPendingConflict({
+                        ...conflict,
+                        localData,
+                        remoteData,
+                        fileId
+                    });
+                    setIsSyncing(false);
+                    return; // Exit sync, will resume after user resolves
+                }
+
+                // No conflict - proceed with merge
                 const tripsToMerge = Array.isArray(currentTrips) ? currentTrips : [];
                 const merged = googleDriveService.mergeData(
                     { trips: tripsToMerge, settings: settings, charges: currentCharges },
@@ -302,6 +447,9 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         lastSyncTime,
         error,
         userProfile,
+        pendingConflict,
+        resolveConflict,
+        dismissConflict: () => setPendingConflict(null),
         login,
         logout,
         syncNow: (data) => performSync(data)
