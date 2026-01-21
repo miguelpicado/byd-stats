@@ -111,7 +111,16 @@ const TabsManager = memo(({
                             <div
                                 key={tab.id}
                                 className={getTabClassName(tab.id, activeTab === tab.id, fadingTab === tab.id)}
-                                style={{ width: `${100 / tabs.length}%`, flexShrink: 0, height: '100%', overflowY: 'auto', padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING }}
+                                style={{
+                                    width: `${100 / tabs.length}%`,
+                                    flexShrink: 0,
+                                    height: '100%',
+                                    // Strict overflow control: hide EVERYTHING if not active
+                                    overflowY: activeTab === tab.id ? 'auto' : 'hidden',
+                                    // Strict visibility: don't paint if not active
+                                    visibility: activeTab === tab.id ? 'visible' : 'hidden',
+                                    padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING
+                                }}
                             >
                                 {(activeTab === tab.id || backgroundLoad) && (
                                     <>
