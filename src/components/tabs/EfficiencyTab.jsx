@@ -33,7 +33,8 @@ const EfficiencyTab = React.memo(({
   summary,
   monthly,
   effScatter,
-  largeChartHeight
+  largeChartHeight,
+  isActive = true
 }) => {
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -177,12 +178,12 @@ const EfficiencyTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <LineJS options={lineChartOptions} data={lineChartData} />
+              <LineJS key={`efficiency-line-v-${isActive}`} options={lineChartOptions} data={lineChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={`📍 ${t('charts.effVsDist')}`}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <ScatterJS options={scatterChartOptions} data={scatterChartData} />
+              <ScatterJS key={`efficiency-scatter-v-${isActive}`} options={scatterChartOptions} data={scatterChartData} />
             </div>
           </ChartCard>
         </div>

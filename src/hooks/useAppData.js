@@ -2,8 +2,8 @@
 // Centralized hook for managing trip data, filtering, and history
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { processData } from '../utils/dataProcessing';
-import { logger } from '../utils/logger';
+import { processData } from '@utils/dataProcessing';
+import { logger } from '@utils/logger';
 
 const STORAGE_KEY = 'byd_stats_data';
 const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -95,7 +95,12 @@ const useAppData = () => {
 
     // --- Computed: Process filtered data for charts and stats ---
     const data = useMemo(() => {
-        return filtered.length > 0 ? processData(filtered) : null;
+        try {
+            return filtered.length > 0 ? processData(filtered) : null;
+        } catch (e) {
+            logger.error('Error processing data:', e);
+            return null;
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filtered, i18n.language]);
 

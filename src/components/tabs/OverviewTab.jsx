@@ -47,7 +47,8 @@ const OverviewTab = React.memo(({
   overviewSpacing,
   onAddCharge,
   trips = [],
-  settings
+  settings,
+  isActive = true
 }) => {
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -201,14 +202,14 @@ const OverviewTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
             <div style={{ width: '100%', height: smallChartHeight }}>
-              <LineJS options={lineChartOptionsVertical} data={lineChartData} />
+              <LineJS key={`overview-line-v-${isActive}`} options={lineChartOptionsVertical} data={lineChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
             <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
               <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
                 <div style={{ width: '100%', height: smallChartHeight }}>
-                  <PieJS options={PIE_CHART_OPTIONS} data={pieChartData} />
+                  <PieJS key={`overview-pie-v-${isActive}`} options={PIE_CHART_OPTIONS} data={pieChartData} />
                 </div>
               </div>
               <div className={`grid ${isCompact ? 'grid-cols-1 w-full gap-1' : 'md:grid-cols-1 md:w-1/2 grid-cols-5 w-full gap-2 mt-4'} text-center`}>
@@ -407,7 +408,8 @@ OverviewTab.propTypes = {
   trips: PropTypes.array,
   settings: PropTypes.shape({
     electricityPrice: PropTypes.number
-  })
+  }),
+  isActive: PropTypes.bool
 };
 
 OverviewTab.displayName = 'OverviewTab';

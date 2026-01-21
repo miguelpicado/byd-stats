@@ -6,42 +6,43 @@ import { BYD_RED } from '../../utils/constants';
 import { Upload, Download, FileText, Trash2, Database } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { useTranslation } from 'react-i18next';
+import { useApp } from '../../context/AppContext';
+import { useData } from '../../providers/DataProvider';
 
 // Electric blue color for accent buttons
 const ELECTRIC_BLUE = '#3b82f6';
 
 /**
  * Database upload/management modal
- * @param {Object} props - Component props
- * @param {boolean} props.isOpen - Modal visibility
- * @param {Function} props.onClose - Close handler
- * @param {boolean} props.sqlReady - SQL.js ready state
- * @param {Function} props.onFileSelect - File selection handler
- * @param {Function} props.onExport - Export database handler
- * @param {Function} props.onClearData - Clear data handler
- * @param {Function} props.onLoadChargeRegistry - Load charge registry CSV handler
- * @param {boolean} props.hasData - Whether there is data loaded
- * @param {boolean} props.isNative - Native platform flag
  */
-const DatabaseUploadModal = ({
-    isOpen,
-    onClose,
-    sqlReady,
-    onFileSelect,
-    onExport,
-    onClearData,
-    onLoadChargeRegistry,
-    hasData,
-    isNative
-}) => {
+const DatabaseUploadModal = () => {
     const { t } = useTranslation();
+    const { isNative } = useApp();
+    const {
+        modals,
+        closeModal,
+        database,
+        loadFile,
+        exportData,
+        clearData,
+        loadChargeRegistry,
+        trips
+    } = useData();
+
+    // Derived State
+    const isOpen = modals.history;
+    const sqlReady = !!database;
+    const hasData = trips && trips.length > 0;
+
+    const onClose = () => closeModal('history');
 
     if (!isOpen) return null;
 
     const handleFileChange = (e, merge) => {
         const file = e.target.files[0];
         if (file) {
-            onFileSelect(file, merge);
+            loadFile(file, merge);
+            onClose();
         }
         e.target.value = '';
     };
@@ -49,7 +50,7 @@ const DatabaseUploadModal = ({
     const handleChargeRegistryChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            onLoadChargeRegistry(file);
+            loadChargeRegistry(file);
             onClose();
         }
         e.target.value = '';
@@ -125,7 +126,7 @@ const DatabaseUploadModal = ({
                             {/* 3. Clear current data */}
                             {hasData && (
                                 <button
-                                    onClick={() => { onClearData(); onClose(); }}
+                                    onClick={() => { clearData(); onClose(); }}
                                     className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Trash2 className="w-4 h-4" />
@@ -136,7 +137,7 @@ const DatabaseUploadModal = ({
                             {/* 4. Export trips */}
                             {hasData && (
                                 <button
-                                    onClick={() => { onExport(); onClose(); }}
+                                    onClick={() => { exportData(); onClose(); }}
                                     className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Download className="w-4 h-4" />
@@ -157,16 +158,6 @@ const DatabaseUploadModal = ({
     );
 };
 
-DatabaseUploadModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    sqlReady: PropTypes.bool,
-    onFileSelect: PropTypes.func.isRequired,
-    onExport: PropTypes.func.isRequired,
-    onClearData: PropTypes.func.isRequired,
-    onLoadChargeRegistry: PropTypes.func.isRequired,
-    hasData: PropTypes.bool,
-    isNative: PropTypes.bool
-};
+DatabaseUploadModal.propTypes = {};
 
 export default DatabaseUploadModal;

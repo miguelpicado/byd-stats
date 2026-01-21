@@ -7,19 +7,27 @@ import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '../../utils/constants';
 import { Battery } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
+import { useApp } from '../../context/AppContext';
+import { useData } from '../../providers/DataProvider';
 
 /**
  * Modal for adding or editing a charging session
  */
-const AddChargeModal = ({
-    isOpen,
-    onClose,
-    onSave,
-    chargerTypes = [],
-    defaultPricePerKwh = 0.15,
-    editingCharge = null
-}) => {
+const AddChargeModal = () => {
     const { t } = useTranslation();
+    const { settings } = useApp();
+    const {
+        modals,
+        closeModal,
+        addCharge: onSave,
+        editingCharge,
+        setEditingCharge
+    } = useData();
+
+    // Derived values
+    const isOpen = modals.addCharge;
+    const chargerTypes = settings?.chargerTypes || [];
+    const defaultPricePerKwh = settings?.electricityPrice || 0.15;
 
     // Get current date and time in proper format
     const getCurrentDate = () => new Date().toISOString().split('T')[0];
@@ -42,6 +50,12 @@ const AddChargeModal = ({
 
     const [formData, setFormData] = useState(getInitialState);
 
+    // Internal Handlers
+    const onClose = () => {
+        closeModal('addCharge');
+        if (setEditingCharge) setEditingCharge(null);
+    };
+
     // Reset form when modal opens or editingCharge changes
     useEffect(() => {
         if (isOpen) {
@@ -63,9 +77,6 @@ const AddChargeModal = ({
             }
         }
     }, [isOpen, editingCharge, chargerTypes, defaultPricePerKwh, getInitialState]);
-
-    // Auto-calculate total cost when kWh or price changes
-    // useEffect removed to avoid cascading renders
 
     const handleChange = (field, value) => {
         setFormData(prev => {
@@ -295,18 +306,6 @@ const AddChargeModal = ({
     );
 };
 
-AddChargeModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    onSave: PropTypes.func.isRequired,
-    chargerTypes: PropTypes.arrayOf(PropTypes.shape({
-        id: PropTypes.string,
-        name: PropTypes.string,
-        speedKw: PropTypes.number,
-        efficiency: PropTypes.number
-    })),
-    defaultPricePerKwh: PropTypes.number,
-    editingCharge: PropTypes.object
-};
+AddChargeModal.propTypes = {};
 
 export default AddChargeModal;

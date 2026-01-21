@@ -1,111 +1,92 @@
-// BYD Stats - Error Boundary Component
-// Catches React component errors and displays fallback UI
-import { Component } from 'react';
+import React from 'react';
 import PropTypes from 'prop-types';
-import { logger } from '../../utils/logger';
 
-class ErrorBoundary extends Component {
+
+/**
+ * Global Error Boundary to catch rendering errors and prevent app crash.
+ * shows a friendly fallback UI with reload option.
+ */
+class ErrorBoundary extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            hasError: false,
-            error: null,
-            errorInfo: null
-        };
+        this.state = { hasError: false, error: null, errorInfo: null };
     }
 
-    static getDerivedStateFromError(_error) {
-        // Update state so the next render will show the fallback UI
-        return { hasError: true };
+    static getDerivedStateFromError(error) {
+        // Update state so the next render will show the fallback UI.
+        return { hasError: true, error };
     }
 
     componentDidCatch(error, errorInfo) {
-        // Log the error to our logging service
-        logger.error('[ErrorBoundary] Component error caught:', error, errorInfo);
-
-        this.setState({
-            error,
-            errorInfo
-        });
-
-        // In production, you could send this to an error tracking service
-        // For now, we just log it
-        if (import.meta.env.PROD) {
-            // Could send to Sentry, LogRocket, etc.
-            console.error('Production error:', error, errorInfo);
-        }
+        // You can also log the error to an error reporting service
+        console.error("Uncaught error:", error, errorInfo);
+        this.setState({ errorInfo });
     }
 
-    handleReset = () => {
-        this.setState({
-            hasError: false,
-            error: null,
-            errorInfo: null
-        });
+    handleReload = () => {
+        window.location.reload();
     };
 
     render() {
         if (this.state.hasError) {
-            // Fallback UI
+            // You can render any custom fallback UI
             return (
-                <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 flex items-center justify-center p-4">
-                    <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 sm:p-8">
-                        <div className="text-center">
-                            {/* Error Icon */}
-                            <div className="mx-auto w-16 h-16 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mb-4">
-                                <svg
-                                    className="w-8 h-8 text-red-600 dark:text-red-400"
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                >
-                                    <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                                    />
-                                </svg>
-                            </div>
-
-                            {/* Error Message */}
-                            <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-                                Algo salió mal
-                            </h2>
-                            <p className="text-slate-600 dark:text-slate-400 mb-6">
-                                La aplicación ha encontrado un error inesperado. Puedes intentar recargar la página.
-                            </p>
-
-                            {/* Error Details (Development Only) */}
-                            {import.meta.env.DEV && this.state.error && (
-                                <details className="text-left mb-6 p-4 bg-slate-100 dark:bg-slate-900 rounded-lg text-sm">
-                                    <summary className="cursor-pointer font-medium text-slate-700 dark:text-slate-300 mb-2">
-                                        Detalles del error (solo en desarrollo)
-                                    </summary>
-                                    <pre className="text-xs text-red-600 dark:text-red-400 overflow-auto">
-                                        {this.state.error.toString()}
-                                        {'\n\n'}
-                                        {this.state.errorInfo?.componentStack}
-                                    </pre>
-                                </details>
-                            )}
-
-                            {/* Actions */}
-                            <div className="flex flex-col sm:flex-row gap-3">
-                                <button
-                                    onClick={this.handleReset}
-                                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-                                >
-                                    Intentar de nuevo
-                                </button>
-                                <button
-                                    onClick={() => window.location.reload()}
-                                    className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-900 dark:text-white rounded-lg font-medium transition-colors"
-                                >
-                                    Recargar página
-                                </button>
-                            </div>
+                <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900 p-4">
+                    <div className="max-w-md w-full bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-6 text-center border border-slate-200 dark:border-slate-700">
+                        <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-8 h-8 text-red-600 dark:text-red-400"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
                         </div>
+
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                            Algo salió mal
+                        </h2>
+
+                        <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
+                            La aplicación ha encontrado un error inesperado. Hemos registrado el problema.
+                        </p>
+
+                        {/* Dev details - simple toggle or check env */}
+                        {import.meta.env.DEV && this.state.error && (
+                            <div className="mb-6 text-left bg-slate-100 dark:bg-slate-950 p-3 rounded-lg overflow-auto max-h-40 text-xs font-mono text-red-600 dark:text-red-400">
+                                {this.state.error.toString()}
+                                <br />
+                                {this.state.errorInfo?.componentStack}
+                            </div>
+                        )}
+
+                        <button
+                            onClick={this.handleReload}
+                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl font-medium hover:opacity-90 transition-opacity"
+                        >
+                            <svg
+                                xmlns="http://www.w3.org/2000/svg"
+                                className="w-4 h-4"
+                                viewBox="0 0 24 24"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="2"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                            >
+                                <path d="M23 4v6h-6"></path>
+                                <path d="M1 20v-6h6"></path>
+                                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                            </svg>
+                            Recargar página
+                        </button>
                     </div>
                 </div>
             );
@@ -120,3 +101,4 @@ ErrorBoundary.propTypes = {
 };
 
 export default ErrorBoundary;
+
