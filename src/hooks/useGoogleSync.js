@@ -263,6 +263,12 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
      * @param {Array} newTripsData - Optional. If provided, represents the latest local trips state (e.g. after file load).
      */
     const performSync = useCallback(async (newTripsData = null) => {
+        if (!navigator.onLine) {
+            setError("Sin conexión a Internet");
+            setIsSyncing(false);
+            return;
+        }
+
         if (!googleDriveService.isInited) return;
 
         setIsSyncing(true);

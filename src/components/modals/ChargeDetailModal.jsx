@@ -1,18 +1,26 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { Battery, Zap, AlertTriangle, Trash2, Edit, X, BYD_RED } from '../Icons.jsx';
-import ModalHeader from '../common/ModalHeader';
+import { Battery, Zap, Trash2, Edit, X, BYD_RED } from '../Icons.jsx';
+import { useApp } from '../../context/AppContext';
+import { useData } from '../../providers/DataProvider';
 
-const ChargeDetailModal = ({
-    isOpen,
-    onClose,
-    charge,
-    chargerTypes,
-    onEdit,
-    onDelete
-}) => {
+const ChargeDetailModal = () => {
     const { t } = useTranslation();
+    const { settings } = useApp();
+    const {
+        selectedCharge: charge,
+        deleteCharge,
+        setEditingCharge,
+        closeModal,
+        openModal,
+        modals,
+        setSelectedCharge
+    } = useData();
+
+    // Access styling or data via context
+    const chargerTypes = settings?.chargerTypes || [];
+    const isOpen = modals.chargeDetail;
 
     const chargerType = useMemo(() => {
         if (!charge || !chargerTypes) return null;
@@ -26,8 +34,26 @@ const ChargeDetailModal = ({
         return charge.kwhCharged * efficiency;
     }, [charge, chargerType]);
 
-    // Calculate cost per 100km (if we had distance since last charge, but we don't strictly track that here yet)
-    // For now we just show the raw data
+    // Internal Handlers
+    const onClose = () => {
+        closeModal('chargeDetail');
+        setSelectedCharge(null);
+    };
+
+    const handleDelete = () => {
+        if (window.confirm(t('charges.confirmDelete'))) {
+            deleteCharge(charge.id);
+            onClose();
+        }
+    };
+
+    const handleEdit = () => {
+        setEditingCharge(charge);
+        closeModal('chargeDetail');
+        // setTimeout because we are closing one modal and opening another? 
+        // Logic in Coordinator was direct.
+        openModal('addCharge');
+    };
 
     if (!isOpen || !charge) return null;
 
@@ -164,22 +190,14 @@ const ChargeDetailModal = ({
                 {/* Footer Buttons */}
                 <div className="p-5 border-t border-slate-100 dark:border-slate-700 flex gap-3">
                     <button
-                        onClick={() => {
-                            if (window.confirm(t('charges.confirmDelete'))) {
-                                onDelete(charge.id);
-                                onClose();
-                            }
-                        }}
+                        onClick={handleDelete}
                         className="flex-1 py-2.5 rounded-xl border border-red-200 dark:border-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center justify-center gap-2 text-sm font-medium"
                     >
                         <Trash2 className="w-4 h-4" />
                         {t('charges.delete')}
                     </button>
                     <button
-                        onClick={() => {
-                            onEdit(charge);
-                            onClose();
-                        }}
+                        onClick={handleEdit}
                         className="flex-1 py-2.5 rounded-xl text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2 text-sm font-medium"
                         style={{ backgroundColor: BYD_RED }}
                     >
@@ -193,12 +211,7 @@ const ChargeDetailModal = ({
 };
 
 ChargeDetailModal.propTypes = {
-    isOpen: PropTypes.bool.isRequired,
-    onClose: PropTypes.func.isRequired,
-    charge: PropTypes.object,
-    chargerTypes: PropTypes.array,
-    onEdit: PropTypes.func.isRequired,
-    onDelete: PropTypes.func.isRequired
+    // No props needed!
 };
 
 export default ChargeDetailModal;
