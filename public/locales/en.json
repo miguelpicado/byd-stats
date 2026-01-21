@@ -504,5 +504,12 @@
         "avgTime": "Time",
         "avgCons": "Consumption",
         "totalDays": "Active days"
+    },
+    "sync": {
+        "conflictDetected": "Sync Conflict",
+        "conflictDescription": "There are differences between your local settings and the cloud. What would you like to do?",
+        "keepLocal": "Keep Local",
+        "useCloud": "Use Cloud",
+        "mergeBoth": "Merge Both"
     }
 }
