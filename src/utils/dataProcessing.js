@@ -5,12 +5,107 @@ import { formatMonth, formatDate } from './dateUtils';
 import { logger } from './logger';
 
 /**
- * Process raw trip data into statistics and aggregated data
- * @param {Array} rows - Array of raw trip objects
- * @returns {Object|null} Processed data object or null if invalid
+ * @typedef {Object} Trip
+ * @property {string} date - Date in YYYYMMDD format
+ * @property {number} trip - Distance in km
+ * @property {number} electricity - Energy consumed in kWh
+ * @property {number} duration - Duration in minutes
+ * @property {number} start_timestamp - Unix timestamp of trip start
+ * @property {number} end_timestamp - Unix timestamp of trip end
+ * @property {string} [month] - Month string for filtering (YYYYMM)
+ * @property {number} [start_soc] - Starting battery percentage
+ * @property {number} [end_soc] - Ending battery percentage
  */
+
+/**
+ * @typedef {Object} Charge
+ * @property {string} id - Unique identifier
+ * @property {string} date - Date in YYYYMMDD format
+ * @property {string} time - Time in HH:MM format
+ * @property {number} kwhCharged - Energy charged in kWh
+ * @property {number} totalCost - Total cost in currency
+ * @property {number} pricePerKwh - Price per kWh
+ * @property {string} chargerTypeId - ID of the charger type used
+ * @property {number} [initialPercentage] - Starting battery percentage
+ * @property {number} [finalPercentage] - Final battery percentage
+ * @property {number} [odometer] - Odometer reading in km
+ */
+
+/**
+ * @typedef {Object} ChartDataPoint
+ * @property {string|number} label - X-axis label
+ * @property {number} value - Y-axis value
+ */
+
+/**
+ * @typedef {Object} MonthlyData
+ * @property {string} month - Month label (e.g., "Jan 2024")
+ * @property {number} km - Total km for month
+ * @property {number} kwh - Total kWh for month
+ * @property {number} trips - Trip count for month
+ */
+
+/**
+ * @typedef {Object} Summary
+ * @property {number} totalKm - Total distance traveled
+ * @property {number} totalKwh - Total energy consumed
+ * @property {number} totalDuration - Total time in minutes
+ * @property {number} avgEfficiency - Average kWh/100km
+ * @property {number} avgSpeed - Average speed in km/h
+ * @property {number} tripCount - Number of trips
+ * @property {number} activeDays - Number of unique driving days
+ * @property {number} minEfficiency - Minimum efficiency value
+ * @property {number} maxEfficiency - Maximum efficiency value
+ */
+
+/**
+ * @typedef {Object} ProcessedData
+ * @property {Summary} summary - Aggregated statistics
+ * @property {MonthlyData[]} monthly - Monthly aggregated data
+ * @property {Object[]} daily - Daily aggregated data
+ * @property {Object[]} hourly - Hourly trip distribution
+ * @property {Object[]} weekday - Weekday trip distribution
+ * @property {Object[]} tripDist - Trip distance distribution buckets
+ * @property {Object[]} effScatter - Efficiency scatter plot data
+ * @property {Object} top - Top records (distance, consumption, duration)
+ */
+
+/**
+ * Process raw trip data into statistics and aggregated data
+ * @param {Trip[]} rows - Array of raw trip objects
+ * @returns {ProcessedData|null} Processed data object or null if invalid
+ */
+// Helper to get top N items without full sort - O(N) for small K
+function getTopN(arr, compareFn, n) {
+    if (arr.length <= n) return [...arr].sort(compareFn);
+
+    // Sort first N items
+    const result = arr.slice(0, n).sort(compareFn);
+
+    // Process remaining items
+    for (let i = n; i < arr.length; i++) {
+        const item = arr[i];
+        // If item belongs in top N (compare with last/smallest in result)
+        // compareFn(a, b) > 0 means a comes before b. 
+        // We want descending order usually, so if compareFn(item, last) < 0, item is "larger/better"
+        if (compareFn(item, result[n - 1]) < 0) {
+            // Find insertion point
+            let j = n - 2;
+            while (j >= 0 && compareFn(item, result[j]) < 0) {
+                result[j + 1] = result[j];
+                j--;
+            }
+            result[j + 1] = item;
+        }
+    }
+    return result;
+}
+
 export function processData(rows) {
     if (!rows || rows.length === 0) return null;
+
+    // Filter valid trips
+    // Optimization: Pre-allocate? JS arrays are dynamic.
     const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
     if (trips.length === 0) return null;
 
@@ -19,7 +114,7 @@ export function processData(rows) {
     let totalKwh = 0;
     let totalDuration = 0;
 
-    // Tracking min/max without sorting
+    // Tracking min/max
     let maxKmVal = -Infinity;
     let minKmVal = Infinity;
     let maxKwhVal = -Infinity;
@@ -28,7 +123,8 @@ export function processData(rows) {
     const monthlyData = {};
     const dailyData = {};
     const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
-    // 0=Mon...6=Sun logic matching the original
+    // 0=Sun... but we want Mon=0...Sun=6. 
+    // Data says: 0=Mon...6=Sun logic matching the original
     const weekdayData = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => ({ day: d, trips: 0, km: 0 }));
 
     const tripDistribution = [
@@ -42,8 +138,7 @@ export function processData(rows) {
     const uniqueDates = new Set();
     const efficiencyScatter = [];
 
-    // Single pass for all aggregations
-    // Using for...of loop for better performance/readability over reduce/forEach
+    // Single pass for all simple aggregations
     for (const trip of trips) {
         const tTrip = trip.trip || 0;
         const tElec = trip.electricity || 0;
@@ -75,7 +170,7 @@ export function processData(rows) {
         dailyData[d].km += tTrip;
         dailyData[d].kwh += tElec;
 
-        // Hourly & Weekday
+        // Hourly
         if (trip.start_timestamp) {
             const dt = new Date(trip.start_timestamp * 1000);
             const h = dt.getHours();
@@ -86,7 +181,9 @@ export function processData(rows) {
                 hourlyData[h].km += tTrip;
             }
 
-            // Weekday: 0(Sun)->6, 1(Mon)->0, etc.
+            // Weekday: we want 0=Mon, 6=Sun. JS getDay returns 0=Sun.
+            // (0 + 6) % 7 = 6 (Sun)
+            // (1 + 6) % 7 = 0 (Mon)
             const weekdayIndex = (w + 6) % 7;
             if (weekdayData[weekdayIndex]) {
                 weekdayData[weekdayIndex].trips++;
@@ -94,14 +191,14 @@ export function processData(rows) {
             }
         }
 
-        // Trip Distribution
+        // Trip Distribution buckets
         if (tTrip <= 5) tripDistribution[0].count++;
         else if (tTrip <= 15) tripDistribution[1].count++;
         else if (tTrip <= 30) tripDistribution[2].count++;
         else if (tTrip <= 50) tripDistribution[3].count++;
         else tripDistribution[4].count++;
 
-        // Scatter Data
+        // Scatter Data (Top efficiency outliers filtered out usually? keeping simple)
         if (tTrip > 0 && tElec > 0) {
             const y = (tElec / tTrip) * 100;
             if (y > 0 && y < 50) {
@@ -112,7 +209,13 @@ export function processData(rows) {
 
     if (totalKm === 0) return null;
 
-    // Post-process aggregations
+    // --- SORTING OPTIMIZATIONS ---
+
+    // 1. Sort Scatter (needed for chart plotting usually, or maybe not strictly but good for order)
+    efficiencyScatter.sort((a, b) => a.x - b.x);
+
+    // 2. Sort Aggregates by Key (Date string 'YYYYMM' and 'YYYYMMDD' allows lexicographical sort)
+    // Object.values is O(N), sort is O(K log K) where K is months/days (small)
     const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
     monthlyArray.forEach(m => {
         m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
@@ -125,21 +228,23 @@ export function processData(rows) {
         d.dateLabel = formatDate(d.date);
     });
 
-    // Sort scatter
-    efficiencyScatter.sort((a, b) => a.x - b.x);
+    // 3. Chronological Sort (The BIG one)
+    // We sort the trips array in-place (conceptually, we made a filter copy earlier)
+    // Used for range calculation and potentially other timestamp-dependent logic in UI
+    trips.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
 
-    // Sorts for Top/Charts (Unavoidable for "Top 10" and Charts usually)
-    // We do these specifically.
-    const sortedByKm = [...trips].sort((a, b) => (b.trip || 0) - (a.trip || 0));
-    const sortedByKwh = [...trips].sort((a, b) => (b.electricity || 0) - (a.electricity || 0));
-    const sortedByDur = [...trips].sort((a, b) => (b.duration || 0) - (a.duration || 0));
-    const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+    // 4. Top lists
+    // precise desc comparisons (b - a)
+    // Instead of sorting WHOLE array 3 more times, get top 10 efficiently
+    const topKm = getTopN(trips, (a, b) => (b.trip || 0) - (a.trip || 0), 10);
+    const topKwh = getTopN(trips, (a, b) => (b.electricity || 0) - (a.electricity || 0), 10);
+    const topDur = getTopN(trips, (a, b) => (b.duration || 0) - (a.duration || 0), 10);
 
     const daysActive = uniqueDates.size || 1;
 
-    // Calculate total span
-    const firstTs = sorted[0]?.start_timestamp;
-    const lastTs = sorted[sorted.length - 1]?.start_timestamp;
+    // Calculate total span from sorted trips
+    const firstTs = trips[0]?.start_timestamp;
+    const lastTs = trips[trips.length - 1]?.start_timestamp;
     const totalDays = (firstTs && lastTs)
         ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
         : daysActive;
@@ -156,11 +261,11 @@ export function processData(rows) {
             avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
             daysActive,
             totalDays,
-            dateRange: formatDate(sorted[0]?.date) + ' - ' + formatDate(sorted[sorted.length - 1]?.date),
-            maxKm: maxKmVal.toFixed(1), // Uses tracked val
-            minKm: minKmVal.toFixed(1), // Uses tracked val
-            maxKwh: maxKwhVal.toFixed(1), // Uses tracked val
-            maxMin: (maxDurVal / 60).toFixed(0), // Uses tracked val
+            dateRange: formatDate(trips[0]?.date) + ' - ' + formatDate(trips[trips.length - 1]?.date),
+            maxKm: maxKmVal.toFixed(1),
+            minKm: minKmVal.toFixed(1),
+            maxKwh: maxKwhVal.toFixed(1),
+            maxMin: (maxDurVal / 60).toFixed(0),
             tripsDay: (trips.length / daysActive).toFixed(1),
             kmDay: (totalKm / daysActive).toFixed(1)
         },
@@ -171,9 +276,9 @@ export function processData(rows) {
         tripDist: tripDistribution,
         effScatter: efficiencyScatter,
         top: {
-            km: sortedByKm.slice(0, 10),
-            kwh: sortedByKwh.slice(0, 10),
-            dur: sortedByDur.slice(0, 10)
+            km: topKm,
+            kwh: topKwh,
+            dur: topDur
         }
     };
 }

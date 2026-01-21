@@ -513,5 +513,12 @@
         "avgTime": "Tiempo",
         "avgCons": "Consumo",
         "totalDays": "Días activos"
+    },
+    "sync": {
+        "conflictDetected": "Conflicto de Sincronización",
+        "conflictDescription": "Hay diferencias entre tus ajustes locales y los de la nube. ¿Qué deseas hacer?",
+        "keepLocal": "Mantener Local",
+        "useCloud": "Usar Nube",
+        "mergeBoth": "Combinar Ambos"
     }
 }

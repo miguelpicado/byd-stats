@@ -1,7 +1,7 @@
 // BYD Stats - useDatabase Hook
 
 import { useState, useCallback } from 'react';
-import { logger } from '../utils/logger';
+import { logger } from '@utils/logger';
 
 /**
  * Custom hook for database operations
@@ -31,7 +31,7 @@ export function useDatabase() {
                     document.head.appendChild(script);
                 });
             }
-            
+
             window.SQL = await window.initSqlJs({
                 locateFile: f => `/assets/sql/${f}`
             });

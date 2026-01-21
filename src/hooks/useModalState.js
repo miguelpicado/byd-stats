@@ -24,6 +24,11 @@ const useModalState = () => {
   // Track additional modal-related state
   const [legalInitialSection, setLegalInitialSection] = useState('privacy');
 
+  // Selected items for detail modals
+  const [selectedTrip, setSelectedTrip] = useState(null);
+  const [selectedCharge, setSelectedCharge] = useState(null);
+  const [editingCharge, setEditingCharge] = useState(null);
+
   /**
    * Open a specific modal
    * @param {string} name - Modal name to open
@@ -65,6 +70,9 @@ const useModalState = () => {
       addCharge: false,
       chargeDetail: false
     });
+    setSelectedTrip(null);
+    setSelectedCharge(null);
+    setEditingCharge(null);
   }, []);
 
   /**
@@ -86,9 +94,16 @@ const useModalState = () => {
     openLegalModal,
     legalInitialSection,
     setLegalInitialSection, // Expose setter for backwards compatibility
+    // Selected items for detail modals
+    selectedTrip,
+    setSelectedTrip,
+    selectedCharge,
+    setSelectedCharge,
+    editingCharge,
+    setEditingCharge,
     // Convenience boolean getters for common checks
     isAnyModalOpen: Object.values(modals).some(Boolean)
-  }), [modals, openModal, closeModal, toggleModal, closeAllModals, openLegalModal, legalInitialSection]);
+  }), [modals, openModal, closeModal, toggleModal, closeAllModals, openLegalModal, legalInitialSection, selectedTrip, selectedCharge, editingCharge]);
 
   return value;
 };
