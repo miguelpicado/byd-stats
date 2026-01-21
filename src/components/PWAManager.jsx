@@ -20,6 +20,8 @@ const RefreshCw = ({ className }) => (
     </svg>
 );
 
+import { useRegisterSW } from 'virtual:pwa-register/react';
+
 /**
  * PWA Manager Component
  * Handles PWA installation prompt, exit button, and update notifications
@@ -33,10 +35,6 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
     const [isStandalone, setIsStandalone] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [showUpdateBanner, setShowUpdateBanner] = useState(false);
-    const [waitingWorker, setWaitingWorker] = useState(null);
-
-    // Exit button only shows in horizontal + standalone mode, but NOT in compact mode
-    const showExitButton = isStandalone && layoutMode === 'horizontal' && !isCompact;
 
     // Check if running as PWA
     useEffect(() => {
@@ -56,57 +54,36 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
         return () => mediaQuery.removeEventListener('change', checkStandalone);
     }, []);
 
-    // Listen for Service Worker updates
+    // Virtual PWA Register Hook
+    const {
+        offlineReady: [offlineReady, setOfflineReady],
+        needRefresh: [needRefresh, setNeedRefresh],
+        updateServiceWorker,
+    } = useRegisterSW({
+        onRegisteredPO(r) {
+            logger.debug('[PWA] SW Registered:', r);
+        },
+        onRegisterError(error) {
+            logger.error('[PWA] SW Registration Error:', error);
+        },
+    });
+
+    // Check availability of updates
     useEffect(() => {
-        if (!('serviceWorker' in navigator)) return;
+        if (needRefresh) {
+            setShowUpdateBanner(true);
+        }
+    }, [needRefresh]);
 
-        const handleUpdate = async () => {
-            try {
-                const registration = await navigator.serviceWorker.getRegistration();
-                if (!registration) return;
+    // Cleanup manual interval as the hook handles it or we can keep a simple one
+    useEffect(() => {
+        if (offlineReady) {
+            logger.debug('[PWA] App ready to work offline');
+        }
+    }, [offlineReady]);
 
-                // Check for waiting worker (update ready)
-                if (registration.waiting) {
-                    setWaitingWorker(registration.waiting);
-                    setShowUpdateBanner(true);
-                }
-
-                // Listen for new updates
-                registration.addEventListener('updatefound', () => {
-                    const newWorker = registration.installing;
-                    if (!newWorker) return;
-
-                    newWorker.addEventListener('statechange', () => {
-                        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                            // New version available
-                            setWaitingWorker(newWorker);
-                            setShowUpdateBanner(true);
-                        }
-                    });
-                });
-
-                // Listen for controller change (update applied)
-                navigator.serviceWorker.addEventListener('controllerchange', () => {
-                    // Reload to apply new version
-                    window.location.reload();
-                });
-
-            } catch (e) {
-                logger.error('[PWA] Update check error:', e);
-            }
-        };
-
-        handleUpdate();
-
-        // Check for updates periodically (every 5 minutes)
-        const interval = setInterval(() => {
-            navigator.serviceWorker.getRegistration().then(reg => {
-                if (reg) reg.update();
-            });
-        }, 5 * 60 * 1000);
-
-        return () => clearInterval(interval);
-    }, []);
+    // Exit button only shows in horizontal + standalone mode, but NOT in compact mode
+    const showExitButton = isStandalone && layoutMode === 'horizontal' && !isCompact;
 
     // Listen for install prompt
     useEffect(() => {
@@ -143,16 +120,9 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
 
     // Apply update
     const handleUpdate = useCallback(() => {
-        if (!waitingWorker) {
-            // No waiting worker, just reload
-            window.location.reload();
-            return;
-        }
-
-        // Tell the waiting worker to skip waiting
-        waitingWorker.postMessage({ type: 'SKIP_WAITING' });
+        updateServiceWorker(true);
         setShowUpdateBanner(false);
-    }, [waitingWorker]);
+    }, [updateServiceWorker]);
 
     // Exit app
     const handleExit = useCallback(() => {
