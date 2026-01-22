@@ -56,21 +56,49 @@ const EfficiencyTab = React.memo(({
     };
   }, [monthly]);
 
-  // Memoize line chart options (depends on efficiencyYAxis)
-  const lineChartOptions = useMemo(() => ({
-    ...LINE_CHART_BASE,
-    scales: {
-      y: {
-        beginAtZero: false,
-        min: efficiencyYAxis.min,
-        max: efficiencyYAxis.max,
-        border: { dash: [] },
-        grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
-        ticks: { font: { size: 10 } }
+  // Check if hybrid data exists
+  const isHybrid = summary.isHybrid || false;
+  const hasHybridData = isHybrid && monthly.some(m => m.fuelEfficiency > 0);
+
+  // Memoize line chart options (depends on efficiencyYAxis and hybrid mode)
+  const lineChartOptions = useMemo(() => {
+    const options = {
+      ...LINE_CHART_BASE,
+      plugins: {
+        legend: { display: hasHybridData, position: 'top', labels: { usePointStyle: true, boxWidth: 6 } }
       },
-      x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+      scales: {
+        y: {
+          type: 'linear',
+          display: true,
+          position: 'left',
+          beginAtZero: false,
+          min: efficiencyYAxis.min,
+          max: efficiencyYAxis.max,
+          border: { dash: [] },
+          grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+          ticks: { font: { size: 10 }, color: '#10b981' },
+          title: { display: hasHybridData, text: 'kWh/100km', color: '#10b981', font: { size: 10 } }
+        },
+        x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+      }
+    };
+
+    // Add second Y-axis for fuel efficiency if hybrid
+    if (hasHybridData) {
+      options.scales.y1 = {
+        type: 'linear',
+        display: true,
+        position: 'right',
+        beginAtZero: true,
+        grid: { drawOnChartArea: false },
+        ticks: { font: { size: 10 }, color: '#f59e0b' },
+        title: { display: true, text: 'L/100km', color: '#f59e0b', font: { size: 10 } }
+      };
     }
-  }), [efficiencyYAxis]);
+
+    return options;
+  }, [efficiencyYAxis, hasHybridData]);
 
   // Memoize scatter chart options
   const scatterChartOptions = useMemo(() => ({
@@ -105,10 +133,9 @@ const EfficiencyTab = React.memo(({
     interaction: { mode: 'nearest', axis: 'xy', intersect: true }
   }), [t]);
 
-  // Memoize chart data
-  const lineChartData = useMemo(() => ({
-    labels: monthly.map(m => m.monthLabel),
-    datasets: [{
+  // Memoize chart data with optional fuel efficiency line for hybrids
+  const lineChartData = useMemo(() => {
+    const datasets = [{
       label: 'kWh/100km',
       data: monthly.map(m => m.efficiency),
       borderColor: '#10b981',
@@ -116,9 +143,28 @@ const EfficiencyTab = React.memo(({
       fill: true,
       pointBackgroundColor: '#10b981',
       tension: 0.4,
-      pointRadius: 4
-    }]
-  }), [monthly]);
+      pointRadius: 4,
+      yAxisID: 'y'
+    }];
+
+    // Add fuel efficiency line for hybrids
+    if (hasHybridData) {
+      datasets.push({
+        label: 'L/100km',
+        data: monthly.map(m => m.fuelEfficiency),
+        borderColor: '#f59e0b',
+        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+        fill: false,
+        pointBackgroundColor: '#f59e0b',
+        tension: 0.4,
+        pointRadius: 4,
+        yAxisID: 'y1',
+        borderDash: [5, 5]
+      });
+    }
+
+    return { labels: monthly.map(m => m.monthLabel), datasets };
+  }, [monthly, hasHybridData]);
 
   const scatterChartData = useMemo(() => ({
     datasets: [{
@@ -175,6 +221,31 @@ const EfficiencyTab = React.memo(({
             color="bg-blue-500/20 text-blue-400"
           />
         </div>
+
+        {/* Hybrid fuel efficiency StatCard - only for hybrids */}
+        {isHybrid && (
+          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            <div className="bg-gradient-to-r from-emerald-500/10 to-amber-500/10 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⚡ {t('hybrid.electricConsumption')}</p>
+                  <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{summary.avgEff} <span className="text-xs">kWh/100km</span></p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⛽ {t('hybrid.fuelConsumption')}</p>
+                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.avgFuelEff} <span className="text-xs">L/100km</span></p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('hybrid.evModeUsage')}</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.evModeUsage}%</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
             <div style={{ width: '100%', height: largeChartHeight }}>
@@ -232,6 +303,31 @@ const EfficiencyTab = React.memo(({
           color="bg-blue-500/20 text-blue-400"
         />
       </div>
+
+      {/* Hybrid fuel efficiency StatCard - only for hybrids (horizontal) */}
+      {isHybrid && (
+        <div className={`grid grid-cols-2 gap-4 ${isCompact ? '!gap-3' : ''}`}>
+          <div className="bg-gradient-to-r from-emerald-500/10 to-amber-500/10 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⚡ {t('hybrid.electricConsumption')}</p>
+                <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{summary.avgEff} <span className="text-xs">kWh/100km</span></p>
+              </div>
+              <div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⛽ {t('hybrid.fuelConsumption')}</p>
+                <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.avgFuelEff} <span className="text-xs">L/100km</span></p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('hybrid.evModeUsage')}</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.evModeUsage}%</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
           <div key="line-container-h" style={{ width: '100%', height: largeChartHeight }}>

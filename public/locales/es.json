@@ -175,7 +175,9 @@
         "chargerEfficiency": "Eficiencia (0-1)",
         "addChargerType": "Añadir tipo",
         "deleteChargerType": "Eliminar",
-        "newChargerType": "Nuevo cargador"
+        "newChargerType": "Nuevo cargador",
+        "fuelPrice": "Precio gasolina",
+        "fuelPriceHint": "Precio medio de gasolina para calcular costes (solo híbridos)"
     },
     "upload": {
         "title": "Estadísticas BYD",
@@ -425,6 +427,10 @@
         "date": "Fecha",
         "time": "Hora",
         "finalPercentage": "% final de carga",
+        "typeElectric": "Eléctrica",
+        "typeFuel": "Repostaje",
+        "litersCharged": "Litros repostados",
+        "pricePerLiter": "Precio por litro",
         "initialPercentage": "% inicial (opcional)",
         "optional": "Opcional",
         "save": "Guardar",
@@ -520,5 +526,28 @@
         "keepLocal": "Mantener Local",
         "useCloud": "Usar Nube",
         "mergeBoth": "Combinar Ambos"
+    },
+    "hybrid": {
+        "vehicleType": "Tipo de vehículo",
+        "electric": "Eléctrico",
+        "hybridPhev": "Híbrido (PHEV)",
+        "fuelConsumption": "Consumo gasolina",
+        "electricConsumption": "Consumo eléctrico",
+        "totalFuel": "Gasolina total",
+        "avgFuelEfficiency": "Eficiencia gasolina",
+        "electricPercentage": "% Eléctrico",
+        "fuelPercentage": "% Gasolina",
+        "evModeUsage": "Uso modo EV",
+        "evOnlyTrips": "Viajes solo EV",
+        "hybridTrips": "Viajes con gasolina",
+        "combinedEfficiency": "Eficiencia combinada",
+        "energySplit": "Reparto de energía",
+        "fuelLabel": "Gasolina",
+        "electricLabel": "Electricidad",
+        "liters": "L",
+        "litersPer100km": "L/100km",
+        "topFuel": "Top Consumo Gasolina",
+        "fuelStats": "Estadísticas de Gasolina",
+        "electricStats": "Estadísticas Eléctricas"
     }
 }

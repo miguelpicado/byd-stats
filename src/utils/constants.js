@@ -40,6 +40,7 @@ export const DEFAULT_SETTINGS = {
   batterySize: 60.48,
   soh: 100,
   electricityPrice: 0.15,
+  fuelPrice: 1.50, // €/L - only used for hybrid vehicles
   useCalculatedPrice: false,
   theme: 'auto',
   chargerTypes: [],
@@ -54,3 +55,16 @@ export const TRIP_DISTRIBUTION_COLORS = [
   { range: '30-50', color: '#EA0029' },
   { range: '50+', color: '#8b5cf6' }
 ];
+
+// Hybrid vehicle constants
+export const HYBRID_COLORS = {
+  electric: '#10b981',  // Green for electric
+  fuel: '#f59e0b',      // Amber for fuel/gasoline
+  combined: '#6366f1'   // Indigo for combined metrics
+};
+
+// Energy equivalents (for combined efficiency calculations)
+export const FUEL_ENERGY_EQUIVALENT_KWH = 9.7; // kWh per liter of gasoline
+
+// Default fuel price (€/L) - can be overridden in settings
+export const DEFAULT_FUEL_PRICE = 1.50;

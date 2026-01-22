@@ -111,6 +111,24 @@ const RecordsTab = React.memo(({
               ))}
             </div>
           </ChartCard>
+
+          {/* Top Fuel - Only for hybrid vehicles */}
+          {summary.isHybrid && top.fuel && top.fuel.length > 0 && (
+            <ChartCard isCompact={isCompact} title={`⛽ ${t('hybrid.topFuel')}`}>
+              <div className="space-y-1">
+                {top.fuel.map((trip, i) => (
+                  <div key={i} className={`flex justify-between border-b border-amber-200 dark:border-amber-700/50 last:border-0 ${recordsItemPadding}`}>
+                    <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
+                      {i + 1}. {formatDate(trip.date)}
+                    </span>
+                    <span className={`font-medium text-amber-600 dark:text-amber-400 ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
+                      {trip.fuel?.toFixed(2)} L
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </ChartCard>
+          )}
         </div>
       </div>
     );
@@ -200,6 +218,24 @@ const RecordsTab = React.memo(({
             ))}
           </div>
         </ChartCard>
+
+        {/* Top Fuel - Only for hybrid vehicles */}
+        {summary.isHybrid && top.fuel && top.fuel.length > 0 && (
+          <ChartCard isCompact={isCompact} title={`⛽ ${t('hybrid.topFuel')}`}>
+            <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
+              {top.fuel.map((trip, i) => (
+                <div key={i} className={`flex justify-between border-b border-amber-200 dark:border-amber-700/50 last:border-0 ${recordsItemPaddingHorizontal}`}>
+                  <span className={`text-slate-600 dark:text-slate-400 ${isCompact ? 'text-[11px] truncate' : 'text-xs sm:text-sm'}`}>
+                    {i + 1}. {formatDate(trip.date)}
+                  </span>
+                  <span className={`font-medium text-amber-600 dark:text-amber-400 ${isCompact ? 'text-[12px]' : 'text-sm sm:text-base'}`}>
+                    {trip.fuel?.toFixed(2)} L
+                  </span>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+        )}
       </div>
     </div>
   );

@@ -7,7 +7,8 @@ import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from 
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 import FloatingActionButton from '../common/FloatingActionButton';
-import TripInsightsModal from '../modals/TripInsightsModal'; // NEW
+import TripInsightsModal from '../modals/TripInsightsModal';
+import HybridStatsCard from '../cards/HybridStatsCard';
 import { useLayout } from '../../context/LayoutContext';
 
 // Static chart options that don't change
@@ -152,6 +153,14 @@ const OverviewTab = React.memo(({
             onClick={() => handleCardClick('time')}
           />
         </div>
+
+        {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
+        {summary.isHybrid && (
+          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={true} />
+          </div>
+        )}
+
         <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
           <StatCard
             isVerticalMode={true}
@@ -296,6 +305,14 @@ const OverviewTab = React.memo(({
           onClick={() => handleCardClick('time')}
         />
       </div>
+
+      {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
+      {summary.isHybrid && (
+        <div className={`grid grid-cols-2 gap-4 ${isCompact ? '!gap-3' : ''}`}>
+          <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={false} />
+        </div>
+      )}
+
       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
         <StatCard
           isLarger={isLargerCard}
