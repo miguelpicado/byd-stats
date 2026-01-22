@@ -166,7 +166,9 @@
         "logout": "Logout",
         "lastSync": "Last sync",
         "dataManagement": "Data management",
-        "updateData": "Update data"
+        "updateData": "Update data",
+        "fuelPrice": "Fuel price",
+        "fuelPriceHint": "Average fuel price for cost calculations (hybrid only)"
     },
     "upload": {
         "title": "BYD Stats",
@@ -426,6 +428,10 @@
         "edit": "Edit",
         "delete": "Delete",
         "confirmDelete": "Delete this charge permanently?",
+        "typeElectric": "Electric",
+        "typeFuel": "Refueling",
+        "litersCharged": "Liters Refueled",
+        "pricePerLiter": "Price per Liter",
         "summary": "Charging Summary",
         "totalKwh": "Total kWh Charged",
         "avgPrice": "Avg Price/kWh",
@@ -511,5 +517,28 @@
         "keepLocal": "Keep Local",
         "useCloud": "Use Cloud",
         "mergeBoth": "Merge Both"
+    },
+    "hybrid": {
+        "vehicleType": "Vehicle type",
+        "electric": "Electric",
+        "hybridPhev": "Hybrid (PHEV)",
+        "fuelConsumption": "Fuel consumption",
+        "electricConsumption": "Electric consumption",
+        "totalFuel": "Total fuel",
+        "avgFuelEfficiency": "Fuel efficiency",
+        "electricPercentage": "% Electric",
+        "fuelPercentage": "% Fuel",
+        "evModeUsage": "EV mode usage",
+        "evOnlyTrips": "EV-only trips",
+        "hybridTrips": "Trips with fuel",
+        "combinedEfficiency": "Combined efficiency",
+        "energySplit": "Energy split",
+        "fuelLabel": "Fuel",
+        "electricLabel": "Electric",
+        "liters": "L",
+        "litersPer100km": "L/100mi",
+        "topFuel": "Top Fuel Consumption",
+        "fuelStats": "Fuel Statistics",
+        "electricStats": "Electric Statistics"
     }
 }
