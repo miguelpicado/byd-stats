@@ -24,8 +24,16 @@ export const DataProvider = ({ children }) => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
 
-    // 1. Core App Data (Trips, Filtering, Stats history)
-    const appData = useAppData();
+    // 1. Charges Data (Moved up to be available for AppData dynamic pricing)
+    const chargesData = useChargesData();
+    const {
+        charges,
+        replaceCharges,
+        ...restChargesData
+    } = chargesData;
+
+    // 2. Core App Data (Trips, Filtering, Stats history)
+    const appData = useAppData(settings, charges);
     const {
         rawTrips,
         setRawTrips,
@@ -38,14 +46,6 @@ export const DataProvider = ({ children }) => {
         loadFromHistory: rawLoadFromHistory,
         ...restAppData
     } = appData;
-
-    // 2. Charges Data
-    const chargesData = useChargesData();
-    const {
-        charges,
-        replaceCharges,
-        ...restChargesData
-    } = chargesData;
 
     // 3. Confirmation Logic (wraps data actions)
     const confirmation = useConfirmation({

@@ -18,7 +18,7 @@ export const SWIPE_THRESHOLD = 50; // Minimum distance to trigger tab change
 export const SWIPE_VELOCITY_THRESHOLD = 0.3; // Minimum velocity for quick swipes
 
 // Tab configuration
-export const TAB_ORDER = ['overview', 'efficiency', 'trends', 'patterns', 'records', 'history', 'charges'];
+export const TAB_ORDER = ['overview', 'calendar', 'efficiency', 'trends', 'patterns', 'records', 'history', 'charges'];
 export const TAB_COUNT = TAB_ORDER.length;
 
 // Day names mapping

@@ -17,6 +17,34 @@ const HybridStatsCard = React.memo(({ summary, isCompact = false, isVertical = f
 
     const electricPct = parseFloat(summary.electricPercentage) || 0;
     const fuelPct = parseFloat(summary.fuelPercentage) || 0;
+    const evModePct = parseFloat(summary.evModeUsage) || 0;
+    const hybridModePct = 100 - evModePct;
+
+    const renderProgressBar = (label, pct1, pct2, color1, color2, label1, label2) => (
+        <div className="w-full">
+            <div className="flex justify-between items-end mb-1">
+                <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">{label}</span>
+            </div>
+            <div className="flex justify-between text-[10px] mb-1 opacity-80">
+                <span style={{ color: color1 }} className="font-medium">
+                    {label1} {pct1.toFixed(0)}%
+                </span>
+                <span style={{ color: color2 }} className="font-medium">
+                    {label2} {pct2.toFixed(0)}%
+                </span>
+            </div>
+            <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
+                <div
+                    className="h-full transition-all duration-500"
+                    style={{ width: `${pct1}%`, backgroundColor: color1 }}
+                />
+                <div
+                    className="h-full transition-all duration-500"
+                    style={{ width: `${pct2}%`, backgroundColor: color2 }}
+                />
+            </div>
+        </div>
+    );
 
     return (
         <div className={`col-span-2 bg-gradient-to-r from-emerald-500/10 via-amber-500/10 to-emerald-500/10 dark:from-emerald-900/20 dark:via-amber-900/20 dark:to-emerald-900/20 rounded-xl sm:rounded-2xl border border-emerald-200/50 dark:border-emerald-800/30 ${isCompact ? 'p-3' : 'p-4'}`}>
@@ -27,31 +55,28 @@ const HybridStatsCard = React.memo(({ summary, isCompact = false, isVertical = f
                         {t('hybrid.hybridPhev')}
                     </h3>
                 </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${electricPct > 80 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300'}`}>
-                    {summary.evModeUsage}% EV
-                </span>
             </div>
 
-            {/* Energy Split Bar */}
-            <div className="mb-3">
-                <div className="flex justify-between text-xs mb-1">
-                    <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                        {t('hybrid.electricLabel')} {electricPct.toFixed(0)}%
-                    </span>
-                    <span className="text-amber-600 dark:text-amber-400 font-medium">
-                        {t('hybrid.fuelLabel')} {fuelPct.toFixed(0)}%
-                    </span>
-                </div>
-                <div className="h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden flex">
-                    <div
-                        className="h-full transition-all duration-500"
-                        style={{ width: `${electricPct}%`, backgroundColor: HYBRID_COLORS.electric }}
-                    />
-                    <div
-                        className="h-full transition-all duration-500"
-                        style={{ width: `${fuelPct}%`, backgroundColor: HYBRID_COLORS.fuel }}
-                    />
-                </div>
+            {/* Dual Energy Split Bars */}
+            <div className={`grid ${!isVertical ? 'grid-cols-2 gap-4' : 'grid-cols-1 gap-3'} mb-4`}>
+                {renderProgressBar(
+                    t('stats.distance'),
+                    electricPct,
+                    fuelPct,
+                    HYBRID_COLORS.electric,
+                    HYBRID_COLORS.fuel,
+                    t('hybrid.electricLabel'),
+                    t('hybrid.fuelLabel')
+                )}
+                {renderProgressBar(
+                    t('stats.trips'),
+                    evModePct,
+                    hybridModePct,
+                    '#3b82f6', // Blue-500 (EV Trips)
+                    '#f97316', // Orange-500 (Hybrid Trips)
+                    'EV',
+                    'Hybrid'
+                )}
             </div>
 
             {/* Stats Grid */}
