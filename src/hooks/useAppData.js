@@ -12,7 +12,7 @@ const TRIP_HISTORY_KEY = 'byd_trip_history';
  * Hook to manage application data: trips, filtering, and history
  * @returns {Object} Data state and management functions
  */
-const useAppData = () => {
+const useAppData = (settings, charges = []) => {
     const { t, i18n } = useTranslation();
 
     // --- Core Trip Data State ---
@@ -93,16 +93,37 @@ const useAppData = () => {
         return rawTrips;
     }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
 
+    // --- Computed: Effective Prices (Dynamic vs Static) ---
+    const effectiveElectricityPrice = useMemo(() => {
+        if (settings?.useCalculatedPrice && charges.length > 0) {
+            const electricCharges = charges.filter(c => !c.type || c.type === 'electric');
+            const totalCost = electricCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+            const totalKwh = electricCharges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
+            if (totalKwh > 0) return totalCost / totalKwh;
+        }
+        return settings?.electricityPrice || 0;
+    }, [settings?.useCalculatedPrice, settings?.electricityPrice, charges]);
+
+    const effectiveFuelPrice = useMemo(() => {
+        if (settings?.useCalculatedFuelPrice && charges.length > 0) {
+            const fuelCharges = charges.filter(c => c.type === 'fuel');
+            const totalCost = fuelCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+            const totalLiters = fuelCharges.reduce((sum, c) => sum + (c.litersCharged || 0), 0);
+            if (totalLiters > 0) return totalCost / totalLiters;
+        }
+        return settings?.fuelPrice || 0;
+    }, [settings?.useCalculatedFuelPrice, settings?.fuelPrice, charges]);
+
     // --- Computed: Process filtered data for charts and stats ---
     const data = useMemo(() => {
         try {
-            return filtered.length > 0 ? processData(filtered) : null;
+            return filtered.length > 0 ? processData(filtered, effectiveElectricityPrice, effectiveFuelPrice) : null;
         } catch (e) {
             logger.error('Error processing data:', e);
             return null;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filtered, i18n.language]);
+    }, [filtered, i18n.language, effectiveElectricityPrice, effectiveFuelPrice]);
 
     // --- Action: Clear all trip data ---
     const clearData = useCallback(() => {

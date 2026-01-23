@@ -109,7 +109,7 @@ function getTopN(arr, compareFn, n) {
     return result;
 }
 
-export function processData(rows) {
+export function processData(rows, electricityPrice = 0, fuelPrice = 0) {
     if (!rows || rows.length === 0) return null;
 
     // Filter valid trips
@@ -136,6 +136,10 @@ export function processData(rows) {
     let maxKwhVal = -Infinity;
     let maxDurVal = -Infinity;
     let maxFuelVal = 0;
+
+    // Cost tracking
+    let maxCostVal = -Infinity;
+    let maxCostDate = null;
 
     const monthlyData = {};
     const dailyData = {};
@@ -167,6 +171,17 @@ export function processData(rows) {
         totalKwh += tElec;
         totalFuel += tFuel;
         totalDuration += tDur;
+
+        // Calculate Cost
+        // Cost = (kWh * ElecPrice) + (L * FuelPrice)
+        const ePrice = parseFloat(electricityPrice) || 0;
+        const fPrice = parseFloat(fuelPrice) || 0;
+        const tripCost = (tElec * ePrice) + (tFuel * fPrice);
+
+        if (tripCost > maxCostVal) {
+            maxCostVal = tripCost;
+            maxCostDate = trip.date;
+        }
 
         // Hybrid detection and tracking
         if (tFuel > 0) {
@@ -287,7 +302,7 @@ export function processData(rows) {
     // Calculate hybrid-specific metrics
     const electricPercentage = totalKm > 0 ? (electricOnlyKm / totalKm * 100) : 100;
     const fuelPercentage = totalKm > 0 ? (fuelUsedKm / totalKm * 100) : 0;
-    const avgFuelEfficiency = fuelUsedKm > 0 ? (totalFuel / fuelUsedKm * 100) : 0;
+    const avgFuelEfficiency = totalKm > 0 ? (totalFuel / totalKm * 100) : 0;
     const evModeUsage = trips.length > 0 ? (electricOnlyTrips / trips.length * 100) : 100;
 
     // Build summary object
@@ -318,7 +333,10 @@ export function processData(rows) {
         electricOnlyTrips,
         fuelUsedTrips,
         evModeUsage: evModeUsage.toFixed(1),
-        maxFuel: maxFuelVal.toFixed(2)
+        maxFuel: maxFuelVal.toFixed(2),
+        // Most Expensive Trip
+        maxCost: maxCostVal > 0 ? maxCostVal.toFixed(2) : '0.00',
+        maxCostDate: maxCostDate || ''
     };
 
     return {

@@ -16,6 +16,7 @@
     },
     "tabs": {
         "overview": "Overview",
+        "calendar": "Calendar",
         "trends": "Trends",
         "patterns": "Patterns",
         "efficiency": "Efficiency",
@@ -49,7 +50,8 @@
         "longest": "Longest",
         "maxCons": "Max Consumption",
         "maxDur": "Max Duration",
-        "shortest": "Shortest"
+        "shortest": "Shortest",
+        "mostExpensive": "Most expensive"
     },
     "units": {
         "km": "mi",
@@ -152,6 +154,7 @@
         "priceCalculatedNoData": "No charge data available to calculate",
         "priceCalculatedAuto": "Automatically calculated",
         "priceCalculatedInfo": "Calculated from {{count}} charges ({{total}}€ / {{kwh}} kWh)",
+        "priceCalculatedInfoFuel": "Calculated from {{count}} refuels ({{total}}€ / {{liters}} L)",
         "priceCalculatedNoCharges": "Add charges to calculate the price automatically",
         "language": "Language",
         "theme": "Theme",
@@ -522,7 +525,8 @@
         "vehicleType": "Vehicle type",
         "electric": "Electric",
         "hybridPhev": "Hybrid (PHEV)",
-        "fuelConsumption": "Fuel consumption",
+        "fuelConsumption": "Avg fuel consumption",
+        "fuelConsumptionPerTrip": "Fuel consumption/trip",
         "electricConsumption": "Electric consumption",
         "totalFuel": "Total fuel",
         "avgFuelEfficiency": "Fuel efficiency",
@@ -540,5 +544,16 @@
         "topFuel": "Top Fuel Consumption",
         "fuelStats": "Fuel Statistics",
         "electricStats": "Electric Statistics"
+    },
+    "calendar": {
+        "title": "Activity Calendar",
+        "trips": "Trips",
+        "charges": "Charges",
+        "dayDetails": "Day details",
+        "noActivity": "No activity recorded on this day",
+        "efficiency": "Efficiency",
+        "cost": "Cost",
+        "kwh": "kWh",
+        "km": "mi"
     }
 }
