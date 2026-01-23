@@ -1,0 +1,73 @@
+name: Deploy Test Environment
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_path:
+        description: 'Subdirectory path (e.g., test1, test2)'
+        required: true
+        default: 'test1'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages-test"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}${{ github.event.inputs.target_path }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v4
+      
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build with base path
+        run: npm run build
+        env:
+          VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID }}
+          VITE_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.VITE_GOOGLE_ANDROID_CLIENT_ID }}
+
+      - name: Download existing pages artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: github-pages
+          path: existing-pages
+        continue-on-error: true
+
+      - name: Prepare combined artifact
+        run: |
+          mkdir -p combined
+          # Copy existing content if available
+          if [ -d "existing-pages" ]; then
+            cp -r existing-pages/* combined/ 2>/dev/null || true
+          fi
+          # Copy new build to target subdirectory
+          mkdir -p combined/${{ github.event.inputs.target_path }}
+          cp -r dist/* combined/${{ github.event.inputs.target_path }}/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './combined'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
