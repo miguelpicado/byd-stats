@@ -1,7 +1,7 @@
 // BYD Stats - Records Tab Component
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigation, Zap, Clock, MapPin } from '../Icons.jsx';
+import { Navigation, Zap, Clock, MapPin, Euro } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 import { formatDate } from '../../utils/dateUtils';
@@ -61,11 +61,12 @@ const RecordsTab = React.memo(({
             isVerticalMode={true}
             isLarger={isLargerCard}
             isCompact={isCompact}
-            icon={MapPin}
-            label={t('stats.shortest')}
-            value={summary.minKm}
-            unit={t('units.km')}
+            icon={Euro}
+            label={t('stats.mostExpensive')}
+            value={summary.maxCost}
+            unit="€"
             color="bg-purple-500/20 text-purple-500"
+            sub={formatDate(summary.maxCostDate)}
           />
         </div>
         <div className={`grid ${isCompact ? 'grid-cols-3' : 'grid-cols-1'} gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
@@ -168,14 +169,15 @@ const RecordsTab = React.memo(({
         <StatCard
           isLarger={isLargerCard}
           isCompact={isCompact}
-          icon={MapPin}
-          label={t('stats.shortest')}
-          value={summary.minKm}
-          unit={t('units.km')}
+          icon={Euro}
+          label={t('stats.mostExpensive')}
+          value={summary.maxCost}
+          unit="€"
           color="bg-purple-500/20 text-purple-500"
+          sub={formatDate(summary.maxCostDate)}
         />
       </div>
-      <div className={`grid grid-cols-3 gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+      <div className={`grid ${summary.isHybrid ? 'grid-cols-4' : 'grid-cols-3'} gap-3 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
         <ChartCard isCompact={isCompact} title={`🥇 ${t('charts.topDist')}`}>
           <div className={`flex flex-col justify-between ${recordsListHeightHorizontal}`}>
             {top.km.map((trip, i) => (

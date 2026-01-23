@@ -110,8 +110,8 @@ const TripDetailModal = () => {
                     </div>
                 </div>
 
-                {/* Fuel consumption - Only for hybrid trips */}
-                {trip.fuel > 0 && (
+                {/* Fuel consumption - Only for hybrid vehicles (even if 0L) */}
+                {(summary?.isHybrid || trip.fuel > 0) && (
                     <div className="grid grid-cols-2 gap-2 mb-3">
                         <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 text-center border border-amber-200 dark:border-amber-800/50">
                             <span className="text-lg">⛽</span>
@@ -180,7 +180,7 @@ const TripDetailModal = () => {
                             <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.cost')}</span>
                             <div className="text-right">
                                 <span className="font-bold text-amber-500">{details.cost.toFixed(2)}€</span>
-                                {trip.fuel > 0 && (
+                                {(summary?.isHybrid || trip.fuel > 0) && (
                                     <p className="text-[10px] text-slate-400">
                                         ⚡ {details.electricCost.toFixed(2)}€ + ⛽ {details.fuelCost.toFixed(2)}€
                                     </p>
