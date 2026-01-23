@@ -8,6 +8,7 @@ import TabFallback from '../common/TabFallback';
 import FloatingActionButton from '../common/FloatingActionButton'; // Used in vertical mode
 
 // Lazy loaded tabs
+const CalendarTab = React.lazy(() => import('../tabs/CalendarTab'));
 const HistoryTab = React.lazy(() => import('../tabs/HistoryTab'));
 const RecordsTab = React.lazy(() => import('../tabs/RecordsTab'));
 const TrendsTab = React.lazy(() => import('../tabs/TrendsTab'));
@@ -136,6 +137,20 @@ const TabsManager = memo(({
                                                 settings={settings}
                                             />
                                         )}
+                                        {tab.id === 'calendar' && (
+                                            <Suspense fallback={<TabFallback />}>
+                                                <CalendarTab
+                                                    trips={rawTrips}
+                                                    charges={charges}
+                                                    isActive={activeTab === tab.id}
+                                                    onTripSelect={openTripDetail}
+                                                    onChargeSelect={setSelectedCharge ? (charge) => {
+                                                        setSelectedCharge(charge);
+                                                        openModal('chargeDetail');
+                                                    } : undefined}
+                                                />
+                                            </Suspense>
+                                        )}
                                         {tab.id === 'trends' && (
                                             <Suspense fallback={<TabFallback />}>
                                                 <TrendsTab
@@ -250,6 +265,19 @@ const TabsManager = memo(({
                                     overviewSpacing={overviewSpacingHorizontal}
                                     trips={rawTrips}
                                     settings={settings}
+                                />
+                            )}
+                            {tab.id === 'calendar' && (
+                                <CalendarTab
+                                    key={isActive ? 'calendar-active' : 'calendar-bg'}
+                                    trips={rawTrips}
+                                    charges={charges}
+                                    isActive={isActive}
+                                    onTripSelect={openTripDetail}
+                                    onChargeSelect={setSelectedCharge ? (charge) => {
+                                        setSelectedCharge(charge);
+                                        openModal('chargeDetail');
+                                    } : undefined}
                                 />
                             )}
                             {tab.id === 'trends' && (

@@ -24,9 +24,9 @@ export default defineConfig({
         background_color: '#0f172a',
         display: 'standalone',
         orientation: 'any',
-        scope: '/',
-        start_url: '/?v=1.3',
-        id: '/?v=1.3',
+        scope: './',
+        start_url: './?v=1.5',
+        id: './?v=1.5',
         categories: ['utilities', 'productivity'],
         icons: [
           {
@@ -88,7 +88,7 @@ export default defineConfig({
       '@features': path.resolve(__dirname, './src/features'),
     },
   },
-  base: '/',
+  base: '', // Relative base for better subfolder support (GH Pages)
   build: {
     rollupOptions: {
       external: ['fs', 'path', 'crypto'], // Externalize node built-ins
