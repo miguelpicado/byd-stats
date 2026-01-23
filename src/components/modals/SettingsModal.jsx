@@ -25,12 +25,29 @@ const SettingsModal = () => {
     const onClose = () => closeModal('settings');
 
     // Calculate average electricity price from charges (must be before early return)
-    const calculatedPrice = useMemo(() => {
-        if (!charges || charges.length === 0) return 0;
-        const totalCost = charges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
-        const totalKwh = charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
-        if (totalKwh === 0) return 0;
-        return totalCost / totalKwh;
+    // Calculate average electricity and fuel prices
+    const { avgElectricPrice, avgFuelPrice, electricStats, fuelStats } = useMemo(() => {
+        if (!charges || charges.length === 0) return { avgElectricPrice: 0, avgFuelPrice: 0, electricStats: {}, fuelStats: {} };
+
+        const electricCharges = charges.filter(c => !c.type || c.type === 'electric');
+        const fuelCharges = charges.filter(c => c.type === 'fuel');
+
+        // Electric stats
+        const eCost = electricCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+        const eKwh = electricCharges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
+        const avgElectricPrice = eKwh > 0 ? eCost / eKwh : 0;
+
+        // Fuel stats
+        const fCost = fuelCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+        const fLiters = fuelCharges.reduce((sum, c) => sum + (c.litersCharged || 0), 0);
+        const avgFuelPrice = fLiters > 0 ? fCost / fLiters : 0;
+
+        return {
+            avgElectricPrice,
+            avgFuelPrice,
+            electricStats: { count: electricCharges.length, total: eCost, kwh: eKwh },
+            fuelStats: { count: fuelCharges.length, total: fCost, liters: fLiters }
+        };
     }, [charges]);
 
     if (!isOpen) return null;
@@ -168,7 +185,7 @@ const SettingsModal = () => {
                         <input
                             type="number"
                             step="0.001"
-                            value={settings?.useCalculatedPrice ? calculatedPrice.toFixed(3) : (settings?.electricityPrice || 0)}
+                            value={settings?.useCalculatedPrice ? avgElectricPrice.toFixed(3) : (settings?.electricityPrice || 0)}
                             onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
                             disabled={settings?.useCalculatedPrice}
                             className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings?.useCalculatedPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
@@ -177,12 +194,12 @@ const SettingsModal = () => {
 
                         {/* Info text */}
                         {settings?.useCalculatedPrice && (
-                            charges && charges.length > 0 ? (
+                            electricStats.count > 0 ? (
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                     {t('settings.priceCalculatedInfo', {
-                                        count: charges.length,
-                                        total: charges.reduce((sum, c) => sum + (c.totalCost || 0), 0).toFixed(2),
-                                        kwh: charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0).toFixed(2)
+                                        count: electricStats.count,
+                                        total: electricStats.total.toFixed(2),
+                                        kwh: electricStats.kwh.toFixed(2)
                                     })}
                                 </p>
                             ) : (
@@ -200,17 +217,62 @@ const SettingsModal = () => {
                                 <span className="text-lg">⛽</span>
                                 {t('settings.fuelPrice')} (€/L)
                             </label>
+
+                            {/* Toggle between calculated and custom price */}
+                            <div className="flex gap-2 mb-2">
+                                <button
+                                    onClick={() => onSettingsChange({ ...settings, useCalculatedFuelPrice: false })}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${!settings?.useCalculatedFuelPrice
+                                        ? 'byd-active-item'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                        }`}
+                                >
+                                    {t('settings.priceCustom')}
+                                </button>
+                                <button
+                                    onClick={() => onSettingsChange({ ...settings, useCalculatedFuelPrice: true })}
+                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${settings?.useCalculatedFuelPrice
+                                        ? 'byd-active-item'
+                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                        }`}
+                                    title={fuelStats.count === 0 ? t('settings.priceCalculatedNoData') : ''}
+                                >
+                                    {t('settings.priceCalculated')}
+                                </button>
+                            </div>
+
                             <input
                                 type="number"
                                 step="0.01"
-                                value={settings?.fuelPrice || 1.50}
+                                value={settings?.useCalculatedFuelPrice ? avgFuelPrice.toFixed(3) : (settings?.fuelPrice || 1.50)}
                                 onChange={(e) => onSettingsChange({ ...settings, fuelPrice: parseFloat(e.target.value) || 1.50 })}
-                                className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                                placeholder="1.50"
+                                disabled={settings?.useCalculatedFuelPrice}
+                                className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings?.useCalculatedFuelPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
+                                placeholder={settings?.useCalculatedFuelPrice ? t('settings.priceCalculatedAuto') : '1.50'}
                             />
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {t('settings.fuelPriceHint')}
-                            </p>
+
+                            {/* Info text for fuel */}
+                            {settings?.useCalculatedFuelPrice && (
+                                fuelStats.count > 0 ? (
+                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                        {t('settings.priceCalculatedInfoFuel', {
+                                            count: fuelStats.count,
+                                            total: fuelStats.total.toFixed(2),
+                                            liters: fuelStats.liters.toFixed(2)
+                                        })}
+                                    </p>
+                                ) : (
+                                    <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                        {t('settings.priceCalculatedNoCharges')}
+                                    </p>
+                                )
+                            )}
+
+                            {!settings?.useCalculatedFuelPrice && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400">
+                                    {t('settings.fuelPriceHint')}
+                                </p>
+                            )}
                         </div>
                     )}
 

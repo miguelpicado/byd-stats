@@ -49,7 +49,8 @@
         "longest": "Máis longo",
         "maxCons": "Maior consumo",
         "maxDur": "Maior duración",
-        "shortest": "Máis curto"
+        "shortest": "Máis curto",
+        "mostExpensive": "Máis custoso"
     },
     "units": {
         "km": "km",
@@ -499,5 +500,29 @@
         "avgTime": "Tempo",
         "avgCons": "Consumo",
         "totalDays": "Días activos"
+    },
+    "hybrid": {
+        "vehicleType": "Tipo de vehículo",
+        "electric": "Eléctrico",
+        "hybridPhev": "Híbrido (PHEV)",
+        "fuelConsumption": "Consumo medio comb.",
+        "electricConsumption": "Consumo eléctrico",
+        "totalFuel": "Combustible total",
+        "avgFuelEfficiency": "Eficiencia comb.",
+        "electricPercentage": "% Eléctrico",
+        "fuelPercentage": "% Combustible",
+        "evModeUsage": "Uso modo EV",
+        "evOnlyTrips": "Viaxes só EV",
+        "hybridTrips": "Viaxes con comb.",
+        "combinedEfficiency": "Eficiencia combinada",
+        "energySplit": "Reparto de enerxía",
+        "fuelLabel": "Combustible",
+        "electricLabel": "Eléctrico",
+        "liters": "L",
+        "litersPer100km": "L/100km",
+        "topFuel": "Top Consumo Combustible",
+        "fuelStats": "Estatísticas Combustible",
+        "electricStats": "Estatísticas Eléctricas",
+        "fuelConsumptionPerTrip": "Consumo comb./viaxe"
     }
 }

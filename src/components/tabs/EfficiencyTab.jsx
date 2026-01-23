@@ -2,7 +2,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Scatter as ScatterJS } from 'react-chartjs-2';
-import { Battery, Zap, MapPin, TrendingUp, BYD_RED } from '../Icons.jsx';
+import { Battery, Zap, MapPin, TrendingUp, Fuel, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 import { useLayout } from '../../context/LayoutContext';
@@ -43,6 +43,10 @@ const EfficiencyTab = React.memo(({
   const consumptionPerTrip = useMemo(() => {
     return (parseFloat(summary.totalKwh) / summary.totalTrips).toFixed(2);
   }, [summary.totalKwh, summary.totalTrips]);
+
+  const fuelConsumptionPerTrip = useMemo(() => {
+    return (parseFloat(summary.totalFuel) / summary.totalTrips).toFixed(2);
+  }, [summary.totalFuel, summary.totalTrips]);
 
   // Calculate y-axis min/max for efficiency chart
   const efficiencyYAxis = useMemo(() => {
@@ -179,17 +183,54 @@ const EfficiencyTab = React.memo(({
   if (isVertical) {
     return (
       <div className={isCompact ? 'space-y-3' : 'space-y-4'}>
+        {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
+        {isHybrid && (
+          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            <div className="bg-gradient-to-r from-emerald-500/10 to-amber-500/10 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⚡ {t('hybrid.electricConsumption')}</p>
+                  <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{summary.avgEff} <span className="text-xs">kWh/100km</span></p>
+                </div>
+                <div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⛽ {t('hybrid.fuelConsumption')}</p>
+                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.avgFuelEff} <span className="text-xs">L/100km</span></p>
+                </div>
+              </div>
+            </div>
+            <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('hybrid.evModeUsage')} (km)</p>
+                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.electricPercentage}%</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Battery}
-            label={t('stats.efficiency')}
-            value={summary.avgEff}
-            unit={t('units.kWh100km')}
-            color="bg-green-500/20 text-green-400"
-          />
+          {isHybrid ? (
+            <StatCard
+              isVerticalMode={true}
+              isLarger={isLargerCard}
+              isCompact={isCompact}
+              icon={Fuel}
+              label={t('hybrid.fuelConsumptionPerTrip') || 'Consumo combustible/viaje'}
+              value={fuelConsumptionPerTrip}
+              unit="L"
+              color="bg-amber-500/20 text-amber-500"
+            />
+          ) : (
+            <StatCard
+              isVerticalMode={true}
+              isLarger={isLargerCard}
+              isCompact={isCompact}
+              icon={Battery}
+              label={t('stats.efficiency')}
+              value={summary.avgEff}
+              unit={t('units.kWh100km')}
+              color="bg-green-500/20 text-green-400"
+            />
+          )}
           <StatCard
             isVerticalMode={true}
             isLarger={isLargerCard}
@@ -222,29 +263,7 @@ const EfficiencyTab = React.memo(({
           />
         </div>
 
-        {/* Hybrid fuel efficiency StatCard - only for hybrids */}
-        {isHybrid && (
-          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-            <div className="bg-gradient-to-r from-emerald-500/10 to-amber-500/10 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 border border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⚡ {t('hybrid.electricConsumption')}</p>
-                  <p className="text-xl font-bold text-emerald-600 dark:text-emerald-400">{summary.avgEff} <span className="text-xs">kWh/100km</span></p>
-                </div>
-                <div>
-                  <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">⛽ {t('hybrid.fuelConsumption')}</p>
-                  <p className="text-xl font-bold text-amber-600 dark:text-amber-400">{summary.avgFuelEff} <span className="text-xs">L/100km</span></p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('hybrid.evModeUsage')}</p>
-                <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.evModeUsage}%</p>
-              </div>
-            </div>
-          </div>
-        )}
+
 
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
@@ -265,16 +284,30 @@ const EfficiencyTab = React.memo(({
   // Render horizontal layout
   return (
     <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
+
+
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 lg:grid-cols-4'}`}>
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={Battery}
-          label={t('stats.efficiency')}
-          value={summary.avgEff}
-          unit="kWh/100km"
-          color="bg-green-500/20 text-green-400"
-        />
+        {isHybrid ? (
+          <StatCard
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Fuel}
+            label={t('hybrid.fuelConsumptionPerTrip') || 'Consumo combustible/viaje'}
+            value={fuelConsumptionPerTrip}
+            unit="L"
+            color="bg-amber-500/20 text-amber-500"
+          />
+        ) : (
+          <StatCard
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Battery}
+            label={t('stats.efficiency')}
+            value={summary.avgEff}
+            unit="kWh/100km"
+            color="bg-green-500/20 text-green-400"
+          />
+        )}
         <StatCard
           isLarger={isLargerCard}
           isCompact={isCompact}
@@ -321,8 +354,8 @@ const EfficiencyTab = React.memo(({
           </div>
           <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 flex items-center justify-center">
             <div className="text-center">
-              <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('hybrid.evModeUsage')}</p>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.evModeUsage}%</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 uppercase tracking-wide">{t('hybrid.evModeUsage')} (km)</p>
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{summary.electricPercentage}%</p>
             </div>
           </div>
         </div>
