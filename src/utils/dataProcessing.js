@@ -109,8 +109,95 @@ function getTopN(arr, compareFn, n) {
     return result;
 }
 
-export function processData(rows, electricityPrice = 0, fuelPrice = 0) {
+// Helper to determine cost based on strategy
+function getPriceForTrip(trip, strategy, customPrice, avgPrice, processedCharges) {
+    if (strategy === 'custom') return customPrice;
+    if (strategy === 'average') return avgPrice;
+
+    // Dynamic Strategy: Find last charge before trip start
+    if (processedCharges && processedCharges.length > 0) {
+        // Linear search backwards or filter? 
+        // Charges are sorted by timestamp asc. We want the last one where charge.ts < trip.start_timestamp
+        // Optimization: Could use binary search, but N is small.
+        // Or since trips are looped chronologically, we could keep a pointer.
+
+        // Simple finding for now:
+        const tripStart = trip.start_timestamp || 0;
+        let lastCharge = null;
+
+        for (let i = processedCharges.length - 1; i >= 0; i--) {
+            const charge = processedCharges[i];
+            const chargeTs = charge.timestamp || 0;
+            if (chargeTs < tripStart) {
+                lastCharge = charge;
+                break;
+            }
+        }
+
+        if (lastCharge) {
+            return lastCharge.effectivePrice;
+        }
+    }
+
+    // Fallback if no prior charge found (e.g. first trip)
+    return customPrice > 0 ? customPrice : avgPrice;
+}
+
+export function processData(rows, priceSettings = {}, charges = []) {
     if (!rows || rows.length === 0) return null;
+
+    // Parse Price Settings
+    // Strategy: 'custom' | 'average' | 'dynamic'
+    const elecStrategy = priceSettings.electricStrategy || 'custom';
+    const fuelStrategy = priceSettings.fuelStrategy || 'custom';
+
+    const elecCustomPrice = parseFloat(priceSettings.electricPrice) || 0;
+    const fuelCustomPrice = parseFloat(priceSettings.fuelPrice) || 0;
+
+    // Calculate Averages if needed (or passed in?)
+    // Re-calculating here ensures consistency if not passed
+    let elecAvgPrice = 0;
+    let fuelAvgPrice = 0;
+
+    // Pre-process charges for Dynamic Strategy
+    let processedElectricCharges = [];
+    let processedFuelCharges = [];
+
+    if (charges && charges.length > 0) {
+        // Calculate Global Averages
+        const eCharges = charges.filter(c => !c.type || c.type === 'electric');
+        const fCharges = charges.filter(c => c.type === 'fuel');
+
+        const eCost = eCharges.reduce((s, c) => s + (c.totalCost || 0), 0);
+        const eKwh = eCharges.reduce((s, c) => s + (c.kwhCharged || 0), 0);
+        elecAvgPrice = eKwh > 0 ? eCost / eKwh : 0;
+
+        const fCost = fCharges.reduce((s, c) => s + (c.totalCost || 0), 0);
+        const fLiters = fCharges.reduce((s, c) => s + (c.litersCharged || 0), 0);
+        fuelAvgPrice = fLiters > 0 ? fCost / fLiters : 0;
+
+        // Process for lookup (add timestamps if missing, calculate effective price)
+        if (elecStrategy === 'dynamic') {
+            processedElectricCharges = eCharges.map(c => {
+                // date "YYYY-MM-DD", time "HH:mm" -> timestamp
+                const dStr = c.date; // 2024-01-01
+                const tStr = c.time || "00:00";
+                const ts = new Date(`${dStr}T${tStr}:00`).getTime() / 1000;
+                const price = (c.kwhCharged > 0) ? (c.totalCost / c.kwhCharged) : 0;
+                return { ...c, timestamp: ts, effectivePrice: price };
+            }).sort((a, b) => a.timestamp - b.timestamp);
+        }
+
+        if (fuelStrategy === 'dynamic') {
+            processedFuelCharges = fCharges.map(c => {
+                const dStr = c.date;
+                const tStr = c.time || "00:00";
+                const ts = new Date(`${dStr}T${tStr}:00`).getTime() / 1000;
+                const price = (c.litersCharged > 0) ? (c.totalCost / c.litersCharged) : 0;
+                return { ...c, timestamp: ts, effectivePrice: price };
+            }).sort((a, b) => a.timestamp - b.timestamp);
+        }
+    }
 
     // Filter valid trips
     // Optimization: Pre-allocate? JS arrays are dynamic.
@@ -140,6 +227,11 @@ export function processData(rows, electricityPrice = 0, fuelPrice = 0) {
     // Cost tracking
     let maxCostVal = -Infinity;
     let maxCostDate = null;
+
+    // Sort trips chronologically FIRST to help with dynamic pricing correctness?
+    // The main sort happens at the end, but for dynamic pricing, processing in order might be cleaner conceptually,
+    // though the 'find last charge' logic works regardless of trip iteration order.
+    // Let's stick to existing iteration order (likely source order) for now.
 
     const monthlyData = {};
     const dailyData = {};
@@ -173,10 +265,14 @@ export function processData(rows, electricityPrice = 0, fuelPrice = 0) {
         totalDuration += tDur;
 
         // Calculate Cost
-        // Cost = (kWh * ElecPrice) + (L * FuelPrice)
-        const ePrice = parseFloat(electricityPrice) || 0;
-        const fPrice = parseFloat(fuelPrice) || 0;
+        // Dynamic Pricing Logic
+        const ePrice = getPriceForTrip(trip, elecStrategy, elecCustomPrice, elecAvgPrice, processedElectricCharges);
+        const fPrice = getPriceForTrip(trip, fuelStrategy, fuelCustomPrice, fuelAvgPrice, processedFuelCharges);
+
         const tripCost = (tElec * ePrice) + (tFuel * fPrice);
+
+        // Attach calculated cost to trip object for potential future use (e.g. detail view)
+        trip.calculatedCost = tripCost;
 
         if (tripCost > maxCostVal) {
             maxCostVal = tripCost;

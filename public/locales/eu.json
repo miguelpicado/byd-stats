@@ -167,7 +167,10 @@
         "about": "Honi buruz",
         "version": "Bertsioa",
         "sourceCode": "Iturburu kodea",
-        "reportBug": "Akatsa jakinarazi"
+        "reportBug": "Akatsa jakinarazi",
+        "priceStrategy": "Prezio modua",
+        "priceDynamics": "Azken Karga",
+        "priceDynamicsHint": "Bidaia aurreko azken kargaren prezioa erabiltzen du"
     },
     "upload": {
         "title": "Datuen kudeaketa",
