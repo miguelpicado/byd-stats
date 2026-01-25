@@ -271,8 +271,10 @@ export function processData(rows, priceSettings = {}, charges = []) {
 
         const tripCost = (tElec * ePrice) + (tFuel * fPrice);
 
-        // Attach calculated cost to trip object for potential future use (e.g. detail view)
+        // Attach calculated cost components
         trip.calculatedCost = tripCost;
+        trip.electricCost = tElec * ePrice;
+        trip.fuelCost = tFuel * fPrice;
 
         if (tripCost > maxCostVal) {
             maxCostVal = tripCost;
