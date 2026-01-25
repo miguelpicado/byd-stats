@@ -42,9 +42,10 @@ const TripDetailModal = () => {
         const percentile = calculatePercentile(trip, allTrips || []);
 
         // Calculate costs (electricity + fuel for hybrids)
-        const electricCost = (trip.electricity || 0) * (settings?.electricityPrice || 0.15);
-        const fuelCost = (trip.fuel || 0) * (settings?.fuelPrice || 1.50);
-        const cost = electricCost + fuelCost;
+        // Use pre-calculated values if available (respects Dynamic/Average strategies), otherwise fallback to custom price
+        const electricCost = trip.electricCost !== undefined ? trip.electricCost : ((trip.electricity || 0) * (settings?.electricityPrice || 0.15));
+        const fuelCost = trip.fuelCost !== undefined ? trip.fuelCost : ((trip.fuel || 0) * (settings?.fuelPrice || 1.50));
+        const cost = trip.calculatedCost !== undefined ? trip.calculatedCost : (electricCost + fuelCost);
 
         return { efficiency, score, scoreColor, comparisonPercent, percentile, cost, electricCost, fuelCost };
     }, [trip, allTrips, summary, settings]);
