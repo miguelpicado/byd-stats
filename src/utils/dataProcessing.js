@@ -112,16 +112,13 @@ function getTopN(arr, compareFn, n) {
 // Helper to determine cost based on strategy
 function getPriceForTrip(trip, strategy, customPrice, avgPrice, processedCharges) {
     if (strategy === 'custom') return customPrice;
-    if (strategy === 'average') return avgPrice;
+
+    if (strategy === 'average') {
+        return avgPrice > 0 ? avgPrice : customPrice;
+    }
 
     // Dynamic Strategy: Find last charge before trip start
     if (processedCharges && processedCharges.length > 0) {
-        // Linear search backwards or filter? 
-        // Charges are sorted by timestamp asc. We want the last one where charge.ts < trip.start_timestamp
-        // Optimization: Could use binary search, but N is small.
-        // Or since trips are looped chronologically, we could keep a pointer.
-
-        // Simple finding for now:
         const tripStart = trip.start_timestamp || 0;
         let lastCharge = null;
 
@@ -135,12 +132,15 @@ function getPriceForTrip(trip, strategy, customPrice, avgPrice, processedCharges
         }
 
         if (lastCharge) {
+            // If dynamic price is 0, it is valid (free charge), so return it directly.
+            // Do NOT fallback if price is 0.
             return lastCharge.effectivePrice;
         }
     }
 
     // Fallback if no prior charge found (e.g. first trip)
-    return customPrice > 0 ? customPrice : avgPrice;
+    // Use Custom Price
+    return customPrice;
 }
 
 export function processData(rows, priceSettings = {}, charges = []) {
