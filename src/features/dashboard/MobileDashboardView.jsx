@@ -15,6 +15,7 @@ import TabFallback from '@components/common/TabFallback';
 import FloatingActionButton from '@components/common/FloatingActionButton';
 
 // Lazy loaded tabs
+const CalendarTab = React.lazy(() => import('@components/tabs/CalendarTab'));
 const HistoryTab = React.lazy(() => import('@components/tabs/HistoryTab'));
 const RecordsTab = React.lazy(() => import('@components/tabs/RecordsTab'));
 const TrendsTab = React.lazy(() => import('@components/tabs/TrendsTab'));
@@ -127,6 +128,17 @@ const MobileDashboardView = memo(({
                                                     settings={settings}
                                                     isActive={isActive}
                                                 />
+                                            )}
+                                            {tab.id === 'calendar' && (
+                                                <Suspense fallback={<TabFallback />}>
+                                                    <CalendarTab
+                                                        trips={rawTrips}
+                                                        charges={charges}
+                                                        isActive={isActive}
+                                                        onTripSelect={onTripSelect}
+                                                        onChargeSelect={onChargeSelect}
+                                                    />
+                                                </Suspense>
                                             )}
                                             {tab.id === 'trends' && (
                                                 <Suspense fallback={<TabFallback />}>
