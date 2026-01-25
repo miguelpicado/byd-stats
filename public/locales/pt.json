@@ -21,7 +21,8 @@
         "efficiency": "Eficiência",
         "records": "Recordes",
         "history": "Histórico",
-        "charges": "Carregamentos"
+        "charges": "Carregamentos",
+        "calendar": "Calendário"
     },
     "stats": {
         "distance": "Distância",
@@ -168,7 +169,25 @@
         "about": "Sobre",
         "version": "Versão",
         "sourceCode": "Código fonte",
-        "reportBug": "Reportar erro"
+        "reportBug": "Reportar erro",
+        "customizeTabs": "Personalizar abas",
+        "visibleTabs": "Abas visíveis",
+        "chargerTypes": "Tipos de carregadores",
+        "chargerName": "Nome",
+        "chargerSpeed": "Velocidade (kW)",
+        "chargerEfficiency": "Eficiência (0-1)",
+        "addChargerType": "Adicionar tipo",
+        "deleteChargerType": "Eliminar",
+        "newChargerType": "Novo carregador",
+        "fuelPrice": "Preço gasolina",
+        "fuelPriceHint": "Preço médio da gasolina para calcular custos (apenas híbridos)",
+        "priceCustom": "Personalizado",
+        "priceCalculated": "Calculado",
+        "priceCalculatedNoData": "Não há dados de cargas para calcular",
+        "priceCalculatedAuto": "Calculado automaticamente",
+        "priceCalculatedInfo": "Calculado desde {{count}} cargas ({{total}}€ / {{kwh}} kWh)",
+        "priceCalculatedInfoFuel": "Calculado desde {{count}} abastecimentos ({{total}}€ / {{liters}} L)",
+        "priceCalculatedNoCharges": "Adicione cargas para calcular o preço automaticamente"
     },
     "upload": {
         "title": "Gestão de dados",
@@ -191,7 +210,8 @@
         "loadMerge": "Carregar apenas novas viagens",
         "loadChargeRegistry": "Carregar registo de carregamentos",
         "clearView": "Limpar vista atual",
-        "exportTrips": "Exportar viagens"
+        "exportTrips": "Exportar viagens",
+        "exportCharges": "Exportar carregamentos"
     },
     "filter": {
         "title": "Filtrar dados",
@@ -268,7 +288,13 @@
         "invalidFile": "Apenas ficheiros *.DB o *.JPG (base de dados renomeada) são permitidos\nEncontre EC_Database.db na pasta \"Energydata\" do seu carro",
         "somethingWentWrong": "Algo correu mal",
         "unexpectedRenderError": "A aplicação encontrou um erro inesperado",
-        "resetAndClearCache": "Reiniciar e Limpar Cache"
+        "resetAndClearCache": "Reiniciar e Limpar Cache",
+        "loadingSqlJs": "Erro ao carregar SQL.js",
+        "sqlNotReady": "SQL não está pronto",
+        "tableNotFound": "Tabela não encontrada",
+        "noDataFound": "Sem dados",
+        "noDataToExport": "Não há dados para exportar",
+        "exportError": "Erro ao exportar a base de dados"
     },
     "legal": {
         "pageTitle": "Documentação Legal",
@@ -434,7 +460,11 @@
         "avgLast10": "Média últimos 10 carregamentos",
         "avgKwh": "Média kWh",
         "avgCost": "Custo médio",
-        "last10Charges": "Últimos 10 carregamentos"
+        "last10Charges": "Últimos 10 carregamentos",
+        "typeElectric": "Elétrica",
+        "typeFuel": "Abastecimento",
+        "litersCharged": "Litros abastecidos",
+        "pricePerLiter": "Preço por litro"
     },
     "chargeInsights": {
         "kwhTitle": "Insights de Energia",
@@ -524,5 +554,23 @@
         "fuelStats": "Estatísticas Combustível",
         "electricStats": "Estatísticas Elétricas",
         "fuelConsumptionPerTrip": "Consumo comb./viagem"
+    },
+    "calendar": {
+        "title": "Calendário de Atividade",
+        "trips": "Viagens",
+        "charges": "Carregamentos",
+        "dayDetails": "Detalhes do dia",
+        "noActivity": "Nenhuma atividade registrada neste dia",
+        "efficiency": "Eficiência",
+        "cost": "Custo",
+        "kwh": "kWh",
+        "km": "km"
+    },
+    "sync": {
+        "conflictDetected": "Conflito de Sincronização",
+        "conflictDescription": "Existem diferenças entre as suas definições locais e as da nuvem. O que deseja fazer?",
+        "keepLocal": "Manter Local",
+        "useCloud": "Usar Nuvem",
+        "mergeBoth": "Combinar Ambos"
     }
 }

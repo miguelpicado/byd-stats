@@ -21,7 +21,8 @@
         "efficiency": "Eficiencia",
         "records": "Récords",
         "history": "Histórico",
-        "charges": "Cargas"
+        "charges": "Cargas",
+        "calendar": "Calendario"
     },
     "stats": {
         "distance": "Distancia",
@@ -168,7 +169,25 @@
         "about": "Acerca de",
         "version": "Versión",
         "sourceCode": "Código fonte",
-        "reportBug": "Reportar erro"
+        "reportBug": "Reportar erro",
+        "customizeTabs": "Personalizar pestañas",
+        "visibleTabs": "Pestañas visibles",
+        "chargerTypes": "Tipos de cargadores",
+        "chargerName": "Nome",
+        "chargerSpeed": "Velocidade (kW)",
+        "chargerEfficiency": "Eficiencia (0-1)",
+        "addChargerType": "Engadir tipo",
+        "deleteChargerType": "Eliminar",
+        "newChargerType": "Novo cargador",
+        "fuelPrice": "Prezo gasolina",
+        "fuelPriceHint": "Prezo medio de gasolina para calcular custos (só híbridos)",
+        "priceCustom": "Personalizado",
+        "priceCalculated": "Calculado",
+        "priceCalculatedNoData": "Non hai datos de cargas para calcular",
+        "priceCalculatedAuto": "Calculado automaticamente",
+        "priceCalculatedInfo": "Calculado desde {{count}} cargas ({{total}}€ / {{kwh}} kWh)",
+        "priceCalculatedInfoFuel": "Calculado desde {{count}} repostaxes ({{total}}€ / {{liters}} L)",
+        "priceCalculatedNoCharges": "Engade cargas para calcular o prezo automaticamente"
     },
     "upload": {
         "title": "Xestión de datos",
@@ -191,7 +210,8 @@
         "loadMerge": "Cargar só viaxes novas",
         "loadChargeRegistry": "Cargar rexistro de cargas",
         "clearView": "Limpar vista actual",
-        "exportTrips": "Exportar viaxes"
+        "exportTrips": "Exportar viaxes",
+        "exportCharges": "Exportar cargas"
     },
     "filter": {
         "title": "Filtrar datos",
@@ -268,7 +288,13 @@
         "invalidFile": "Só se admiten ficheiros *.DB ou *.JPG (base de datos renomeada)\nAtopa EC_Database.db na carpeta \"Energydata\" do coche",
         "somethingWentWrong": "Algo foi mal",
         "unexpectedRenderError": "A aplicación atopou un erro inesperado",
-        "resetAndClearCache": "Reiniciar e Borrar Caché"
+        "resetAndClearCache": "Reiniciar e Borrar Caché",
+        "loadingSqlJs": "Erro cargando SQL.js",
+        "sqlNotReady": "SQL non está listo",
+        "tableNotFound": "Táboa non atopada",
+        "noDataFound": "Sen datos",
+        "noDataToExport": "Non hai datos para exportar",
+        "exportError": "Erro ao exportar a base de datos"
     },
     "legal": {
         "pageTitle": "Documentación Legal",
@@ -434,7 +460,11 @@
         "avgLast10": "Media últimas 10 cargas",
         "avgKwh": "Media kWh",
         "avgCost": "Custo medio",
-        "last10Charges": "Últimas 10 cargas"
+        "last10Charges": "Últimas 10 cargas",
+        "typeElectric": "Eléctrica",
+        "typeFuel": "Repostaxe",
+        "litersCharged": "Litros repostados",
+        "pricePerLiter": "Prezo por litro"
     },
     "chargeInsights": {
         "kwhTitle": "Insights de Enerxía",
@@ -524,5 +554,23 @@
         "fuelStats": "Estatísticas Combustible",
         "electricStats": "Estatísticas Eléctricas",
         "fuelConsumptionPerTrip": "Consumo comb./viaxe"
+    },
+    "calendar": {
+        "title": "Calendario de Actividade",
+        "trips": "Viaxes",
+        "charges": "Cargas",
+        "dayDetails": "Detalles do día",
+        "noActivity": "Non hai actividade rexistrada neste día",
+        "efficiency": "Eficiencia",
+        "cost": "Custo",
+        "kwh": "kWh",
+        "km": "km"
+    },
+    "sync": {
+        "conflictDetected": "Conflito de Sincronización",
+        "conflictDescription": "Hai diferenzas entre os teus axustes locais e os da nube. Que desexas facer?",
+        "keepLocal": "Manter Local",
+        "useCloud": "Usar Nube",
+        "mergeBoth": "Combinar Ambos"
     }
 }

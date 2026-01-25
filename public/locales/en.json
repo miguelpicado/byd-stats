@@ -171,7 +171,16 @@
         "dataManagement": "Data management",
         "updateData": "Update data",
         "fuelPrice": "Fuel price",
-        "fuelPriceHint": "Average fuel price for cost calculations (hybrid only)"
+        "fuelPriceHint": "Average fuel price for cost calculations (hybrid only)",
+        "customizeTabs": "Customize tabs",
+        "visibleTabs": "Visible tabs",
+        "chargerTypes": "Charger types",
+        "chargerName": "Name",
+        "chargerSpeed": "Speed (kW)",
+        "chargerEfficiency": "Efficiency (0-1)",
+        "addChargerType": "Add type",
+        "deleteChargerType": "Delete",
+        "newChargerType": "New charger"
     },
     "upload": {
         "title": "BYD Stats",
