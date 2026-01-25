@@ -203,7 +203,8 @@
         "loadMerge": "Cargar sólo viajes nuevos",
         "loadChargeRegistry": "Cargar registro de cargas",
         "clearView": "Limpiar datos actuales",
-        "exportTrips": "Exportar viajes"
+        "exportTrips": "Exportar viajes",
+        "exportCharges": "Exportar cargas"
     },
     "filter": {
         "title": "Filtrar datos",
