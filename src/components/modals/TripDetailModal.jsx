@@ -40,9 +40,13 @@ const TripDetailModal = () => {
         const avgEfficiency = parseFloat(summary?.avgEff || 0);
         const comparisonPercent = avgEfficiency > 0 ? ((efficiency - avgEfficiency) / avgEfficiency) * 100 : 0;
         const percentile = calculatePercentile(trip, allTrips || []);
-        const cost = (trip.electricity || 0) * (settings?.electricityPrice || 0.15);
 
-        return { efficiency, score, scoreColor, comparisonPercent, percentile, cost };
+        // Calculate costs (electricity + fuel for hybrids)
+        const electricCost = (trip.electricity || 0) * (settings?.electricityPrice || 0.15);
+        const fuelCost = (trip.fuel || 0) * (settings?.fuelPrice || 1.50);
+        const cost = electricCost + fuelCost;
+
+        return { efficiency, score, scoreColor, comparisonPercent, percentile, cost, electricCost, fuelCost };
     }, [trip, allTrips, summary, settings]);
 
     if (!isOpen || !trip) return null;
@@ -106,6 +110,34 @@ const TripDetailModal = () => {
                     </div>
                 </div>
 
+                {/* Fuel consumption - Only for hybrid vehicles (even if 0L) */}
+                {(summary?.isHybrid || trip.fuel > 0) && (
+                    <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 text-center border border-amber-200 dark:border-amber-800/50">
+                            <span className="text-lg">⛽</span>
+                            <p className="text-slate-600 dark:text-slate-400 text-xs">{t('hybrid.fuelConsumption')}</p>
+                            <p className="text-amber-600 dark:text-amber-400 text-lg font-bold">{trip.fuel?.toFixed(2)} L</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-[10px]">{(trip.trip > 0 ? (trip.fuel / trip.trip * 100).toFixed(2) : 0)} L/100km</p>
+                        </div>
+                        <div className="bg-gradient-to-r from-emerald-50 to-amber-50 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 text-center border border-slate-200 dark:border-slate-700">
+                            <span className="text-lg">🔌⛽</span>
+                            <p className="text-slate-600 dark:text-slate-400 text-xs">{t('hybrid.energySplit')}</p>
+                            <div className="flex items-center justify-center gap-2 mt-1">
+                                <span className="text-emerald-600 dark:text-emerald-400 text-sm font-bold">
+                                    {(trip.electricity > 0 && (trip.electricity + trip.fuel) > 0
+                                        ? ((trip.electricity / (trip.electricity + trip.fuel * 9.7)) * 100).toFixed(0)
+                                        : 0)}% ⚡
+                                </span>
+                                <span className="text-amber-600 dark:text-amber-400 text-sm font-bold">
+                                    {(trip.fuel > 0 && (trip.electricity + trip.fuel) > 0
+                                        ? ((trip.fuel * 9.7 / (trip.electricity + trip.fuel * 9.7)) * 100).toFixed(0)
+                                        : 0)}% ⛽
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Speed */}
                 {trip.duration > 0 && (
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 mb-3">
@@ -146,7 +178,14 @@ const TripDetailModal = () => {
                         </div>
                         <div className="flex items-center justify-between">
                             <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.cost')}</span>
-                            <span className="font-bold text-amber-500">{details.cost.toFixed(2)}€</span>
+                            <div className="text-right">
+                                <span className="font-bold text-amber-500">{details.cost.toFixed(2)}€</span>
+                                {(summary?.isHybrid || trip.fuel > 0) && (
+                                    <p className="text-[10px] text-slate-400">
+                                        ⚡ {details.electricCost.toFixed(2)}€ + ⛽ {details.fuelCost.toFixed(2)}€
+                                    </p>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

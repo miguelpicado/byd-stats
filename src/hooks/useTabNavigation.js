@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, TrendingUp, Clock, Zap, BarChart3, List, Battery } from '../components/Icons';
+import { Activity, TrendingUp, Clock, Zap, BarChart3, List, Battery, Calendar } from '../components/Icons';
 
 export const useTabNavigation = ({ settings }) => {
     const { t } = useTranslation();
@@ -13,6 +13,7 @@ export const useTabNavigation = ({ settings }) => {
 
     const tabs = useMemo(() => [
         { id: 'overview', label: t('tabs.overview'), icon: Activity },
+        { id: 'calendar', label: t('tabs.calendar'), icon: Calendar },
         { id: 'trends', label: t('tabs.trends'), icon: TrendingUp },
         { id: 'patterns', label: t('tabs.patterns'), icon: Clock },
         { id: 'efficiency', label: t('tabs.efficiency'), icon: Zap },
