@@ -264,7 +264,8 @@
         "github": "GitHub",
         "email": "Contact Email",
         "openSource": "Open Source Project",
-        "viewOnGithub": "View on GitHub"
+        "viewOnGithub": "View on GitHub",
+        "faq": "Help / FAQ"
     },
     "history": {
         "title": "Trip history",
@@ -569,5 +570,48 @@
         "cost": "Cost",
         "kwh": "kWh",
         "km": "mi"
+    },
+    "faq": {
+        "pageTitle": "Freq. Asked Questions",
+        "pageSubtitle": "HELP & SUPPORT",
+        "general": {
+            "title": "General",
+            "q1": "Is this application free?",
+            "a1": "Yes, BYD Stats is 100% free and open source. It was developed as a personal project to help the BYD community better visualize their data.",
+            "q2": "Where is my data stored?",
+            "a2": "Your data is yours. By default, all information is stored locally on your device. We do not upload anything to external servers nor sell your demographics.",
+            "q3": "Do I need a Google account to use it?",
+            "a3": "No, it is not mandatory. You can use all analysis features without registering. A Google account is only needed if you voluntarily activate \"Cloud Sync\" to save a backup to your own Google Drive."
+        },
+        "database": {
+            "title": "Database",
+            "q1": "How do I get the EC_Database.db file from my car?",
+            "a1_intro": "Follow these steps on your BYD screen:",
+            "a1_step1": "Connect a USB drive (FAT32 format) to the car's data USB port.",
+            "a1_step2": "Open the \"File Manager\" app in the car.",
+            "a1_step3": "Navigate to: Internal Storage > BYD > ElectronicOwnerManual > data.",
+            "a1_step4": "Copy the EC_Database.db file and paste it onto your USB drive.",
+            "tip_label": "Tip",
+            "tip_text": "If you have trouble selecting the file when uploading, you can rename it to EC_Database.jpg. The application will accept the file as a valid image and process it correctly."
+        },
+        "install": {
+            "title": "Installation (PWA)",
+            "q1": "How do I install the App on my phone (Android/iOS)?",
+            "a1_intro": "You will usually see an automatic banner when entering the website inviting you to install the application.",
+            "a1_ios": "Tap the \"Share\" button and select \"Add to Home Screen\".",
+            "a1_android": "Tap the menu (three dots) and select \"Install App\" or \"Add to Home Screen\".",
+            "q2": "Can I install it on the car screen?",
+            "a2_intro": "Yes, if your car has a web browser (like GBox or native browser):",
+            "a2_step1": "Open bydstats.com in the car browser.",
+            "a2_step2": "Look for the browser option to \"Add to Home Screen\" or \"Install\".",
+            "a2_step3": "It will now appear as just another app on your multimedia system."
+        },
+        "support": {
+            "title": "Support & Contact",
+            "q1": "How can I support the project?",
+            "a1": "If you find the application useful and want to support its maintenance and ongoing development, you can make a small voluntary donation via Ko-fi. Any contribution is immensely appreciated!",
+            "q2": "Do you have questions or suggestions?",
+            "a2": "For any questions, ideas, contributions, or if you find any issues, feel free to write to me at"
+        }
     }
 }
