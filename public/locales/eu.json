@@ -21,7 +21,8 @@
         "efficiency": "Eraginkortasuna",
         "records": "Errekordak",
         "history": "Historia",
-        "charges": "Kargak"
+        "charges": "Kargak",
+        "calendar": "Egutegia"
     },
     "stats": {
         "distance": "Distantzia",
@@ -50,7 +51,8 @@
         "maxCons": "Kontsumo max",
         "maxDur": "Iraupen max",
         "shortest": "Laburrena",
-        "mostExpensive": "Garestiena"
+        "mostExpensive": "Garestiena",
+        "consumption": "Kontsumoa"
     },
     "units": {
         "km": "km",
@@ -71,7 +73,8 @@
         "kWhDay": "kWh/egun",
         "currencyPerMonth": "€/hil",
         "exkwh": "kWh",
-        "kwh100": "kWh/100km"
+        "kwh100": "kWh/100km",
+        "kWh": "kWh"
     },
     "days": {
         "mon": "Astelehena",
@@ -170,7 +173,25 @@
         "reportBug": "Akatsa jakinarazi",
         "priceStrategy": "Prezio modua",
         "priceDynamics": "Dinamikoa",
-        "priceDynamicsHint": "Bidaia aurreko azken kargaren prezioa erabiltzen du"
+        "priceDynamicsHint": "Bidaia aurreko azken kargaren prezioa erabiltzen du",
+        "customizeTabs": "Fitxak pertsonalizatu",
+        "visibleTabs": "Fitxa ikusgarriak",
+        "chargerTypes": "Kargagailu motak",
+        "chargerName": "Izena",
+        "chargerSpeed": "Abiadura (kW)",
+        "chargerEfficiency": "Eraginkortasuna (0-1)",
+        "addChargerType": "Gehitu mota",
+        "deleteChargerType": "Ezabatu",
+        "newChargerType": "Kargagailu berria",
+        "fuelPrice": "Gasolinaren prezioa",
+        "fuelPriceHint": "Gasolinaren batez besteko prezioa kostuak kalkulatzeko (hibridoak soilik)",
+        "priceCustom": "Pertsonalizatua",
+        "priceCalculated": "Kalkulatua",
+        "priceCalculatedNoData": "Ez dago kalkulatzeko karga daturik",
+        "priceCalculatedAuto": "Automatikoki kalkulatua",
+        "priceCalculatedInfo": "{{count}} kargetatik kalkulatua ({{total}}€ / {{kwh}} kWh)",
+        "priceCalculatedInfoFuel": "{{count}} repostajeetatik kalkulatua ({{total}}€ / {{liters}} L)",
+        "priceCalculatedNoCharges": "Gehitu kargak prezioa automatikoki kalkulatzeko"
     },
     "upload": {
         "title": "Datuen kudeaketa",
@@ -193,7 +214,8 @@
         "loadMerge": "Kargatu bidaia berriak soilik",
         "loadChargeRegistry": "Kargatu kargen erregistroa",
         "clearView": "Garbitu uneko ikuspegia",
-        "exportTrips": "Esportatu bidaiak"
+        "exportTrips": "Esportatu bidaiak",
+        "exportCharges": "Kargak esportatu"
     },
     "filter": {
         "title": "Datuak iragazi",
@@ -270,7 +292,13 @@
         "invalidFile": "*.DB edo *.JPG fitxategiak soilik onartzen dira (izena aldatutako datu-basea)\nAurkitu EC_Database.db autoaren \"Energydata\" karpetan",
         "somethingWentWrong": "Zerbait gaizki joan da",
         "unexpectedRenderError": "Aplikazioak ustekabeko errorea aurkitu du",
-        "resetAndClearCache": "Berrabiarazi eta Katxea Garbitu"
+        "resetAndClearCache": "Berrabiarazi eta Katxea Garbitu",
+        "loadingSqlJs": "Errorea SQL.js kargatzean",
+        "sqlNotReady": "SQL ez dago prest",
+        "tableNotFound": "Taula ez da aurkitu",
+        "noDataFound": "Daturik gabe",
+        "noDataToExport": "Ez dago esportatzeko daturik",
+        "exportError": "Errorea datu-basea esportatzean"
     },
     "legal": {
         "pageTitle": "Dokumentazio Legala",
@@ -436,7 +464,11 @@
         "avgLast10": "Azken 10 kargen batez bestekoa",
         "avgKwh": "Batez besteko kWh",
         "avgCost": "Batez besteko kostua",
-        "last10Charges": "Azken 10 kargak"
+        "last10Charges": "Azken 10 kargak",
+        "typeElectric": "Elektrikoa",
+        "typeFuel": "Repostajea",
+        "litersCharged": "Litro repostatuak",
+        "pricePerLiter": "Litroko prezioa"
     },
     "chargeInsights": {
         "kwhTitle": "Energia Analisiak",
@@ -526,5 +558,23 @@
         "fuelStats": "Erregai Estatistikak",
         "electricStats": "Estatistika Elektrikoak",
         "fuelConsumptionPerTrip": "Erregai kontsumoa/bidaia"
+    },
+    "calendar": {
+        "title": "Jarduera Egutegia",
+        "trips": "Bidaiak",
+        "charges": "Kargak",
+        "dayDetails": "Eguneko xehetasunak",
+        "noActivity": "Egun honetan ez dago jarduerarik erregistratuta",
+        "efficiency": "Eraginkortasuna",
+        "cost": "Kostua",
+        "kwh": "kWh",
+        "km": "km"
+    },
+    "sync": {
+        "conflictDetected": "Sinkronizazio gatazka",
+        "conflictDescription": "Desberdintasunak daude zure tokiko ezarpenen eta hodeikoen artean. Zer egin nahi duzu?",
+        "keepLocal": "Mantendu Lokala",
+        "useCloud": "Erabili Hodeia",
+        "mergeBoth": "Konbinatu Biak"
     }
 }

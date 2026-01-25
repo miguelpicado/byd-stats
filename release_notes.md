@@ -1,37 +1,23 @@
-# Release Notes v1.5.0
+# Release Notes - v1.6.0 🚀
 
-## 🚀 Mejoras Principales
+## Nuevas Funcionalidades 🌟
 
-### 🏗️ Arquitectura y Refactorización (Fase 1 & 2)
-- **Sistema de Providers**: Creación de `AppProviders` para gestionar contextos globales (`AuthProvider`, `DataProvider`, `ThemeManager`) de forma centralizada y limpia.
-- **Modularización**: 
-  - Separación de `App.jsx` en componentes más pequeños (`AppRoutes`, `LandingPage`).
-  - Implementación de Hooks personalizados (`useChargeImporter`, `useGoogleSync`, `useDatabase`).
-  - Configuración de **Path Aliases** (`@components`, `@hooks`, `@utils`) para importaciones más limpias.
-- **Lazy Loading**: Code splitting para `AllTripsView`, `AllChargesView` y `ModalCoordinator`, reduciendo el bundle inicial.
+### 📅 Nueva Pestaña "Calendario"
+- Disfruta de una visión completa de tu actividad diaria.
+- Visualiza de un vistazo los días con viajes o cargas.
+- Accede a los detalles de cada día para ver estadísticas agregadas (distancia, consumo, eficiencia).
 
-### ⚡ Rendimiento y Optimización (Fase 3 & 4)
-- **Data Processing**: Algoritmos estadísticos optimizados (O(N)) para cálculos rápidos.
-- **Renderizado Eficiente**: Uso estratégico de `React.memo` en gráficos y listas virtualizadas (`@tanstack/react-virtual` revisado).
-- **Bundle Split**: Separación de dependencias grandes (Chart.js, Firebase) en chunks individuales.
-- **Compresión**: Implementación de Gzip/Brotli (`vite-plugin-compression`).
+### 🌱 Soporte para Vehículos Híbridos (PHEV)
+- **Estadísticas completas**: Ahora la aplicación lee e interpreta los datos de consumo de combustible.
+- **Gráficos dedicados**: Visualiza el consumo de gasolina vs. eléctrico.
+- **Eficiencia combinada**: Análisis del rendimiento total de tu vehículo híbrido.
+- Configuración de precio de combustible para cálculos de costes precisos.
 
-### 📱 PWA y Experiencia Móvil (Fase 5)
-- **Soporte Offline**: Service Worker funcional con estrategia Cache-First.
-- **UX Mejorada**:
-  - Corrección de animaciones de gráficos en cambios de pestaña.
-  - Gestión de actualizaciones de la App (`PWAManager` y `virtual:pwa-register`).
-  - Solución a la superposición del tema claro/oscuro en Android (Barra de estado).
+### 💾 Gestión de Base de Datos Mejorada
+- **Reemplazo de Viajes**: Nueva opción para reemplazar completamente tu base de datos de viajes (útil si quieres hacer una carga limpia).
+  - *Nota*: Esta opción es inteligente y **preserva** tu registro manual de cargas.
+- **Detección de Conflictos de Sincronización**: Hemos mejorado la sincronización con Google Drive para detectar y resolver conflictos automáticamente cuando reemplazas tu base de datos local.
 
-### 🛡️ Calidad y Testing (Fase 6)
-- **Infraestructura de Tests**:
-  - **Unit**: Configuración de Vitest con cobertura para `DataProvider` y utilidades.
-  - **E2E**: Setup de Playwright con Smoke Tests para verificar despliegues.
-- **Robustez**: Verificación de conectividad (`navigator.onLine`) en sincronización.
-- **CI/CD**: Preparación para pipelines automatizados.
-
-## 🐛 Correcciones y Ajustes
-- Solución al problema de carga de SQL.js (`wasm` loading).
-- Fix de accesibilidad en botón de carga de archivos.
-- Unificación de estilos y constantes.
-- Eliminación de código muerto y dependencias obsoletas (`react-window` reemplazado/eliminado).
+## Mejoras Técnicas 🛠️
+- Actualización del sistema de despliegue para mayor estabilidad.
+- Correcciones menores en la interfaz de usuario.

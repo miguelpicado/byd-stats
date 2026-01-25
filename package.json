@@ -1,7 +1,7 @@
 {
   "name": "byd-stats",
   "private": true,
-  "version": "1.5.0",
+  "version": "1.6.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,8 +9,6 @@
     "preview": "vite preview",
     "predeploy": "npm run build",
     "deploy": "npx gh-pages -d dist",
-    "build:test": "vite build --base=/test1/",
-    "deploy:test": "npx gh-pages -d dist --dest test1 --add",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",

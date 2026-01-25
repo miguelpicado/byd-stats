@@ -178,6 +178,73 @@ const useChargesData = () => {
         logger.info(`Charges replaced with ${newCharges.length} items`);
     }, []);
 
+    /**
+     * Export charges to CSV file
+     */
+    const exportCharges = useCallback(() => {
+        if (charges.length === 0) {
+            return false;
+        }
+
+        try {
+            // CSV Header matching the import format
+            const headers = [
+                'Fecha/Hora',
+                'Km Totales',
+                'kWh Facturados',
+                'Precio Total',
+                'Duración (min)',
+                'Tipo Cargador',
+                'Precio/kWh',
+                '% Final'
+            ].join(',');
+
+            // CSV Rows
+            const rows = charges.map(c => {
+                // Format date/time: YYYY-MM-DD HH:MM
+                const dateTime = `${c.date} ${c.time}`;
+                // Fields
+                const km = c.odometer || 0;
+                // Handle different charge types (electric vs fuel)
+                // For fuel, we use liters as 'kWh Facturados' equivalent for CSV structure, 
+                // but import logic handles them differently based on 'Tipo Cargador' logic if implemented.
+                // Current import implementation assumes electric fields mostly, but let's stick to standard format.
+                const kwh = c.type === 'fuel' ? (c.litersCharged || 0) : (c.kwhCharged || 0);
+                const price = c.totalCost || 0;
+                const duration = 0; // Duration not currently tracked in model, default to 0
+                const type = c.chargerTypeId || (c.type === 'fuel' ? 'Gasolina' : 'Desconocido');
+                const priceUnit = c.type === 'fuel' ? (c.pricePerLiter || 0) : (c.pricePerKwh || 0);
+                const finalPct = c.finalPercentage || 0;
+
+                return [
+                    dateTime,
+                    km,
+                    kwh,
+                    price,
+                    duration,
+                    type,
+                    priceUnit,
+                    finalPct
+                ].join(',');
+            });
+
+            const csvContent = [headers, ...rows].join('\n');
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `REGISTRO_CARGAS_${new Date().toISOString().slice(0, 10)}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            return true;
+        } catch (e) {
+            logger.error('Error exporting charges:', e);
+            return false;
+        }
+    }, [charges]);
+
     // Calculate summary statistics (separate for electric and fuel)
     const summary = useMemo(() => {
         if (charges.length === 0) return null;
@@ -223,6 +290,7 @@ const useChargesData = () => {
         getChargeById,
         clearCharges,
         replaceCharges,
+        exportCharges,
         summary
     };
 };

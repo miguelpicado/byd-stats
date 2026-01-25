@@ -21,7 +21,8 @@
         "efficiency": "Eficiència",
         "records": "Rècords",
         "history": "Històric",
-        "charges": "Càrregues"
+        "charges": "Càrregues",
+        "calendar": "Calendari"
     },
     "stats": {
         "distance": "Distància",
@@ -50,7 +51,8 @@
         "maxCons": "Major consum",
         "maxDur": "Major durada",
         "shortest": "Més curt",
-        "mostExpensive": "Més costós"
+        "mostExpensive": "Més costós",
+        "consumption": "Consum"
     },
     "units": {
         "km": "km",
@@ -169,7 +171,27 @@
         "reportBug": "Reportar error",
         "priceStrategy": "Mode de preu",
         "priceDynamics": "Dinàmic",
-        "priceDynamicsHint": "Usa el preu de la càrrega més recent anterior al viatge"
+        "priceDynamicsHint": "Usa el preu de la càrrega més recent anterior al viatge",
+        "customizeTabs": "Personalitzar pestanyes",
+        "visibleTabs": "Pestanyes visibles",
+        "chargerTypes": "Tipus de carregadors",
+        "chargerName": "Nom",
+        "chargerSpeed": "Velocitat (kW)",
+        "chargerEfficiency": "Eficiència (0-1)",
+        "addChargerType": "Afegir tipus",
+        "deleteChargerType": "Eliminar",
+        "newChargerType": "Nou carregador",
+        "fuelPrice": "Preu gasolina",
+        "fuelPriceHint": "Preu mitjà de gasolina per calcular costos (només híbrids)",
+        "priceCustom": "Personalitzat",
+        "priceCalculated": "Calculat",
+        "priceCalculatedNoData": "No hi ha dades de càrregues per calcular",
+        "priceCalculatedAuto": "Calculat automàticament",
+        "priceCalculatedInfo": "Calculat des de {{count}} càrregues ({{total}}€ / {{kwh}} kWh)",
+        "priceCalculatedInfoFuel": "Calculat des de {{count}} repostatges ({{total}}€ / {{liters}} L)",
+        "priceCalculatedNoCharges": "Afegeix càrregues per calcular el preu automàticament",
+        "dataManagement": "Gestió de dades",
+        "updateData": "Actualitzar dades"
     },
     "upload": {
         "title": "Gestió de dades",
@@ -192,7 +214,8 @@
         "loadMerge": "Carregar només viatges nous",
         "loadChargeRegistry": "Carregar registre de càrregues",
         "clearView": "Netejar vista actual",
-        "exportTrips": "Exportar viatges"
+        "exportTrips": "Exportar viatges",
+        "exportCharges": "Exportar càrregues"
     },
     "filter": {
         "title": "Filtrar dades",
@@ -269,7 +292,13 @@
         "invalidFile": "Només s'admeten fitxers *.DB o *.JPG (base de dades reanomenada)\nTroba EC_Database.db a la carpeta \"Energydata\" del cotxe",
         "somethingWentWrong": "Alguna cosa ha anat malament",
         "unexpectedRenderError": "L'aplicació ha trobat un error inesperat",
-        "resetAndClearCache": "Reiniciar i Esborrar Memòria Cau"
+        "resetAndClearCache": "Reiniciar i Esborrar Memòria Cau",
+        "loadingSqlJs": "Error carregant SQL.js",
+        "sqlNotReady": "SQL no està llest",
+        "tableNotFound": "Taula no trobada",
+        "noDataFound": "Sense dades",
+        "noDataToExport": "No hi ha dades per exportar",
+        "exportError": "Error a l'exportar la base de dades"
     },
     "legal": {
         "pageTitle": "Documentació Legal",
@@ -435,7 +464,11 @@
         "avgLast10": "Mitjana últimes 10 càrregues",
         "avgKwh": "Mitjana kWh",
         "avgCost": "Cost mitjà",
-        "last10Charges": "Últimes 10 càrregues"
+        "last10Charges": "Últimes 10 càrregues",
+        "typeElectric": "Elèctrica",
+        "typeFuel": "Repostatge",
+        "litersCharged": "Litres repostats",
+        "pricePerLiter": "Preu per litre"
     },
     "chargeInsights": {
         "kwhTitle": "Insights d'Energia",
@@ -525,5 +558,23 @@
         "fuelStats": "Estadístiques Combustible",
         "electricStats": "Estadístiques Elèctriques",
         "fuelConsumptionPerTrip": "Consum comb./viatge"
+    },
+    "calendar": {
+        "title": "Calendari d'Activitat",
+        "trips": "Viatges",
+        "charges": "Càrregues",
+        "dayDetails": "Detalls del dia",
+        "noActivity": "No hi ha activitat registrada en aquest dia",
+        "efficiency": "Eficiència",
+        "cost": "Cost",
+        "kwh": "kWh",
+        "km": "km"
+    },
+    "sync": {
+        "conflictDetected": "Conflicte de Sincronització",
+        "conflictDescription": "Hi ha diferències entre els teus ajustos locals i els del núvol. Què vols fer?",
+        "keepLocal": "Mantenir Local",
+        "useCloud": "Usar Núvol",
+        "mergeBoth": "Combinar Ambdós"
     }
 }
