@@ -173,7 +173,7 @@
         "fuelPrice": "Fuel price",
         "fuelPriceHint": "Average fuel price for cost calculations (hybrid only)",
         "priceStrategy": "Price Logic",
-        "priceDynamics": "Last Charge",
+        "priceDynamics": "Dynamic",
         "priceDynamicsHint": "Uses the price of the most recent charge before the trip"
     },
     "upload": {

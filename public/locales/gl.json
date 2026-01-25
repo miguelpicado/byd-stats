@@ -170,7 +170,7 @@
         "sourceCode": "Código fonte",
         "reportBug": "Reportar erro",
         "priceStrategy": "Modo de prezo",
-        "priceDynamics": "Última Carga",
+        "priceDynamics": "Dinámico",
         "priceDynamicsHint": "Usa o prezo da carga máis recente anterior á viaxe"
     },
     "upload": {
