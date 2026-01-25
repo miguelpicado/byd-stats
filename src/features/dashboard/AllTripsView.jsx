@@ -143,7 +143,7 @@ const AllTripsView = ({
                             {t('common.allTrips', 'Todos los viajes')}
                         </h2>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
-                            {finalTrips.length} {t('header.trips', 'viajes')}
+                            {t('header.trips', { count: finalTrips.length, defaultValue: 'viajes' })}
                         </p>
                     </div>
 
