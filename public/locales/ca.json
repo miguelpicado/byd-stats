@@ -168,7 +168,7 @@
         "sourceCode": "Codi font",
         "reportBug": "Reportar error",
         "priceStrategy": "Mode de preu",
-        "priceDynamics": "Última Càrrega",
+        "priceDynamics": "Dinàmic",
         "priceDynamicsHint": "Usa el preu de la càrrega més recent anterior al viatge"
     },
     "upload": {

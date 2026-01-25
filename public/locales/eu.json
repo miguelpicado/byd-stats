@@ -169,7 +169,7 @@
         "sourceCode": "Iturburu kodea",
         "reportBug": "Akatsa jakinarazi",
         "priceStrategy": "Prezio modua",
-        "priceDynamics": "Azken Karga",
+        "priceDynamics": "Dinamikoa",
         "priceDynamicsHint": "Bidaia aurreko azken kargaren prezioa erabiltzen du"
     },
     "upload": {

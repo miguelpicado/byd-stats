@@ -38,6 +38,8 @@ const DEFAULT_SETTINGS = {
     fuelPrice: 1.50, // €/L - Default fuel price
     useCalculatedPrice: false,
     useCalculatedFuelPrice: false,
+    priceStrategy: 'custom', // 'custom' | 'average' | 'dynamic'
+    fuelPriceStrategy: 'custom',
     theme: 'auto',
     chargerTypes: DEFAULT_CHARGER_TYPES,
     hiddenTabs: []
@@ -87,6 +89,8 @@ export const AppProvider = ({ children }) => {
                 fuelPrice: updated.fuelPrice ?? prev.fuelPrice ?? 1.50,
                 useCalculatedPrice: updated.useCalculatedPrice ?? prev.useCalculatedPrice ?? false,
                 useCalculatedFuelPrice: updated.useCalculatedFuelPrice ?? prev.useCalculatedFuelPrice ?? false,
+                priceStrategy: updated.priceStrategy ?? prev.priceStrategy ?? 'custom',
+                fuelPriceStrategy: updated.fuelPriceStrategy ?? prev.fuelPriceStrategy ?? 'custom',
                 theme: updated.theme ?? prev.theme ?? 'auto',
                 chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES,
                 hiddenTabs: updated.hiddenTabs ?? prev.hiddenTabs ?? []
