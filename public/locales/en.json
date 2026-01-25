@@ -51,7 +51,8 @@
         "maxCons": "Max Consumption",
         "maxDur": "Max Duration",
         "shortest": "Shortest",
-        "mostExpensive": "Most expensive"
+        "mostExpensive": "Most expensive",
+        "consumption": "Consumption"
     },
     "units": {
         "km": "mi",
@@ -174,7 +175,16 @@
         "fuelPriceHint": "Average fuel price for cost calculations (hybrid only)",
         "priceStrategy": "Price Logic",
         "priceDynamics": "Dynamic",
-        "priceDynamicsHint": "Uses the price of the most recent charge before the trip"
+        "priceDynamicsHint": "Uses the price of the most recent charge before the trip",
+        "customizeTabs": "Customize tabs",
+        "visibleTabs": "Visible tabs",
+        "chargerTypes": "Charger types",
+        "chargerName": "Name",
+        "chargerSpeed": "Speed (kW)",
+        "chargerEfficiency": "Efficiency (0-1)",
+        "addChargerType": "Add type",
+        "deleteChargerType": "Delete",
+        "newChargerType": "New charger"
     },
     "upload": {
         "title": "BYD Stats",
@@ -197,7 +207,8 @@
         "loadMerge": "Load only new trips",
         "loadChargeRegistry": "Load charge registry",
         "clearView": "Clear current data",
-        "exportTrips": "Export trips"
+        "exportTrips": "Export trips",
+        "exportCharges": "Export charges"
     },
     "filter": {
         "title": "Filter data",
