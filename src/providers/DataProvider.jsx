@@ -94,8 +94,9 @@ export const DataProvider = ({ children }) => {
 
                 // Auto-sync after import if authenticated
                 // IMPORTANT: Pass newTrips explicitly because React state update is async
+                // If replacing data (merge=false), forcing conflict check to allow user to choose source
                 if (googleSync.isAuthenticated) {
-                    googleSync.syncNow(newTrips);
+                    googleSync.syncNow(newTrips, { checkData: !merge });
                 }
             }
         } catch (error) {
