@@ -9,6 +9,7 @@ import { logger } from './logger';
  * @property {string} date - Date in YYYYMMDD format
  * @property {number} trip - Distance in km
  * @property {number} electricity - Energy consumed in kWh
+ * @property {number} [fuel] - Fuel consumed in liters (hybrid vehicles)
  * @property {number} duration - Duration in minutes
  * @property {number} start_timestamp - Unix timestamp of trip start
  * @property {number} end_timestamp - Unix timestamp of trip end
@@ -42,6 +43,7 @@ import { logger } from './logger';
  * @property {string} month - Month label (e.g., "Jan 2024")
  * @property {number} km - Total km for month
  * @property {number} kwh - Total kWh for month
+ * @property {number} [fuel] - Total fuel for month (hybrid only)
  * @property {number} trips - Trip count for month
  */
 
@@ -49,13 +51,18 @@ import { logger } from './logger';
  * @typedef {Object} Summary
  * @property {number} totalKm - Total distance traveled
  * @property {number} totalKwh - Total energy consumed
+ * @property {number} [totalFuel] - Total fuel consumed (hybrid only)
  * @property {number} totalDuration - Total time in minutes
  * @property {number} avgEfficiency - Average kWh/100km
+ * @property {number} [avgFuelEfficiency] - Average L/100km (hybrid only)
  * @property {number} avgSpeed - Average speed in km/h
  * @property {number} tripCount - Number of trips
  * @property {number} activeDays - Number of unique driving days
  * @property {number} minEfficiency - Minimum efficiency value
  * @property {number} maxEfficiency - Maximum efficiency value
+ * @property {boolean} [isHybrid] - Whether the vehicle is a hybrid
+ * @property {number} [electricPercentage] - % of km on electricity (hybrid)
+ * @property {number} [fuelPercentage] - % of km on fuel (hybrid)
  */
 
 /**
@@ -68,6 +75,7 @@ import { logger } from './logger';
  * @property {Object[]} tripDist - Trip distance distribution buckets
  * @property {Object[]} effScatter - Efficiency scatter plot data
  * @property {Object} top - Top records (distance, consumption, duration)
+ * @property {boolean} isHybrid - Whether the data is from a hybrid vehicle
  */
 
 /**
@@ -101,7 +109,7 @@ function getTopN(arr, compareFn, n) {
     return result;
 }
 
-export function processData(rows) {
+export function processData(rows, electricityPrice = 0, fuelPrice = 0) {
     if (!rows || rows.length === 0) return null;
 
     // Filter valid trips
@@ -112,13 +120,26 @@ export function processData(rows) {
     // Initialize structures
     let totalKm = 0;
     let totalKwh = 0;
+    let totalFuel = 0;
     let totalDuration = 0;
+
+    // Hybrid detection - any trip with fuel > 0 means hybrid vehicle
+    let hasAnyFuel = false;
+    let electricOnlyKm = 0;  // km traveled with electricity only (fuel = 0)
+    let fuelUsedKm = 0;      // km traveled using fuel (fuel > 0)
+    let electricOnlyTrips = 0;
+    let fuelUsedTrips = 0;
 
     // Tracking min/max
     let maxKmVal = -Infinity;
     let minKmVal = Infinity;
     let maxKwhVal = -Infinity;
     let maxDurVal = -Infinity;
+    let maxFuelVal = 0;
+
+    // Cost tracking
+    let maxCostVal = -Infinity;
+    let maxCostDate = null;
 
     const monthlyData = {};
     const dailyData = {};
@@ -142,12 +163,36 @@ export function processData(rows) {
     for (const trip of trips) {
         const tTrip = trip.trip || 0;
         const tElec = trip.electricity || 0;
+        const tFuel = trip.fuel || 0;
         const tDur = trip.duration || 0;
 
         // Totals
         totalKm += tTrip;
         totalKwh += tElec;
+        totalFuel += tFuel;
         totalDuration += tDur;
+
+        // Calculate Cost
+        // Cost = (kWh * ElecPrice) + (L * FuelPrice)
+        const ePrice = parseFloat(electricityPrice) || 0;
+        const fPrice = parseFloat(fuelPrice) || 0;
+        const tripCost = (tElec * ePrice) + (tFuel * fPrice);
+
+        if (tripCost > maxCostVal) {
+            maxCostVal = tripCost;
+            maxCostDate = trip.date;
+        }
+
+        // Hybrid detection and tracking
+        if (tFuel > 0) {
+            hasAnyFuel = true;
+            fuelUsedKm += tTrip;
+            fuelUsedTrips++;
+            if (tFuel > maxFuelVal) maxFuelVal = tFuel;
+        } else {
+            electricOnlyKm += tTrip;
+            electricOnlyTrips++;
+        }
 
         // Min/Max tracking
         if (tTrip > maxKmVal) maxKmVal = tTrip;
@@ -157,18 +202,20 @@ export function processData(rows) {
 
         // Monthly
         const m = trip.month || 'unknown';
-        if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0 };
+        if (!monthlyData[m]) monthlyData[m] = { month: m, trips: 0, km: 0, kwh: 0, fuel: 0 };
         monthlyData[m].trips++;
         monthlyData[m].km += tTrip;
         monthlyData[m].kwh += tElec;
+        monthlyData[m].fuel += tFuel;
 
         // Daily
         const d = trip.date || 'unknown';
         uniqueDates.add(d);
-        if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0 };
+        if (!dailyData[d]) dailyData[d] = { date: d, trips: 0, km: 0, kwh: 0, fuel: 0 };
         dailyData[d].trips++;
         dailyData[d].km += tTrip;
         dailyData[d].kwh += tElec;
+        dailyData[d].fuel += tFuel;
 
         // Hourly
         if (trip.start_timestamp) {
@@ -202,7 +249,7 @@ export function processData(rows) {
         if (tTrip > 0 && tElec > 0) {
             const y = (tElec / tTrip) * 100;
             if (y > 0 && y < 50) {
-                efficiencyScatter.push({ x: tTrip, y });
+                efficiencyScatter.push({ x: tTrip, y, fuel: tFuel });
             }
         }
     }
@@ -219,12 +266,14 @@ export function processData(rows) {
     const monthlyArray = Object.values(monthlyData).sort((a, b) => a.month.localeCompare(b.month));
     monthlyArray.forEach(m => {
         m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
+        m.fuelEfficiency = m.km > 0 ? (m.fuel / m.km * 100) : 0;
         m.monthLabel = formatMonth(m.month);
     });
 
     const dailyArray = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
     dailyArray.forEach(d => {
         d.efficiency = d.km > 0 ? (d.kwh / d.km * 100) : 0;
+        d.fuelEfficiency = d.km > 0 ? (d.fuel / d.km * 100) : 0;
         d.dateLabel = formatDate(d.date);
     });
 
@@ -239,6 +288,7 @@ export function processData(rows) {
     const topKm = getTopN(trips, (a, b) => (b.trip || 0) - (a.trip || 0), 10);
     const topKwh = getTopN(trips, (a, b) => (b.electricity || 0) - (a.electricity || 0), 10);
     const topDur = getTopN(trips, (a, b) => (b.duration || 0) - (a.duration || 0), 10);
+    const topFuel = hasAnyFuel ? getTopN(trips.filter(t => (t.fuel || 0) > 0), (a, b) => (b.fuel || 0) - (a.fuel || 0), 10) : [];
 
     const daysActive = uniqueDates.size || 1;
 
@@ -249,26 +299,48 @@ export function processData(rows) {
         ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
         : daysActive;
 
+    // Calculate hybrid-specific metrics
+    const electricPercentage = totalKm > 0 ? (electricOnlyKm / totalKm * 100) : 100;
+    const fuelPercentage = totalKm > 0 ? (fuelUsedKm / totalKm * 100) : 0;
+    const avgFuelEfficiency = totalKm > 0 ? (totalFuel / totalKm * 100) : 0;
+    const evModeUsage = trips.length > 0 ? (electricOnlyTrips / trips.length * 100) : 100;
+
+    // Build summary object
+    const summary = {
+        totalTrips: trips.length,
+        totalKm: totalKm.toFixed(1),
+        totalKwh: totalKwh.toFixed(1),
+        totalHours: (totalDuration / 3600).toFixed(1),
+        avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
+        avgKm: (totalKm / trips.length).toFixed(1),
+        avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
+        avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
+        daysActive,
+        totalDays,
+        dateRange: formatDate(trips[0]?.date) + ' - ' + formatDate(trips[trips.length - 1]?.date),
+        maxKm: maxKmVal.toFixed(1),
+        minKm: minKmVal.toFixed(1),
+        maxKwh: maxKwhVal.toFixed(1),
+        maxMin: (maxDurVal / 60).toFixed(0),
+        tripsDay: (trips.length / daysActive).toFixed(1),
+        kmDay: (totalKm / daysActive).toFixed(1),
+        // Hybrid-specific fields (always present but meaningful only for hybrids)
+        isHybrid: hasAnyFuel,
+        totalFuel: totalFuel.toFixed(2),
+        avgFuelEff: avgFuelEfficiency.toFixed(2),
+        electricPercentage: electricPercentage.toFixed(1),
+        fuelPercentage: fuelPercentage.toFixed(1),
+        electricOnlyTrips,
+        fuelUsedTrips,
+        evModeUsage: evModeUsage.toFixed(1),
+        maxFuel: maxFuelVal.toFixed(2),
+        // Most Expensive Trip
+        maxCost: maxCostVal > 0 ? maxCostVal.toFixed(2) : '0.00',
+        maxCostDate: maxCostDate || ''
+    };
+
     return {
-        summary: {
-            totalTrips: trips.length,
-            totalKm: totalKm.toFixed(1),
-            totalKwh: totalKwh.toFixed(1),
-            totalHours: (totalDuration / 3600).toFixed(1),
-            avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
-            avgKm: (totalKm / trips.length).toFixed(1),
-            avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
-            avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
-            daysActive,
-            totalDays,
-            dateRange: formatDate(trips[0]?.date) + ' - ' + formatDate(trips[trips.length - 1]?.date),
-            maxKm: maxKmVal.toFixed(1),
-            minKm: minKmVal.toFixed(1),
-            maxKwh: maxKwhVal.toFixed(1),
-            maxMin: (maxDurVal / 60).toFixed(0),
-            tripsDay: (trips.length / daysActive).toFixed(1),
-            kmDay: (totalKm / daysActive).toFixed(1)
-        },
+        summary,
         monthly: monthlyArray,
         daily: dailyArray,
         hourly: hourlyData,
@@ -278,7 +350,10 @@ export function processData(rows) {
         top: {
             km: topKm,
             kwh: topKwh,
-            dur: topDur
-        }
+            dur: topDur,
+            fuel: topFuel
+        },
+        isHybrid: hasAnyFuel
     };
 }
+

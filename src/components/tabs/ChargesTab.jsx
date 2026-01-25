@@ -6,7 +6,7 @@ import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { useLayout } from '../../context/LayoutContext';
 import { BYD_RED } from '../../utils/constants';
-import { Battery, Zap, Calendar, Euro, TrendingUp } from '../Icons.jsx';
+import { Battery, Zap, Calendar, Euro, TrendingUp, Fuel } from '../Icons.jsx';
 import FloatingActionButton from '../common/FloatingActionButton';
 import ChargeInsightsModal from '../modals/ChargeInsightsModal';
 
@@ -56,17 +56,22 @@ const ChargesTab = React.memo(({
         const len = last10.length;
 
         // Single pass reduction
-        const { totalKwh, totalCost, totalPrice } = last10.reduce((acc, c) => ({
+        // Single pass reduction
+        const { totalKwh, totalCost, totalPrice, totalLiters, fuelCount } = last10.reduce((acc, c) => ({
             totalKwh: acc.totalKwh + (c.kwhCharged || 0),
             totalCost: acc.totalCost + (c.totalCost || 0),
-            totalPrice: acc.totalPrice + (c.pricePerKwh || 0)
-        }), { totalKwh: 0, totalCost: 0, totalPrice: 0 });
+            totalPrice: acc.totalPrice + (c.type === 'fuel' ? (c.pricePerLiter || 0) : (c.pricePerKwh || 0)),
+            totalLiters: acc.totalLiters + (c.litersCharged || 0),
+            fuelCount: acc.fuelCount + (c.type === 'fuel' ? 1 : 0)
+        }), { totalKwh: 0, totalCost: 0, totalPrice: 0, totalLiters: 0, fuelCount: 0 });
 
         return {
             chargeCount: charges.length,
-            avgKwh: totalKwh / len,
+            avgKwh: (len - fuelCount) > 0 ? totalKwh / (len - fuelCount) : 0,
+            avgLiters: fuelCount > 0 ? totalLiters / fuelCount : 0,
             avgCost: totalCost / len,
-            avgPricePerKwh: totalPrice / len
+            avgPrice: totalPrice / len, // Combined average
+            hasFuel: fuelCount > 0
         };
     }, [last10, charges.length]);
 
@@ -109,38 +114,56 @@ const ChargesTab = React.memo(({
     const kwhText = isCompact ? 'text-base' : (isFullscreenBYD ? 'text-[17px]' : 'text-lg');
 
     // Render charge card
-    const renderChargeCard = useCallback((charge) => (
-        <div
-            key={charge.id}
-            onClick={() => onChargeClick && onChargeClick(charge)}
-            className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${chargeCardPadding}`}
-        >
-            <div className="flex justify-between items-center">
-                <div className="flex-1">
-                    <p className={`text-slate-500 dark:text-slate-400 ${dateText}`}>
-                        {formatDate(charge.date)} - {charge.time}
-                    </p>
-                    <p className={`font-bold text-slate-900 dark:text-white ${kwhText}`}>
-                        {charge.kwhCharged?.toFixed(2) || '0.00'} kWh
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">
-                        {getChargerTypeName(charge.chargerTypeId)}
-                    </p>
-                </div>
-                <div className="text-right">
-                    <p className="text-amber-600 dark:text-amber-400 font-semibold">
-                        {charge.totalCost?.toFixed(2) || '0.00'} €
-                    </p>
-                    {charge.finalPercentage && (
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {charge.initialPercentage ? `${charge.initialPercentage}% → ` : ''}
-                            {charge.finalPercentage}%
+    const renderChargeCard = useCallback((charge) => {
+        const isFuel = charge.type === 'fuel';
+
+        return (
+            <div
+                key={charge.id}
+                onClick={() => onChargeClick && onChargeClick(charge)}
+                className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${chargeCardPadding}`}
+            >
+                <div className="flex justify-between items-center">
+                    <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-0.5">
+                            {isFuel && <Fuel className="w-3.5 h-3.5 text-amber-500" />}
+                            <p className={`text-slate-500 dark:text-slate-400 ${dateText}`}>
+                                {formatDate(charge.date)} - {charge.time}
+                            </p>
+                        </div>
+                        <p className={`font-bold ${isFuel ? 'text-amber-600 dark:text-amber-400' : 'text-slate-900 dark:text-white'} ${kwhText}`}>
+                            {isFuel
+                                ? `${charge.litersCharged?.toFixed(2) || '0.00'} L`
+                                : `${charge.kwhCharged?.toFixed(2) || '0.00'} kWh`
+                            }
                         </p>
-                    )}
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
+                            {isFuel
+                                ? `${charge.pricePerLiter?.toFixed(3) || '0.000'} €/L`
+                                : getChargerTypeName(charge.chargerTypeId)
+                            }
+                        </p>
+                    </div>
+                    <div className="text-right">
+                        <p className="text-slate-900 dark:text-white font-semibold">
+                            {charge.totalCost?.toFixed(2) || '0.00'} €
+                        </p>
+                        {!isFuel && charge.finalPercentage && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {charge.initialPercentage ? `${charge.initialPercentage}% → ` : ''}
+                                {charge.finalPercentage}%
+                            </p>
+                        )}
+                        {isFuel && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {t('charges.typeFuel')}
+                            </p>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
-    ), [onChargeClick, getChargerTypeName, chargeCardPadding, dateText, kwhText]);
+        );
+    }, [onChargeClick, getChargerTypeName, chargeCardPadding, dateText, kwhText, t]);
 
     // Empty state
     if (charges.length === 0) {
@@ -191,10 +214,17 @@ const ChargesTab = React.memo(({
                 {/* Stats grid */}
                 {summary && (
                     <div className="grid grid-cols-2 gap-3">
-                        {renderStatCard(Zap, t('charges.avgKwh'), summary.avgKwh.toFixed(2), 'kWh', 'bg-emerald-500/20 text-emerald-400', () => setInsightType('kwh'))}
-                        {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-amber-500/20 text-amber-400', () => setInsightType('cost'))}
-                        {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPricePerKwh.toFixed(3), '€/kWh', 'bg-purple-500/20 text-purple-400', () => setInsightType('price'))}
-                        {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-blue-500/20 text-blue-400', () => setInsightType('count'))}
+                        {renderStatCard(
+                            summary.hasFuel ? Fuel : Zap,
+                            summary.hasFuel ? t('charges.litersCharged') : t('charges.avgKwh'),
+                            summary.hasFuel ? summary.avgLiters.toFixed(2) : summary.avgKwh.toFixed(2),
+                            summary.hasFuel ? 'L' : 'kWh',
+                            summary.hasFuel ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400',
+                            () => setInsightType(summary.hasFuel ? 'fuel' : 'kwh')
+                        )}
+                        {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-blue-500/20 text-blue-400', () => setInsightType('cost'))}
+                        {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPrice.toFixed(3), '€', 'bg-purple-500/20 text-purple-400', () => setInsightType('price'))}
+                        {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-slate-500/20 text-slate-400', () => setInsightType('count'))}
                     </div>
                 )}
 
@@ -278,10 +308,17 @@ const ChargesTab = React.memo(({
                 <div className={`lg:col-span-2 flex flex-col ${cardGap}`}>
                     {summary && (
                         <>
-                            {renderStatCard(Zap, t('charges.avgKwh'), summary.avgKwh.toFixed(2), 'kWh', 'bg-emerald-500/20 text-emerald-400', () => setInsightType('kwh'))}
-                            {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-amber-500/20 text-amber-400', () => setInsightType('cost'))}
-                            {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPricePerKwh.toFixed(3), '€/kWh', 'bg-purple-500/20 text-purple-400', () => setInsightType('price'))}
-                            {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-blue-500/20 text-blue-400', () => setInsightType('count'))}
+                            {renderStatCard(
+                                summary.hasFuel ? Fuel : Zap,
+                                summary.hasFuel ? t('charges.litersCharged') : t('charges.avgKwh'),
+                                summary.hasFuel ? summary.avgLiters.toFixed(2) : summary.avgKwh.toFixed(2),
+                                summary.hasFuel ? 'L' : 'kWh',
+                                summary.hasFuel ? 'bg-amber-500/20 text-amber-400' : 'bg-emerald-500/20 text-emerald-400',
+                                () => setInsightType(summary.hasFuel ? 'fuel' : 'kwh')
+                            )}
+                            {renderStatCard(Euro, t('charges.avgCost'), summary.avgCost.toFixed(2), '€', 'bg-blue-500/20 text-blue-400', () => setInsightType('cost'))}
+                            {renderStatCard(TrendingUp, t('charges.avgPrice'), summary.avgPrice.toFixed(3), '€', 'bg-purple-500/20 text-purple-400', () => setInsightType('price'))}
+                            {renderStatCard(Calendar, t('charges.chargeCount'), summary.chargeCount, '', 'bg-slate-500/20 text-slate-400', () => setInsightType('count'))}
                         </>
                     )}
                 </div>

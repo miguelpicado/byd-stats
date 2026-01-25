@@ -9,16 +9,22 @@ import { logger } from '../utils/logger';
  * Charge data schema:
  * {
  *   id: string (uuid),
+ *   type: 'electric' | 'fuel' (default: 'electric'),
  *   date: string (YYYY-MM-DD),
  *   time: string (HH:MM),
  *   timestamp: number (unix ms),
  *   odometer: number (km),
- *   kwhCharged: number,
- *   chargerTypeId: string,
- *   pricePerKwh: number (€),
- *   totalCost: number (€),
- *   finalPercentage: number (0-100),
- *   initialPercentage: number|null (0-100, optional)
+ *   // Electric charges:
+ *   kwhCharged: number (for electric),
+ *   chargerTypeId: string (for electric),
+ *   pricePerKwh: number (€, for electric),
+ *   finalPercentage: number (0-100, for electric),
+ *   initialPercentage: number|null (0-100, optional, for electric)
+ *   // Fuel charges:
+ *   litersCharged: number (for fuel),
+ *   pricePerLiter: number (€, for fuel),
+ *   // Common:
+ *   totalCost: number (€)
  * }
  */
 
@@ -172,19 +178,39 @@ const useChargesData = () => {
         logger.info(`Charges replaced with ${newCharges.length} items`);
     }, []);
 
-    // Calculate summary statistics
+    // Calculate summary statistics (separate for electric and fuel)
     const summary = useMemo(() => {
         if (charges.length === 0) return null;
 
-        const totalKwh = charges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
-        const totalCost = charges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
-        const avgPricePerKwh = charges.reduce((sum, c) => sum + (c.pricePerKwh || 0), 0) / charges.length;
+        // Separate electric and fuel charges
+        const electricCharges = charges.filter(c => (c.type || 'electric') === 'electric');
+        const fuelCharges = charges.filter(c => c.type === 'fuel');
+
+        // Electric stats
+        const totalKwh = electricCharges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
+        const electricCost = electricCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+        const avgPricePerKwh = electricCharges.length > 0
+            ? electricCharges.reduce((sum, c) => sum + (c.pricePerKwh || 0), 0) / electricCharges.length
+            : 0;
+
+        // Fuel stats
+        const totalLiters = fuelCharges.reduce((sum, c) => sum + (c.litersCharged || 0), 0);
+        const fuelCost = fuelCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
+        const avgPricePerLiter = fuelCharges.length > 0
+            ? fuelCharges.reduce((sum, c) => sum + (c.pricePerLiter || 0), 0) / fuelCharges.length
+            : 0;
 
         return {
             chargeCount: charges.length,
+            electricCount: electricCharges.length,
+            fuelCount: fuelCharges.length,
             totalKwh,
-            totalCost,
-            avgPricePerKwh
+            totalLiters,
+            totalCost: electricCost + fuelCost,
+            electricCost,
+            fuelCost,
+            avgPricePerKwh,
+            avgPricePerLiter
         };
     }, [charges]);
 
