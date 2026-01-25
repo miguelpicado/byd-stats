@@ -197,25 +197,27 @@ const SettingsModal = () => {
                             </p>
                         )}
 
-                        {/* Price input */}
-                        <input
-                            type="number"
-                            step="0.001"
-                            value={
-                                (settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice))
-                                    ? avgElectricPrice.toFixed(3)
-                                    : (settings?.electricityPrice || 0)
-                            }
-                            onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
-                            disabled={settings.priceStrategy === 'average' || settings.priceStrategy === 'dynamic' || settings.useCalculatedPrice}
-                            className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.priceStrategy === 'average' || settings.priceStrategy === 'dynamic' || settings.useCalculatedPrice) ? 'opacity-60 cursor-not-allowed' : ''
-                                }`}
-                            placeholder={
-                                (settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice))
-                                    ? t('settings.priceCalculatedAuto')
-                                    : (settings.priceStrategy === 'dynamic' ? '---' : '0.15')
-                            }
-                        />
+                        {/* Price input - Only show if not dynamic */}
+                        {settings.priceStrategy !== 'dynamic' && (
+                            <input
+                                type="number"
+                                step="0.001"
+                                value={
+                                    (settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice))
+                                        ? avgElectricPrice.toFixed(3)
+                                        : (settings?.electricityPrice || 0)
+                                }
+                                onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
+                                disabled={settings.priceStrategy === 'average' || settings.useCalculatedPrice}
+                                className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.priceStrategy === 'average' || settings.useCalculatedPrice) ? 'opacity-60 cursor-not-allowed' : ''
+                                    }`}
+                                placeholder={
+                                    (settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice))
+                                        ? t('settings.priceCalculatedAuto')
+                                        : '0.15'
+                                }
+                            />
+                        )}
 
                         {/* Info text */}
                         {(settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice)) && (
@@ -281,24 +283,27 @@ const SettingsModal = () => {
                                 </p>
                             )}
 
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={
-                                    (settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice))
-                                        ? avgFuelPrice.toFixed(3)
-                                        : (settings?.fuelPrice || 1.50)
-                                }
-                                onChange={(e) => onSettingsChange({ ...settings, fuelPrice: parseFloat(e.target.value) || 1.50 })}
-                                disabled={settings.fuelPriceStrategy === 'average' || settings.fuelPriceStrategy === 'dynamic' || settings.useCalculatedFuelPrice}
-                                className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.fuelPriceStrategy === 'average' || settings.fuelPriceStrategy === 'dynamic' || settings.useCalculatedFuelPrice) ? 'opacity-60 cursor-not-allowed' : ''
-                                    }`}
-                                placeholder={
-                                    (settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice))
-                                        ? t('settings.priceCalculatedAuto')
-                                        : (settings.fuelPriceStrategy === 'dynamic' ? '---' : '1.50')
-                                }
-                            />
+                            {/* Fuel Price Input - Only show if not dynamic */}
+                            {settings.fuelPriceStrategy !== 'dynamic' && (
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={
+                                        (settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice))
+                                            ? avgFuelPrice.toFixed(3)
+                                            : (settings?.fuelPrice || 1.50)
+                                    }
+                                    onChange={(e) => onSettingsChange({ ...settings, fuelPrice: parseFloat(e.target.value) || 1.50 })}
+                                    disabled={settings.fuelPriceStrategy === 'average' || settings.useCalculatedFuelPrice}
+                                    className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.fuelPriceStrategy === 'average' || settings.useCalculatedFuelPrice) ? 'opacity-60 cursor-not-allowed' : ''
+                                        }`}
+                                    placeholder={
+                                        (settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice))
+                                            ? t('settings.priceCalculatedAuto')
+                                            : '1.50'
+                                    }
+                                />
+                            )}
 
                             {/* Info text for fuel */}
                             {(settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice)) && (
