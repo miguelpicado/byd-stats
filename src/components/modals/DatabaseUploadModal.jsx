@@ -87,6 +87,24 @@ const DatabaseUploadModal = () => {
                             <div>
                                 <input
                                     type="file"
+                                    id="uploadNew"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg"
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange(e, false)}
+                                    disabled={!sqlReady}
+                                />
+                                <button
+                                    onClick={() => document.getElementById('uploadNew')?.click()}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 mb-2"
+                                    style={{ backgroundColor: '#EF4444' }} // Red for dangerous action (replace)
+                                    disabled={!sqlReady}
+                                >
+                                    <Database className="w-4 h-4" />
+                                    {t('upload.loadNew')}
+                                </button>
+
+                                <input
+                                    type="file"
                                     id="uploadMerge"
                                     accept="*/*,image/*,.db,.jpg,.jpeg"
                                     className="hidden"
@@ -96,7 +114,7 @@ const DatabaseUploadModal = () => {
                                 <button
                                     onClick={() => document.getElementById('uploadMerge')?.click()}
                                     className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
-                                    style={{ backgroundColor: BYD_RED }}
+                                    style={{ backgroundColor: '#10B981' }} // Emerald/Green for safe action (merge)
                                     disabled={!sqlReady}
                                 >
                                     <Upload className="w-4 h-4" />
