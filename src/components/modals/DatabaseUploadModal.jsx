@@ -26,13 +26,16 @@ const DatabaseUploadModal = () => {
         exportData,
         clearData,
         loadChargeRegistry,
-        trips
+        exportCharges,
+        trips,
+        charges
     } = useData();
 
     // Derived State
     const isOpen = modals.history;
     const sqlReady = !!database;
     const hasData = trips && trips.length > 0;
+    const hasCharges = charges && charges.length > 0;
 
     const onClose = () => closeModal('history');
 
@@ -87,6 +90,24 @@ const DatabaseUploadModal = () => {
                             <div>
                                 <input
                                     type="file"
+                                    id="uploadNew"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg"
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange(e, false)}
+                                    disabled={!sqlReady}
+                                />
+                                <button
+                                    onClick={() => document.getElementById('uploadNew')?.click()}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 mb-2"
+                                    style={{ backgroundColor: '#EF4444' }} // Red for dangerous action (replace)
+                                    disabled={!sqlReady}
+                                >
+                                    <Database className="w-4 h-4" />
+                                    {t('upload.loadNew')}
+                                </button>
+
+                                <input
+                                    type="file"
                                     id="uploadMerge"
                                     accept="*/*,image/*,.db,.jpg,.jpeg"
                                     className="hidden"
@@ -96,7 +117,7 @@ const DatabaseUploadModal = () => {
                                 <button
                                     onClick={() => document.getElementById('uploadMerge')?.click()}
                                     className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
-                                    style={{ backgroundColor: BYD_RED }}
+                                    style={{ backgroundColor: '#10B981' }} // Emerald/Green for safe action (merge)
                                     disabled={!sqlReady}
                                 >
                                     <Upload className="w-4 h-4" />
@@ -142,6 +163,17 @@ const DatabaseUploadModal = () => {
                                 >
                                     <Download className="w-4 h-4" />
                                     {t('upload.exportTrips')}
+                                </button>
+                            )}
+
+                            {/* 5. Export charges */}
+                            {hasCharges && (
+                                <button
+                                    onClick={() => { exportCharges(); onClose(); }}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-600/80 transition-colors flex items-center justify-center gap-2"
+                                >
+                                    <FileText className="w-4 h-4" />
+                                    {t('upload.exportCharges')}
                                 </button>
                             )}
                         </div>

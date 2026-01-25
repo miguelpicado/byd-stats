@@ -146,12 +146,35 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, []);
 
     /**
-     * Detect settings conflicts between local and remote
+     * Detect conflicts between local and remote
      * Returns null if no conflicts, or an object with differences array
      */
-    const detectSettingsConflict = useCallback((localSettings, remoteSettings) => {
+    const detectConflict = useCallback((localData, remoteData, options = {}) => {
+        const localSettings = localData.settings || {};
+        const remoteSettings = remoteData.settings || {};
         const differences = [];
 
+        // 1. Data Conflict Check (Trips)
+        if (options.checkData) {
+            const localTrips = localData.trips || [];
+            const remoteTrips = remoteData.trips || [];
+
+            // Simple heuristic to detect significant deviation: count mismatch
+            // In a replacement scenario, counts will likely differ.
+            // Even if same count, content might differ, but count is a good first proxy for "different DB".
+            // Ideally we'd compare hash, but for now strict count check + checkData flag is sufficient signal.
+            if (localTrips.length !== remoteTrips.length) {
+                differences.push({
+                    key: 'trips',
+                    label: 'Viajes', // Using hardcoded label as existing ones are hardcoded
+                    local: `${localTrips.length} viajes`,
+                    cloud: `${remoteTrips.length} viajes`,
+                    isDataConflict: true
+                });
+            }
+        }
+
+        // 2. Settings Conflict Check
         // Check chargerTypes
         const localChargers = localSettings.chargerTypes || [];
         const remoteChargers = remoteSettings.chargerTypes || [];
@@ -261,8 +284,10 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     /**
      * Core Sync Logic
      * @param {Array} newTripsData - Optional. If provided, represents the latest local trips state (e.g. after file load).
+     * @param {Object} options - Sync options
+     * @param {boolean} options.checkData - If true, checks for data conflicts (trips count mismatch).
      */
-    const performSync = useCallback(async (newTripsData = null) => {
+    const performSync = useCallback(async (newTripsData = null, options = {}) => {
         if (!navigator.onLine) {
             setError("Sin conexión a Internet");
             setIsSyncing(false);
@@ -323,10 +348,10 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 const currentCharges = Array.isArray(localCharges) ? localCharges : [];
                 const localData = { trips: currentTrips, settings: settings, charges: currentCharges };
 
-                // Detect settings conflicts
-                const conflict = detectSettingsConflict(settings, remoteData.settings || {});
+                // Detect conflicts (settings + data if requested)
+                const conflict = detectConflict(localData, remoteData, options);
 
-                if (conflict && Object.keys(remoteData.settings || {}).length > 0) {
+                if (conflict && (Object.keys(remoteData.settings || {}).length > 0 || remoteData.trips.length > 0)) {
                     // Conflict detected - pause and ask user
                     logger.debug('Conflict detected, waiting for user resolution:', conflict.differences);
                     setPendingConflict({
@@ -369,7 +394,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         } finally {
             setIsSyncing(false);
         }
-    }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout]); // Added charges to dependencies
+    }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout, detectConflict]); // Added detectConflict
 
     // Web login hook (only used on web)
     const webLogin = useGoogleLogin({
@@ -458,6 +483,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         dismissConflict: () => setPendingConflict(null),
         login,
         logout,
-        syncNow: (data) => performSync(data)
+        syncNow: (data, options) => performSync(data, options)
     };
 }
