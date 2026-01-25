@@ -51,7 +51,8 @@
         "maxCons": "Maior consumo",
         "maxDur": "Maior duração",
         "shortest": "Mais curta",
-        "mostExpensive": "Mais caro"
+        "mostExpensive": "Mais caro",
+        "consumption": "Consumo"
     },
     "units": {
         "km": "km",
