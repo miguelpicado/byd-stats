@@ -13,6 +13,7 @@ import OverviewTab from '@components/tabs/OverviewTab';
 import TabFallback from '@components/common/TabFallback';
 
 // Lazy loaded tabs
+const CalendarTab = React.lazy(() => import('@components/tabs/CalendarTab'));
 const HistoryTab = React.lazy(() => import('@components/tabs/HistoryTab'));
 const RecordsTab = React.lazy(() => import('@components/tabs/RecordsTab'));
 const TrendsTab = React.lazy(() => import('@components/tabs/TrendsTab'));
@@ -74,6 +75,16 @@ const DesktopDashboardView = memo(({
                                     overviewSpacing={overviewSpacingHorizontal}
                                     trips={rawTrips}
                                     settings={settings}
+                                />
+                            )}
+                            {tab.id === 'calendar' && (
+                                <CalendarTab
+                                    key={isActive ? 'calendar-active' : 'calendar-bg'}
+                                    trips={rawTrips}
+                                    charges={charges}
+                                    isActive={isActive}
+                                    onTripSelect={onTripSelect}
+                                    onChargeSelect={onChargeSelect}
                                 />
                             )}
                             {tab.id === 'trends' && (

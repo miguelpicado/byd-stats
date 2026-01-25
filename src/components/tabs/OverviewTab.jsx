@@ -3,11 +3,12 @@ import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
-import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, BYD_RED } from '../Icons.jsx';
+import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, Fuel, BYD_RED } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 import FloatingActionButton from '../common/FloatingActionButton';
-import TripInsightsModal from '../modals/TripInsightsModal'; // NEW
+import TripInsightsModal from '../modals/TripInsightsModal';
+import HybridStatsCard from '../cards/HybridStatsCard';
 import { useLayout } from '../../context/LayoutContext';
 
 // Static chart options that don't change
@@ -152,6 +153,9 @@ const OverviewTab = React.memo(({
             onClick={() => handleCardClick('time')}
           />
         </div>
+
+
+
         <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
           <StatCard
             isVerticalMode={true}
@@ -164,17 +168,31 @@ const OverviewTab = React.memo(({
             color="bg-green-500/20 text-green-400"
             onClick={() => handleCardClick('efficiency')}
           />
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={TrendingUp}
-            label={t('stats.speed')}
-            value={summary.avgSpeed}
-            unit={t('units.kmh')}
-            color="bg-blue-500/20 text-blue-400"
-            onClick={() => handleCardClick('speed')}
-          />
+          {summary.isHybrid ? (
+            <StatCard
+              isVerticalMode={true}
+              isLarger={isLargerCard}
+              isCompact={isCompact}
+              icon={Fuel}
+              label={t('hybrid.avgFuelEfficiency')}
+              value={summary.avgFuelEff}
+              unit="L/100km"
+              color="bg-amber-500/20 text-amber-500"
+              onClick={() => handleCardClick('fuel')}
+            />
+          ) : (
+            <StatCard
+              isVerticalMode={true}
+              isLarger={isLargerCard}
+              isCompact={isCompact}
+              icon={Calendar}
+              label={t('stats.activeDays')}
+              value={summary.daysActive}
+              unit=""
+              color="bg-pink-500/20 text-pink-400"
+              onClick={() => handleCardClick('activeDays')}
+            />
+          )}
           <StatCard
             isVerticalMode={true}
             isLarger={isLargerCard}
@@ -191,14 +209,21 @@ const OverviewTab = React.memo(({
             isVerticalMode={true}
             isLarger={isLargerCard}
             isCompact={isCompact}
-            icon={Calendar}
-            label={t('stats.activeDays')}
-            value={summary.daysActive}
-            unit=""
-            color="bg-pink-500/20 text-pink-400"
-            onClick={() => handleCardClick('activeDays')}
+            icon={TrendingUp}
+            label={t('stats.speed')}
+            value={summary.avgSpeed}
+            unit={t('units.kmh')}
+            color="bg-blue-500/20 text-blue-400"
+            onClick={() => handleCardClick('speed')}
           />
         </div>
+
+        {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
+        {summary.isHybrid && (
+          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={true} />
+          </div>
+        )}
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
             <div style={{ width: '100%', height: smallChartHeight }}>
@@ -296,6 +321,9 @@ const OverviewTab = React.memo(({
           onClick={() => handleCardClick('time')}
         />
       </div>
+
+
+
       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
         <StatCard
           isLarger={isLargerCard}
@@ -307,16 +335,29 @@ const OverviewTab = React.memo(({
           color="bg-green-500/20 text-green-400"
           onClick={() => handleCardClick('efficiency')}
         />
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={TrendingUp}
-          label={t('stats.speed')}
-          value={summary.avgSpeed}
-          unit={t('units.kmh')}
-          color="bg-blue-500/20 text-blue-400"
-          onClick={() => handleCardClick('speed')}
-        />
+        {summary.isHybrid ? (
+          <StatCard
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Fuel}
+            label={t('hybrid.avgFuelEfficiency')}
+            value={summary.avgFuelEff}
+            unit="L/100km"
+            color="bg-amber-500/20 text-amber-500"
+            onClick={() => handleCardClick('fuel')}
+          />
+        ) : (
+          <StatCard
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Calendar}
+            label={t('stats.activeDays')}
+            value={summary.daysActive}
+            unit=""
+            color="bg-pink-500/20 text-pink-400"
+            onClick={() => handleCardClick('activeDays')}
+          />
+        )}
         <StatCard
           isLarger={isLargerCard}
           isCompact={isCompact}
@@ -331,14 +372,21 @@ const OverviewTab = React.memo(({
         <StatCard
           isLarger={isLargerCard}
           isCompact={isCompact}
-          icon={Calendar}
-          label={t('stats.activeDays')}
-          value={summary.daysActive}
-          unit=""
-          color="bg-pink-500/20 text-pink-400"
-          onClick={() => handleCardClick('activeDays')}
+          icon={TrendingUp}
+          label={t('stats.speed')}
+          value={summary.avgSpeed}
+          unit={t('units.kmh')}
+          color="bg-blue-500/20 text-blue-400"
+          onClick={() => handleCardClick('speed')}
         />
       </div>
+
+      {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
+      {summary.isHybrid && (
+        <div className={`grid grid-cols-2 gap-4 ${isCompact ? '!gap-3' : ''}`}>
+          <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={false} />
+        </div>
+      )}
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
           <div key="line-container-h" style={{ width: '100%', height: smallChartHeight }}>

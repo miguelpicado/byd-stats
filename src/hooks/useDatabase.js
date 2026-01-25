@@ -20,12 +20,16 @@ export function useDatabase() {
         }
 
         try {
+            // Get the base URL for the application (handles bad subdirectories like /test1/)
+            const baseUrl = import.meta.env.BASE_URL;
+            const assetsPath = `${baseUrl}assets/sql/`;
+
             // Load SQL.js from the browser-ready build in public/assets/sql
             // This avoids the npm package which contains Node.js-specific code (fs, path)
             if (!window.initSqlJs) {
                 await new Promise((resolve, reject) => {
                     const script = document.createElement('script');
-                    script.src = '/assets/sql/sql-wasm.min.js';
+                    script.src = `${assetsPath}sql-wasm.min.js`;
                     script.onload = resolve;
                     script.onerror = () => reject(new Error('Failed to load SQL.js script'));
                     document.head.appendChild(script);
@@ -33,7 +37,7 @@ export function useDatabase() {
             }
 
             window.SQL = await window.initSqlJs({
-                locateFile: f => `/assets/sql/${f}`
+                locateFile: f => `${assetsPath}${f}`
             });
             setSqlReady(true);
             return true;

@@ -33,7 +33,7 @@
     // Register Service Worker for PWA (disabled in development)
     if ('serviceWorker' in navigator && location.hostname !== 'localhost' && !location.hostname.includes('github.dev') && !location.hostname.includes('.app.github.dev')) {
       window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/sw.js')
+        navigator.serviceWorker.register('./sw.js')
           .then(reg => console.log('[PWA] SW registered'))
           .catch(err => console.error('[PWA] SW error:', err));
       });

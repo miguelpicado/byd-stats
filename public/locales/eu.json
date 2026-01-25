@@ -49,7 +49,8 @@
         "longest": "Luzeena",
         "maxCons": "Kontsumo max",
         "maxDur": "Iraupen max",
-        "shortest": "Laburrena"
+        "shortest": "Laburrena",
+        "mostExpensive": "Garestiena"
     },
     "units": {
         "km": "km",
@@ -498,5 +499,29 @@
         "avgTime": "Denbora",
         "avgCons": "Kontsumoa",
         "totalDays": "Egun aktiboak"
+    },
+    "hybrid": {
+        "vehicleType": "Ibilgailu mota",
+        "electric": "Elektrikoa",
+        "hybridPhev": "Hibridoa (PHEV)",
+        "fuelConsumption": "Batez besteko kontsumoa",
+        "electricConsumption": "Kontsumo elektrikoa",
+        "totalFuel": "Erregai osoa",
+        "avgFuelEfficiency": "Erregai-efizientzia",
+        "electricPercentage": "% Elektrikoa",
+        "fuelPercentage": "% Erregaia",
+        "evModeUsage": "EV modua erabilera",
+        "evOnlyTrips": "EV soilik bidaiak",
+        "hybridTrips": "Erregai bidaiak",
+        "combinedEfficiency": "Efizientzia konbinatua",
+        "energySplit": "Energia banaketa",
+        "fuelLabel": "Erregaia",
+        "electricLabel": "Elektrikoa",
+        "liters": "L",
+        "litersPer100km": "L/100km",
+        "topFuel": "Top Erregai Kontsumoa",
+        "fuelStats": "Erregai Estatistikak",
+        "electricStats": "Estatistika Elektrikoak",
+        "fuelConsumptionPerTrip": "Erregai kontsumoa/bidaia"
     }
 }

@@ -9,7 +9,9 @@ on:
         default: 'test1'
 
 permissions:
-  contents: write
+  contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: "pages-test"
@@ -17,6 +19,9 @@ concurrency:
 
 jobs:
   build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}${{ github.event.inputs.target_path }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout current branch
@@ -32,15 +37,37 @@ jobs:
         run: npm ci
 
       - name: Build with base path
-        run: npm run build -- --base=/${{ github.event.inputs.target_path }}/
+        run: npm run build
         env:
           VITE_GOOGLE_WEB_CLIENT_ID: ${{ secrets.VITE_GOOGLE_WEB_CLIENT_ID }}
           VITE_GOOGLE_ANDROID_CLIENT_ID: ${{ secrets.VITE_GOOGLE_ANDROID_CLIENT_ID }}
 
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
+      - name: Download existing pages artifact
+        uses: actions/download-artifact@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          destination_dir: ${{ github.event.inputs.target_path }}
-          keep_files: true
+          name: github-pages
+          path: existing-pages
+        continue-on-error: true
+
+      - name: Prepare combined artifact
+        run: |
+          mkdir -p combined
+          # Copy existing content if available
+          if [ -d "existing-pages" ]; then
+            cp -r existing-pages/* combined/ 2>/dev/null || true
+          fi
+          # Copy new build to target subdirectory
+          mkdir -p combined/${{ github.event.inputs.target_path }}
+          cp -r dist/* combined/${{ github.event.inputs.target_path }}/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './combined'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

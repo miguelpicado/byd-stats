@@ -35,7 +35,9 @@ const DEFAULT_SETTINGS = {
     batterySize: 60.48,
     soh: 100,
     electricityPrice: 0.15,
+    fuelPrice: 1.50, // €/L - Default fuel price
     useCalculatedPrice: false,
+    useCalculatedFuelPrice: false,
     theme: 'auto',
     chargerTypes: DEFAULT_CHARGER_TYPES,
     hiddenTabs: []
@@ -82,7 +84,9 @@ export const AppProvider = ({ children }) => {
                 batterySize: updated.batterySize ?? prev.batterySize ?? 60.48,
                 soh: updated.soh ?? prev.soh ?? 100,
                 electricityPrice: updated.electricityPrice ?? prev.electricityPrice ?? 0.15,
+                fuelPrice: updated.fuelPrice ?? prev.fuelPrice ?? 1.50,
                 useCalculatedPrice: updated.useCalculatedPrice ?? prev.useCalculatedPrice ?? false,
+                useCalculatedFuelPrice: updated.useCalculatedFuelPrice ?? prev.useCalculatedFuelPrice ?? false,
                 theme: updated.theme ?? prev.theme ?? 'auto',
                 chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES,
                 hiddenTabs: updated.hiddenTabs ?? prev.hiddenTabs ?? []

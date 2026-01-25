@@ -20,7 +20,7 @@ i18n
         fallbackLng: 'es',
         supportedLngs: ['es', 'en', 'pt', 'gl', 'ca', 'eu'],
         backend: {
-            loadPath: '/locales/{{lng}}.json'
+            loadPath: 'locales/{{lng}}.json'
         },
         detection: {
             order: ['localStorage', 'navigator'],
