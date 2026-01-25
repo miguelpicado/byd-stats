@@ -182,7 +182,7 @@
         "fuelPrice": "Precio gasolina",
         "fuelPriceHint": "Precio medio de gasolina para calcular costes (solo híbridos)",
         "priceStrategy": "Modo de precio",
-        "priceDynamics": "Última Carga",
+        "priceDynamics": "Dinámico",
         "priceDynamicsHint": "Usa el precio de la carga más reciente anterior al viaje"
     },
     "upload": {
