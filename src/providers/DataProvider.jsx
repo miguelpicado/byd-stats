@@ -261,7 +261,6 @@ export const DataProvider = ({ children }) => {
         loadFile, // Load .db file and optionally merge trips
         exportData, // Export trips to .db file
         loadChargeRegistry, // Load charges from CSV file
-        exportCharges, // Export charges to CSV file
 
         // Sync Interface
         googleSync, // { isSyncing, lastSync, ... }
