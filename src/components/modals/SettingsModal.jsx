@@ -158,42 +158,69 @@ const SettingsModal = () => {
                     <div className="space-y-2">
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.electricityPrice')} (€/kWh)</label>
 
-                        {/* Toggle between calculated and custom price */}
-                        <div className="flex gap-2 mb-2">
-                            <button
-                                onClick={() => onSettingsChange({ ...settings, useCalculatedPrice: false })}
-                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${!settings?.useCalculatedPrice
-                                    ? 'byd-active-item'
-                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
-                                    }`}
-                            >
-                                {t('settings.priceCustom')}
-                            </button>
-                            <button
-                                onClick={() => onSettingsChange({ ...settings, useCalculatedPrice: true })}
-                                className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${settings?.useCalculatedPrice
-                                    ? 'byd-active-item'
-                                    : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
-                                    }`}
-                                title={!charges || charges.length === 0 ? t('settings.priceCalculatedNoData') : ''}
-                            >
-                                {t('settings.priceCalculated')}
-                            </button>
+                        {/* Pricing Strategy Selector */}
+                        <div className="flex gap-2 mb-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
+                            {['custom', 'average', 'dynamic'].map(strategy => {
+                                const isActive = (settings.priceStrategy === strategy) ||
+                                    (!settings.priceStrategy && (
+                                        (strategy === 'average' && settings.useCalculatedPrice) ||
+                                        (strategy === 'custom' && !settings.useCalculatedPrice)
+                                    ));
+
+                                return (
+                                    <button
+                                        key={strategy}
+                                        onClick={() => onSettingsChange({
+                                            ...settings,
+                                            priceStrategy: strategy,
+                                            // Maintain legacy compatibility temporarily
+                                            useCalculatedPrice: strategy === 'average'
+                                        })}
+                                        className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${isActive
+                                            ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                            : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                            }`}
+                                        title={strategy === 'average' && (!charges || charges.length === 0) ? t('settings.priceCalculatedNoData') : ''}
+                                    >
+                                        {strategy === 'custom' ? t('settings.priceCustom') :
+                                            strategy === 'average' ? t('settings.priceCalculated') :
+                                                t('settings.priceDynamics')}
+                                    </button>
+                                );
+                            })}
                         </div>
 
-                        {/* Price input */}
-                        <input
-                            type="number"
-                            step="0.001"
-                            value={settings?.useCalculatedPrice ? avgElectricPrice.toFixed(3) : (settings?.electricityPrice || 0)}
-                            onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
-                            disabled={settings?.useCalculatedPrice}
-                            className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings?.useCalculatedPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
-                            placeholder={settings?.useCalculatedPrice ? t('settings.priceCalculatedAuto') : '0.15'}
-                        />
+                        {/* Dynamic Price Hint */}
+                        {(settings.priceStrategy === 'dynamic') && (
+                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 italic">
+                                {t('settings.priceDynamicsHint')}
+                            </p>
+                        )}
+
+                        {/* Price input - Only show if not dynamic */}
+                        {settings.priceStrategy !== 'dynamic' && (
+                            <input
+                                type="number"
+                                step="0.001"
+                                value={
+                                    (settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice))
+                                        ? avgElectricPrice.toFixed(3)
+                                        : (settings?.electricityPrice || 0)
+                                }
+                                onChange={(e) => onSettingsChange({ ...settings, electricityPrice: parseFloat(e.target.value) || 0 })}
+                                disabled={settings.priceStrategy === 'average' || settings.useCalculatedPrice}
+                                className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.priceStrategy === 'average' || settings.useCalculatedPrice) ? 'opacity-60 cursor-not-allowed' : ''
+                                    }`}
+                                placeholder={
+                                    (settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice))
+                                        ? t('settings.priceCalculatedAuto')
+                                        : '0.15'
+                                }
+                            />
+                        )}
 
                         {/* Info text */}
-                        {settings?.useCalculatedPrice && (
+                        {(settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice)) && (
                             electricStats.count > 0 ? (
                                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                     {t('settings.priceCalculatedInfo', {
@@ -218,41 +245,68 @@ const SettingsModal = () => {
                                 {t('settings.fuelPrice')} (€/L)
                             </label>
 
-                            {/* Toggle between calculated and custom price */}
-                            <div className="flex gap-2 mb-2">
-                                <button
-                                    onClick={() => onSettingsChange({ ...settings, useCalculatedFuelPrice: false })}
-                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${!settings?.useCalculatedFuelPrice
-                                        ? 'byd-active-item'
-                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
-                                        }`}
-                                >
-                                    {t('settings.priceCustom')}
-                                </button>
-                                <button
-                                    onClick={() => onSettingsChange({ ...settings, useCalculatedFuelPrice: true })}
-                                    className={`flex-1 py-2 px-3 rounded-lg text-xs font-medium transition-colors border ${settings?.useCalculatedFuelPrice
-                                        ? 'byd-active-item'
-                                        : 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-600 hover:bg-slate-200 dark:hover:bg-slate-600'
-                                        }`}
-                                    title={fuelStats.count === 0 ? t('settings.priceCalculatedNoData') : ''}
-                                >
-                                    {t('settings.priceCalculated')}
-                                </button>
+                            {/* Fuel Pricing Strategy Selector */}
+                            <div className="flex gap-2 mb-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
+                                {['custom', 'average', 'dynamic'].map(strategy => {
+                                    const isActive = (settings.fuelPriceStrategy === strategy) ||
+                                        (!settings.fuelPriceStrategy && (
+                                            (strategy === 'average' && settings.useCalculatedFuelPrice) ||
+                                            (strategy === 'custom' && !settings.useCalculatedFuelPrice)
+                                        ));
+
+                                    return (
+                                        <button
+                                            key={strategy}
+                                            onClick={() => onSettingsChange({
+                                                ...settings,
+                                                fuelPriceStrategy: strategy,
+                                                useCalculatedFuelPrice: strategy === 'average'
+                                            })}
+                                            className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${isActive
+                                                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                                }`}
+                                            title={strategy === 'average' && fuelStats.count === 0 ? t('settings.priceCalculatedNoData') : ''}
+                                        >
+                                            {strategy === 'custom' ? t('settings.priceCustom') :
+                                                strategy === 'average' ? t('settings.priceCalculated') :
+                                                    t('settings.priceDynamics')}
+                                        </button>
+                                    );
+                                })}
                             </div>
 
-                            <input
-                                type="number"
-                                step="0.01"
-                                value={settings?.useCalculatedFuelPrice ? avgFuelPrice.toFixed(3) : (settings?.fuelPrice || 1.50)}
-                                onChange={(e) => onSettingsChange({ ...settings, fuelPrice: parseFloat(e.target.value) || 1.50 })}
-                                disabled={settings?.useCalculatedFuelPrice}
-                                className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${settings?.useCalculatedFuelPrice ? 'opacity-60 cursor-not-allowed' : ''}`}
-                                placeholder={settings?.useCalculatedFuelPrice ? t('settings.priceCalculatedAuto') : '1.50'}
-                            />
+                            {/* Dynamic Price Hint */}
+                            {(settings.fuelPriceStrategy === 'dynamic') && (
+                                <p className="text-xs text-slate-500 dark:text-slate-400 mb-2 italic">
+                                    {t('settings.priceDynamicsHint')}
+                                </p>
+                            )}
+
+                            {/* Fuel Price Input - Only show if not dynamic */}
+                            {settings.fuelPriceStrategy !== 'dynamic' && (
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    value={
+                                        (settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice))
+                                            ? avgFuelPrice.toFixed(3)
+                                            : (settings?.fuelPrice || 1.50)
+                                    }
+                                    onChange={(e) => onSettingsChange({ ...settings, fuelPrice: parseFloat(e.target.value) || 1.50 })}
+                                    disabled={settings.fuelPriceStrategy === 'average' || settings.useCalculatedFuelPrice}
+                                    className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.fuelPriceStrategy === 'average' || settings.useCalculatedFuelPrice) ? 'opacity-60 cursor-not-allowed' : ''
+                                        }`}
+                                    placeholder={
+                                        (settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice))
+                                            ? t('settings.priceCalculatedAuto')
+                                            : '1.50'
+                                    }
+                                />
+                            )}
 
                             {/* Info text for fuel */}
-                            {settings?.useCalculatedFuelPrice && (
+                            {(settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice)) && (
                                 fuelStats.count > 0 ? (
                                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
                                         {t('settings.priceCalculatedInfoFuel', {
@@ -268,7 +322,7 @@ const SettingsModal = () => {
                                 )
                             )}
 
-                            {!settings?.useCalculatedFuelPrice && (
+                            {(!settings.fuelPriceStrategy || settings.fuelPriceStrategy === 'custom') && !settings.useCalculatedFuelPrice && (
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
                                     {t('settings.fuelPriceHint')}
                                 </p>

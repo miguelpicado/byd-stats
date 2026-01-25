@@ -117,13 +117,20 @@ const useAppData = (settings, charges = []) => {
     // --- Computed: Process filtered data for charts and stats ---
     const data = useMemo(() => {
         try {
-            return filtered.length > 0 ? processData(filtered, effectiveElectricityPrice, effectiveFuelPrice) : null;
+            const priceSettings = {
+                electricStrategy: settings?.priceStrategy || (settings?.useCalculatedPrice ? 'average' : 'custom'),
+                fuelStrategy: settings?.fuelPriceStrategy || (settings?.useCalculatedFuelPrice ? 'average' : 'custom'),
+                electricPrice: settings?.electricityPrice || 0,
+                fuelPrice: settings?.fuelPrice || 0
+            };
+
+            return filtered.length > 0 ? processData(filtered, priceSettings, charges) : null;
         } catch (e) {
             logger.error('Error processing data:', e);
             return null;
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filtered, i18n.language, effectiveElectricityPrice, effectiveFuelPrice]);
+    }, [filtered, i18n.language, settings, charges]);
 
     // --- Action: Clear all trip data ---
     const clearData = useCallback(() => {
