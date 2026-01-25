@@ -25,8 +25,8 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'any',
         scope: './',
-        start_url: './?v=1.5',
-        id: './?v=1.5',
+        start_url: './?v=1.6',
+        id: './?v=1.6',
         categories: ['utilities', 'productivity'],
         icons: [
           {
