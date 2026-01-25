@@ -168,7 +168,10 @@
         "about": "Sobre",
         "version": "Versão",
         "sourceCode": "Código fonte",
-        "reportBug": "Reportar erro"
+        "reportBug": "Reportar erro",
+        "priceStrategy": "Modo de preço",
+        "priceDynamics": "Última Carga",
+        "priceDynamicsHint": "Usa o preço do carregamento mais recente anterior à viagem"
     },
     "upload": {
         "title": "Gestão de dados",

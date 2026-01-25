@@ -171,7 +171,10 @@
         "dataManagement": "Data management",
         "updateData": "Update data",
         "fuelPrice": "Fuel price",
-        "fuelPriceHint": "Average fuel price for cost calculations (hybrid only)"
+        "fuelPriceHint": "Average fuel price for cost calculations (hybrid only)",
+        "priceStrategy": "Price Logic",
+        "priceDynamics": "Last Charge",
+        "priceDynamicsHint": "Uses the price of the most recent charge before the trip"
     },
     "upload": {
         "title": "BYD Stats",
