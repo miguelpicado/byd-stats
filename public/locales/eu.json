@@ -51,7 +51,8 @@
         "maxCons": "Kontsumo max",
         "maxDur": "Iraupen max",
         "shortest": "Laburrena",
-        "mostExpensive": "Garestiena"
+        "mostExpensive": "Garestiena",
+        "consumption": "Kontsumoa"
     },
     "units": {
         "km": "km",
