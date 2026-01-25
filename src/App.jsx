@@ -525,6 +525,14 @@ export default function BYDStatsAnalyzer() {
               <FileText className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
               <span>{t('footer.legal')}</span>
             </Link>
+            <div className="w-px h-3 bg-slate-800"></div>
+            <Link
+              to="/faq"
+              className="text-[10px] sm:text-xs text-slate-500 hover:text-slate-300 transition-colors flex items-center gap-1.5 p-1"
+            >
+              <HelpCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500" />
+              <span>{t('footer.faq')}</span>
+            </Link>
           </div>
           <p className="text-[10px] text-slate-600 pl-1">BYD Stats {appVersion}</p>
         </div>
