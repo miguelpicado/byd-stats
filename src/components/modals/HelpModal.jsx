@@ -1,6 +1,7 @@
 // BYD Stats - Help Modal Component
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, HelpCircle, Bug, GitHub, Mail, Shield, Heart } from '../Icons.jsx';
 import { BYD_RED } from '../../utils/constants';
@@ -8,6 +9,7 @@ import { useData } from '../../providers/DataProvider';
 
 const HelpModal = () => {
     const { t } = useTranslation();
+    const navigate = useNavigate();
     const { modals, closeModal, openModal, setLegalInitialSection } = useData();
     const [appVersion, setAppVersion] = useState('v1.2');
 
@@ -96,6 +98,14 @@ const HelpModal = () => {
                             <Mail className="w-5 h-5" />
                             {t('footer.email')}
                         </a>
+
+                        <button
+                            onClick={() => { closeModal('help'); navigate('/faq'); }}
+                            className="w-full py-3 rounded-xl font-medium text-slate-900 dark:text-white bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <HelpCircle className="w-5 h-5" />
+                            {t('footer.faq')}
+                        </button>
 
                         <button
                             onClick={() => { if (setLegalInitialSection) setLegalInitialSection('privacy'); openModal('legal'); }}
