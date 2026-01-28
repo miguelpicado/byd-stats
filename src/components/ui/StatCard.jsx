@@ -30,7 +30,8 @@ StatCard.propTypes = {
     isCompact: PropTypes.bool,
     lowPadding: PropTypes.bool,
     isLarger: PropTypes.bool,
-    isVerticalMode: PropTypes.bool
+    isVerticalMode: PropTypes.bool,
+    onClick: PropTypes.func
 };
 
 export default StatCard;

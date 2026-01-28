@@ -290,6 +290,10 @@ const OverviewTab = React.memo(({
           trips={trips}
           settings={settings}
         />
+        <OdometerAdjustmentModal
+          isOpen={showOdometerModal}
+          onClose={() => setShowOdometerModal(false)}
+        />
       </div >
     );
   }
