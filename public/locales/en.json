@@ -615,7 +615,11 @@
             "a1_step3": "Navigate to: Internal Storage > BYD > ElectronicOwnerManual > data.",
             "a1_step4": "Copy the EC_Database.db file and paste it onto your USB drive.",
             "tip_label": "Tip",
-            "tip_text": "If you have trouble selecting the file when uploading, you can rename it to EC_Database.jpg. The application will accept the file as a valid image and process it correctly."
+            "tip_text": "If you have trouble selecting the file when uploading, you can rename it to EC_Database.jpg. The application will accept the file as a valid image and process it correctly.",
+            "q_csv_import": "Can I import my own charges/trips?",
+            "a_csv_import": "Yes, you can import your data from CSV files. Download the official templates from GitHub to ensure you use the correct format:",
+            "a_csv_charges": "- Template for importing charges",
+            "a_csv_trips": "- Template for importing trips"
         },
         "install": {
             "title": "Installation (PWA)",

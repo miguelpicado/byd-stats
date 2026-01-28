@@ -94,6 +94,33 @@ const FaqContent = () => {
                             <strong>{t('faq.database.tip_label')}: </strong> {t('faq.database.tip_text')}
                         </div>
                     </FaqItem>
+                    <FaqItem question={t('faq.database.q_csv_import') || "¿Puedo importar mis propias cargas/viajes?"}>
+                        <p className="mb-2">
+                            {t('faq.database.a_csv_import') || "Sí, puedes importar tus datos desde archivos CSV. Descarga las plantillas oficiales desde GitHub para asegurarte de usar el formato correcto:"}
+                        </p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li>
+                                <a
+                                    href="https://github.com/miguelpicado/byd-stats/blob/main/REGISTRO_CARGAS.csv"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-bold text-red-600 hover:text-red-700 underline"
+                                >
+                                    REGISTRO_CARGAS.csv
+                                </a> {t('faq.database.a_csv_charges') || "- Plantilla para importar cargas"}
+                            </li>
+                            <li>
+                                <a
+                                    href="https://github.com/miguelpicado/byd-stats/blob/main/REGISTRO_VIAJES.csv"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="font-bold text-red-600 hover:text-red-700 underline"
+                                >
+                                    REGISTRO_VIAJES.csv
+                                </a> {t('faq.database.a_csv_trips') || "- Plantilla para importar viajes"}
+                            </li>
+                        </ul>
+                    </FaqItem>
                 </div>
             </section>
 
