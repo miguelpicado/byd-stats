@@ -20,133 +20,13 @@ const AddChargeModal = () => {
         modals,
         closeModal,
         addCharge: onSave,
+        updateCharge,
         editingCharge,
         setEditingCharge,
         stats
     } = useData();
 
-    // Check if vehicle is hybrid
-    const isHybrid = stats?.summary?.isHybrid || false;
-
-    // Derived values
-    const isOpen = modals.addCharge;
-    const chargerTypes = settings?.chargerTypes || [];
-    const defaultPricePerKwh = settings?.electricityPrice || 0.15;
-
-    // Get current date and time in proper format
-    const getCurrentDate = () => new Date().toISOString().split('T')[0];
-    const getCurrentTime = () => {
-        const now = new Date();
-        return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-    };
-
-    const getInitialState = useCallback(() => ({
-        type: 'electric', // 'electric' or 'fuel'
-        date: getCurrentDate(),
-        time: getCurrentTime(),
-        odometer: '',
-        // Electric fields
-        kwhCharged: '',
-        chargerTypeId: chargerTypes[0]?.id || '',
-        pricePerKwh: defaultPricePerKwh,
-        finalPercentage: '',
-        initialPercentage: '',
-        // Fuel fields
-        litersCharged: '',
-        pricePerLiter: settings?.fuelPrice || DEFAULT_FUEL_PRICE,
-        // Common
-        totalCost: ''
-    }), [chargerTypes, defaultPricePerKwh, settings?.fuelPrice]);
-
-    const [formData, setFormData] = useState(getInitialState);
-
-    // Internal Handlers
-    const onClose = () => {
-        closeModal('addCharge');
-        if (setEditingCharge) setEditingCharge(null);
-    };
-
-    // Reset form when modal opens or editingCharge changes
-    useEffect(() => {
-        if (isOpen) {
-            if (editingCharge) {
-                // eslint-disable-next-line react-hooks/set-state-in-effect
-                setFormData({
-                    type: editingCharge.type || 'electric',
-                    date: editingCharge.date || getCurrentDate(),
-                    time: editingCharge.time || getCurrentTime(),
-                    odometer: editingCharge.odometer?.toString() || '',
-                    // Electric fields
-                    kwhCharged: editingCharge.kwhCharged?.toString() || '',
-                    chargerTypeId: editingCharge.chargerTypeId || chargerTypes[0]?.id || '',
-                    pricePerKwh: editingCharge.pricePerKwh ?? defaultPricePerKwh,
-                    finalPercentage: editingCharge.finalPercentage?.toString() || '',
-                    initialPercentage: editingCharge.initialPercentage?.toString() || '',
-                    // Fuel fields
-                    litersCharged: editingCharge.litersCharged?.toString() || '',
-                    pricePerLiter: editingCharge.pricePerLiter ?? (settings?.fuelPrice || DEFAULT_FUEL_PRICE),
-                    // Common
-                    totalCost: editingCharge.totalCost?.toString() || ''
-                });
-            } else {
-                setFormData(getInitialState());
-            }
-        }
-    }, [isOpen, editingCharge, chargerTypes, defaultPricePerKwh, getInitialState]);
-
-    const handleChange = (field, value) => {
-        setFormData(prev => {
-            const newState = { ...prev, [field]: value };
-
-            // Auto-calculate based on charge type
-            if (prev.type === 'electric') {
-                // Electric: kWh * price = cost
-                if (field === 'kwhCharged' || field === 'pricePerKwh') {
-                    const kwh = parseFloat(field === 'kwhCharged' ? value : prev.kwhCharged);
-                    const price = parseFloat(field === 'pricePerKwh' ? value : prev.pricePerKwh);
-                    if (!isNaN(kwh) && !isNaN(price) && kwh > 0 && price > 0) {
-                        newState.totalCost = (kwh * price).toFixed(2);
-                    }
-                }
-                else if (field === 'totalCost') {
-                    const cost = parseFloat(value);
-                    const kwh = parseFloat(prev.kwhCharged);
-                    if (!isNaN(cost) && !isNaN(kwh) && kwh > 0) {
-                        newState.pricePerKwh = (cost / kwh).toFixed(4);
-                    }
-                }
-            } else {
-                // Fuel: liters * price = cost
-                if (field === 'litersCharged' || field === 'pricePerLiter') {
-                    const liters = parseFloat(field === 'litersCharged' ? value : prev.litersCharged);
-                    const price = parseFloat(field === 'pricePerLiter' ? value : prev.pricePerLiter);
-                    if (!isNaN(liters) && !isNaN(price) && liters > 0 && price > 0) {
-                        newState.totalCost = (liters * price).toFixed(2);
-                    }
-                }
-                else if (field === 'totalCost') {
-                    const cost = parseFloat(value);
-                    const liters = parseFloat(prev.litersCharged);
-                    if (!isNaN(cost) && !isNaN(liters) && liters > 0) {
-                        newState.pricePerLiter = (cost / liters).toFixed(4);
-                    }
-                }
-            }
-
-            return newState;
-        });
-    };
-
-    // Calculate Real kWh based on efficiency
-    const getRealKwh = () => {
-        const kwh = parseFloat(formData.kwhCharged);
-        if (isNaN(kwh) || !formData.chargerTypeId) return null;
-
-        const type = chargerTypes.find(t => t.id === formData.chargerTypeId);
-        if (!type || !type.efficiency) return null;
-
-        return (kwh * type.efficiency).toFixed(2);
-    };
+    // ... (rest of the file until handleSubmit)
 
     const handleSubmit = () => {
         const isElectric = formData.type === 'electric';
@@ -183,12 +63,13 @@ const AddChargeModal = () => {
             chargeData.pricePerLiter = parseFloat(formData.pricePerLiter) || 0;
         }
 
-        // If editing, preserve the ID
+        // If editing, update instead of add
         if (editingCharge?.id) {
-            chargeData.id = editingCharge.id;
+            updateCharge(editingCharge.id, chargeData);
+        } else {
+            onSave(chargeData);
         }
 
-        onSave(chargeData);
         onClose();
     };
 
@@ -226,8 +107,8 @@ const AddChargeModal = () => {
                                 type="button"
                                 onClick={() => handleChange('type', 'electric')}
                                 className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition-all border-2 ${formData.type === 'electric'
-                                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300'
-                                        : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                    ? 'bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300'
+                                    : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                                     }`}
                             >
                                 <Battery className="w-4 h-4" />
@@ -237,8 +118,8 @@ const AddChargeModal = () => {
                                 type="button"
                                 onClick={() => handleChange('type', 'fuel')}
                                 className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition-all border-2 ${formData.type === 'fuel'
-                                        ? 'bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300'
-                                        : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                                    ? 'bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300'
+                                    : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                                     }`}
                             >
                                 <Fuel className="w-4 h-4" />
