@@ -202,7 +202,7 @@ export function processData(rows, priceSettings = {}, charges = []) {
 
     // Filter valid trips structure for valid trips only
     // Optimization: Pre-allocate? JS arrays are dynamic.
-    const allTrips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
+    const allTrips = rows.filter(r => r && typeof r.trip === 'number' && r.trip >= 0);
     if (allTrips.length === 0) return null;
 
     // Initialize structures
