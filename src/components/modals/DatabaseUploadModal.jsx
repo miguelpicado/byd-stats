@@ -86,26 +86,8 @@ const DatabaseUploadModal = () => {
                             {t('upload.filesSection')}
                         </h3>
                         <div className="space-y-2">
-                            {/* 1. Load only new trips (merge) - RED */}
+                            {/* 1. Load only new trips (merge) - GREEN */}
                             <div>
-                                <input
-                                    type="file"
-                                    id="uploadNew"
-                                    accept="*/*,image/*,.db,.jpg,.jpeg"
-                                    className="hidden"
-                                    onChange={(e) => handleFileChange(e, false)}
-                                    disabled={!sqlReady}
-                                />
-                                <button
-                                    onClick={() => document.getElementById('uploadNew')?.click()}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 mb-2"
-                                    style={{ backgroundColor: '#EF4444' }} // Red for dangerous action (replace)
-                                    disabled={!sqlReady}
-                                >
-                                    <Database className="w-4 h-4" />
-                                    {t('upload.loadNew')}
-                                </button>
-
                                 <input
                                     type="file"
                                     id="uploadMerge"
@@ -141,6 +123,27 @@ const DatabaseUploadModal = () => {
                                 >
                                     <FileText className="w-4 h-4" />
                                     {t('upload.loadChargeRegistry')}
+                                </button>
+                            </div>
+
+                            {/* 3. Load NEW (Replace) - RED */}
+                            <div>
+                                <input
+                                    type="file"
+                                    id="uploadNew"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg"
+                                    className="hidden"
+                                    onChange={(e) => handleFileChange(e, false)}
+                                    disabled={!sqlReady}
+                                />
+                                <button
+                                    onClick={() => document.getElementById('uploadNew')?.click()}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                    style={{ backgroundColor: '#EF4444' }} // Red for dangerous action (replace)
+                                    disabled={!sqlReady}
+                                >
+                                    <Database className="w-4 h-4" />
+                                    {t('upload.loadNew')}
                                 </button>
                             </div>
 

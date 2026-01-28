@@ -1,5 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { createPortal } from 'react-dom';
 import { X, MapPin, Zap, Clock, TrendingUp, Car } from '../Icons';
 import { formatTime, formatDate } from '../../utils/dateUtils';
 import { BYD_RED } from '../../utils/constants';
@@ -22,14 +23,15 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
     const totalKwh = trips.reduce((acc, trip) => acc + Math.abs(trip.electricity || 0), 0);
     const totalChargeKwh = charges.reduce((acc, charge) => acc + (charge.kwhCharged || 0), 0);
 
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+    // Use Portal to escape any parent stacking contexts (transforms, etc)
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
             <div
-                className="bg-white dark:bg-slate-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col animate-slide-up"
+                className="bg-white dark:bg-slate-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 shrink-0">
                     <div>
                         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                             {date ? date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
@@ -40,29 +42,29 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                     </div>
                     <button
                         onClick={onClose}
-                        className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        className="p-2 -mr-2 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                     >
-                        <X className="w-5 h-5 text-slate-500" />
+                        <X className="w-5 h-5" />
                     </button>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-6">
+                {/* Content - Scrollable */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 overscroll-contain">
 
                     {/* Summary Cards */}
                     {(trips.length > 0 || charges.length > 0) && (
                         <div className="grid grid-cols-3 gap-2 text-center">
-                            <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                                <p className="text-xs text-slate-500 uppercase">{t('stats.distance')}</p>
-                                <p className="font-bold text-slate-900 dark:text-white">{(totalDist || 0).toFixed(1)} <span className="text-xs font-normal text-slate-500">{t('units.km')}</span></p>
+                            <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t('stats.distance')}</p>
+                                <p className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{(totalDist || 0).toFixed(1)} <span className="text-[10px] font-normal text-slate-500">{t('units.km')}</span></p>
                             </div>
-                            <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                                <p className="text-xs text-slate-500 uppercase">{t('stats.consumption')}</p>
-                                <p className="font-bold text-slate-900 dark:text-white">{(totalKwh || 0).toFixed(1)} <span className="text-xs font-normal text-slate-500">{t('units.kWh')}</span></p>
+                            <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t('stats.consumption')}</p>
+                                <p className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{(totalKwh || 0).toFixed(1)} <span className="text-[10px] font-normal text-slate-500">{t('units.kWh')}</span></p>
                             </div>
-                            <div className="p-2 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                                <p className="text-xs text-slate-500 uppercase">{t('charges.kwhCharged')}</p>
-                                <p className="font-bold text-slate-900 dark:text-white">{(totalChargeKwh || 0).toFixed(1)} <span className="text-xs font-normal text-slate-500">{t('units.kWh')}</span></p>
+                            <div className="p-2 sm:p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                                <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1">{t('charges.kwhCharged')}</p>
+                                <p className="font-bold text-slate-900 dark:text-white text-sm sm:text-base">{(totalChargeKwh || 0).toFixed(1)} <span className="text-[10px] font-normal text-slate-500">{t('units.kWh')}</span></p>
                             </div>
                         </div>
                     )}
@@ -70,7 +72,7 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                     {/* Trips Section */}
                     {trips.length > 0 && (
                         <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wider">
                                 <Car className="w-4 h-4 text-orange-500" />
                                 {t('calendar.trips')}
                             </h3>
@@ -83,17 +85,20 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                                             onClose();
                                             onTripSelect(trip);
                                         }}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors cursor-pointer"
+                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/50 transition-colors cursor-pointer group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-700 shadow-sm text-xs font-medium text-slate-500">
+                                            <div className="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm text-xs font-medium text-slate-500 group-hover:border-orange-200 dark:group-hover:border-orange-900/50 transition-colors">
                                                 <span>{new Date(trip.startTime || trip.start_timestamp * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                             </div>
                                             <div>
-                                                <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-medium">
-                                                    <span>{(trip.trip || 0).toFixed(1)} {t('units.km')}</span>
+                                                <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold text-base">
+                                                    <span>{(trip.trip || 0).toFixed(1)} <span className="text-xs font-normal text-slate-500">{t('units.km')}</span></span>
+                                                    {(trip.trip || 0) < 0.5 && (
+                                                        <span className="px-1.5 py-0.5 rounded text-[10px] bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400 font-medium">Stationary</span>
+                                                    )}
                                                 </div>
-                                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                                                     <span className="flex items-center gap-0.5">
                                                         <Clock className="w-3 h-3" />
                                                         {Math.floor((trip.duration || 0) / 3600)}h {Math.floor(((trip.duration || 0) % 3600) / 60)}m
@@ -108,7 +113,7 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                                         </div>
 
                                         <div className="text-right">
-                                            <span className="text-orange-500 font-semibold text-sm">
+                                            <span className="text-orange-500 font-bold text-sm">
                                                 {(trip.electricity || 0).toFixed(1)} kWh
                                             </span>
                                             <p className="text-xs text-slate-400">
@@ -124,7 +129,7 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                     {/* Charges Section */}
                     {charges.length > 0 && (
                         <div className="space-y-3">
-                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                            <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2 uppercase tracking-wider">
                                 <Zap className="w-4 h-4 text-cyan-500" />
                                 {t('calendar.charges')}
                             </h3>
@@ -137,22 +142,22 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                                             onClose();
                                             onChargeSelect(charge);
                                         }}
-                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700 transition-colors cursor-pointer"
+                                        className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-700/50 transition-colors cursor-pointer group"
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 border border-cyan-100 dark:border-cyan-800/30 shadow-sm text-xs font-medium">
+                                            <div className="flex flex-col items-center justify-center w-10 h-10 rounded-full bg-cyan-50 dark:bg-cyan-900/20 text-cyan-600 dark:text-cyan-400 border border-cyan-100 dark:border-cyan-800/30 shadow-sm text-xs font-medium group-hover:border-cyan-200 dark:group-hover:border-cyan-700/50 transition-colors">
                                                 <span>{charge.time || new Date(charge.timestamp || charge.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                                             </div>
                                             <div>
-                                                <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-medium">
-                                                    <span>+{(charge.kwhCharged || 0).toFixed(1)} kWh</span>
+                                                <div className="flex items-center gap-1.5 text-slate-900 dark:text-white font-bold text-base">
+                                                    <span>+{(charge.kwhCharged || 0).toFixed(1)} <span className="text-xs font-normal text-slate-500">kWh</span></span>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-xs text-slate-500">
+                                                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
                                                     <span>{getChargerName(charge.chargerTypeId)}</span>
                                                     {charge.location && (
                                                         <>
                                                             <span>•</span>
-                                                            <span className="flex items-center gap-0.5">
+                                                            <span className="flex items-center gap-0.5 truncate max-w-[100px]">
                                                                 <MapPin className="w-3 h-3" />
                                                                 {charge.location}
                                                             </span>
@@ -163,11 +168,11 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                                         </div>
 
                                         <div className="text-right">
-                                            <span className="text-cyan-500 font-semibold text-sm">
+                                            <span className="text-cyan-500 font-bold text-sm">
                                                 {charge.totalCost > 0 ? `${(charge.totalCost || 0).toFixed(2)}€` : 'Gratis'}
                                             </span>
                                             <p className="text-xs text-slate-400">
-                                                {charge.initialPercentage ? `${charge.initialPercentage}% → ` : '→ '}{charge.finalPercentage}%
+                                                {charge.initialPercentage ? `${charge.initialPercentage}% → ` : ''}{charge.finalPercentage}%
                                             </p>
                                         </div>
                                     </div>
@@ -187,16 +192,17 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
                 </div>
 
                 {/* Footer */}
-                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">
+                <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 shrink-0">
                     <button
                         onClick={onClose}
-                        className="w-full py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium transition-colors"
+                        className="w-full py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl text-slate-700 dark:text-slate-300 font-medium transition-colors shadow-sm"
                     >
                         {t('common.close')}
                     </button>
                 </div>
             </div>
-        </div >
+        </div >,
+        document.body
     );
 };
 
