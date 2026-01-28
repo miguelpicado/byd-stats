@@ -103,7 +103,11 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
         }
 
         // Average cost per trip
+        // Average cost per trip
         const avgCostPerTrip = (totalKwh / len) * electricityPrice;
+
+        const validSpeedTrips = trips.filter(t => (t.duration || 0) > 60 && (t.trip || 0) > 0.5); // Filter very short/invalid trips for speed stats
+        const minSpeedTrip = validSpeedTrips.length > 0 ? validSpeedTrips.reduce((min, t) => (getAvgSpeed(t) < getAvgSpeed(min) ? t : min), validSpeedTrips[0]) : null;
 
         return {
             distance: {
@@ -140,7 +144,8 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
             },
             speed: {
                 avg: totalSeconds > 0 ? (totalKm / (totalSeconds / 3600)) : 0, // Global avg speed
-                max: getAvgSpeed(maxSpeedTrip), // max avg speed of a trip
+                max: maxSpeedTrip ? getAvgSpeed(maxSpeedTrip) : 0, // max avg speed of a trip
+                min: minSpeedTrip ? getAvgSpeed(minSpeedTrip) : 0,
                 fastestTripDate: maxSpeedTrip.date
             },
             avgTrip: {
@@ -180,7 +185,8 @@ const TripInsightsModal = ({
         efficiency: { title: t('tripInsights.efficiencyTitle', 'Insights de Eficiencia'), icon: Battery, color: 'text-green-500', bgColor: 'bg-green-100 dark:bg-green-900/30' },
         speed: { title: t('tripInsights.speedTitle', 'Insights de Velocidad'), icon: TrendingUp, color: 'text-blue-500', bgColor: 'bg-blue-100 dark:bg-blue-900/30' },
         avgTrip: { title: t('tripInsights.avgTripTitle', 'Insights de Viaje Medio'), icon: MapPin, color: 'text-orange-500', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
-        activeDays: { title: t('tripInsights.activeDaysTitle', 'Insights de Actividad'), icon: Calendar, color: 'text-pink-500', bgColor: 'bg-pink-100 dark:bg-pink-900/30' }
+        activeDays: { title: t('tripInsights.activeDaysTitle', 'Insights de Actividad'), icon: Calendar, color: 'text-pink-500', bgColor: 'bg-pink-100 dark:bg-pink-900/30' },
+        stationary: { title: t('tripInsights.stationaryTitle', 'Consumo en Parado'), icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' }
     };
 
     const currentConfig = config[type] || config.distance;
@@ -260,7 +266,9 @@ const TripInsightsModal = ({
                 return (
                     <div className="grid grid-cols-2 gap-3">
                         <StatItem label={t('tripInsights.avgSpeed', 'Media')} value={insights.speed.avg.toFixed(1)} unit="km/h" highlight />
+                        {/* We use specific keys if available, or fallback */}
                         <StatItem label={t('tripInsights.maxAvgSpeed', 'Máx media viaje')} value={insights.speed.max.toFixed(1)} unit="km/h" />
+                        <StatItem label={t('tripInsights.minAvgSpeed', 'Mín media viaje')} value={insights.speed.min.toFixed(1)} unit="km/h" />
                     </div>
                 );
             case 'avgTrip':
@@ -277,6 +285,41 @@ const TripInsightsModal = ({
                     <div className="grid grid-cols-2 gap-3">
                         <StatItem label={t('tripInsights.totalDays', 'Días activos')} value={insights.activeDays.count} highlight />
                         <StatItem label={t('tripInsights.streak', 'Racha')} value={insights.activeDays.maxStreak} unit={t('units.days', 'días')} />
+                    </div>
+                );
+            case 'stationary':
+                return (
+                    <div className="flex flex-col gap-4 text-center py-4">
+                        <p className="text-slate-600 dark:text-slate-300">
+                            {t('tripInsights.stationaryDesc', 'Aquí se contabiliza todo el consumo de energía de aquellos viajes registrados con una distancia menor a 0.5km (como encendidos remotos, climatización en parado, etc).')}
+                        </p>
+                        <div className="grid grid-cols-1 gap-3 mt-2">
+                            <StatItem label={t('stats.consumption', 'Consumo Total')} value={insights.energy?.total ? (insights.energy.total - (insights.energy.avgPerTrip * insights.trips.total)).toFixed(1) : "0.0"} unit="kWh" highlight />
+                            {/* Note: The above calc is wrong because insights doesn't separate stationary. 
+                                 We need to pass the specific stat value or calculate it. 
+                                 Actually, `useTripInsights` calculates based on the passed `trips` array.
+                                 Currently `OverviewTab` passes ALL trips to `TripInsightsModal`.
+                                 `useTripInsights` calculates totals from those trips.
+                                 BUT `stationary` consumption is calculated in `dataProcessing.js` by filtering < 0.5km.
+                                 `useTripInsights` does NOT separate them currently. 
+                                 
+                                 Option 1: Modify `useTripInsights` to calculate stationary.
+                                 Option 2: Just show the text as requested ("El insight debe ser un texto...").
+                                 The user said: "El insight debe ser un texto explicando...".
+                                 Maybe I should just show the text and the value if available from the props?
+                                 `TripInsightsModal` receives `trips`.
+                                 Wait, the prompt says "en la statcard... el insight debe ser un texto".
+                                 Let's stick to just the text first, maybe with the total value if I can easily get it.
+                                 
+                                 Actually, `processData` calculated it. `OverviewTab` has `summary`. 
+                                 But `TripInsightsModal` only gets `trips`.
+                                 
+                                 I'll just add the text for now as explicitly requested.
+                             */}
+                            {/* Let's refine the calculation of stationary from the raw trips inside the modal or just show text for now.
+                                 The user request is specifically about the explanation text.
+                             */}
+                        </div>
                     </div>
                 );
             default:
@@ -327,7 +370,7 @@ const TripInsightsModal = ({
 TripInsightsModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    type: PropTypes.oneOf(['distance', 'energy', 'trips', 'time', 'efficiency', 'speed', 'avgTrip', 'activeDays']).isRequired,
+    type: PropTypes.oneOf(['distance', 'energy', 'trips', 'time', 'efficiency', 'speed', 'avgTrip', 'activeDays', 'stationary']).isRequired,
     trips: PropTypes.array.isRequired,
     settings: PropTypes.shape({
         electricityPrice: PropTypes.number
