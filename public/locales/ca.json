@@ -294,6 +294,11 @@
         "noHistory": "No hi ha històric desat",
         "dbExported": "Base de dades exportada correctament"
     },
+    "modals": {
+        "odometerTitle": "Ajust d'Odòmetre",
+        "odometerDesc": "Ajust visual per corregir la diferència amb el marcador del cotxe.",
+        "offset": "Desfase (km)"
+    },
     "errors": {
         "invalidFile": "Només s'admeten fitxers *.DB o *.JPG (base de dades reanomenada)\nTroba EC_Database.db a la carpeta \"Energydata\" del cotxe",
         "somethingWentWrong": "Alguna cosa ha anat malament",
@@ -516,6 +521,8 @@
         "speedTitle": "Insights de Velocitat",
         "avgTripTitle": "Insights de Viatge Mitjà",
         "activeDaysTitle": "Insights d'Activitat",
+        "stationaryTitle": "Consum en Parat",
+        "stationaryDesc": "Aquí es comptabilitza tot el consum de tots els viatges registrats de menys de 0.5km.",
         "totalKm": "Total Km",
         "kmPerDay": "Km/dia actiu",
         "avgPerTrip": "Mitjana/viatge",
@@ -613,7 +620,11 @@
             "a1_step3": "Navega a: Emmagatzematge Intern > BYD > ElectronicOwnerManual > data.",
             "a1_step4": "Copia el fitxer EC_Database.db i enganxa'l a la teva memòria USB.",
             "tip_label": "Truc",
-            "tip_text": "Si tens problemes per seleccionar el fitxer en carregar-lo, pots reanomenar-lo a EC_Database.jpg. L'aplicació acceptarà el fitxer com una imatge vàlida i el processarà correctament."
+            "tip_text": "Si tens problemes per seleccionar el fitxer en carregar-lo, pots reanomenar-lo a EC_Database.jpg. L'aplicació acceptarà el fitxer com una imatge vàlida i el processarà correctament.",
+            "q_csv_import": "Puc importar les meves pròpies càrregues/viatges?",
+            "a_csv_import": "Sí, pots importar les teves dades des d'arxius CSV. Descarrega les plantilles oficials des de GitHub per assegurar-te d'usar el format correcte:",
+            "a_csv_charges": "- Plantilla per importar càrregues",
+            "a_csv_trips": "- Plantilla per importar viatges"
         },
         "install": {
             "title": "Instal·lació (PWA)",

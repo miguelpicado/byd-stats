@@ -294,6 +294,11 @@
         "noHistory": "Sem histórico guardado",
         "dbExported": "Base de dados exportada com sucesso"
     },
+    "modals": {
+        "odometerTitle": "Ajuste de Odómetro",
+        "odometerDesc": "Ajuste visual para corrigir a diferença com o marcador do carro.",
+        "offset": "Desvio (km)"
+    },
     "errors": {
         "invalidFile": "Apenas ficheiros *.DB o *.JPG (base de dados renomeada) são permitidos\nEncontre EC_Database.db na pasta \"Energydata\" do seu carro",
         "somethingWentWrong": "Algo correu mal",
@@ -516,6 +521,8 @@
         "speedTitle": "Insights de Velocidade",
         "avgTripTitle": "Insights de Viagem Média",
         "activeDaysTitle": "Insights de Atividade",
+        "stationaryTitle": "Consumo estacionário",
+        "stationaryDesc": "Aqui é contabilizado todo o consumo de todas as viagens registradas de menos de 0.5km.",
         "totalKm": "Total Km",
         "kmPerDay": "Km/dia ativo",
         "avgPerTrip": "Média/viagem",
@@ -613,7 +620,11 @@
             "a1_step3": "Navegue até: Armazenamento Interno > BYD > ElectronicOwnerManual > data.",
             "a1_step4": "Copie o ficheiro EC_Database.db e cole-o na sua memória USB.",
             "tip_label": "Dica",
-            "tip_text": "Se tiver problemas para selecionar o ficheiro ao carregar, pode renomeá-lo para EC_Database.jpg. A aplicação aceitará o ficheiro como uma imagem válida e processá-lo-á corretamente."
+            "tip_text": "Se tiver problemas para selecionar o ficheiro ao carregar, pode renomeá-lo para EC_Database.jpg. A aplicação aceitará o ficheiro como uma imagem válida e processá-lo-á corretamente.",
+            "q_csv_import": "Posso importar os meus próprios carregamentos/viagens?",
+            "a_csv_import": "Sim, pode importar os seus dados a partir de ficheiros CSV. Descarregue os modelos oficiais do GitHub para garantir que utiliza o formato correto:",
+            "a_csv_charges": "- Modelo para importar carregamentos",
+            "a_csv_trips": "- Modelo para importar viagens"
         },
         "install": {
             "title": "Instalação (PWA)",

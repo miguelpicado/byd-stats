@@ -294,6 +294,11 @@
         "noHistory": "Ez dago historiarik gordeta",
         "dbExported": "Datu-basea ondo esportatu da"
     },
+    "modals": {
+        "odometerTitle": "Odometroaren doikuntza",
+        "odometerDesc": "Autoaren markagailuaren aldea zuzentzeko doikuntza bisuala.",
+        "offset": "Desfasea (km)"
+    },
     "errors": {
         "invalidFile": "*.DB edo *.JPG fitxategiak soilik onartzen dira (izena aldatutako datu-basea)\nAurkitu EC_Database.db autoaren \"Energydata\" karpetan",
         "somethingWentWrong": "Zerbait gaizki joan da",
@@ -516,6 +521,8 @@
         "speedTitle": "Abiadura Analisiak",
         "avgTripTitle": "Batez besteko Bidaia",
         "activeDaysTitle": "Jarduera Analisiak",
+        "stationaryTitle": "Geldiko kontsumoa",
+        "stationaryDesc": "Hemen erregistratutako 0.5km-tik beherako bidaia guztien kontsumoa kontabilizatzen da.",
         "totalKm": "Km Guztira",
         "kmPerDay": "Km/egun aktibo",
         "avgPerTrip": "B.B./bidaia",
@@ -588,21 +595,21 @@
         "pageSubtitle": "LAGUNTZA ETA SOPORTEA",
         "general": {
             "title": "Orokorra",
-            "q1": "¿Es gratuita esta aplicación?",
-            "a1": "Bai, BYD Stats %100 doakoa da eta kode irekikoa. (Sí, BYD Stats es 100% gratuita y de código abierto. Fue desarrollada como un proyecto personal para ayudar a la comunidad de propietarios de BYD a visualizar mejor sus datos.)",
-            "q2": "¿Dónde se guardan mis datos?",
-            "a2": "Zure datuak zureak dira. (Tus datos son tuyos. Por defecto, toda la información se almacena localmente en tu dispositivo. No subimos nada a servidores externos ni vendemos tu información.)",
-            "q3": "¿Necesito una cuenta de Google para usarla?",
-            "a3": "Ez, ez da derrigorrezkoa. (No, no es obligatorio. Puedes usar todas las funciones de análisis sin registrarte. La cuenta de Google solo se necesita si decides activar voluntariamente la \"Sincronización en la Nube\" para guardar una copia de seguridad en tu propio Google Drive.)",
-            "q_no_efficiency": "¿Por qué no veo eficiencia o Score en algunos viajes?",
-            "a_no_efficiency": "Los viajes de menos de 0.5km no muestran eficiencia ni puntaje (Score) y aparecen con un guion. Esto se debe a que distancias tan cortas con consumos de arranque o climatización generarían eficiencias artificialmente altas. Estos consumos se consideran 'Geldiko kontsumoa' y se suman aparte.",
-            "q_score_works": "¿Cómo funciona el Score?",
-            "a_score_works": "El Score no es una escala fija, es dinámica y adaptada a tu coche. Un 10 es la mejor eficiencia lograda en TU coche para un viaje (>0.5km) y un 0 la peor. Dos coches iguales podrían tener Scores distintos para el mismo viaje si sus históricos de uso varían.",
+            "q1": "Aplikazio hau doakoa al da?",
+            "a1": "Bai, BYD Stats %100 doakoa da eta kode irekikoa. Garapen pertsonaleko proiektu gisa garatu zen BYD jabeen komunitateari beren datuak hobeto bistaratzen laguntzeko.",
+            "q2": "Non gordetzen dira nire datuak?",
+            "a2": "Zure datuak zureak dira. Lehenespenez, informazio guztia lokalki gordetzen da zure gailuan. Ez dugu bidaia daturik igotzen kanpoko zerbitzarietara, ezta zure informazioa saltzen ere.",
+            "q3": "Google kontu bat behar al dut erabiltzeko?",
+            "a3": "Ez, ez da derrigorrezkoa. Analisi funtzio guztiak erabil ditzakezu erregistratu gabe. Google kontua soilik behar da \"Hodeiko Sinkronizazioa\" boluntarioki aktibatzea erabakitzen baduzu, zure Google Drive-n babeskopia bat gordetzeko.",
+            "q_no_efficiency": "Zergatik ez dut ikusten eraginkortasuna edo Score-a bidaia batzuetan?",
+            "a_no_efficiency": "0.5km-tik beherako bidaiek ez dute eraginkortasunik edo puntuaziorik (Score) erakusten eta marratxo batekin agertzen dira. Izan ere, hain distantzia laburrek, abiarazteko edo klimatizaziorako kontsumoekin, eraginkortasun artifizialki handiak sortuko lituzkete. Kontsumo hauek 'Geldiko kontsumoa' gisa hartzen dira eta aparte gehitzen dira.",
+            "q_score_works": "Nola funtzionatzen du Score-ak?",
+            "a_score_works": "Score-a ez da eskala finko bat, dinamikoa da eta zure autora egokitua dago. 10 bat ZURE autoan lortutako eraginkortasunik onena da bidaia baterako (>0.5km) eta 0 txarrena. Bi auto berdin Score desberdinak izan ditzakete bidaia bererako, erabileraren historia aldatzen bada.",
             "q_cost_types": "Zer esan nahi dute 3 kostu motak Ezarpenetan?",
-            "a_cost_types_intro": "Hautatu dezakezu:",
-            "a_cost_fixed": "Balio finko bat.",
-            "a_cost_avg": "Batez besteko historikoa.",
-            "a_cost_dynamic": "Azken kargaren prezioa bidaia aurretik."
+            "a_cost_types_intro": "Hauen artean aukera dezakezu:",
+            "a_cost_fixed": "Eskuzko balio konstante bat.",
+            "a_cost_avg": "Erregistratutako karga guztien batez besteko historikoa.",
+            "a_cost_dynamic": "Bidaia aurreko azken kargan ordaindutako kW-eko prezioa."
         },
         "database": {
             "title": "Datu-basea",
@@ -613,7 +620,11 @@
             "a1_step3": "Joan hona: Barne Biltegiratzea > BYD > ElectronicOwnerManual > data.",
             "a1_step4": "Kopiatu EC_Database.db fitxategia eta itsatsi USB memorian.",
             "tip_label": "Trikimailua",
-            "tip_text": "Arazoak badituzu igotzerakoan, saiatu EC_Database.jpg izenera aldatzen."
+            "tip_text": "Arazoak badituzu igotzerakoan, saiatu EC_Database.jpg izenera aldatzen. Aplikazioak fitxategia irudi baliagarri gisa onartuko du eta zuzen prozesatuko du.",
+            "q_csv_import": "Nire kargak/bidaiak inporta ditzaket?",
+            "a_csv_import": "Bai, zure datuak CSV fitxategietatik inporta ditzakezu. Deskargatu txantiloi ofizialak GitHub-etik formatu zuzena erabiltzen duzula ziurtatzeko:",
+            "a_csv_charges": "- Kargak inportatzeko txantiloia",
+            "a_csv_trips": "- Bidaiak inportatzeko txantiloia"
         },
         "install": {
             "title": "Instalazioa (PWA)",
