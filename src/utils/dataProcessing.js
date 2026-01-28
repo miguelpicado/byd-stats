@@ -84,6 +84,13 @@ import { logger } from './logger';
  * @param {Trip[]} rows - Array of raw trip objects
  * @returns {ProcessedData|null} Processed data object or null if invalid
  */
+/**
+ * Checks if a trip is considered stationary (distance < 0.5km)
+ * @param {Trip} trip 
+ * @returns {boolean}
+ */
+export const isStationaryTrip = (trip) => (trip.trip || 0) < 0.5;
+
 // Helper to get top N items without full sort - O(N) for small K
 function getTopN(arr, compareFn, n) {
     if (arr.length <= n) return [...arr].sort(compareFn);
@@ -276,7 +283,7 @@ export function processData(rows, priceSettings = {}, charges = []) {
         // STATIONARY CONSUMPTION LOGIC:
         // If trip < 0.5km, we consider it stationary consumption.
         // We track its energy but exclude it from distance/efficiency stats.
-        if (tTrip < 0.5) {
+        if (isStationaryTrip(trip)) {
             stationaryKwh += tElec;
             totalKwh += tElec; // Still adds to total consumption
             totalFuel += tFuel; // Still adds to total fuel? (Yes, if engine idled)
