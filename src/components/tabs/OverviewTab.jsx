@@ -107,181 +107,172 @@ const OverviewTab = React.memo(({
     }]
   }), [tripDist]);
 
+  // --- Configuración de Tarjetas de Estadísticas ---
+  const getStatsConfig = () => [
+    {
+      key: 'distance',
+      icon: MapPin,
+      label: t('stats.distance'),
+      value: summary.totalKm,
+      unit: t('units.km'),
+      color: "bg-red-500/20 text-red-400",
+      sub: `${summary.kmDay} ${t('units.km')}/${t('units.day')}`,
+      onClick: () => handleCardClick('distance')
+    },
+    {
+      key: 'energy',
+      icon: Zap,
+      label: t('stats.energy'),
+      value: summary.totalKwh,
+      unit: t('units.kWh'),
+      color: "bg-cyan-500/20 text-cyan-400",
+      onClick: () => handleCardClick('energy')
+    },
+    {
+      key: 'trips',
+      icon: Car,
+      label: t('stats.trips'),
+      value: summary.totalTrips,
+      unit: "",
+      color: "bg-amber-500/20 text-amber-400",
+      sub: `${summary.tripsDay}/${t('units.day')}`,
+      onClick: () => handleCardClick('trips')
+    },
+    // Condicional: Hybrid vs EV
+    summary.isHybrid ? {
+      key: 'stationary',
+      icon: Activity,
+      label: t('stats.stationary'),
+      value: summary.stationaryConsumption,
+      unit: t('units.kWh'),
+      color: "bg-yellow-500/20 text-yellow-500",
+      onClick: () => handleCardClick('stationary')
+    } : {
+      key: 'time',
+      icon: Clock,
+      label: t('stats.time'),
+      value: summary.totalHours,
+      unit: "h",
+      color: "bg-purple-500/20 text-purple-400",
+      onClick: () => handleCardClick('time')
+    },
+    {
+      key: 'efficiency',
+      icon: Battery,
+      label: t('stats.efficiency'),
+      value: summary.avgEff,
+      unit: t('units.kWh100km'),
+      color: "bg-green-500/20 text-green-400",
+      onClick: () => handleCardClick('efficiency')
+    },
+    // Condicional: Fuel vs Stationary (EV reuse)
+    summary.isHybrid ? {
+      key: 'fuel',
+      icon: Fuel,
+      label: t('hybrid.avgFuelEfficiency'),
+      value: summary.avgFuelEff,
+      unit: "L/100km",
+      color: "bg-amber-500/20 text-amber-500",
+      onClick: () => handleCardClick('fuel')
+    } : {
+      key: 'stationary_ev', // Unique key for list
+      icon: Activity,
+      label: t('stats.stationary'),
+      value: summary.stationaryConsumption,
+      unit: t('units.kWh'),
+      color: "bg-yellow-500/20 text-yellow-500",
+      onClick: () => handleCardClick('stationary')
+    },
+    {
+      key: 'avgTrip',
+      icon: MapPin,
+      label: t('stats.avgTrip'),
+      value: summary.avgKm,
+      unit: t('units.km'),
+      color: "bg-orange-500/20 text-orange-400",
+      sub: `${summary.avgMin} min`,
+      onClick: () => handleCardClick('avgTrip')
+    },
+    {
+      key: 'speed',
+      icon: TrendingUp,
+      label: t('stats.speed'),
+      value: summary.avgSpeed,
+      unit: t('units.kmh'),
+      color: "bg-blue-500/20 text-blue-400",
+      onClick: () => handleCardClick('speed')
+    }
+  ];
+
+  const statItems = getStatsConfig();
+
+  // Helper render function
+  const renderStatGrid = () => (
+    <>
+      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+        {statItems.slice(0, 4).map(item => (
+          <StatCard
+            key={item.key}
+            isVerticalMode={isVertical}
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            {...item}
+          />
+        ))}
+      </div>
+      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
+        {statItems.slice(4, 8).map(item => (
+          <StatCard
+            key={item.key}
+            isVerticalMode={isVertical}
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            {...item}
+          />
+        ))}
+      </div>
+    </>
+  );
+
   // Render vertical layout
   if (isVertical) {
     return (
       <div className={`${overviewSpacing}`}>
-        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={MapPin}
-            label={t('stats.distance')}
-            value={summary.totalKm}
-            unit={t('units.km')}
-            color="bg-red-500/20 text-red-400"
-            sub={`${summary.kmDay} ${t('units.km')}/${t('units.day')}`}
-            onClick={() => handleCardClick('distance')}
-          />
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Zap}
-            label={t('stats.energy')}
-            value={summary.totalKwh}
-            unit={t('units.kWh')}
-            color="bg-cyan-500/20 text-cyan-400"
-            onClick={() => handleCardClick('energy')}
-          />
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Car}
-            label={t('stats.trips')}
-            value={summary.totalTrips}
-            unit=""
-            color="bg-amber-500/20 text-amber-400"
-            sub={`${summary.tripsDay}/${t('units.day')}`}
-            onClick={() => handleCardClick('trips')}
-          />
-          {/* Hybrid Mode: Replaced Time with Stationary Consumption */}
-          {summary.isHybrid ? (
-            <StatCard
-              isVerticalMode={true}
-              isLarger={isLargerCard}
-              isCompact={isCompact}
-              icon={Activity}
-              label={t('stats.stationary')}
-              value={summary.stationaryConsumption}
-              unit={t('units.kWh')}
-              color="bg-yellow-500/20 text-yellow-500"
-              onClick={() => handleCardClick('stationary')}
-            />
-          ) : (
-            <StatCard
-              isVerticalMode={true}
-              isLarger={isLargerCard}
-              isCompact={isCompact}
-              icon={Clock}
-              label={t('stats.time')}
-              value={summary.totalHours}
-              unit="h"
-              color="bg-purple-500/20 text-purple-400"
-              onClick={() => handleCardClick('time')}
-            />
-          )}
-        </div>
-
-        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Battery}
-            label={t('stats.efficiency')}
-            value={summary.avgEff}
-            unit={t('units.kWh100km')}
-            color="bg-green-500/20 text-green-400"
-            onClick={() => handleCardClick('efficiency')}
-          />
-          {summary.isHybrid ? (
-            <StatCard
-              isVerticalMode={true}
-              isLarger={isLargerCard}
-              isCompact={isCompact}
-              icon={Fuel}
-              label={t('hybrid.avgFuelEfficiency')}
-              value={summary.avgFuelEff}
-              unit="L/100km"
-              color="bg-amber-500/20 text-amber-500"
-              onClick={() => handleCardClick('fuel')}
-            />
-          ) : (
-            /* EV Mode: Replaced Active Days with Stationary Consumption */
-            <StatCard
-              isVerticalMode={true}
-              isLarger={isLargerCard}
-              isCompact={isCompact}
-              icon={Activity}
-              label={t('stats.stationary')}
-              value={summary.stationaryConsumption}
-              unit={t('units.kWh')}
-              color="bg-yellow-500/20 text-yellow-500"
-              onClick={() => handleCardClick('stationary')}
-            />
-          )}
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={MapPin}
-            label={t('stats.avgTrip')}
-            value={summary.avgKm}
-            unit={t('units.km')}
-            color="bg-orange-500/20 text-orange-400"
-            sub={`${summary.avgMin} min`}
-            onClick={() => handleCardClick('avgTrip')}
-          />
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={TrendingUp}
-            label={t('stats.speed')}
-            value={summary.avgSpeed}
-            unit={t('units.kmh')}
-            color="bg-blue-500/20 text-blue-400"
-            onClick={() => handleCardClick('speed')}
-          />
-        </div>
+        {renderStatGrid()}
 
         {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
         {summary.isHybrid && (
-          <div className={`grid grid-cols-2 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-            <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={true} />
+          <div className={`grid grid-cols-2 gap-4 ${isCompact ? '!gap-3' : ''}`}>
+            <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={false} />
           </div>
         )}
-        <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
+        <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
           <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
-            <div style={{ width: '100%', height: smallChartHeight }}>
-              <LineJS key={`overview-line-v-${isActive}`} options={lineChartOptionsVertical} data={lineChartData} />
+            <div key="line-container-h" style={{ width: '100%', height: smallChartHeight }}>
+              <LineJS key="overview-line-h" redraw={true} options={lineChartOptionsHorizontal} data={lineChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
-            <div className={`flex items-center ${isCompact ? 'flex-col' : 'md:flex-row flex-col gap-4'}`}>
-              <div className={isCompact ? 'w-full' : 'md:w-1/2 w-full'}>
-                <div style={{ width: '100%', height: smallChartHeight }}>
-                  <PieJS key={`overview-pie-v-${isActive}`} options={PIE_CHART_OPTIONS} data={pieChartData} />
+            <div className="flex flex-row items-center gap-4">
+              <div className="w-1/2">
+                <div key="pie-container-h" style={{ width: '100%', height: smallChartHeight }}>
+                  <PieJS key="overview-pie-h" redraw={true} options={PIE_CHART_OPTIONS} data={pieChartData} />
                 </div>
               </div>
-              <div className={`grid ${isCompact ? 'grid-cols-1 w-full gap-1' : 'md:grid-cols-1 md:w-1/2 grid-cols-5 w-full gap-2 mt-4'} text-center`}>
+              <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
                 {tripDist.map((d, i) => (
-                  <div key={i} className={`flex ${isCompact ? 'flex-row items-center justify-between px-4 py-1.5 bg-slate-100 dark:bg-slate-700/50 rounded-lg' : 'flex-col items-center'}`}>
-                    <div className="flex items-center gap-2">
+                  <div key={i} className={`flex flex-row items-center justify-between px-2 py-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg`}>
+                    <div className="flex items-center gap-2 overflow-hidden">
                       <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
-                      <p className={`text-slate-600 dark:text-slate-400 truncate ${isCompact ? 'text-[11px]' : 'text-[9px] sm:text-[10px]'}`}>{d.range}km</p>
+                      <p className="text-slate-600 dark:text-slate-400 truncate text-[9px]">{d.range}km</p>
                     </div>
-                    <p className={`font-bold text-slate-900 dark:text-white ${isCompact ? 'text-sm' : 'text-xs sm:text-sm'}`}>{d.count}</p>
+                    <p className="font-bold text-slate-900 dark:text-white text-[11px]">{d.count}</p>
                   </div>
                 ))}
               </div>
             </div>
           </ChartCard>
         </div>
-
-
-        {
-          isVertical && onAddCharge && (
-            <FloatingActionButton
-              onClick={onAddCharge}
-              label={t('charges.addCharge')}
-              icon={Battery}
-            />
-          )
-        }
 
         <TripInsightsModal
           isOpen={!!insightType}
@@ -294,127 +285,14 @@ const OverviewTab = React.memo(({
           isOpen={showOdometerModal}
           onClose={() => setShowOdometerModal(false)}
         />
-      </div >
+      </div>
     );
   }
 
   // Render horizontal layout
   return (
     <div className={`${overviewSpacing}`}>
-      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={MapPin}
-          label={t('stats.distance')}
-          value={summary.totalKm}
-          unit={t('units.km')}
-          color="bg-red-500/20 text-red-400"
-          sub={`${summary.kmDay} ${t('units.km')}/${t('units.day')}`}
-          onClick={() => handleCardClick('distance')}
-        />
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={Zap}
-          label={t('stats.energy')}
-          value={summary.totalKwh}
-          unit={t('units.kWh')}
-          color="bg-cyan-500/20 text-cyan-400"
-          onClick={() => handleCardClick('energy')}
-        />
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={Car}
-          label={t('stats.trips')}
-          value={summary.totalTrips}
-          unit=""
-          color="bg-amber-500/20 text-amber-400"
-          sub={`${summary.tripsDay}/${t('units.day')}`}
-          onClick={() => handleCardClick('trips')}
-        />
-        {summary.isHybrid ? (
-          <StatCard
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Activity}
-            label={t('stats.stationary')}
-            value={summary.stationaryConsumption}
-            unit={t('units.kWh')}
-            color="bg-yellow-500/20 text-yellow-500"
-            onClick={() => handleCardClick('stationary')}
-          />
-        ) : (
-          <StatCard
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Clock}
-            label={t('stats.time')}
-            value={summary.totalHours}
-            unit="h"
-            color="bg-purple-500/20 text-purple-400"
-            onClick={() => handleCardClick('time')}
-          />
-        )}
-      </div>
-
-      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={Battery}
-          label={t('stats.efficiency')}
-          value={summary.avgEff}
-          unit={t('units.kWh100km')}
-          color="bg-green-500/20 text-green-400"
-          onClick={() => handleCardClick('efficiency')}
-        />
-        {summary.isHybrid ? (
-          <StatCard
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Fuel}
-            label={t('hybrid.avgFuelEfficiency')}
-            value={summary.avgFuelEff}
-            unit="L/100km"
-            color="bg-amber-500/20 text-amber-500"
-            onClick={() => handleCardClick('fuel')}
-          />
-        ) : (
-          <StatCard
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Activity}
-            label={t('stats.stationary')}
-            value={summary.stationaryConsumption}
-            unit={t('units.kWh')}
-            color="bg-yellow-500/20 text-yellow-500"
-            onClick={() => handleCardClick('stationary')}
-          />
-        )}
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={MapPin}
-          label={t('stats.avgTrip')}
-          value={summary.avgKm}
-          unit={t('units.km')}
-          color="bg-orange-500/20 text-orange-400"
-          sub={`${summary.avgMin} min`}
-          onClick={() => handleCardClick('avgTrip')}
-        />
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={TrendingUp}
-          label={t('stats.speed')}
-          value={summary.avgSpeed}
-          unit={t('units.kmh')}
-          color="bg-blue-500/20 text-blue-400"
-          onClick={() => handleCardClick('speed')}
-        />
-      </div>
+      {renderStatGrid()}
 
       {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
       {summary.isHybrid && (
