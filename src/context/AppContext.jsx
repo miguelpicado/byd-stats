@@ -42,7 +42,8 @@ const DEFAULT_SETTINGS = {
     fuelPriceStrategy: 'custom',
     theme: 'auto',
     chargerTypes: DEFAULT_CHARGER_TYPES,
-    hiddenTabs: []
+    hiddenTabs: [],
+    odometerOffset: 0
 };
 
 /**
@@ -93,7 +94,8 @@ export const AppProvider = ({ children }) => {
                 fuelPriceStrategy: updated.fuelPriceStrategy ?? prev.fuelPriceStrategy ?? 'custom',
                 theme: updated.theme ?? prev.theme ?? 'auto',
                 chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES,
-                hiddenTabs: updated.hiddenTabs ?? prev.hiddenTabs ?? []
+                hiddenTabs: updated.hiddenTabs ?? prev.hiddenTabs ?? [],
+                odometerOffset: updated.odometerOffset ?? prev.odometerOffset ?? 0
             };
 
             localStorage.setItem('byd_settings', JSON.stringify(validated));
