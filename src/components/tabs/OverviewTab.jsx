@@ -3,7 +3,7 @@ import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
-import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, Fuel, BYD_RED } from '../Icons.jsx';
+import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, Fuel, BYD_RED, Activity } from '../Icons.jsx';
 import StatCard from '../ui/StatCard';
 import ChartCard from '../ui/ChartCard';
 import FloatingActionButton from '../common/FloatingActionButton';
@@ -141,20 +141,33 @@ const OverviewTab = React.memo(({
             sub={`${summary.tripsDay}/${t('units.day')}`}
             onClick={() => handleCardClick('trips')}
           />
-          <StatCard
-            isVerticalMode={true}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Clock}
-            label={t('stats.time')}
-            value={summary.totalHours}
-            unit="h"
-            color="bg-purple-500/20 text-purple-400"
-            onClick={() => handleCardClick('time')}
-          />
+          {/* Hybrid Mode: Replaced Time with Stationary Consumption */}
+          {summary.isHybrid ? (
+            <StatCard
+              isVerticalMode={true}
+              isLarger={isLargerCard}
+              isCompact={isCompact}
+              icon={Activity}
+              label={t('stats.stationary')}
+              value={summary.stationaryConsumption}
+              unit={t('units.kWh')}
+              color="bg-yellow-500/20 text-yellow-500"
+              onClick={() => handleCardClick('stationary')}
+            />
+          ) : (
+            <StatCard
+              isVerticalMode={true}
+              isLarger={isLargerCard}
+              isCompact={isCompact}
+              icon={Clock}
+              label={t('stats.time')}
+              value={summary.totalHours}
+              unit="h"
+              color="bg-purple-500/20 text-purple-400"
+              onClick={() => handleCardClick('time')}
+            />
+          )}
         </div>
-
-
 
         <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
           <StatCard
@@ -181,16 +194,17 @@ const OverviewTab = React.memo(({
               onClick={() => handleCardClick('fuel')}
             />
           ) : (
+            /* EV Mode: Replaced Active Days with Stationary Consumption */
             <StatCard
               isVerticalMode={true}
               isLarger={isLargerCard}
               isCompact={isCompact}
-              icon={Calendar}
-              label={t('stats.activeDays')}
-              value={summary.daysActive}
-              unit=""
-              color="bg-pink-500/20 text-pink-400"
-              onClick={() => handleCardClick('activeDays')}
+              icon={Activity}
+              label={t('stats.stationary')}
+              value={summary.stationaryConsumption}
+              unit={t('units.kWh')}
+              color="bg-yellow-500/20 text-yellow-500"
+              onClick={() => handleCardClick('stationary')}
             />
           )}
           <StatCard
@@ -310,19 +324,30 @@ const OverviewTab = React.memo(({
           sub={`${summary.tripsDay}/${t('units.day')}`}
           onClick={() => handleCardClick('trips')}
         />
-        <StatCard
-          isLarger={isLargerCard}
-          isCompact={isCompact}
-          icon={Clock}
-          label={t('stats.time')}
-          value={summary.totalHours}
-          unit="h"
-          color="bg-purple-500/20 text-purple-400"
-          onClick={() => handleCardClick('time')}
-        />
+        {summary.isHybrid ? (
+          <StatCard
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Activity}
+            label={t('stats.stationary')}
+            value={summary.stationaryConsumption}
+            unit={t('units.kWh')}
+            color="bg-yellow-500/20 text-yellow-500"
+            onClick={() => handleCardClick('stationary')}
+          />
+        ) : (
+          <StatCard
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Clock}
+            label={t('stats.time')}
+            value={summary.totalHours}
+            unit="h"
+            color="bg-purple-500/20 text-purple-400"
+            onClick={() => handleCardClick('time')}
+          />
+        )}
       </div>
-
-
 
       <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 ${isCompact ? '!gap-3' : ''}`}>
         <StatCard
@@ -350,12 +375,12 @@ const OverviewTab = React.memo(({
           <StatCard
             isLarger={isLargerCard}
             isCompact={isCompact}
-            icon={Calendar}
-            label={t('stats.activeDays')}
-            value={summary.daysActive}
-            unit=""
-            color="bg-pink-500/20 text-pink-400"
-            onClick={() => handleCardClick('activeDays')}
+            icon={Activity}
+            label={t('stats.stationary')}
+            value={summary.stationaryConsumption}
+            unit={t('units.kWh')}
+            color="bg-yellow-500/20 text-yellow-500"
+            onClick={() => handleCardClick('stationary')}
           />
         )}
         <StatCard

@@ -52,7 +52,10 @@
         "maxDur": "Major durada",
         "shortest": "Més curt",
         "mostExpensive": "Més costós",
-        "consumption": "Consum"
+        "consumption": "Consum",
+        "stationaryConsumption": "Consum en parat",
+        "stationary": "Consum en parat",
+        "cost": "Cost"
     },
     "units": {
         "km": "km",
@@ -190,6 +193,9 @@
         "priceCalculatedInfo": "Calculat des de {{count}} càrregues ({{total}}€ / {{kwh}} kWh)",
         "priceCalculatedInfoFuel": "Calculat des de {{count}} repostatges ({{total}}€ / {{liters}} L)",
         "priceCalculatedNoCharges": "Afegeix càrregues per calcular el preu automàticament",
+        "custom": "Preu Fix",
+        "average": "Preu Mig",
+        "dynamic": "Dinàmic",
         "dataManagement": "Gestió de dades",
         "updateData": "Actualitzar dades"
     },
@@ -576,5 +582,57 @@
         "keepLocal": "Mantenir Local",
         "useCloud": "Usar Núvol",
         "mergeBoth": "Combinar Ambdós"
+    },
+    "faq": {
+        "pageTitle": "Preguntes Freqüents",
+        "pageSubtitle": "AJUDA I SUPORT",
+        "general": {
+            "title": "General",
+            "q1": "És gratuïta aquesta aplicació?",
+            "a1": "Sí, BYD Stats és 100% gratuïta i de codi obert. Va ser desenvolupada com un projecte personal per ajudar la comunitat de propietaris de BYD a visualitzar millor les seves dades.",
+            "q2": "On es guarden les meves dades?",
+            "a2": "Les teves dades són teves. Per defecte, tota la informació s'emmagatzema localment al teu dispositiu. No pugem res a servidors externs ni venem la teva informació.",
+            "q3": "Necessito un compte de Google per utilitzar-la?",
+            "a3": "No, no és obligatori. Pots utilitzar totes les funcions d'anàlisi sense registrar-te. El compte de Google només es necessita si decideixes activar voluntàriament la \"Sincronització al Núvol\" per guardar una còpia de seguretat al teu propi Google Drive.",
+            "q_no_efficiency": "Per què no veig eficiència o Score en alguns viatges?",
+            "a_no_efficiency": "Els viatges de menys de 0.5km no mostren eficiència ni puntuació (Score) i apareixen amb un guió. Això es deu al fet que distàncies tan curtes amb consums d'arrencada o climatització generarien eficiències artificialment altes. Aquests consums es consideren 'Consum en Parat' i se sumen a part.",
+            "q_score_works": "Com funciona el Score?",
+            "a_score_works": "El Score no és una escala fixa, és dinàmica i adaptada al teu cotxe. Un 10 és la millor eficiència aconseguida en el TEU cotxe per a un viatge (>0.5km) i un 0 la pitjor. Dos cotxes iguals podrien tenir Scores diferents per al mateix viatge si els seus històrics d'ús varien.",
+            "q_cost_types": "Què signifiquen els 3 tipus de cost a Configuració?",
+            "a_cost_types_intro": "Pots triar entre:",
+            "a_cost_fixed": "Un valor manual constant.",
+            "a_cost_avg": "Mitjana històrica de totes les teves càrregues registrades.",
+            "a_cost_dynamic": "Preu per kW pagat en l'última càrrega anterior al viatge."
+        },
+        "database": {
+            "title": "Base de Dades",
+            "q1": "Com obtingo el fitxer EC_Database.db del meu cotxe?",
+            "a1_intro": "Segueix aquests passos a la pantalla del teu BYD:",
+            "a1_step1": "Connecta una memòria USB (format FAT32) al port USB de dades del cotxe.",
+            "a1_step2": "Obre l'app \"Gestor de Fitxers\" al cotxe.",
+            "a1_step3": "Navega a: Emmagatzematge Intern > BYD > ElectronicOwnerManual > data.",
+            "a1_step4": "Copia el fitxer EC_Database.db i enganxa'l a la teva memòria USB.",
+            "tip_label": "Truc",
+            "tip_text": "Si tens problemes per seleccionar el fitxer en carregar-lo, pots reanomenar-lo a EC_Database.jpg. L'aplicació acceptarà el fitxer com una imatge vàlida i el processarà correctament."
+        },
+        "install": {
+            "title": "Instal·lació (PWA)",
+            "q1": "Com instal·lo l'App al meu mòbil (Android/iOS)?",
+            "a1_intro": "Normalment veuràs un bàner automàtic en entrar a la web convidant-te a instal·lar l'aplicació.",
+            "a1_ios": "Prem el botó \"Compartir\" i selecciona \"Afegir a la pantalla d'inici\".",
+            "a1_android": "Prem el menú (tres punts) i selecciona \"Instal·lar aplicació\" o \"Afegir a pantalla d'inici\".",
+            "q2": "Puc instal·lar-la a la pantalla del cotxe?",
+            "a2_intro": "Sí, si el teu cotxe té un navegador web (com GBox o navegador natiu):",
+            "a2_step1": "Obre bydstats.com al navegador del cotxe.",
+            "a2_step2": "Busca l'opció del navegador per \"Afegir a pantalla d'inici\" o \"Instal·lar\".",
+            "a2_step3": "Ara apareixerà com una app més al teu sistema multimèdia."
+        },
+        "support": {
+            "title": "Suport i Contacte",
+            "q1": "Com puc donar suport al projecte?",
+            "a1": "Si l'aplicació et resulta útil i vols donar suport al seu manteniment i desenvolupament continu, pots fer una petita donació voluntària a través de Ko-fi. Qualsevol aportació és immensament agraïda!",
+            "q2": "Tens dubtes o suggeriments?",
+            "a2": "Per a qualsevol consulta, idea, aportació o si trobes algun problema, no dubtis a escriure'm a"
+        }
     }
 }

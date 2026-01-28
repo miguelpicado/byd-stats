@@ -18,6 +18,9 @@ import { formatDate, formatTime } from '../../utils/dateUtils';
 const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact, isFullscreenBYD }) => {
     const { t } = useTranslation();
 
+    // Determine if stationary/short trip
+    const isStationary = (trip.trip || 0) < 0.5;
+
     const efficiency = useMemo(() => {
         if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
             return 0;
@@ -38,6 +41,9 @@ const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact, isFulls
     const paddingClass = isCompact ? 'p-[7px]' : (isFullscreenBYD ? 'p-2.5' : 'p-3 sm:p-4');
     const marginBottom = (isCompact || isFullscreenBYD) ? 'mb-1' : 'mb-3';
 
+    // Cost logic: Use calculatedCost if available, otherwise totalCost (fallback)
+    const displayCost = trip.calculatedCost !== undefined ? trip.calculatedCost : (trip.totalCost || 0);
+
     return (
         <div
             onClick={() => onClick(trip)}
@@ -48,7 +54,8 @@ const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact, isFulls
                     {formatDate(trip.date)} · {formatTime(trip.start_timestamp)}
                 </p>
             </div>
-            <div className="grid grid-cols-4 gap-2">
+            {/* 5 Column Grid */}
+            <div className="grid grid-cols-5 gap-2">
                 <div className="text-center">
                     <p className={`text-slate-600 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.distance')}</p>
                     <p className={`text-slate-900 dark:text-white font-bold ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.trip?.toFixed(1)}</p>
@@ -61,14 +68,28 @@ const TripCard = React.memo(({ trip, minEff, maxEff, onClick, isCompact, isFulls
                 </div>
                 <div className="text-center">
                     <p className={`text-slate-600 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.efficiency')}</p>
-                    <p className={`text-slate-900 dark:text-white font-bold ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-base sm:text-xl'}`}>{efficiency.toFixed(2)}</p>
+                    {isStationary ? (
+                        <p className={`text-slate-400 dark:text-slate-500 font-bold ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-base sm:text-xl'}`}>-</p>
+                    ) : (
+                        <p className={`text-slate-900 dark:text-white font-bold ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-base sm:text-xl'}`}>{efficiency.toFixed(2)}</p>
+                    )}
                     <p className={`text-slate-500 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>kWh/100km</p>
+                </div>
+                {/* Cost Column */}
+                <div className="text-center">
+                    <p className={`text-slate-600 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.cost') || 'Coste'}</p>
+                    <p className={`text-slate-900 dark:text-white font-bold ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-base sm:text-xl'}`}>{displayCost.toFixed(2)}</p>
+                    <p className={`text-slate-500 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>€</p>
                 </div>
                 <div className="text-center">
                     <p className={`text-slate-600 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>Score</p>
-                    <p className={`font-bold ${(isCompact || isFullscreenBYD) ? 'text-lg' : 'text-2xl sm:text-3xl'}`} style={{ color: scoreColor }}>
-                        {score.toFixed(1)}
-                    </p>
+                    {isStationary ? (
+                        <p className={`text-slate-400 dark:text-slate-500 font-bold ${(isCompact || isFullscreenBYD) ? 'text-lg' : 'text-2xl sm:text-3xl'}`}>-</p>
+                    ) : (
+                        <p className={`font-bold ${(isCompact || isFullscreenBYD) ? 'text-lg' : 'text-2xl sm:text-3xl'}`} style={{ color: scoreColor }}>
+                            {score.toFixed(1)}
+                        </p>
+                    )}
                 </div>
             </div>
         </div>
@@ -80,7 +101,9 @@ TripCard.propTypes = {
         trip: PropTypes.number,
         electricity: PropTypes.number,
         date: PropTypes.string,
-        start_timestamp: PropTypes.number
+        start_timestamp: PropTypes.number,
+        calculatedCost: PropTypes.number,
+        totalCost: PropTypes.number
     }).isRequired,
     minEff: PropTypes.number.isRequired,
     maxEff: PropTypes.number.isRequired,

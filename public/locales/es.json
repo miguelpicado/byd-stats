@@ -52,7 +52,10 @@
         "maxDur": "Más duración",
         "shortest": "Más corto",
         "mostExpensive": "Más costoso",
-        "consumption": "Consumo"
+        "consumption": "Consumo",
+        "stationaryConsumption": "Consumo en parado",
+        "stationary": "Consumo en parado",
+        "cost": "Coste"
     },
     "units": {
         "km": "km",
@@ -184,7 +187,10 @@
         "fuelPriceHint": "Precio medio de gasolina para calcular costes (solo híbridos)",
         "priceStrategy": "Modo de precio",
         "priceDynamics": "Dinámico",
-        "priceDynamicsHint": "Usa el precio de la carga más reciente anterior al viaje"
+        "priceDynamicsHint": "Usa el precio de la carga más reciente anterior al viaje",
+        "custom": "Precio Fijo",
+        "average": "Precio Medio",
+        "dynamic": "Dinámico"
     },
     "upload": {
         "title": "Estadísticas BYD",
@@ -581,7 +587,16 @@
             "q2": "¿Dónde se guardan mis datos?",
             "a2": "Tus datos son tuyos. Por defecto, toda la información se almacena localmente en tu dispositivo. No subimos nada a servidores externos ni vendemos tu información.",
             "q3": "¿Necesito una cuenta de Google para usarla?",
-            "a3": "No, no es obligatorio. Puedes usar todas las funciones de análisis sin registrarte. La cuenta de Google solo se necesita si decides activar voluntariamente la \"Sincronización en la Nube\" para guardar una copia de seguridad en tu propio Google Drive."
+            "a3": "No, no es obligatorio. Puedes usar todas las funciones de análisis sin registrarte. La cuenta de Google solo se necesita si decides activar voluntariamente la \"Sincronización en la Nube\" para guardar una copia de seguridad en tu propio Google Drive.",
+            "q_no_efficiency": "¿Por qué no veo eficiencia o Score en algunos viajes?",
+            "a_no_efficiency": "Los viajes de menos de 0.5km no muestran eficiencia ni puntaje (Score) y aparecen con un guion. Esto se debe a que distancias tan cortas con consumos de arranque o climatización generarían eficiencias artificialmente altas. Estos consumos se consideran 'Consumo en Parado' y se suman aparte.",
+            "q_score_works": "¿Cómo funciona el Score?",
+            "a_score_works": "El Score no es una escala fija, es dinámica y adaptada a tu coche. Un 10 es la mejor eficiencia lograda en TU coche para un viaje (>0.5km) y un 0 la peor. Dos coches iguales podrían tener Scores distintos para el mismo viaje si sus históricos de uso varían.",
+            "q_cost_types": "¿Qué significan los 3 tipos de coste en Configuración?",
+            "a_cost_types_intro": "Puedes elegir entre:",
+            "a_cost_fixed": "Un valor manual constante.",
+            "a_cost_avg": "Media histórica de todas tus cargas registradas.",
+            "a_cost_dynamic": "Precio por kW pagado en la última carga anterior al viaje."
         },
         "database": {
             "title": "Base de Datos",
