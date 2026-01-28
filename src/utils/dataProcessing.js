@@ -63,6 +63,7 @@ import { logger } from './logger';
  * @property {boolean} [isHybrid] - Whether the vehicle is a hybrid
  * @property {number} [electricPercentage] - % of km on electricity (hybrid)
  * @property {number} [fuelPercentage] - % of km on fuel (hybrid)
+ * @property {number} stationaryConsumption - Energy consumed when stationary (trips < 0.5km)
  */
 
 /**
@@ -199,16 +200,18 @@ export function processData(rows, priceSettings = {}, charges = []) {
         }
     }
 
-    // Filter valid trips
+    // Filter valid trips structure for valid trips only
     // Optimization: Pre-allocate? JS arrays are dynamic.
-    const trips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
-    if (trips.length === 0) return null;
+    const allTrips = rows.filter(r => r && typeof r.trip === 'number' && r.trip > 0);
+    if (allTrips.length === 0) return null;
 
     // Initialize structures
     let totalKm = 0;
-    let totalKwh = 0;
+    let totalKwh = 0; // Total including stationary
+    let drivingKwh = 0; // Kwh for trips >= 0.5km
+    let stationaryKwh = 0; // Kwh for trips < 0.5km
     let totalFuel = 0;
-    let totalDuration = 0;
+    let totalDuration = 0; // Duration only for valid trips
 
     // Hybrid detection - any trip with fuel > 0 means hybrid vehicle
     let hasAnyFuel = false;
@@ -217,7 +220,7 @@ export function processData(rows, priceSettings = {}, charges = []) {
     let electricOnlyTrips = 0;
     let fuelUsedTrips = 0;
 
-    // Tracking min/max
+    // Tracking min/max (only for valid trips)
     let maxKmVal = -Infinity;
     let minKmVal = Infinity;
     let maxKwhVal = -Infinity;
@@ -227,11 +230,6 @@ export function processData(rows, priceSettings = {}, charges = []) {
     // Cost tracking
     let maxCostVal = -Infinity;
     let maxCostDate = null;
-
-    // Sort trips chronologically FIRST to help with dynamic pricing correctness?
-    // The main sort happens at the end, but for dynamic pricing, processing in order might be cleaner conceptually,
-    // though the 'find last charge' logic works regardless of trip iteration order.
-    // Let's stick to existing iteration order (likely source order) for now.
 
     const monthlyData = {};
     const dailyData = {};
@@ -251,45 +249,70 @@ export function processData(rows, priceSettings = {}, charges = []) {
     const uniqueDates = new Set();
     const efficiencyScatter = [];
 
+    // Filtered lists for aggregated stats
+    const validTrips = [];
+
     // Single pass for all simple aggregations
-    for (const trip of trips) {
+    for (const trip of allTrips) {
         const tTrip = trip.trip || 0;
         const tElec = trip.electricity || 0;
         const tFuel = trip.fuel || 0;
         const tDur = trip.duration || 0;
 
-        // Totals
-        totalKm += tTrip;
-        totalKwh += tElec;
-        totalFuel += tFuel;
-        totalDuration += tDur;
-
-        // Calculate Cost
-        // Dynamic Pricing Logic
+        // Calculate Cost (for ALL trips, even short ones, as they cost money)
         const ePrice = getPriceForTrip(trip, elecStrategy, elecCustomPrice, elecAvgPrice, processedElectricCharges);
         const fPrice = getPriceForTrip(trip, fuelStrategy, fuelCustomPrice, fuelAvgPrice, processedFuelCharges);
 
         const tripCost = (tElec * ePrice) + (tFuel * fPrice);
 
-        // Attach calculated cost components
+        // Attach calculated cost components to trip object
         trip.calculatedCost = tripCost;
         trip.electricCost = tElec * ePrice;
         trip.fuelCost = tFuel * fPrice;
 
-        if (tripCost > maxCostVal) {
-            maxCostVal = tripCost;
-            maxCostDate = trip.date;
+        // Hybrid check (global property regardless of trip length)
+        if (tFuel > 0) hasAnyFuel = true;
+
+        // STATIONARY CONSUMPTION LOGIC:
+        // If trip < 0.5km, we consider it stationary consumption.
+        // We track its energy but exclude it from distance/efficiency stats.
+        if (tTrip < 0.5) {
+            stationaryKwh += tElec;
+            totalKwh += tElec; // Still adds to total consumption
+            totalFuel += tFuel; // Still adds to total fuel? (Yes, if engine idled)
+
+            // Should we add cost to maxCostVal? Probably yes, a very expensive idle? 
+            // Usually max cost trips are long ones, but let's track it just in case.
+            if (tripCost > maxCostVal) {
+                maxCostVal = tripCost;
+                maxCostDate = trip.date;
+            }
+            continue; // Skip the rest of processing for this trip (stats, charts, etc.)
         }
 
-        // Hybrid detection and tracking
+        // VALID TRIP PROCESSING (>= 0.5km)
+        validTrips.push(trip);
+
+        // Totals
+        totalKm += tTrip;
+        drivingKwh += tElec;
+        totalKwh += tElec;
+        totalFuel += tFuel;
+        totalDuration += tDur;
+
+        // Hybrid tracking
         if (tFuel > 0) {
-            hasAnyFuel = true;
             fuelUsedKm += tTrip;
             fuelUsedTrips++;
             if (tFuel > maxFuelVal) maxFuelVal = tFuel;
         } else {
             electricOnlyKm += tTrip;
             electricOnlyTrips++;
+        }
+
+        if (tripCost > maxCostVal) {
+            maxCostVal = tripCost;
+            maxCostDate = trip.date;
         }
 
         // Min/Max tracking
@@ -327,8 +350,6 @@ export function processData(rows, priceSettings = {}, charges = []) {
             }
 
             // Weekday: we want 0=Mon, 6=Sun. JS getDay returns 0=Sun.
-            // (0 + 6) % 7 = 6 (Sun)
-            // (1 + 6) % 7 = 0 (Mon)
             const weekdayIndex = (w + 6) % 7;
             if (weekdayData[weekdayIndex]) {
                 weekdayData[weekdayIndex].trips++;
@@ -343,7 +364,7 @@ export function processData(rows, priceSettings = {}, charges = []) {
         else if (tTrip <= 50) tripDistribution[3].count++;
         else tripDistribution[4].count++;
 
-        // Scatter Data (Top efficiency outliers filtered out usually? keeping simple)
+        // Scatter Data
         if (tTrip > 0 && tElec > 0) {
             const y = (tElec / tTrip) * 100;
             if (y > 0 && y < 50) {
@@ -352,7 +373,11 @@ export function processData(rows, priceSettings = {}, charges = []) {
         }
     }
 
-    if (totalKm === 0) return null;
+    if (allTrips.length === 0) return null; // Should be handled by top check but safety first
+
+    // Use validTrips count for averages? 
+    // Yes, because avg trip and avg speed should effectively be "Avg Moving Trip"
+    const validTripCount = validTrips.length;
 
     // --- SORTING OPTIMIZATIONS ---
 
@@ -378,21 +403,23 @@ export function processData(rows, priceSettings = {}, charges = []) {
     // 3. Chronological Sort (The BIG one)
     // We sort the trips array in-place (conceptually, we made a filter copy earlier)
     // Used for range calculation and potentially other timestamp-dependent logic in UI
-    trips.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+    // IMPORTANT: We sort ALL trips, because the history list usually shows them all, just flagged differently
+    allTrips.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+    validTrips.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
 
-    // 4. Top lists
+    // 4. Top lists (Only from VALID trips)
     // precise desc comparisons (b - a)
     // Instead of sorting WHOLE array 3 more times, get top 10 efficiently
-    const topKm = getTopN(trips, (a, b) => (b.trip || 0) - (a.trip || 0), 10);
-    const topKwh = getTopN(trips, (a, b) => (b.electricity || 0) - (a.electricity || 0), 10);
-    const topDur = getTopN(trips, (a, b) => (b.duration || 0) - (a.duration || 0), 10);
-    const topFuel = hasAnyFuel ? getTopN(trips.filter(t => (t.fuel || 0) > 0), (a, b) => (b.fuel || 0) - (a.fuel || 0), 10) : [];
+    const topKm = getTopN(validTrips, (a, b) => (b.trip || 0) - (a.trip || 0), 10);
+    const topKwh = getTopN(validTrips, (a, b) => (b.electricity || 0) - (a.electricity || 0), 10);
+    const topDur = getTopN(validTrips, (a, b) => (b.duration || 0) - (a.duration || 0), 10);
+    const topFuel = hasAnyFuel ? getTopN(validTrips.filter(t => (t.fuel || 0) > 0), (a, b) => (b.fuel || 0) - (a.fuel || 0), 10) : [];
 
     const daysActive = uniqueDates.size || 1;
 
-    // Calculate total span from sorted trips
-    const firstTs = trips[0]?.start_timestamp;
-    const lastTs = trips[trips.length - 1]?.start_timestamp;
+    // Calculate total span from sorted trips (using all trips for range, or just valid? All trips seems right for date range)
+    const firstTs = allTrips[0]?.start_timestamp;
+    const lastTs = allTrips[allTrips.length - 1]?.start_timestamp;
     const totalDays = (firstTs && lastTs)
         ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1)
         : daysActive;
@@ -401,26 +428,30 @@ export function processData(rows, priceSettings = {}, charges = []) {
     const electricPercentage = totalKm > 0 ? (electricOnlyKm / totalKm * 100) : 100;
     const fuelPercentage = totalKm > 0 ? (fuelUsedKm / totalKm * 100) : 0;
     const avgFuelEfficiency = totalKm > 0 ? (totalFuel / totalKm * 100) : 0;
-    const evModeUsage = trips.length > 0 ? (electricOnlyTrips / trips.length * 100) : 100;
+
+    // EV Mode Usage: Only valid trips? Yes.
+    const evModeUsage = validTripCount > 0 ? (electricOnlyTrips / validTripCount * 100) : 100;
 
     // Build summary object
     const summary = {
-        totalTrips: trips.length,
-        totalKm: totalKm.toFixed(1),
-        totalKwh: totalKwh.toFixed(1),
-        totalHours: (totalDuration / 3600).toFixed(1),
-        avgEff: totalKm > 0 ? (totalKwh / totalKm * 100).toFixed(2) : '0',
-        avgKm: (totalKm / trips.length).toFixed(1),
-        avgMin: totalDuration > 0 ? (totalDuration / trips.length / 60).toFixed(0) : '0',
+        totalTrips: validTripCount, // Only valid trips count towards stats
+        totalKm: totalKm.toFixed(1), // Only valid km
+        totalKwh: totalKwh.toFixed(1), // TOTAL Energy (Driving + Stationary)
+        drivingKwh: drivingKwh.toFixed(1), // Only driving energy (for efficiency calculation if needed elsewhere)
+        stationaryConsumption: stationaryKwh.toFixed(1), // New Metric
+        totalHours: (totalDuration / 3600).toFixed(1), // Only driving hours
+        avgEff: totalKm > 0 ? (drivingKwh / totalKm * 100).toFixed(2) : '0', // Eff = (Driving Kwh) / (Trip Km)
+        avgKm: validTripCount > 0 ? (totalKm / validTripCount).toFixed(1) : '0',
+        avgMin: totalDuration > 0 ? (totalDuration / validTripCount / 60).toFixed(0) : '0',
         avgSpeed: totalDuration > 0 ? (totalKm / (totalDuration / 3600)).toFixed(1) : '0',
         daysActive,
         totalDays,
-        dateRange: formatDate(trips[0]?.date) + ' - ' + formatDate(trips[trips.length - 1]?.date),
-        maxKm: maxKmVal.toFixed(1),
-        minKm: minKmVal.toFixed(1),
-        maxKwh: maxKwhVal.toFixed(1),
-        maxMin: (maxDurVal / 60).toFixed(0),
-        tripsDay: (trips.length / daysActive).toFixed(1),
+        dateRange: formatDate(allTrips[0]?.date) + ' - ' + formatDate(allTrips[allTrips.length - 1]?.date),
+        maxKm: maxKmVal > -Infinity ? maxKmVal.toFixed(1) : '0.0',
+        minKm: minKmVal < Infinity ? minKmVal.toFixed(1) : '0.0',
+        maxKwh: maxKwhVal > -Infinity ? maxKwhVal.toFixed(1) : '0.0',
+        maxMin: maxDurVal > -Infinity ? (maxDurVal / 60).toFixed(0) : '0',
+        tripsDay: (validTripCount / daysActive).toFixed(1),
         kmDay: (totalKm / daysActive).toFixed(1),
         // Hybrid-specific fields (always present but meaningful only for hybrids)
         isHybrid: hasAnyFuel,
@@ -433,7 +464,7 @@ export function processData(rows, priceSettings = {}, charges = []) {
         evModeUsage: evModeUsage.toFixed(1),
         maxFuel: maxFuelVal.toFixed(2),
         // Most Expensive Trip
-        maxCost: maxCostVal > 0 ? maxCostVal.toFixed(2) : '0.00',
+        maxCost: maxCostVal > -Infinity ? maxCostVal.toFixed(2) : '0.00',
         maxCostDate: maxCostDate || ''
     };
 
