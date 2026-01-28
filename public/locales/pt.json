@@ -52,7 +52,10 @@
         "maxDur": "Maior duração",
         "shortest": "Mais curta",
         "mostExpensive": "Mais caro",
-        "consumption": "Consumo"
+        "consumption": "Consumo",
+        "stationaryConsumption": "Consumo estacionário",
+        "stationary": "Consumo estacionário",
+        "cost": "Custo"
     },
     "units": {
         "km": "km",
@@ -191,7 +194,10 @@
         "priceCalculatedAuto": "Calculado automaticamente",
         "priceCalculatedInfo": "Calculado desde {{count}} cargas ({{total}}€ / {{kwh}} kWh)",
         "priceCalculatedInfoFuel": "Calculado desde {{count}} abastecimentos ({{total}}€ / {{liters}} L)",
-        "priceCalculatedNoCharges": "Adicione cargas para calcular o preço automaticamente"
+        "priceCalculatedNoCharges": "Adicione cargas para calcular o preço automaticamente",
+        "custom": "Preço Fixo",
+        "average": "Preço Médio",
+        "dynamic": "Dinâmico"
     },
     "upload": {
         "title": "Gestão de dados",
@@ -576,5 +582,57 @@
         "keepLocal": "Manter Local",
         "useCloud": "Usar Nuvem",
         "mergeBoth": "Combinar Ambos"
+    },
+    "faq": {
+        "pageTitle": "Perguntas Frequentes",
+        "pageSubtitle": "AJUDA E SUPORTE",
+        "general": {
+            "title": "Geral",
+            "q1": "Esta aplicação é gratuita?",
+            "a1": "Sim, o BYD Stats é 100% gratuito e de código aberto. Foi desenvolvido como um projeto pessoal para ajudar a comunidade de proprietários da BYD a visualizar melhor os seus dados.",
+            "q2": "Onde são guardados os meus dados?",
+            "a2": "Os seus dados são seus. Por defeito, toda a informação é armazenada localmente no seu dispositivo. Não enviamos nada para servidores externos nem vendemos a sua informação.",
+            "q3": "Preciso de uma conta Google para usar?",
+            "a3": "Não, não é obrigatório. Pode usar todas as funções de análise sem se registar. A conta Google só é necessária se decidir ativar voluntariamente a \"Sincronização na Nuvem\" para guardar uma cópia de segurança no seu próprio Google Drive.",
+            "q_no_efficiency": "Por que não vejo eficiência ou Score em algumas viagens?",
+            "a_no_efficiency": "As viagens de menos de 0.5km não mostram eficiência nem pontuação (Score) e aparecem com um traço. Isto deve-se a que distâncias tão curtas com consumos de arranque ou climatização gerariam eficiências artificialmente altas. Estes consumos são considerados 'Consumo Estacionário' e somam-se à parte.",
+            "q_score_works": "Como funciona o Score?",
+            "a_score_works": "O Score não é uma escala fixa, é dinâmico e adaptado ao seu carro. Um 10 é a melhor eficiência conseguida no SEU carro para uma viagem (>0.5km) e um 0 a pior. Dois carros iguais poderiam ter Scores diferentes para a mesma viagem se os seus históricos de uso variarem.",
+            "q_cost_types": "O que significam os 3 tipos de custo nas Configurações?",
+            "a_cost_types_intro": "Pode escolher entre:",
+            "a_cost_fixed": "Um valor manual constante.",
+            "a_cost_avg": "Média histórica de todos os seus carregamentos registados.",
+            "a_cost_dynamic": "Preço por kW pago no último carregamento antes da viagem."
+        },
+        "database": {
+            "title": "Base de Dados",
+            "q1": "Como obtenho o ficheiro EC_Database.db do meu carro?",
+            "a1_intro": "Siga estes passos no ecrã do seu BYD:",
+            "a1_step1": "Ligue uma memória USB (formato FAT32) à porta USB de dados do carro.",
+            "a1_step2": "Abra a app \"Gestor de Ficheiros\" no carro.",
+            "a1_step3": "Navegue até: Armazenamento Interno > BYD > ElectronicOwnerManual > data.",
+            "a1_step4": "Copie o ficheiro EC_Database.db e cole-o na sua memória USB.",
+            "tip_label": "Dica",
+            "tip_text": "Se tiver problemas para selecionar o ficheiro ao carregar, pode renomeá-lo para EC_Database.jpg. A aplicação aceitará o ficheiro como uma imagem válida e processá-lo-á corretamente."
+        },
+        "install": {
+            "title": "Instalação (PWA)",
+            "q1": "Como instalo a App no meu telemóvel (Android/iOS)?",
+            "a1_intro": "Normalmente verá um banner automático ao entrar no site convidando-o a instalar a aplicação.",
+            "a1_ios": "Prima o botão \"Partilhar\" e selecione \"Adicionar ao Ecrã Principal\".",
+            "a1_android": "Prima o menu (três pontos) e selecione \"Instalar aplicação\" ou \"Adicionar ao Ecrã Principal\".",
+            "q2": "Posso instalá-la no ecrã do carro?",
+            "a2_intro": "Sim, se o seu carro tiver um navegador web (como GBox ou navegador nativo):",
+            "a2_step1": "Abra bydstats.com no navegador do carro.",
+            "a2_step2": "Procure a opção do navegador para \"Adicionar ao Ecrã Principal\" ou \"Instalar\".",
+            "a2_step3": "Agora aparecerá como uma app mais no seu sistema multimédia."
+        },
+        "support": {
+            "title": "Suporte e Contacto",
+            "q1": "Como posso apoiar o projeto?",
+            "a1": "Se a aplicação lhe for útil e quiser apoiar a sua manutenção e desenvolvimento contínuo, pode fazer uma pequena doação voluntária através do Ko-fi. Qualquer contribuição é imensamente agradecida!",
+            "q2": "Tem dúvidas ou sugestões?",
+            "a2": "Para qualquer consulta, ideia, contribuição ou se encontrar algum problema, não hesite em escrever-me para"
+        }
     }
 }

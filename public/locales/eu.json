@@ -52,7 +52,10 @@
         "maxDur": "Iraupen max",
         "shortest": "Laburrena",
         "mostExpensive": "Garestiena",
-        "consumption": "Kontsumoa"
+        "consumption": "Kontsumoa",
+        "stationaryConsumption": "Geldiko kontsumoa",
+        "stationary": "Geldiko kontsumoa",
+        "cost": "Kostua"
     },
     "units": {
         "km": "km",
@@ -191,7 +194,10 @@
         "priceCalculatedAuto": "Automatikoki kalkulatua",
         "priceCalculatedInfo": "{{count}} kargetatik kalkulatua ({{total}}€ / {{kwh}} kWh)",
         "priceCalculatedInfoFuel": "{{count}} repostajeetatik kalkulatua ({{total}}€ / {{liters}} L)",
-        "priceCalculatedNoCharges": "Gehitu kargak prezioa automatikoki kalkulatzeko"
+        "priceCalculatedNoCharges": "Gehitu kargak prezioa automatikoki kalkulatzeko",
+        "custom": "Prezio Finkoa",
+        "average": "Batez besteko Prezioa",
+        "dynamic": "Dinamikoa"
     },
     "upload": {
         "title": "Datuen kudeaketa",
@@ -576,5 +582,57 @@
         "keepLocal": "Mantendu Lokala",
         "useCloud": "Erabili Hodeia",
         "mergeBoth": "Konbinatu Biak"
+    },
+    "faq": {
+        "pageTitle": "Galdera Arruntak",
+        "pageSubtitle": "LAGUNTZA ETA SOPORTEA",
+        "general": {
+            "title": "Orokorra",
+            "q1": "¿Es gratuita esta aplicación?",
+            "a1": "Bai, BYD Stats %100 doakoa da eta kode irekikoa. (Sí, BYD Stats es 100% gratuita y de código abierto. Fue desarrollada como un proyecto personal para ayudar a la comunidad de propietarios de BYD a visualizar mejor sus datos.)",
+            "q2": "¿Dónde se guardan mis datos?",
+            "a2": "Zure datuak zureak dira. (Tus datos son tuyos. Por defecto, toda la información se almacena localmente en tu dispositivo. No subimos nada a servidores externos ni vendemos tu información.)",
+            "q3": "¿Necesito una cuenta de Google para usarla?",
+            "a3": "Ez, ez da derrigorrezkoa. (No, no es obligatorio. Puedes usar todas las funciones de análisis sin registrarte. La cuenta de Google solo se necesita si decides activar voluntariamente la \"Sincronización en la Nube\" para guardar una copia de seguridad en tu propio Google Drive.)",
+            "q_no_efficiency": "¿Por qué no veo eficiencia o Score en algunos viajes?",
+            "a_no_efficiency": "Los viajes de menos de 0.5km no muestran eficiencia ni puntaje (Score) y aparecen con un guion. Esto se debe a que distancias tan cortas con consumos de arranque o climatización generarían eficiencias artificialmente altas. Estos consumos se consideran 'Geldiko kontsumoa' y se suman aparte.",
+            "q_score_works": "¿Cómo funciona el Score?",
+            "a_score_works": "El Score no es una escala fija, es dinámica y adaptada a tu coche. Un 10 es la mejor eficiencia lograda en TU coche para un viaje (>0.5km) y un 0 la peor. Dos coches iguales podrían tener Scores distintos para el mismo viaje si sus históricos de uso varían.",
+            "q_cost_types": "Zer esan nahi dute 3 kostu motak Ezarpenetan?",
+            "a_cost_types_intro": "Hautatu dezakezu:",
+            "a_cost_fixed": "Balio finko bat.",
+            "a_cost_avg": "Batez besteko historikoa.",
+            "a_cost_dynamic": "Azken kargaren prezioa bidaia aurretik."
+        },
+        "database": {
+            "title": "Datu-basea",
+            "q1": "Nola lortu EC_Database.db fitxategia?",
+            "a1_intro": "Jarraitu urrats hauek zure BYD pantailan:",
+            "a1_step1": "Konektatu USB memoria bat (FAT32) datu atakara.",
+            "a1_step2": "Ireki \"Fitxategi Kudeatzailea\" autoan.",
+            "a1_step3": "Joan hona: Barne Biltegiratzea > BYD > ElectronicOwnerManual > data.",
+            "a1_step4": "Kopiatu EC_Database.db fitxategia eta itsatsi USB memorian.",
+            "tip_label": "Trikimailua",
+            "tip_text": "Arazoak badituzu igotzerakoan, saiatu EC_Database.jpg izenera aldatzen."
+        },
+        "install": {
+            "title": "Instalazioa (PWA)",
+            "q1": "Nola instalatu App-a mugikorrean?",
+            "a1_intro": "Normalean banner automatiko bat ikusiko duzu.",
+            "a1_ios": "Sakatu \"Partekatu\" eta hautatu \"Gehitu hasierako pantailara\".",
+            "a1_android": "Sakatu menua eta hautatu \"Instalatu aplikazioa\".",
+            "q2": "Autoan instalatu dezaket?",
+            "a2_intro": "Bai, nabigatzailea web badu:",
+            "a2_step1": "Ireki bydstats.com autoan.",
+            "a2_step2": "Bilatu \"Gehitu hasierako pantailara\" aukera.",
+            "a2_step3": "Orain app bat bezala agertuko da."
+        },
+        "support": {
+            "title": "Laguntza eta Kontaktua",
+            "q1": "Nola lagundu proiektua?",
+            "a1": "Aplikazioa erabilgarria bazaizu, borondatezko dohaintza txiki bat egin dezakezu Ko-fi bidez.",
+            "q2": "Zalantzak dituzu?",
+            "a2": "Edozein zalantza izanez gero, idatzi lasai."
+        }
     }
 }

@@ -54,6 +54,23 @@ const FaqContent = () => {
                     <FaqItem question={t('faq.general.q3')}>
                         {t('faq.general.a3')}
                     </FaqItem>
+                    {/* NEW: Short Trips / Efficiency 0 */}
+                    <FaqItem question={t('faq.general.q_no_efficiency') || "¿Por qué no veo eficiencia o Score en algunos viajes?"}>
+                        {t('faq.general.a_no_efficiency') || "Los viajes de menos de 0.5km no muestran eficiencia ni puntaje (Score) y aparecen con un guion. Esto se debe a que distancias tan cortas con consumos de arranque o climatización generarían eficiencias artificialmente altas (ej. 200 kWh/100km). Para evitar distorsionar tus estadísticas, estos consumos se consideran 'Consumo en Parado' y se suman en su propia tarjeta en la pantalla de Resumen, pero se excluyen de los promedios de eficiencia."}
+                    </FaqItem>
+                    {/* NEW: Score Explanation */}
+                    <FaqItem question={t('faq.general.q_score_works') || "¿Cómo funciona el Score?"}>
+                        {t('faq.general.a_score_works') || "El Score es una puntuación de 0 a 10 que evalúa tu eficiencia de conducción. Se basa en una escala predefinida (configurable en ajustes por el desarrollador, usualmente 13-18 kWh/100km). Menos consumo da mayor puntuación. El Score ayuda a gamificar y entender rápidamente cuán eficiente ha sido un viaje sin tener que interpretar los kWh exactos."}
+                    </FaqItem>
+                    {/* NEW: Cost Types Explanation */}
+                    <FaqItem question={t('faq.general.q_cost_types') || "¿Qué significan los 3 tipos de coste en Configuración?"}>
+                        <p className="mb-2">{t('faq.general.a_cost_types_intro') || "En Configuración > Precios puedes elegir cómo calcular el coste de tus viajes:"}</p>
+                        <ul className="list-disc pl-5 space-y-1">
+                            <li><strong>{t('settings.custom') || "Precio Fijo"}:</strong> {t('faq.general.a_cost_fixed') || "Usa el valor manual que introduzcas en el campo de precio. Es útil si siempre cargas al mismo precio."}</li>
+                            <li><strong>{t('settings.average') || "Precio Medio"}:</strong> {t('faq.general.a_cost_avg') || "Calcula automáticamente el precio medio de TODAS tus cargas registradas (Coste Total / kWh Totales) y lo aplica a todos los viajes. Es bueno para tener una estimación global."}</li>
+                            <li><strong>{t('settings.dynamic') || "Dinámico"}:</strong> {t('faq.general.a_cost_dynamic') || "El más preciso. Busca la carga registrada más reciente anterior al viaje y usa ese precio específico. Si cargas gratis en el súper y luego viajas, el viaje constará como 0€."}</li>
+                        </ul>
+                    </FaqItem>
                 </div>
             </section>
 
