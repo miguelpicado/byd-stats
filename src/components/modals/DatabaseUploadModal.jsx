@@ -91,7 +91,7 @@ const DatabaseUploadModal = () => {
                                 <input
                                     type="file"
                                     id="uploadMerge"
-                                    accept="*/*,image/*,.db,.jpg,.jpeg"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv"
                                     className="hidden"
                                     onChange={(e) => handleFileChange(e, true)}
                                     disabled={!sqlReady}
@@ -131,7 +131,7 @@ const DatabaseUploadModal = () => {
                                 <input
                                     type="file"
                                     id="uploadNew"
-                                    accept="*/*,image/*,.db,.jpg,.jpeg"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv"
                                     className="hidden"
                                     onChange={(e) => handleFileChange(e, false)}
                                     disabled={!sqlReady}

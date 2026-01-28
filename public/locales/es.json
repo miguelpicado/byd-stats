@@ -297,6 +297,11 @@
         "noHistory": "No hay historial guardado",
         "dbExported": "Base de datos exportada correctamente"
     },
+    "modals": {
+        "odometerTitle": "Ajuste de Odómetro",
+        "odometerDesc": "Ajuste visual para corregir la diferencia con el marcador del coche.",
+        "offset": "Desfase (km)"
+    },
     "errors": {
         "invalidFile": "Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta \"Energydata\" del coche",
         "somethingWentWrong": "Algo salió mal",
@@ -510,6 +515,8 @@
         "speedTitle": "Insights de Velocidad",
         "avgTripTitle": "Insights de Viaje Medio",
         "activeDaysTitle": "Insights de Actividad",
+        "stationaryTitle": "Consumo en Parado",
+        "stationaryDesc": "Aquí se contabiliza todo el consumo de todos los viajes registrados de menos de 0.5km.",
         "totalKm": "Total Km",
         "kmPerDay": "Km/día activo",
         "avgPerTrip": "Media/viaje",
@@ -529,8 +536,9 @@
         "bestEff": "Mejor",
         "worstEff": "Peor",
         "avgSpeed": "Media",
-        "maxAvgSpeed": "Máx media viaje",
-        "avgDist": "Distancia",
+        "maxAvgSpeed": "Vel. media máx.",
+        "minAvgSpeed": "Vel. media mín.",
+        "avgDist": "Distancia media",
         "avgTime": "Tiempo",
         "avgCons": "Consumo",
         "totalDays": "Días activos"
