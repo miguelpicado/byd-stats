@@ -52,7 +52,10 @@
         "maxDur": "Max Duration",
         "shortest": "Shortest",
         "mostExpensive": "Most expensive",
-        "consumption": "Consumption"
+        "consumption": "Consumption",
+        "stationaryConsumption": "Stationary consumption",
+        "stationary": "Stationary consumption",
+        "cost": "Cost"
     },
     "units": {
         "km": "mi",
@@ -176,6 +179,9 @@
         "priceStrategy": "Price Logic",
         "priceDynamics": "Dynamic",
         "priceDynamicsHint": "Uses the price of the most recent charge before the trip",
+        "custom": "Fixed Price",
+        "average": "Average Price",
+        "dynamic": "Dynamic",
         "customizeTabs": "Customize tabs",
         "visibleTabs": "Visible tabs",
         "chargerTypes": "Charger types",
@@ -581,7 +587,16 @@
             "q2": "Where is my data stored?",
             "a2": "Your data is yours. By default, all information is stored locally on your device. We do not upload anything to external servers nor sell your demographics.",
             "q3": "Do I need a Google account to use it?",
-            "a3": "No, it is not mandatory. You can use all analysis features without registering. A Google account is only needed if you voluntarily activate \"Cloud Sync\" to save a backup to your own Google Drive."
+            "a3": "No, it is not mandatory. You can use all analysis features without registering. A Google account is only needed if you voluntarily activate \"Cloud Sync\" to save a backup to your own Google Drive.",
+            "q_no_efficiency": "Why don't I see efficiency or Score for some trips?",
+            "a_no_efficiency": "Trips shorter than 0.5km (0.3mi) do not show efficiency or Score and appear with a hyphen. This is because such short distances with startup or climate control consumption would generate artificially high efficiencies. These are considered 'Stationary Consumption' and are summed separately.",
+            "q_score_works": "How does Score work?",
+            "a_score_works": "Score is not a fixed scale, it is dynamic and adapted to your car. A 10 is the best efficiency achieved in YOUR car for a trip (>0.5km) and 0 is the worst. Two identical cars could have different Scores for the same trip if their usage history varies.",
+            "q_cost_types": "What do the 3 Cost Types in Settings mean?",
+            "a_cost_types_intro": "You can choose between:",
+            "a_cost_fixed": "A constant manual value.",
+            "a_cost_avg": "Historical average of all your recorded charges.",
+            "a_cost_dynamic": "Price per kW paid on the last charge before the trip."
         },
         "database": {
             "title": "Database",
