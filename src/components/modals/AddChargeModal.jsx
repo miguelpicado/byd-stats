@@ -9,6 +9,7 @@ import { Battery, Fuel } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
+import { useCar } from '../../context/CarContext';
 
 /**
  * Modal for adding or editing a charging session
@@ -16,6 +17,7 @@ import { useData } from '../../providers/DataProvider';
 const AddChargeModal = () => {
     const { t } = useTranslation();
     const { settings } = useApp();
+    const { activeCar } = useCar();
     const {
         modals,
         closeModal,
@@ -25,6 +27,76 @@ const AddChargeModal = () => {
         setEditingCharge,
         stats
     } = useData();
+
+    const onClose = () => closeModal('addCharge');
+
+    const isHybrid = activeCar?.isHybrid || false;
+    const chargerTypes = settings.chargerTypes || [];
+
+    const [formData, setFormData] = useState({
+        type: 'electric',
+        date: new Date().toISOString().split('T')[0],
+        time: new Date().toTimeString().slice(0, 5),
+        odometer: '',
+        kwhCharged: '',
+        totalCost: '',
+        chargerTypeId: chargerTypes[0]?.id || '',
+        pricePerKwh: '',
+        finalPercentage: '',
+        initialPercentage: '',
+        litersCharged: '',
+        pricePerLiter: ''
+    });
+
+    // Reset or Load data when opening/editing
+    useEffect(() => {
+        if (!modals.addCharge) return;
+
+        if (editingCharge) {
+            setFormData({
+                type: editingCharge.type || 'electric',
+                date: editingCharge.date,
+                time: editingCharge.time,
+                odometer: editingCharge.odometer,
+                kwhCharged: editingCharge.kwhCharged || '',
+                totalCost: editingCharge.totalCost || '',
+                chargerTypeId: editingCharge.chargerTypeId || chargerTypes[0]?.id || '',
+                pricePerKwh: editingCharge.pricePerKwh || '',
+                finalPercentage: editingCharge.finalPercentage || '',
+                initialPercentage: editingCharge.initialPercentage || '',
+                litersCharged: editingCharge.litersCharged || '',
+                pricePerLiter: editingCharge.pricePerLiter || ''
+            });
+        } else {
+            // Defaults for new charge
+            setFormData(prev => ({
+                ...prev,
+                type: isHybrid ? prev.type : 'electric', // Enforce electric if not hybrid
+                date: new Date().toISOString().split('T')[0],
+                time: new Date().toTimeString().slice(0, 5),
+                odometer: stats?.summary?.lastOdometer || '',
+                kwhCharged: '',
+                totalCost: '',
+                chargerTypeId: chargerTypes[0]?.id || '',
+                pricePerKwh: '',
+                finalPercentage: '',
+                initialPercentage: '',
+                litersCharged: '',
+                pricePerLiter: ''
+            }));
+        }
+    }, [modals.addCharge, editingCharge, chargerTypes, isHybrid, stats]);
+
+    const handleChange = (field, value) => {
+        setFormData(prev => ({ ...prev, [field]: value }));
+    };
+
+    const getRealKwh = useCallback(() => {
+        if (!formData.kwhCharged || !formData.chargerTypeId) return null;
+        const type = chargerTypes.find(c => c.id === formData.chargerTypeId);
+        if (!type || !type.efficiency) return null;
+        return (parseFloat(formData.kwhCharged) * type.efficiency).toFixed(2);
+    }, [formData.kwhCharged, formData.chargerTypeId, chargerTypes]);
 
     // ... (rest of the file until handleSubmit)
 
@@ -73,7 +145,7 @@ const AddChargeModal = () => {
         onClose();
     };
 
-    if (!isOpen) return null;
+    if (!modals.addCharge) return null;
 
     const inputClass = "w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-3 py-2.5 border border-slate-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50";
     const labelClass = "block text-sm text-slate-600 dark:text-slate-400 mb-1.5";
