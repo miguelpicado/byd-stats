@@ -4,6 +4,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
 import { logger } from '../utils/logger';
+import { useCar } from './CarContext';
+import { SETTINGS_KEY as BASE_SETTINGS_KEY } from '../utils/constants';
 
 const AppContext = createContext();
 
@@ -51,18 +53,32 @@ const DEFAULT_SETTINGS = {
  * Handles settings persistence and theme management
  */
 export const AppProvider = ({ children }) => {
+    const { activeCarId } = useCar();
+    const settingsKey = activeCarId ? `${BASE_SETTINGS_KEY}_${activeCarId}` : null;
 
     // --- Settings State ---
-    const [settings, setSettings] = useState(() => {
+    const [settings, setSettings] = useState(DEFAULT_SETTINGS);
+
+    // Load settings when activeCarId (key) changes
+    useEffect(() => {
+        if (!settingsKey) {
+            // If no car selected, maybe default or empty?
+            // Keep default settings
+            setSettings(DEFAULT_SETTINGS);
+            return;
+        }
+
         try {
-            const saved = localStorage.getItem('byd_settings');
-            // Merge saved settings with defaults to ensure new keys (like hiddenTabs) exist
-            return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : DEFAULT_SETTINGS;
+            const saved = localStorage.getItem(settingsKey);
+            const loaded = saved ? JSON.parse(saved) : {};
+            // Merge with defaults
+            setSettings({ ...DEFAULT_SETTINGS, ...loaded });
         } catch (e) {
             logger.error('Error loading settings:', e);
-            return DEFAULT_SETTINGS;
+            setSettings(DEFAULT_SETTINGS);
         }
-    });
+    }, [settingsKey]);
+
 
     /**
      * Update settings with validation and persistence
@@ -98,7 +114,9 @@ export const AppProvider = ({ children }) => {
                 odometerOffset: updated.odometerOffset ?? prev.odometerOffset ?? 0
             };
 
-            localStorage.setItem('byd_settings', JSON.stringify(validated));
+            if (settingsKey) {
+                localStorage.setItem(settingsKey, JSON.stringify(validated));
+            }
             return validated;
         });
     };

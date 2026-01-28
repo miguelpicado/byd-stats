@@ -8,6 +8,8 @@ import useChargesData from '../hooks/useChargesData';
 import { useGoogleSync } from '../hooks/useGoogleSync';
 import { useFileHandling } from '../hooks/useFileHandling';
 import { useConfirmation } from '../hooks/useConfirmation';
+import { useCar } from '../context/CarContext';
+
 import useModalState from '../hooks/useModalState';
 
 const DataContext = createContext();
@@ -23,9 +25,10 @@ export const useData = () => {
 export const DataProvider = ({ children }) => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
+    const { activeCarId, cars } = useCar();
 
     // 1. Charges Data (Moved up to be available for AppData dynamic pricing)
-    const chargesData = useChargesData();
+    const chargesData = useChargesData(activeCarId);
     const {
         charges,
         replaceCharges,
@@ -33,7 +36,7 @@ export const DataProvider = ({ children }) => {
     } = chargesData;
 
     // 2. Core App Data (Trips, Filtering, Stats history)
-    const appData = useAppData(settings, charges);
+    const appData = useAppData(settings, charges, activeCarId);
     const {
         rawTrips,
         setRawTrips,
@@ -70,7 +73,9 @@ export const DataProvider = ({ children }) => {
         settings,
         updateSettings,
         charges,
-        replaceCharges
+        replaceCharges,
+        activeCarId,
+        cars.length
     );
 
     // 7. Global Modal State

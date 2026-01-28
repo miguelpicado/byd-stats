@@ -2,64 +2,61 @@
 // Manages charging session data persistence and CRUD operations
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { CHARGES_STORAGE_KEY } from '../utils/constants';
+import { CHARGES_STORAGE_KEY as BASE_CHARGES_KEY } from '../utils/constants';
 import { logger } from '../utils/logger';
 
-/**
- * Charge data schema:
- * {
- *   id: string (uuid),
- *   type: 'electric' | 'fuel' (default: 'electric'),
- *   date: string (YYYY-MM-DD),
- *   time: string (HH:MM),
- *   timestamp: number (unix ms),
- *   odometer: number (km),
- *   // Electric charges:
- *   kwhCharged: number (for electric),
- *   chargerTypeId: string (for electric),
- *   pricePerKwh: number (€, for electric),
- *   finalPercentage: number (0-100, for electric),
- *   initialPercentage: number|null (0-100, optional, for electric)
- *   // Fuel charges:
- *   litersCharged: number (for fuel),
- *   pricePerLiter: number (€, for fuel),
- *   // Common:
- *   totalCost: number (€)
- * }
- */
+// ... (comments)
 
 /**
  * Hook to manage charging session data
  * Provides CRUD operations with localStorage persistence
  * @returns {Object} Charges state and management functions
  */
-const useChargesData = () => {
-    // Initialize state from localStorage
-    const [charges, setCharges] = useState(() => {
+const useChargesData = (activeCarId = null) => {
+    // specific keys for current car
+    const storageKey = activeCarId ? `${BASE_CHARGES_KEY}_${activeCarId}` : null;
+
+    // Initialize state
+    const [charges, setCharges] = useState([]);
+
+    // Load data when activeCarId changes
+    useEffect(() => {
+        if (!storageKey) {
+            setCharges([]);
+            return;
+        }
+
         try {
-            const saved = localStorage.getItem(CHARGES_STORAGE_KEY);
+            const saved = localStorage.getItem(storageKey);
             if (saved) {
                 const parsed = JSON.parse(saved);
                 // Sort by timestamp descending (newest first)
-                return Array.isArray(parsed)
-                    ? parsed.sort((a, b) => b.timestamp - a.timestamp)
-                    : [];
+                if (Array.isArray(parsed)) {
+                    setCharges(parsed.sort((a, b) => b.timestamp - a.timestamp));
+                } else {
+                    setCharges([]);
+                }
+            } else {
+                setCharges([]);
             }
-            return [];
         } catch (e) {
             logger.error('Error loading charges from localStorage:', e);
-            return [];
+            setCharges([]);
         }
-    });
+    }, [storageKey]);
 
     // Persist changes to localStorage
     useEffect(() => {
-        try {
-            localStorage.setItem(CHARGES_STORAGE_KEY, JSON.stringify(charges));
-        } catch (e) {
-            logger.error('Error saving charges to localStorage:', e);
+        if (storageKey && charges.length > 0) {
+            try {
+                localStorage.setItem(storageKey, JSON.stringify(charges));
+            } catch (e) {
+                logger.error('Error saving charges to localStorage:', e);
+            }
+        } else if (storageKey && charges.length === 0) {
+            // Optional: clean up?
         }
-    }, [charges]);
+    }, [charges, storageKey]);
 
     /**
      * Add a new charge
