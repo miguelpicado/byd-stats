@@ -9,6 +9,7 @@ import ChartCard from '../ui/ChartCard';
 import FloatingActionButton from '../common/FloatingActionButton';
 import TripInsightsModal from '../modals/TripInsightsModal';
 import HybridStatsCard from '../cards/HybridStatsCard';
+import OdometerAdjustmentModal from '../modals/OdometerAdjustmentModal';
 import { useLayout } from '../../context/LayoutContext';
 
 // Static chart options that don't change
@@ -54,9 +55,14 @@ const OverviewTab = React.memo(({
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
   const [insightType, setInsightType] = useState(null);
+  const [showOdometerModal, setShowOdometerModal] = useState(false);
 
   const handleCardClick = (type) => {
-    setInsightType(type);
+    if (type === 'distance') {
+      setShowOdometerModal(true);
+    } else {
+      setInsightType(type);
+    }
   };
 
   // Memoize chart options with scales
@@ -446,6 +452,10 @@ const OverviewTab = React.memo(({
         type={insightType || 'distance'}
         trips={trips}
         settings={settings}
+      />
+      <OdometerAdjustmentModal
+        isOpen={showOdometerModal}
+        onClose={() => setShowOdometerModal(false)}
       />
     </div>
   );

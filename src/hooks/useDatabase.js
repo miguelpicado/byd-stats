@@ -48,17 +48,111 @@ export function useDatabase() {
         }
     }, []);
 
-    // Process database file
+    // Process database file (or CSV)
     const processDB = useCallback(async (file, existingTrips = [], merge = false) => {
-        if (!window.SQL) {
-            setError('SQL no está listo');
-            return null;
-        }
-
         setLoading(true);
         setError(null);
 
         try {
+            // Handle CSV Import
+            if (file.name.toLowerCase().endsWith('.csv')) {
+                const text = await file.text();
+                const lines = text.split(/\r?\n/).filter(l => l.trim());
+
+                if (lines.length < 2) throw new Error('CSV vacío o formato incorrecto');
+
+                const rows = lines.slice(1).map((line, index) => {
+                    // Method from DataProvider.jsx (loadChargeRegistry)
+                    // Matches quoted strings OR non-comma sequences
+                    const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
+
+                    if (!values || values.length < 4) {
+                        // Try semicolon fallback if comma failed
+                        const semiValues = line.match(/("[^"]*"|[^;]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
+                        if (semiValues && semiValues.length >= 4) {
+                            // Use semicolon logic if it looks better
+                            return parseTripRow(semiValues);
+                        }
+                        return null;
+                    }
+
+                    return parseTripRow(values);
+                }).filter(r => r !== null);
+
+                // Helper to parse a standardized row array
+                function parseTripRow(values) {
+                    const [inicio, dur, dist, energy] = values;
+                    if (!inicio) return null;
+
+                    // Strict Date Parsing (from DataProvider)
+                    // Expects YYYY-MM-DD HH:MM specifically
+                    const dateMatch = inicio.match(/^(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
+
+                    if (!dateMatch) {
+                        // Fallback: Try DD/MM/YYYY just in case (optional, but keep it minimal)
+                        // But user specifically asked for "same format as charges", so YYYY-MM-DD is priority.
+                        // Let's rely strictly on ISO like DataProvider first.
+                        return null;
+                    }
+
+                    const dateStr = dateMatch[1]; // "2025-07-13"
+                    const timeStr = dateMatch[2]; // "11:42"
+
+                    const [year, month, day] = dateStr.split('-').map(Number);
+                    const [hour, minute] = timeStr.split(':').map(Number);
+
+                    // Construct Date object (month is 0-indexed)
+                    const dateObj = new Date(year, month - 1, day, hour || 0, minute || 0);
+                    const timestamp = Math.floor(dateObj.getTime() / 1000); // Seconds for App compatibility
+
+                    // Fix: Duration in CSV is in minutes (integer), app expects seconds
+                    const durationSeconds = (parseInt(dur) || 0) * 60;
+
+                    // Format for App (YYYYMMDD without hyphens, expected by dateUtils)
+                    const appDateStr = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
+                    const appMonthStr = `${year}${String(month).padStart(2, '0')}`;
+
+                    return {
+                        trip: parseFloat(dist) || 0,
+                        electricity: parseFloat(energy) || 0,
+                        duration: durationSeconds,
+                        date: appDateStr,
+                        start_timestamp: timestamp,
+                        month: appMonthStr
+                    };
+                }
+
+                if (rows.length === 0) {
+                    alert(`CSV leído (${lines.length} líneas) pero 0 filas válidas detectadas. Verifica el formato.`);
+                    logger.warn(`CSV Parsing failed. Lines: ${lines.length}, Rows: 0`);
+                    return [];
+                }
+
+                logger.info(`CSV Parsed: ${rows.length} valid trips.`);
+
+                // Merge Logic (Reused)
+                if (merge && existingTrips.length) {
+                    const map = new Map();
+                    // Use a unique key for deduplication. Date + Timestamp is good.
+                    existingTrips.forEach(t => map.set(`${t.date}-${t.start_timestamp}`, t));
+                    rows.forEach(t => map.set(`${t.date}-${t.start_timestamp}`, t));
+
+                    return Array.from(map.values()).sort((a, b) => {
+                        const dateComp = (a.date || '').localeCompare(b.date || '');
+                        if (dateComp !== 0) return dateComp;
+                        return (a.start_timestamp || 0) - (b.start_timestamp || 0);
+                    });
+                } else {
+                    return rows;
+                }
+            }
+
+            // Handle SQLite Import (Existing Logic)
+            if (!window.SQL) {
+                setError('SQL no está listo');
+                return null;
+            }
+
             const buf = await file.arrayBuffer();
             const db = new window.SQL.Database(new Uint8Array(buf));
             const t = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='EnergyConsumption'");
@@ -91,8 +185,10 @@ export function useDatabase() {
                 throw new Error('Sin datos');
             }
         } catch (e) {
+            const msg = `Error importando: ${e.message}`;
+            alert(msg); // Make error visible
             setError(e.message);
-            logger.error('Database processing error:', e);
+            logger.error('Database/File processing error:', e);
             return null;
         } finally {
             setLoading(false);
@@ -160,7 +256,7 @@ export function useDatabase() {
     // Validate file type
     const validateFile = useCallback((file) => {
         const fileName = file.name.toLowerCase();
-        if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+        if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.csv')) {
             return false;
         }
         return true;

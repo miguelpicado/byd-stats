@@ -297,6 +297,11 @@
         "noHistory": "No history saved",
         "dbExported": "Database exported successfully"
     },
+    "modals": {
+        "odometerTitle": "Odometer Adjustment",
+        "odometerDesc": "Visual adjustment to correct the difference with the car's dashboard.",
+        "offset": "Offset (km)"
+    },
     "errors": {
         "invalidFile": "Only *.DB or *.JPG files (renamed database) are allowed\nFind EC_Database.db in the \"Energydata\" folder of your car",
         "somethingWentWrong": "Something went wrong",
@@ -510,6 +515,8 @@
         "speedTitle": "Speed Insights",
         "avgTripTitle": "Avg Trip Insights",
         "activeDaysTitle": "Activity Insights",
+        "stationaryTitle": "Stationary Consumption",
+        "stationaryDesc": "This accounts for all consumption from registered trips shorter than 0.5km.",
         "totalKm": "Total Distance",
         "kmPerDay": "Km/active day",
         "avgPerTrip": "Avg/trip",
@@ -530,6 +537,7 @@
         "worstEff": "Worst",
         "avgSpeed": "Avg speed",
         "maxAvgSpeed": "Max trip avg speed",
+        "minAvgSpeed": "Min avg speed",
         "avgDist": "Distance",
         "avgTime": "Time",
         "avgCons": "Consumption",
