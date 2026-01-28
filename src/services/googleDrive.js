@@ -54,9 +54,9 @@ export const googleDriveService = {
   /**
    * List files in the App Data folder to find our DB
    */
-  listFiles: async () => {
+  listFiles: async (filename = DB_FILENAME) => {
     try {
-      const query = `name = '${DB_FILENAME}'`;
+      const query = `name = '${filename}'`;
       const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime)&pageSize=10&q=${encodeURIComponent(query)}`;
 
       const response = await fetch(url, {
@@ -115,8 +115,11 @@ export const googleDriveService = {
 
   /**
    * Upload (Create or Update) the database file
+   * @param {Object} data - Data to upload
+   * @param {string|null} existingFileId - File ID if updating, null if creating
+   * @param {string} filename - Filename to use when creating
    */
-  uploadFile: async (data, existingFileId = null) => {
+  uploadFile: async (data, existingFileId = null, filename = DB_FILENAME) => {
     try {
       const fileContent = JSON.stringify(data);
       let fileId = existingFileId;
@@ -124,7 +127,7 @@ export const googleDriveService = {
       // Step 1: If no existing file, create metadata first
       if (!fileId) {
         const metadata = {
-          name: DB_FILENAME,
+          name: filename,
           mimeType: 'application/json',
           parents: [FOLDER_ID]
         };

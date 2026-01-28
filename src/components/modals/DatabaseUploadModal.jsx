@@ -8,6 +8,7 @@ import ModalHeader from '../common/ModalHeader';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
+import { useCar } from '../../context/CarContext';
 
 // Electric blue color for accent buttons
 const ELECTRIC_BLUE = '#3b82f6';
@@ -25,11 +26,14 @@ const DatabaseUploadModal = () => {
         loadFile,
         exportData,
         clearData,
+        clearCharges,
         loadChargeRegistry,
         exportCharges,
         trips,
         charges
     } = useData();
+
+    const { deleteCar, activeCarId, cars } = useCar();
 
     // Derived State
     const isOpen = modals.history;
@@ -147,14 +151,21 @@ const DatabaseUploadModal = () => {
                                 </button>
                             </div>
 
-                            {/* 3. Clear current data */}
-                            {hasData && (
+                            {/* 3. Delete Car (Replace Clear Data) */}
+                            {cars.length > 0 && (
                                 <button
-                                    onClick={() => { clearData(); onClose(); }}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/20 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors flex items-center justify-center gap-2"
+                                    onClick={() => {
+                                        if (window.confirm(t('confirmations.deleteCar', '¿Estás seguro de que quieres eliminar este coche y todos sus datos?'))) {
+                                            clearData();
+                                            clearCharges();
+                                            deleteCar(activeCarId);
+                                            onClose();
+                                        }
+                                    }}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/20 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center justify-center gap-2"
                                 >
                                     <Trash2 className="w-4 h-4" />
-                                    {t('upload.clearView')}
+                                    {t('cars.deleteCar', 'Borrar Coche')}
                                 </button>
                             )}
 
