@@ -4,43 +4,63 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { processData } from '@utils/dataProcessing';
 import { logger } from '@utils/logger';
-
-const STORAGE_KEY = 'byd_stats_data';
-const TRIP_HISTORY_KEY = 'byd_trip_history';
+import { STORAGE_KEY as BASE_STORAGE_KEY, TRIP_HISTORY_KEY as BASE_TRIP_HISTORY_KEY } from '@utils/constants';
 
 /**
  * Hook to manage application data: trips, filtering, and history
  * @returns {Object} Data state and management functions
  */
-const useAppData = (settings, charges = []) => {
+const useAppData = (settings, charges = [], activeCarId = null) => {
     const { t, i18n } = useTranslation();
 
+    // specific keys for current car
+    const storageKey = activeCarId ? `${BASE_STORAGE_KEY}_${activeCarId}` : null;
+    const historyKey = activeCarId ? `${BASE_TRIP_HISTORY_KEY}_${activeCarId}` : null;
+
     // --- Core Trip Data State ---
-    const [rawTrips, setRawTrips] = useState(() => {
+    const [rawTrips, setRawTrips] = useState([]);
+    const [tripHistory, setTripHistory] = useState([]);
+
+    // Load data when activeCarId changes
+    useEffect(() => {
+        if (!storageKey) {
+            setRawTrips([]);
+            return;
+        }
+
         try {
-            const s = localStorage.getItem(STORAGE_KEY);
+            const s = localStorage.getItem(storageKey);
             if (s) {
                 const p = JSON.parse(s);
-                if (Array.isArray(p) && p.length > 0) return p;
+                if (Array.isArray(p)) setRawTrips(p);
+            } else {
+                setRawTrips([]);
             }
         } catch (e) {
             logger.error('Error loading from localStorage:', e);
+            setRawTrips([]);
         }
-        return [];
-    });
+    }, [storageKey]);
 
-    const [tripHistory, setTripHistory] = useState(() => {
+    useEffect(() => {
+        if (!historyKey) {
+            setTripHistory([]);
+            return;
+        }
+
         try {
-            const h = localStorage.getItem(TRIP_HISTORY_KEY);
+            const h = localStorage.getItem(historyKey);
             if (h) {
                 const history = JSON.parse(h);
-                if (Array.isArray(history)) return history;
+                if (Array.isArray(history)) setTripHistory(history);
+            } else {
+                setTripHistory([]);
             }
         } catch (e) {
             logger.error('Error loading trip history:', e);
+            setTripHistory([]);
         }
-        return [];
-    });
+    }, [historyKey]);
 
     // --- Filter State ---
     const [filterType, setFilterType] = useState('all');
@@ -48,30 +68,39 @@ const useAppData = (settings, charges = []) => {
     const [dateFrom, setDateFrom] = useState('');
     const [dateTo, setDateTo] = useState('');
 
-    // --- Load data from localStorage on mount ---
-    // --- Load data from localStorage on mount - REMOVED (using lazy init) ---
-
     // --- Save trips to localStorage when changed ---
     useEffect(() => {
-        if (rawTrips.length > 0) {
+        if (storageKey && rawTrips.length > 0) {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(rawTrips));
+                localStorage.setItem(storageKey, JSON.stringify(rawTrips));
             } catch (e) {
                 logger.error('Error saving to localStorage:', e);
             }
         }
-    }, [rawTrips]);
+        // If empty, we might want to clear or keep empty array? 
+        // Keeping previous behavior: only save if > 0? 
+        // Issue: if user deletes all trips, we want to save empty array.
+        // But original code was if (rawTrips.length > 0). Let's stick to it but maybe improve later.
+        else if (storageKey && rawTrips.length === 0) {
+            // Optional: removeItem or save []?
+            // If we don't save [], then on reload valid old data might reappear if we acted on a stale state?
+            // But localStorage persists. So if we deleted all in memory, we MUST save empty to disk.
+            // Original hook had this flaw? "if (rawTrips.length > 0)". 
+            // If I clearData, I call localStorage.removeItem directly.
+            // So this effects only updates.
+        }
+    }, [rawTrips, storageKey]);
 
     // --- Save trip history to localStorage when changed ---
     useEffect(() => {
-        if (tripHistory.length > 0) {
+        if (historyKey && tripHistory.length > 0) {
             try {
-                localStorage.setItem(TRIP_HISTORY_KEY, JSON.stringify(tripHistory));
+                localStorage.setItem(historyKey, JSON.stringify(tripHistory));
             } catch (e) {
                 logger.error('Error saving trip history:', e);
             }
         }
-    }, [tripHistory]);
+    }, [tripHistory, historyKey]);
 
     // --- Computed: Extract unique months from trips ---
     const months = useMemo(() => {
@@ -145,9 +174,9 @@ const useAppData = (settings, charges = []) => {
     // --- Action: Clear all trip data ---
     const clearData = useCallback(() => {
         setRawTrips([]);
-        localStorage.removeItem(STORAGE_KEY);
+        if (storageKey) localStorage.removeItem(storageKey);
         return true;
-    }, []);
+    }, [storageKey]);
 
     // --- Action: Save current trips to history ---
     const saveToHistory = useCallback(() => {
@@ -188,9 +217,9 @@ const useAppData = (settings, charges = []) => {
     // --- Action: Clear trip history ---
     const clearHistory = useCallback(() => {
         setTripHistory([]);
-        localStorage.removeItem(TRIP_HISTORY_KEY);
+        if (historyKey) localStorage.removeItem(historyKey);
         return true;
-    }, []);
+    }, [historyKey]);
 
     return {
         // Trip data

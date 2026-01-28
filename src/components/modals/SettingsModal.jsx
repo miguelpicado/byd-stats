@@ -11,6 +11,7 @@ import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
+import { useCar } from '../../context/CarContext';
 
 /**
  * Settings modal for app configuration
@@ -18,6 +19,7 @@ import { useData } from '../../providers/DataProvider';
 const SettingsModal = () => {
     const { t, i18n } = useTranslation();
     const { settings, updateSettings: onSettingsChange } = useApp();
+    const { activeCar, updateCar, activeCarId } = useCar();
     const { googleSync, charges = [], modals, closeModal, stats } = useData();
 
     // Derived State
@@ -103,8 +105,12 @@ const SettingsModal = () => {
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.carModel')}</label>
                         <input
                             type="text"
-                            value={settings?.carModel || ''}
-                            onChange={(e) => onSettingsChange({ ...settings, carModel: e.target.value })}
+                            value={activeCar?.name || settings?.carModel || ''}
+                            onChange={(e) => {
+                                const newName = e.target.value;
+                                onSettingsChange({ ...settings, carModel: newName });
+                                updateCar(activeCarId, { name: newName });
+                            }}
                             placeholder="BYD Seal"
                             className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                         />
@@ -238,7 +244,7 @@ const SettingsModal = () => {
                     </div>
 
                     {/* Fuel Price - Only for hybrid vehicles */}
-                    {stats?.summary?.isHybrid && (
+                    {activeCar?.isHybrid && (
                         <div className="space-y-2">
                             <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2 flex items-center gap-2">
                                 <span className="text-lg">⛽</span>
