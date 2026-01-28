@@ -124,7 +124,17 @@ const useAppData = (settings, charges = []) => {
                 fuelPrice: settings?.fuelPrice || 0
             };
 
-            return filtered.length > 0 ? processData(filtered, priceSettings, charges) : null;
+            const result = filtered.length > 0 ? processData(filtered, priceSettings, charges) : null;
+
+            // Apply Odometer Offset (Visual Only)
+            if (result && settings?.odometerOffset) {
+                const baseKm = parseFloat(result.summary.totalKm);
+                if (!isNaN(baseKm)) {
+                    result.summary.totalKm = (baseKm + parseFloat(settings.odometerOffset)).toFixed(1);
+                }
+            }
+
+            return result;
         } catch (e) {
             logger.error('Error processing data:', e);
             return null;
