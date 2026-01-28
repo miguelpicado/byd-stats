@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Zap, TrendingUp, Calendar, Battery, MapPin, Clock, Car } from '../Icons.jsx';
 import StatItem from '../ui/StatItem';
 import ModalPortal from '../common/ModalPortal';
+import { isStationaryTrip } from '../../utils/dataProcessing';
 
 /**
  * Calculate advanced trip statistics
@@ -16,9 +17,9 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
         if (!trips || trips.length === 0) return null;
 
         // SEPARATION: Valid Trips vs Stationary Records
-        // Match logic from dataProcessing.js: Trips < 0.5km are stationary/phantom
-        const validTrips = trips.filter(t => (t.trip || 0) >= 0.5);
-        const stationaryTrips = trips.filter(t => (t.trip || 0) < 0.5);
+        // Match logic from dataProcessing.js (centralized)
+        const validTrips = trips.filter(t => !isStationaryTrip(t));
+        const stationaryTrips = trips.filter(isStationaryTrip);
 
         const len = validTrips.length;
         const totalRecords = trips.length; // For debug or specific display if needed
