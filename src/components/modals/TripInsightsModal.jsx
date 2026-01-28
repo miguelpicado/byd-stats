@@ -15,32 +15,39 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
     return useMemo(() => {
         if (!trips || trips.length === 0) return null;
 
-        const len = trips.length;
+        // SEPARATION: Valid Trips vs Stationary Records
+        // Match logic from dataProcessing.js: Trips < 0.5km are stationary/phantom
+        const validTrips = trips.filter(t => (t.trip || 0) >= 0.5);
+        const stationaryTrips = trips.filter(t => (t.trip || 0) < 0.5);
+
+        const len = validTrips.length;
+        const totalRecords = trips.length; // For debug or specific display if needed
 
         // Helper to calculate efficiency (kWh/100km)
         const getEfficiency = (t) => (t.trip && t.trip > 0) ? (t.electricity / t.trip) * 100 : 0;
         // Helper to calculate avg speed (km/h)
         const getAvgSpeed = (t) => (t.duration && t.duration > 0) ? t.trip / (t.duration / 3600) : 0;
 
-        // Basic extractions - using correct field names: trip (km), electricity (kWh), duration (seconds)
-        const distances = trips.map(t => t.trip || 0);
-        const energies = trips.map(t => t.electricity || 0); // kWh absolute
-        const durations = trips.map(t => t.duration || 0); // seconds
-        const speeds = trips.map(t => getAvgSpeed(t));
+        // Use validTrips for standard metrics
+        const distances = validTrips.map(t => t.trip || 0);
+        const energies = validTrips.map(t => t.electricity || 0); // kWh absolute
+        const durations = validTrips.map(t => t.duration || 0); // seconds
 
-        // Helper: Find max and min objects
-        const maxDistTrip = trips.reduce((max, t) => ((t.trip || 0) > (max.trip || 0) ? t : max), trips[0]);
+        // Stationary energy
+        const stationaryEnergy = stationaryTrips.reduce((acc, t) => acc + (t.electricity || 0), 0);
 
-        const maxSpeedTrip = trips.reduce((max, t) => (getAvgSpeed(t) > getAvgSpeed(max) ? t : max), trips[0]);
+        // Helper: Find max and min objects (from validTrips)
+        const maxDistTrip = validTrips.reduce((max, t) => ((t.trip || 0) > (max.trip || 0) ? t : max), validTrips[0] || {});
+        const maxSpeedTrip = validTrips.reduce((max, t) => (getAvgSpeed(t) > getAvgSpeed(max) ? t : max), validTrips[0] || {});
+        const maxDurationTrip = validTrips.reduce((max, t) => ((t.duration || 0) > (max.duration || 0) ? t : max), validTrips[0] || {});
 
-        const maxDurationTrip = trips.reduce((max, t) => ((t.duration || 0) > (max.duration || 0) ? t : max), trips[0]);
-        const tripsWithDuration = trips.filter(t => (t.duration || 0) > 0);
+        const tripsWithDuration = validTrips.filter(t => (t.duration || 0) > 0);
         const minDurationTrip = tripsWithDuration.length > 0
             ? tripsWithDuration.reduce((min, t) => (t.duration < min.duration ? t : min), tripsWithDuration[0])
-            : trips[0];
+            : (validTrips[0] || {});
 
         // Efficiency calculations
-        const validTripsForEff = trips.filter(t => (t.trip || 0) > 1 && (t.electricity || 0) > 0);
+        const validTripsForEff = validTrips.filter(t => (t.trip || 0) > 1 && (t.electricity || 0) > 0);
         const efficiencies = validTripsForEff.map(t => getEfficiency(t)).sort((a, b) => a - b);
         const bestEffTrip = validTripsForEff.length > 0 ? validTripsForEff.reduce((min, t) => getEfficiency(t) < getEfficiency(min) ? t : min, validTripsForEff[0]) : null;
         const worstEffTrip = validTripsForEff.length > 0 ? validTripsForEff.reduce((max, t) => getEfficiency(t) > getEfficiency(max) ? t : max, validTripsForEff[0]) : null;
@@ -54,111 +61,118 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
 
         // Totals
         const totalKm = distances.reduce((a, b) => a + b, 0);
-        const totalKwh = energies.reduce((a, b) => a + b, 0);
+        const drivingKwh = energies.reduce((a, b) => a + b, 0); // Only valid trips energy
+        const totalKwh = drivingKwh + stationaryEnergy; // Total including stationary
         const totalSeconds = durations.reduce((a, b) => a + b, 0);
         const totalHours = totalSeconds / 3600;
         const totalMinutes = totalSeconds / 60;
 
-        // Global efficiency (same formula as summary: totalKwh / totalKm * 100)
-        const globalEfficiency = totalKm > 0 ? (totalKwh / totalKm) * 100 : 0;
+        // Global efficiency (same formula as summary: drivingKwh / totalKm * 100)
+        // Note: StatCard uses only driving consumption for efficiency? 
+        // Checking dataProcessing.js: avgEff: totalKm > 0 ? (drivingKwh / totalKm * 100)
+        const globalEfficiency = totalKm > 0 ? (drivingKwh / totalKm) * 100 : 0;
 
-        // Date calculations
-        const dates = trips.map(t => (t.date || '').substring(0, 10)).filter(d => d); // YYYY-MM-DD
+        // Date calculations (Only Valid Trips for active days?)
+        // dataProcessing.js uses 'uniqueDates' from VALID trips? 
+        // No, dataProcessing adds uniqueDates for ALL trips, then 'daysActive' = uniqueDates.size.
+        // Wait, checked dataProcessing.js: "dailyData" and "uniqueDates" are populated inside the "for (const trip of allTrips)" loop.
+        // And stationary check "if (tTrip < 0.5) { ... continue; }" happens BEFORE dailyData population.
+        // So daysActive ONLY counts days with VALID trips.
+        const dates = validTrips.map(t => (t.date || '').substring(0, 10)).filter(d => d); // YYYY-MM-DD
         const uniqueDays = [...new Set(dates)];
         const daysActive = uniqueDays.length;
 
         // Calculate active days distribution (Monday-Sunday)
-        const daysOfWeek = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat (Date uses 0=Sun)
-        trips.forEach(t => {
+        const daysOfWeek = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
+        validTrips.forEach(t => {
             const date = new Date(t.date);
             if (!isNaN(date)) {
                 daysOfWeek[date.getDay()]++;
             }
         });
-        // Find most active day
         const maxTripsOnDay = Math.max(...daysOfWeek);
-        const mostActiveDayIndex = daysOfWeek.indexOf(maxTripsOnDay); // 0=Sun, 1=Mon...
+        const mostActiveDayIndex = daysOfWeek.indexOf(maxTripsOnDay);
 
-        // Find longest streak - fixed algorithm
+        // Find longest streak
         const sortedUniqueDays = [...uniqueDays].sort();
         let currentStreak = 1;
-        let maxStreak = 1;
+        let maxStreak = daysActive > 0 ? 1 : 0;
 
         for (let i = 1; i < sortedUniqueDays.length; i++) {
-            const prevDate = new Date(sortedUniqueDays[i - 1] + 'T12:00:00'); // Use noon to avoid DST issues
+            const prevDate = new Date(sortedUniqueDays[i - 1] + 'T12:00:00');
             const currDate = new Date(sortedUniqueDays[i] + 'T12:00:00');
-
-            // Calculate difference in days
             const diffMs = currDate.getTime() - prevDate.getTime();
             const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
 
             if (diffDays === 1) {
                 currentStreak++;
-                if (currentStreak > maxStreak) {
-                    maxStreak = currentStreak;
-                }
+                if (currentStreak > maxStreak) maxStreak = currentStreak;
             } else {
                 currentStreak = 1;
             }
         }
 
-        // Average cost per trip
-        // Average cost per trip
-        const avgCostPerTrip = (totalKwh / len) * electricityPrice;
+        // Average cost per trip (based on valid trips)
+        // If we want total cost average, we should might need to sum costs. 
+        // But here we approximate: totalKwh (Total or Driving?) -> likely Driving for Avg Trip stats.
+        const avgCostPerTrip = len > 0 ? (drivingKwh / len) * electricityPrice : 0;
 
-        const validSpeedTrips = trips.filter(t => (t.duration || 0) > 60 && (t.trip || 0) > 0.5); // Filter very short/invalid trips for speed stats
+        const validSpeedTrips = validTrips.filter(t => (t.duration || 0) > 60);
         const minSpeedTrip = validSpeedTrips.length > 0 ? validSpeedTrips.reduce((min, t) => (getAvgSpeed(t) < getAvgSpeed(min) ? t : min), validSpeedTrips[0]) : null;
 
         return {
             distance: {
                 total: totalKm,
-                avg: totalKm / len,
+                avg: len > 0 ? totalKm / len : 0,
                 max: maxDistTrip.trip || 0,
                 perDay: daysActive > 0 ? totalKm / daysActive : 0,
                 maxDate: maxDistTrip.date
             },
             energy: {
-                total: totalKwh,
-                avgPerTrip: totalKwh / len,
-                perDay: daysActive > 0 ? totalKwh / daysActive : 0,
-                maxCons: Math.max(...energies)
+                total: totalKwh, // Show Total (Driving + Stationary) or just Driving? Usually "Energy" implies total used.
+                avgPerTrip: len > 0 ? drivingKwh / len : 0, // Per trip based on driving kwh
+                perDay: daysActive > 0 ? drivingKwh / daysActive : 0,
+                maxCons: Math.max(...energies, 0)
             },
             trips: {
-                total: len,
+                total: len, // Matches StatCard (Valid trips)
                 perDay: daysActive > 0 ? len / daysActive : 0,
-                mostActiveDayIndex, // 0-6
+                mostActiveDayIndex,
                 maxStreak
             },
             time: {
                 totalHours,
-                avgMinutes: totalMinutes / len, // average minutes per trip
-                maxDuration: (maxDurationTrip.duration || 0) / 60, // convert seconds to minutes
-                minDuration: (minDurationTrip?.duration || 0) / 60 // convert seconds to minutes
+                avgMinutes: len > 0 ? totalMinutes / len : 0,
+                maxDuration: (maxDurationTrip.duration || 0) / 60,
+                minDuration: ((minDurationTrip?.duration || 0) / 60)
             },
             efficiency: {
-                avg: globalEfficiency, // Same as StatCard: totalKwh / totalKm * 100
+                avg: globalEfficiency,
                 median: medianEff,
                 best: bestEffTrip ? getEfficiency(bestEffTrip) : 0,
                 worst: worstEffTrip ? getEfficiency(worstEffTrip) : 0,
                 bestDate: bestEffTrip ? bestEffTrip.date : ''
             },
             speed: {
-                avg: totalSeconds > 0 ? (totalKm / (totalSeconds / 3600)) : 0, // Global avg speed
-                max: maxSpeedTrip ? getAvgSpeed(maxSpeedTrip) : 0, // max avg speed of a trip
+                avg: totalSeconds > 0 ? (totalKm / (totalSeconds / 3600)) : 0,
+                max: maxSpeedTrip.trip ? getAvgSpeed(maxSpeedTrip) : 0,
                 min: minSpeedTrip ? getAvgSpeed(minSpeedTrip) : 0,
-                fastestTripDate: maxSpeedTrip.date
+                fastestTripDate: maxSpeedTrip.trip ? maxSpeedTrip.date : ''
             },
             avgTrip: {
-                dist: totalKm / len,
-                kwh: totalKwh / len,
-                time: totalMinutes / len, // average minutes per trip
+                dist: len > 0 ? totalKm / len : 0,
+                kwh: len > 0 ? drivingKwh / len : 0,
+                time: len > 0 ? totalMinutes / len : 0,
                 cost: avgCostPerTrip
             },
             activeDays: {
                 count: daysActive,
                 maxStreak,
-                percentage: 0 // Need total span days for this
-            }
+                percentage: 0
+            },
+            // Pass stationary data specifically if needed
+            stationaryCount: stationaryTrips.length,
+            stationaryEnergy: stationaryEnergy
         };
     }, [trips, electricityPrice]);
 };
@@ -294,7 +308,7 @@ const TripInsightsModal = ({
                             {t('tripInsights.stationaryDesc', 'Aquí se contabiliza todo el consumo de energía de aquellos viajes registrados con una distancia menor a 0.5km (como encendidos remotos, climatización en parado, etc).')}
                         </p>
                         <div className="grid grid-cols-1 gap-3 mt-2">
-                            <StatItem label={t('stats.consumption', 'Consumo Total')} value={insights.energy?.total ? (insights.energy.total - (insights.energy.avgPerTrip * insights.trips.total)).toFixed(1) : "0.0"} unit="kWh" highlight />
+                            <StatItem label={t('stats.consumption', 'Consumo Total')} value={insights.stationaryEnergy.toFixed(1)} unit="kWh" highlight />
                             {/* Note: The above calc is wrong because insights doesn't separate stationary. 
                                  We need to pass the specific stat value or calculate it. 
                                  Actually, `useTripInsights` calculates based on the passed `trips` array.

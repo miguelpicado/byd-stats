@@ -228,6 +228,17 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             });
         }
 
+        // Check odometer offset
+        if (localSettings.odometerOffset !== undefined && remoteSettings.odometerOffset !== undefined &&
+            localSettings.odometerOffset !== remoteSettings.odometerOffset) {
+            differences.push({
+                key: 'odometerOffset',
+                label: 'Ajuste Odómetro',
+                local: `${localSettings.odometerOffset} km`,
+                cloud: `${remoteSettings.odometerOffset} km`
+            });
+        }
+
         return differences.length > 0 ? { differences, localSettings, remoteSettings } : null;
     }, []);
 
