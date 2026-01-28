@@ -294,6 +294,18 @@
         "noHistory": "Non hai histórico gardado",
         "dbExported": "Base de datos exportada correctamente"
     },
+    "modals": {
+        "odometerTitle": "Axuste de Odómetro",
+        "odometerDesc": "Axuste visual para corrixir a diferenza co marcador do coche.",
+        "offset": "Desfase (km)",
+        "stationaryTitle": "Viaxes Estacionarias",
+        "stationaryDesc": "Estas viaxes teñen unha distancia de 0 km. Podes eliminalas ou editalas para que non afecten ás túas estatísticas.",
+        "csvImportTitle": "Importar CSV",
+        "csvImportDesc": "Importa as túas viaxes e cargas desde un ficheiro CSV. Asegúrate de que o formato sexa correcto.",
+        "csvImportHint": "O ficheiro CSV debe ter as seguintes columnas: Date, Time, Distance, Consumption, Duration, Start SoC, End SoC, Start Lat, Start Lon, End Lat, End Lon, Odometer, Charge kWh, Charge Cost, Charge Price/kWh, Charge Type, Charge Efficiency, Charge Odometer, Charge Initial SoC, Charge Final SoC, Charge Liters, Charge Price/Liter",
+        "csvImportSuccess": "Importación CSV completada. {{trips}} viaxes e {{charges}} cargas importadas.",
+        "csvImportError": "Erro ao importar CSV. Asegúrate de que o formato sexa correcto e que todas as columnas necesarias estean presentes."
+    },
     "errors": {
         "invalidFile": "Só se admiten ficheiros *.DB ou *.JPG (base de datos renomeada)\nAtopa EC_Database.db na carpeta \"Energydata\" do coche",
         "somethingWentWrong": "Algo foi mal",
@@ -516,6 +528,8 @@
         "speedTitle": "Insights de Velocidade",
         "avgTripTitle": "Insights de Viaxe Media",
         "activeDaysTitle": "Insights de Actividade",
+        "stationaryTitle": "Consumo en parado",
+        "stationaryDesc": "Aquí contabilízase todo o consumo de todas as viaxes rexistradas de menos de 0.5km.",
         "totalKm": "Total Km",
         "kmPerDay": "Km/día activo",
         "avgPerTrip": "Media/viaxe",
@@ -613,7 +627,11 @@
             "a1_step3": "Navega a: Almacenamento Interno > BYD > ElectronicOwnerManual > data.",
             "a1_step4": "Copia o ficheiro EC_Database.db e pégao na túa memoria USB.",
             "tip_label": "Truco",
-            "tip_text": "Se tes problemas para seleccionar o ficheiro ao subilo, podes renomealo a EC_Database.jpg. A aplicación aceptará o ficheiro como unha imaxe válida e procesarao correctamente."
+            "tip_text": "Se tes problemas para seleccionar o ficheiro ao subilo, podes renomealo a EC_Database.jpg. A aplicación aceptará o ficheiro como unha imaxe válida e procesarao correctamente.",
+            "q_csv_import": "Podo importar as miñas propias cargas/viaxes?",
+            "a_csv_import": "Si, podes importar os teus datos desde arquivos CSV. Descarga as modelos oficiais desde GitHub para asegurarte de usar el formato correcto:",
+            "a_csv_charges": "- Modelo para importar cargas",
+            "a_csv_trips": "- Modelo para importar viaxes"
         },
         "install": {
             "title": "Instalación (PWA)",
