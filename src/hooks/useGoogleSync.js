@@ -147,6 +147,9 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, []);
 
+    // Debug log for render
+    // logger.debug(`useGoogleSync Render: localTrips=${localTrips?.length}`);
+
     const performSync = useCallback(async (newTripsData = null, options = {}) => {
         logger.info(`Sync initiated. Local trips: ${localTrips?.length}, New data: ${newTripsData?.length}, Online: ${navigator.onLine}`);
         if (!navigator.onLine) {
