@@ -311,6 +311,21 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout, detectConflict, getTargetFilename]); // Added detectConflict
 
+    // Common login success handler
+    const handleLoginSuccess = useCallback(async (accessToken) => {
+        googleDriveService.setAccessToken(accessToken);
+        sessionStorage.setItem('google_access_token', accessToken);
+
+        // Google access tokens typically expire in 1 hour (3600 seconds)
+        // Store expiry time as timestamp
+        const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour from now
+        sessionStorage.setItem('google_token_expiry', expiryTime.toString());
+
+        setIsAuthenticated(true);
+        await fetchUserProfile(accessToken);
+        performSync();
+    }, [fetchUserProfile, performSync]);
+
     // Ref to hold the latest handleLoginSuccess to avoid stale closures in useGoogleLogin
     const handleLoginSuccessRef = useRef(handleLoginSuccess);
     useEffect(() => {
@@ -332,21 +347,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         },
         scope: "https://www.googleapis.com/auth/drive.appdata"
     });
-
-    // Common login success handler
-    const handleLoginSuccess = useCallback(async (accessToken) => {
-        googleDriveService.setAccessToken(accessToken);
-        sessionStorage.setItem('google_access_token', accessToken);
-
-        // Google access tokens typically expire in 1 hour (3600 seconds)
-        // Store expiry time as timestamp
-        const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour from now
-        sessionStorage.setItem('google_token_expiry', expiryTime.toString());
-
-        setIsAuthenticated(true);
-        await fetchUserProfile(accessToken);
-        performSync();
-    }, [fetchUserProfile, performSync]);
 
     // Platform-aware login function
     const login = useCallback(async () => {
