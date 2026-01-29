@@ -210,12 +210,7 @@ export default function BYDStatsAnalyzer() {
     recordsListHeightHorizontal
   } = chartDimensions;
 
-  // DEBUG LOGS
-  logger.debug('[DEBUG] Mode detection:', {
-    viewport: `${window.innerWidth}x${window.innerHeight}`,
-    isFullscreenBYD,
-    isCompact
-  });
+  // DEBUG LOGS removed
 
 
 
@@ -326,8 +321,6 @@ export default function BYDStatsAnalyzer() {
 
     const handleSharedFile = async () => {
       try {
-        logger.debug('[FileHandling] Processing pending file from:', pendingFile.source);
-
         // Read file using unified handler (works for both Android and PWA)
         const file = await readFile(pendingFile);
 
@@ -343,7 +336,6 @@ export default function BYDStatsAnalyzer() {
         const trips = await processDBHook(file, rawTrips, false);
         if (trips) {
           setRawTrips(trips);
-          logger.debug('[FileHandling] File processed successfully:', trips.length, 'trips');
 
           // Show success message
           alert(t('upload.success') || 'Archivo cargado correctamente');
@@ -370,7 +362,6 @@ export default function BYDStatsAnalyzer() {
       setRawTrips(trips);
       // Auto-sync if connected
       if (googleSync.isAuthenticated) {
-        logger.debug('Auto-syncing new data to cloud...');
         googleSync.syncNow(trips);
       }
       // Close any open database modals
@@ -666,7 +657,7 @@ export default function BYDStatsAnalyzer() {
 
 
   return (
-    <MainLayout setSwipeContainer={setSwipeContainer}>
+    <MainLayout>
       <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
 
         {/* Header Feature */}
@@ -695,6 +686,7 @@ export default function BYDStatsAnalyzer() {
                 backgroundLoad={backgroundLoad}
                 onTripSelect={openTripDetail}
                 onChargeSelect={handleChargeSelect}
+                setSwipeContainer={setSwipeContainer}
               />
             </ErrorBoundary>
           </div>
@@ -708,13 +700,6 @@ export default function BYDStatsAnalyzer() {
             handleTabClick={handleTabClick}
           />
         )}
-
-        {/* Swipe Gesture Handler (Overlay) */}
-        <div
-          ref={setSwipeContainer}
-          className="absolute inset-0 z-30 pointer-events-none"
-          style={{ touchAction: 'pan-y' }}
-        />
 
         <Toaster
           position="bottom-center"

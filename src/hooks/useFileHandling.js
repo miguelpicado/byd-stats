@@ -28,14 +28,11 @@ export function useFileHandling() {
         // ANDROID NATIVE FILE HANDLING
         // ========================================
         if (isNative) {
-            logger.debug('[FileHandling] Running on Android native platform');
-
             // Check for shared file on startup
             const checkNativeSharedFile = async () => {
                 try {
                     const result = await FileOpener.getSharedFile();
                     if (result && result.uri) {
-                        logger.debug('[Android] Found shared file on startup:', result);
                         setPendingFile({ uri: result.uri, source: 'android' });
                     }
                 } catch (err) {
@@ -48,13 +45,10 @@ export function useFileHandling() {
                 if (!isSubscribed) return;
 
                 try {
-                    logger.debug('[Android] App URL Open event:', event);
-
                     if (event.url) {
                         const fileUri = event.url;
 
                         if (fileUri.startsWith('file://') || fileUri.startsWith('content://')) {
-                            logger.debug('[Android] File URI detected:', fileUri);
                             setPendingFile({ uri: fileUri, source: 'android' });
                         }
                     }
@@ -90,32 +84,24 @@ export function useFileHandling() {
         // PWA FILE HANDLING
         // ========================================
         else {
-            logger.debug('[FileHandling] Running on PWA/Web platform');
-
             // 1. Handle File Handling API (when user opens .db file from system)
             if ('launchQueue' in window) {
-                logger.debug('[PWA] File Handling API supported');
-
                 window.launchQueue.setConsumer(async (launchParams) => {
                     if (!isSubscribed) return;
 
                     try {
                         if (launchParams.files && launchParams.files.length > 0) {
-                            logger.debug('[PWA] Files received via launchQueue:', launchParams.files.length);
-
                             const fileHandle = launchParams.files[0];
                             const file = await fileHandle.getFile();
 
-                            logger.debug('[PWA] File opened:', file.name, file.size);
                             setPendingFile({ file, source: 'pwa-launch' });
                         }
                     } catch (err) {
-                        logger.error('[PWA] Error handling launchQueue file:', err);
                         setError('Error al abrir el archivo');
                     }
                 });
             } else {
-                logger.debug('[PWA] File Handling API not supported');
+                // Not supported
             }
 
             // 2. Handle Web Share Target API (when file is shared to PWA)
@@ -123,7 +109,6 @@ export function useFileHandling() {
                 try {
                     const urlParams = new URLSearchParams(window.location.search);
                     if (urlParams.get('shared') === 'true') {
-                        logger.debug('[PWA] Shared file detected, checking IndexedDB');
 
                         // Clean up URL
                         window.history.replaceState({}, '', window.location.pathname);
@@ -137,8 +122,6 @@ export function useFileHandling() {
                         request.onsuccess = () => {
                             const data = request.result;
                             if (data && data.data) {
-                                logger.debug('[PWA] Shared file loaded from IndexedDB:', data.name, data.size);
-
                                 // Convert ArrayBuffer back to File
                                 const blob = new Blob([data.data], { type: data.type });
                                 const file = new File([blob], data.name, { type: data.type });
@@ -196,8 +179,6 @@ export function useFileHandling() {
         // Android: need to read from URI using native plugin
         if (pendingFile.source === 'android') {
             try {
-                logger.debug('[Android] Reading file from URI:', pendingFile.uri);
-
                 const result = await FileOpener.readFileFromUri({ uri: pendingFile.uri });
 
                 if (!result || !result.data) {
