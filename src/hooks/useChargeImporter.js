@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
@@ -18,7 +19,7 @@ export const useChargeImporter = () => {
             const lines = text.split('\n').filter(line => line.trim());
 
             if (lines.length < 2) {
-                alert(t('errors.noDataFound'));
+                toast.error(t('errors.noDataFound'));
                 return;
             }
 
@@ -109,18 +110,18 @@ export const useChargeImporter = () => {
                         types: newChargerTypes.map(ct => ct.name).join(', ')
                     });
                 }
-                alert(message);
+                toast.success(message);
 
                 // Auto-sync after import
                 if (googleSync.isAuthenticated) {
                     googleSync.syncNow();
                 }
             } else {
-                alert(t('errors.noDataFound'));
+                toast.error(t('errors.noDataFound'));
             }
         } catch (error) {
             console.error('Error loading charge registry:', error);
-            alert(t('errors.processingFile') || 'Error processing file');
+            toast.error(t('errors.processingFile') || 'Error processing file');
         }
     }, [settings, updateSettings, addMultipleCharges, googleSync, t]);
 
