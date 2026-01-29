@@ -1,6 +1,6 @@
 // BYD Stats - Unified File Handling Hook (Android Native + PWA)
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { registerPlugin } from '@capacitor/core';
