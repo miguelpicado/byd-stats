@@ -212,12 +212,12 @@ const TrendsTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.monthlyKmKwh')}>
           <div key="bar-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <BarJS key="trends-bar-h" redraw={true} options={BAR_CHART_OPTIONS} data={barChartData} />
+            <BarJS key={`trends-bar-h-${isActive}`} options={BAR_CHART_OPTIONS} data={barChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.last60Days')}>
           <div key="line-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <LineJS key="trends-line-h" redraw={true} options={LINE_CHART_OPTIONS} data={lineChartData} />
+            <LineJS key={`trends-line-h-${isActive}`} options={LINE_CHART_OPTIONS} data={lineChartData} />
           </div>
         </ChartCard>
       </div>
