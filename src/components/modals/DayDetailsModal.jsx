@@ -2,8 +2,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { createPortal } from 'react-dom';
 import { X, MapPin, Zap, Clock, TrendingUp, Car } from '../Icons';
-import { formatTime, formatDate } from '../../utils/dateUtils';
-import { BYD_RED } from '../../utils/constants';
+import { formatTime, formatDate } from '@core/dateUtils';
+import { BYD_RED } from '@core/constants';
 import { useApp } from '../../context/AppContext';
 
 const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTripSelect, onChargeSelect }) => {
@@ -25,9 +25,9 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
 
     // Use Portal to escape any parent stacking contexts (transforms, etc)
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
+        <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center sm:p-4 bg-black/60 backdrop-blur-sm animate-modal-backdrop" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}>
             <div
-                className="bg-white dark:bg-slate-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-in slide-in-from-bottom-10 sm:zoom-in-95 duration-200"
+                className="bg-white dark:bg-slate-900 w-full sm:max-w-lg sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col max-h-[90vh] sm:max-h-[85vh] animate-modal-content"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -207,3 +207,6 @@ const DayDetailsModal = ({ isOpen, onClose, date, trips = [], charges = [], onTr
 };
 
 export default DayDetailsModal;
+
+
+

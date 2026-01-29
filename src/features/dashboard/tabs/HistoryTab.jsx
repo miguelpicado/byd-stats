@@ -2,9 +2,9 @@
 import React, { useMemo, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { MapPin, Zap, Battery, Clock, TrendingUp, BYD_RED } from '../Icons.jsx';
-import TripCard from '../cards/TripCard';
-import { useLayout } from '../../context/LayoutContext';
+import { MapPin, Zap, Battery, Clock, TrendingUp, BYD_RED } from '@components/Icons.jsx';
+import TripCard from '@components/cards/TripCard';
+import { useLayout } from '@/context/LayoutContext';
 
 /**
  * History tab showing last 10 trips and averages
@@ -245,3 +245,5 @@ HistoryTab.propTypes = {
 HistoryTab.displayName = 'HistoryTab';
 
 export default HistoryTab;
+
+

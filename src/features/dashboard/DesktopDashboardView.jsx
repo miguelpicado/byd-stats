@@ -1,6 +1,7 @@
 import React, { Suspense, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle } from '@components/Icons';
+import ErrorBoundary from '@components/common/ErrorBoundary';
 
 // Contexts & Hooks
 import { useData } from '@/providers/DataProvider';
@@ -9,17 +10,17 @@ import { useLayout } from '@/context/LayoutContext';
 import { useChartDimensions } from '@hooks/useChartDimensions';
 
 // Tabs
-import OverviewTab from '@components/tabs/OverviewTab';
+import OverviewTab from '@tabs/OverviewTab';
 import TabFallback from '@components/common/TabFallback';
 
 // Lazy loaded tabs
-const CalendarTab = React.lazy(() => import('@components/tabs/CalendarTab'));
-const HistoryTab = React.lazy(() => import('@components/tabs/HistoryTab'));
-const RecordsTab = React.lazy(() => import('@components/tabs/RecordsTab'));
-const TrendsTab = React.lazy(() => import('@components/tabs/TrendsTab'));
-const PatternsTab = React.lazy(() => import('@components/tabs/PatternsTab'));
-const EfficiencyTab = React.lazy(() => import('@components/tabs/EfficiencyTab'));
-const ChargesTab = React.lazy(() => import('@components/tabs/ChargesTab'));
+const CalendarTab = React.lazy(() => import('@tabs/CalendarTab'));
+const HistoryTab = React.lazy(() => import('@tabs/HistoryTab'));
+const RecordsTab = React.lazy(() => import('@tabs/RecordsTab'));
+const TrendsTab = React.lazy(() => import('@tabs/TrendsTab'));
+const PatternsTab = React.lazy(() => import('@tabs/PatternsTab'));
+const EfficiencyTab = React.lazy(() => import('@tabs/EfficiencyTab'));
+const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
 
 /**
  * Desktop Dashboard View - Optimized for tab navigation and larger screens
@@ -66,85 +67,93 @@ const DesktopDashboardView = memo(({
                     const content = (
                         <>
                             {tab.id === 'overview' && (
-                                <OverviewTab
-                                    key={isActive ? 'overview-active' : 'overview-bg'}
-                                    summary={summary}
-                                    monthly={monthly}
-                                    tripDist={tripDist}
-                                    smallChartHeight={smallChartHeight}
-                                    overviewSpacing={overviewSpacingHorizontal}
-                                    trips={rawTrips}
-                                    settings={settings}
-                                />
+                                <ErrorBoundary key={isActive ? 'overview-active' : 'overview-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <OverviewTab
+                                        summary={summary}
+                                        monthly={monthly}
+                                        tripDist={tripDist}
+                                        smallChartHeight={smallChartHeight}
+                                        overviewSpacing={overviewSpacingHorizontal}
+                                        trips={rawTrips}
+                                        settings={settings}
+                                    />
+                                </ErrorBoundary>
                             )}
                             {tab.id === 'calendar' && (
-                                <CalendarTab
-                                    key={isActive ? 'calendar-active' : 'calendar-bg'}
-                                    trips={rawTrips}
-                                    charges={charges}
-                                    isActive={isActive}
-                                    onTripSelect={onTripSelect}
-                                    onChargeSelect={onChargeSelect}
-                                />
+                                <ErrorBoundary key={isActive ? 'calendar-active' : 'calendar-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <CalendarTab
+                                        trips={rawTrips}
+                                        charges={charges}
+                                        isActive={isActive}
+                                        onTripSelect={onTripSelect}
+                                        onChargeSelect={onChargeSelect}
+                                    />
+                                </ErrorBoundary>
                             )}
                             {tab.id === 'trends' && (
-                                <TrendsTab
-                                    key={isActive ? 'trends-active' : 'trends-bg'}
-                                    filtered={filtered}
-                                    summary={summary}
-                                    monthly={monthly}
-                                    daily={daily}
-                                    settings={settings}
-                                    largeChartHeight={largeChartHeight}
-                                />
+                                <ErrorBoundary key={isActive ? 'trends-active' : 'trends-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <TrendsTab
+                                        filtered={filtered}
+                                        summary={summary}
+                                        monthly={monthly}
+                                        daily={daily}
+                                        settings={settings}
+                                        largeChartHeight={largeChartHeight}
+                                    />
+                                </ErrorBoundary>
                             )}
                             {tab.id === 'patterns' && (
-                                <PatternsTab
-                                    key={isActive ? 'patterns-active' : 'patterns-bg'}
-                                    weekday={weekday}
-                                    hourly={hourly}
-                                    summary={summary}
-                                    patternsSpacing={patternsSpacing}
-                                    patternsChartHeight={patternsChartHeight}
-                                />
+                                <ErrorBoundary key={isActive ? 'patterns-active' : 'patterns-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <PatternsTab
+                                        weekday={weekday}
+                                        hourly={hourly}
+                                        summary={summary}
+                                        patternsSpacing={patternsSpacing}
+                                        patternsChartHeight={patternsChartHeight}
+                                    />
+                                </ErrorBoundary>
                             )}
                             {tab.id === 'efficiency' && (
-                                <EfficiencyTab
-                                    key={isActive ? 'efficiency-active' : 'efficiency-bg'}
-                                    summary={summary}
-                                    monthly={monthly}
-                                    effScatter={effScatter}
-                                    largeChartHeight={largeChartHeight}
-                                />
+                                <ErrorBoundary key={isActive ? 'efficiency-active' : 'efficiency-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <EfficiencyTab
+                                        summary={summary}
+                                        monthly={monthly}
+                                        effScatter={effScatter}
+                                        largeChartHeight={largeChartHeight}
+                                    />
+                                </ErrorBoundary>
                             )}
                             {tab.id === 'records' && (
-                                <RecordsTab
-                                    key={isActive ? 'records-active' : 'records-bg'}
-                                    summary={summary}
-                                    top={top}
-                                    recordsItemPadding={recordsItemPadding}
-                                    recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                                    recordsListHeightHorizontal={recordsListHeightHorizontal}
-                                />
+                                <ErrorBoundary key={isActive ? 'records-active' : 'records-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <RecordsTab
+                                        summary={summary}
+                                        top={top}
+                                        recordsItemPadding={recordsItemPadding}
+                                        recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                                        recordsListHeightHorizontal={recordsListHeightHorizontal}
+                                    />
+                                </ErrorBoundary>
                             )}
                             {tab.id === 'history' && (
-                                <HistoryTab
-                                    key={isActive ? 'history-active' : 'history-bg'}
-                                    filtered={filtered}
-                                    openTripDetail={onTripSelect}
-                                    setShowAllTripsModal={handleShowAllTrips}
-                                />
+                                <ErrorBoundary key={isActive ? 'history-active' : 'history-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <HistoryTab
+                                        filtered={filtered}
+                                        openTripDetail={onTripSelect}
+                                        setShowAllTripsModal={handleShowAllTrips}
+                                    />
+                                </ErrorBoundary>
                             )}
                             {tab.id === 'charges' && (
-                                <ChargesTab
-                                    key={isActive ? 'charges-active' : 'charges-bg'}
-                                    charges={charges}
-                                    chargerTypes={settings.chargerTypes || []}
-                                    onChargeClick={onChargeSelect}
-                                    onAddClick={handleAddCharge}
-                                    setShowAllChargesModal={handleShowAllCharges}
-                                    batterySize={settings.batterySize}
-                                />
+                                <ErrorBoundary key={isActive ? 'charges-active' : 'charges-bg'} isTab title={t('common.errorLoadingTab')}>
+                                    <ChargesTab
+                                        charges={charges}
+                                        chargerTypes={settings.chargerTypes || []}
+                                        onChargeClick={onChargeSelect}
+                                        onAddClick={handleAddCharge}
+                                        setShowAllChargesModal={handleShowAllCharges}
+                                        batterySize={settings.batterySize}
+                                    />
+                                </ErrorBoundary>
                             )}
                         </>
                     );
@@ -186,3 +195,5 @@ const DesktopDashboardView = memo(({
 DesktopDashboardView.displayName = 'DesktopDashboardView';
 
 export default DesktopDashboardView;
+
+

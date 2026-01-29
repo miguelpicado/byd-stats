@@ -14,3 +14,5 @@ const MainLayout = memo(({ children, setSwipeContainer }) => {
 MainLayout.displayName = 'MainLayout';
 
 export default MainLayout;
+
+

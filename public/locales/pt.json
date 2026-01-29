@@ -12,7 +12,8 @@
         "showAll": "Mostrar tudo",
         "noData": "Sem dados para mostrar",
         "allTrips": "Todas as viagens",
-        "last10Trips": "Últimas 10 viagens"
+        "last10Trips": "Últimas 10 viagens",
+        "errorLoadingTab": "Erro ao carregar a aba"
     },
     "tabs": {
         "overview": "Resumo",

@@ -4,11 +4,13 @@
 import React, { useMemo, useCallback, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { useLayout } from '../../context/LayoutContext';
-import { BYD_RED } from '../../utils/constants';
-import { Battery, Zap, Calendar, Euro, TrendingUp, Fuel } from '../Icons.jsx';
-import FloatingActionButton from '../common/FloatingActionButton';
-import ChargeInsightsModal from '../modals/ChargeInsightsModal';
+import { useLayout } from '@/context/LayoutContext';
+import { BYD_RED } from '@core/constants';
+import { Zap, Euro, Activity, BarChart3, BYD_RED as ICON_RED, Battery, Calendar, TrendingUp, Fuel } from '@components/Icons.jsx';
+import FloatingActionButton from '@components/common/FloatingActionButton';
+import ChargeInsightsModal from '@components/modals/ChargeInsightsModal';
+import { useConfirmation } from '@hooks/useConfirmation';
+import { formatTime } from '@core/dateUtils';
 
 // Electric blue color for the "New charge" button
 const ELECTRIC_BLUE = '#0ea5e9';
@@ -395,3 +397,6 @@ ChargesTab.propTypes = {
 ChargesTab.displayName = 'ChargesTab';
 
 export default ChargesTab;
+
+
+

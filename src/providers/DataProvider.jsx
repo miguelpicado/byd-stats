@@ -1,20 +1,36 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 import { toast } from 'react-hot-toast';
-import { useApp } from '../context/AppContext';
-import useAppData from '../hooks/useAppData';
-import { useDatabase } from '../hooks/useDatabase';
-import useChargesData from '../hooks/useChargesData';
-import { useGoogleSync } from '../hooks/useGoogleSync';
-import { useFileHandling } from '../hooks/useFileHandling';
-import { useConfirmation } from '../hooks/useConfirmation';
-import { useCar } from '../context/CarContext';
+import { useApp } from '@/context/AppContext';
+import useAppData from '@hooks/useAppData';
+import { useDatabase } from '@hooks/useDatabase';
+import useChargesData from '@hooks/useChargesData';
+import { useGoogleSync } from '@hooks/useGoogleSync';
+import { useFileHandling } from '@hooks/useFileHandling';
+import { useConfirmation } from '@hooks/useConfirmation';
+import { useCar } from '@/context/CarContext';
 
-import useModalState from '../hooks/useModalState';
+import useModalState from '@hooks/useModalState';
 
 const DataContext = createContext();
 
+/**
+ * Global data and operations hook
+ * @returns {{
+ *   rawTrips: import('@core/types').Trip[],
+ *   filtered: { filteredTrips: import('@core/types').Trip[], stats: import('@core/types').Summary, ... },
+ *   data: import('@core/types').ProcessedData,
+ *   charges: import('@core/types').Charge[],
+ *   database: ReturnType<typeof import('@hooks/useDatabase').useDatabase>,
+ *   googleSync: ReturnType<typeof import('@hooks/useGoogleSync').useGoogleSync>,
+ *   fileHandling: Object,
+ *   modals: Object,
+ *   closeModal: function(string): void,
+ *   openModal: function(string): void,
+ *   loadFile: function(File, boolean=): Promise<void>
+ * }}
+ */
 export const useData = () => {
     const context = useContext(DataContext);
     if (!context) {
@@ -66,6 +82,9 @@ export const DataProvider = ({ children }) => {
     // 5. File Handling (Import/Export/Share)
     const fileHandling = useFileHandling();
 
+    // 7. Global Modal State (Moved up for googleSync dependency)
+    const modalState = useModalState();
+
     // 6. Google Sync (Side Effects & Cloud Sync)
     // Needs access to state setters to update local data from cloud
     const googleSync = useGoogleSync(
@@ -76,11 +95,24 @@ export const DataProvider = ({ children }) => {
         charges,
         replaceCharges,
         activeCarId,
-        cars.length
+        cars.length,
+        modalState.openRegistryModal
     );
 
-    // 7. Global Modal State
-    const modalState = useModalState();
+    // 7. Auto-Sync Effect (Background)
+    useEffect(() => {
+        if (!googleSync.isAuthenticated || googleSync.isSyncing) return;
+
+        // Skip if everything is empty (initial load)
+        if (rawTrips.length === 0 && charges.length === 0) return;
+
+        const timer = setTimeout(() => {
+            logger.debug("[Auto-Sync] Data changed locally, triggering background sync...");
+            googleSync.syncNow();
+        }, 10000); // 10 second debounce to be safe and non-intrusive
+
+        return () => clearTimeout(timer);
+    }, [rawTrips.length, charges.length, settings, googleSync.isAuthenticated]);
 
     // 8. File Loading Functions
     // Load file (database .db) and optionally merge with existing trips
@@ -308,3 +340,4 @@ export const DataProvider = ({ children }) => {
         </DataContext.Provider>
     );
 };
+

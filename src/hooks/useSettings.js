@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { useLocalStorage } from './useLocalStorage';
-import { SETTINGS_KEY, DEFAULT_SETTINGS } from '../utils/constants';
+import { SETTINGS_KEY, DEFAULT_SETTINGS } from '@core/constants';
 
 /**
  * Custom hook for managing app settings
@@ -23,3 +23,5 @@ export function useSettings() {
 }
 
 export default useSettings;
+
+
