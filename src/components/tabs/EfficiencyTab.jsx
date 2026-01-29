@@ -364,12 +364,12 @@ const EfficiencyTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
           <div key="line-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <LineJS key="efficiency-line-h" redraw={true} options={lineChartOptions} data={lineChartData} />
+            <LineJS key={`efficiency-line-h-${isActive}`} options={lineChartOptions} data={lineChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={`📍 ${t('charts.effVsDist')}`}>
           <div key="scatter-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <ScatterJS key="efficiency-scatter-h" redraw={true} options={scatterChartOptions} data={scatterChartData} />
+            <ScatterJS key={`efficiency-scatter-h-${isActive}`} options={scatterChartOptions} data={scatterChartData} />
           </div>
         </ChartCard>
       </div>
