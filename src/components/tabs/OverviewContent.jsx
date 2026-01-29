@@ -44,7 +44,8 @@ const OverviewContent = ({
     showOdometerModal,
     onCloseOdometerModal,
     insightType,
-    onCloseInsightModal
+    onCloseInsightModal,
+    isActive = true
 }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -182,16 +183,16 @@ const OverviewContent = ({
             <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                 <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
                     <div key="line-container-h" style={{ width: '100%', height: smallChartHeight }}>
-                        {/* Removed redraw={true} for performance optimization (Task 2B partially addressed here as good practice) */}
-                        <LineJS key="overview-line-h" options={lineChartOptions} data={lineChartData} />
+                        {/* Used isActive in key to force remount and animation on tab switch */}
+                        <LineJS key={`overview-line-h-${isActive}`} options={lineChartOptions} data={lineChartData} />
                     </div>
                 </ChartCard>
                 <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
                     <div className="flex flex-row items-center gap-4">
                         <div className="w-1/2">
                             <div key="pie-container-h" style={{ width: '100%', height: smallChartHeight }}>
-                                {/* Removed redraw={true} */}
-                                <PieJS key="overview-pie-h" options={PIE_CHART_OPTIONS} data={pieChartData} />
+                                {/* Used isActive in key to force remount and animation on tab switch */}
+                                <PieJS key={`overview-pie-h-${isActive}`} options={PIE_CHART_OPTIONS} data={pieChartData} />
                             </div>
                         </div>
                         <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
