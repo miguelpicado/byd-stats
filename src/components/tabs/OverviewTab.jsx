@@ -1,16 +1,8 @@
 // BYD Stats - Overview Tab Component
 import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { useTranslation } from 'react-i18next';
-import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
-import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Calendar, Fuel, BYD_RED, Activity } from '../Icons.jsx';
-import StatCard from '../ui/StatCard';
-import ChartCard from '../ui/ChartCard';
-import FloatingActionButton from '../common/FloatingActionButton';
-import TripInsightsModal from '../modals/TripInsightsModal';
-import HybridStatsCard from '../cards/HybridStatsCard';
-import OdometerAdjustmentModal from '../modals/OdometerAdjustmentModal';
-import { useLayout } from '../../context/LayoutContext';
+import { BYD_RED } from '../Icons.jsx';
+import OverviewContent from './OverviewContent';
 
 // Static chart options that don't change
 const LINE_CHART_OPTIONS_BASE = {
@@ -18,24 +10,6 @@ const LINE_CHART_OPTIONS_BASE = {
   interaction: { mode: 'index', intersect: false },
   plugins: { legend: { display: false } },
   elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
-};
-
-const PIE_CHART_OPTIONS = {
-  maintainAspectRatio: false,
-  plugins: {
-    legend: { display: false },
-    tooltip: {
-      callbacks: {
-        label: (context) => {
-          const label = context.label || '';
-          const value = context.parsed;
-          const total = context.dataset.data.reduce((a, b) => a + b, 0);
-          const percent = ((value / total) * 100).toFixed(0) + '%';
-          return `${label}: ${context.raw} (${percent})`;
-        }
-      }
-    }
-  }
 };
 
 /**
@@ -52,8 +26,6 @@ const OverviewTab = React.memo(({
   settings,
   isActive = true
 }) => {
-  const { t } = useTranslation();
-  const { isCompact, isLargerCard, isVertical } = useLayout();
   const [insightType, setInsightType] = useState(null);
   const [showOdometerModal, setShowOdometerModal] = useState(false);
 
@@ -64,15 +36,6 @@ const OverviewTab = React.memo(({
       setInsightType(type);
     }
   };
-
-  // Memoize chart options with scales
-  const lineChartOptionsVertical = useMemo(() => ({
-    ...LINE_CHART_OPTIONS_BASE,
-    scales: {
-      y: { beginAtZero: true, border: { dash: [3, 3] }, grid: { color: 'rgba(203, 213, 225, 0.3)' } },
-      x: { grid: { display: false } }
-    }
-  }), []);
 
   const lineChartOptionsHorizontal = useMemo(() => ({
     ...LINE_CHART_OPTIONS_BASE,
@@ -107,239 +70,25 @@ const OverviewTab = React.memo(({
     }]
   }), [tripDist]);
 
-  // --- Configuración de Tarjetas de Estadísticas ---
-  const getStatsConfig = () => [
-    {
-      key: 'distance',
-      icon: MapPin,
-      label: t('stats.distance'),
-      value: summary.totalKm,
-      unit: t('units.km'),
-      color: "bg-red-500/20 text-red-400",
-      sub: `${summary.kmDay} ${t('units.km')}/${t('units.day')}`,
-      onClick: () => handleCardClick('distance')
-    },
-    {
-      key: 'energy',
-      icon: Zap,
-      label: t('stats.energy'),
-      value: summary.totalKwh,
-      unit: t('units.kWh'),
-      color: "bg-cyan-500/20 text-cyan-400",
-      onClick: () => handleCardClick('energy')
-    },
-    {
-      key: 'trips',
-      icon: Car,
-      label: t('stats.trips'),
-      value: summary.totalTrips,
-      unit: "",
-      color: "bg-amber-500/20 text-amber-400",
-      sub: `${summary.tripsDay}/${t('units.day')}`,
-      onClick: () => handleCardClick('trips')
-    },
-    // Condicional: Hybrid vs EV
-    summary.isHybrid ? {
-      key: 'stationary',
-      icon: Activity,
-      label: t('stats.stationary'),
-      value: summary.stationaryConsumption,
-      unit: t('units.kWh'),
-      color: "bg-yellow-500/20 text-yellow-500",
-      onClick: () => handleCardClick('stationary')
-    } : {
-      key: 'time',
-      icon: Clock,
-      label: t('stats.time'),
-      value: summary.totalHours,
-      unit: "h",
-      color: "bg-purple-500/20 text-purple-400",
-      onClick: () => handleCardClick('time')
-    },
-    {
-      key: 'efficiency',
-      icon: Battery,
-      label: t('stats.efficiency'),
-      value: summary.avgEff,
-      unit: t('units.kWh100km'),
-      color: "bg-green-500/20 text-green-400",
-      onClick: () => handleCardClick('efficiency')
-    },
-    // Condicional: Fuel vs Stationary (EV reuse)
-    summary.isHybrid ? {
-      key: 'fuel',
-      icon: Fuel,
-      label: t('hybrid.avgFuelEfficiency'),
-      value: summary.avgFuelEff,
-      unit: "L/100km",
-      color: "bg-amber-500/20 text-amber-500",
-      onClick: () => handleCardClick('fuel')
-    } : {
-      key: 'stationary_ev', // Unique key for list
-      icon: Activity,
-      label: t('stats.stationary'),
-      value: summary.stationaryConsumption,
-      unit: t('units.kWh'),
-      color: "bg-yellow-500/20 text-yellow-500",
-      onClick: () => handleCardClick('stationary')
-    },
-    {
-      key: 'avgTrip',
-      icon: MapPin,
-      label: t('stats.avgTrip'),
-      value: summary.avgKm,
-      unit: t('units.km'),
-      color: "bg-orange-500/20 text-orange-400",
-      sub: `${summary.avgMin} min`,
-      onClick: () => handleCardClick('avgTrip')
-    },
-    {
-      key: 'speed',
-      icon: TrendingUp,
-      label: t('stats.speed'),
-      value: summary.avgSpeed,
-      unit: t('units.kmh'),
-      color: "bg-blue-500/20 text-blue-400",
-      onClick: () => handleCardClick('speed')
-    }
-  ];
-
-  const statItems = getStatsConfig();
-
-  // Helper render function
-  const renderStatGrid = () => (
-    <>
-      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-        {statItems.slice(0, 4).map(item => (
-          <StatCard
-            key={item.key}
-            isVerticalMode={isVertical}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            {...item}
-          />
-        ))}
-      </div>
-      <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-        {statItems.slice(4, 8).map(item => (
-          <StatCard
-            key={item.key}
-            isVerticalMode={isVertical}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            {...item}
-          />
-        ))}
-      </div>
-    </>
-  );
-
-  // Render vertical layout
-  if (isVertical) {
-    return (
-      <div className={`${overviewSpacing}`}>
-        {renderStatGrid()}
-
-        {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
-        {summary.isHybrid && (
-          <div className={`grid grid-cols-2 gap-4 ${isCompact ? '!gap-3' : ''}`}>
-            <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={false} />
-          </div>
-        )}
-        <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
-          <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
-            <div key="line-container-h" style={{ width: '100%', height: smallChartHeight }}>
-              <LineJS key="overview-line-h" redraw={true} options={lineChartOptionsHorizontal} data={lineChartData} />
-            </div>
-          </ChartCard>
-          <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
-            <div className="flex flex-row items-center gap-4">
-              <div className="w-1/2">
-                <div key="pie-container-h" style={{ width: '100%', height: smallChartHeight }}>
-                  <PieJS key="overview-pie-h" redraw={true} options={PIE_CHART_OPTIONS} data={pieChartData} />
-                </div>
-              </div>
-              <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
-                {tripDist.map((d, i) => (
-                  <div key={i} className={`flex flex-row items-center justify-between px-2 py-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg`}>
-                    <div className="flex items-center gap-2 overflow-hidden">
-                      <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
-                      <p className="text-slate-600 dark:text-slate-400 truncate text-[9px]">{d.range}km</p>
-                    </div>
-                    <p className="font-bold text-slate-900 dark:text-white text-[11px]">{d.count}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </ChartCard>
-        </div>
-
-        <TripInsightsModal
-          isOpen={!!insightType}
-          onClose={() => setInsightType(null)}
-          type={insightType || 'distance'}
-          trips={trips}
-          settings={settings}
-        />
-        <OdometerAdjustmentModal
-          isOpen={showOdometerModal}
-          onClose={() => setShowOdometerModal(false)}
-        />
-      </div>
-    );
-  }
-
-  // Render horizontal layout
   return (
-    <div className={`${overviewSpacing}`}>
-      {renderStatGrid()}
-
-      {/* Hybrid Stats Card - Only shown for PHEV vehicles */}
-      {summary.isHybrid && (
-        <div className={`grid grid-cols-2 gap-4 ${isCompact ? '!gap-3' : ''}`}>
-          <HybridStatsCard summary={summary} isCompact={isCompact} isVertical={false} />
-        </div>
-      )}
-      <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
-        <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
-          <div key="line-container-h" style={{ width: '100%', height: smallChartHeight }}>
-            <LineJS key="overview-line-h" redraw={true} options={lineChartOptionsHorizontal} data={lineChartData} />
-          </div>
-        </ChartCard>
-        <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
-          <div className="flex flex-row items-center gap-4">
-            <div className="w-1/2">
-              <div key="pie-container-h" style={{ width: '100%', height: smallChartHeight }}>
-                <PieJS key="overview-pie-h" redraw={true} options={PIE_CHART_OPTIONS} data={pieChartData} />
-              </div>
-            </div>
-            <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
-              {tripDist.map((d, i) => (
-                <div key={i} className={`flex flex-row items-center justify-between px-2 py-1 bg-slate-100 dark:bg-slate-700/50 rounded-lg`}>
-                  <div className="flex items-center gap-2 overflow-hidden">
-                    <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ backgroundColor: d.color }}></div>
-                    <p className="text-slate-600 dark:text-slate-400 truncate text-[9px]">{d.range}km</p>
-                  </div>
-                  <p className="font-bold text-slate-900 dark:text-white text-[11px]">{d.count}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </ChartCard>
-      </div>
-
-      <TripInsightsModal
-        isOpen={!!insightType}
-        onClose={() => setInsightType(null)}
-        type={insightType || 'distance'}
-        trips={trips}
-        settings={settings}
-      />
-      <OdometerAdjustmentModal
-        isOpen={showOdometerModal}
-        onClose={() => setShowOdometerModal(false)}
-      />
-    </div>
+    <OverviewContent
+      summary={summary}
+      monthly={monthly}
+      tripDist={tripDist}
+      smallChartHeight={smallChartHeight}
+      overviewSpacing={overviewSpacing}
+      lineChartOptions={lineChartOptionsHorizontal}
+      lineChartData={lineChartData}
+      pieChartData={pieChartData}
+      trips={trips}
+      settings={settings}
+      onInsightClick={handleCardClick}
+      onOdometerClick={() => handleCardClick('distance')}
+      showOdometerModal={showOdometerModal}
+      onCloseOdometerModal={() => setShowOdometerModal(false)}
+      insightType={insightType}
+      onCloseInsightModal={() => setInsightType(null)}
+    />
   );
 });
 
@@ -367,7 +116,6 @@ OverviewTab.propTypes = {
     color: PropTypes.string
   })).isRequired,
   smallChartHeight: PropTypes.oneOfType([PropTypes.string, PropTypes.number]).isRequired,
-
   overviewSpacing: PropTypes.string.isRequired,
   onAddCharge: PropTypes.func,
   trips: PropTypes.array,
