@@ -29,7 +29,7 @@ const HelpModal = () => {
                         }
                     }
                 } catch (error) {
-                    console.log('Error fetching version:', error);
+                    // console.log('Error fetching version:', error);
                 }
             };
 

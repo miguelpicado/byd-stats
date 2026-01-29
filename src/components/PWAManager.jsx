@@ -61,7 +61,6 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
         updateServiceWorker,
     } = useRegisterSW({
         onRegisteredPO(r) {
-            logger.debug('[PWA] SW Registered:', r);
         },
         onRegisterError(error) {
             logger.error('[PWA] SW Registration Error:', error);
@@ -78,7 +77,7 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
     // Cleanup manual interval as the hook handles it or we can keep a simple one
     useEffect(() => {
         if (offlineReady) {
-            logger.debug('[PWA] App ready to work offline');
+            // Ready for offline
         }
     }, [offlineReady]);
 
@@ -95,7 +94,6 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
 
         // Check if event was already captured in global scope
         if (window.deferredPrompt) {
-            logger.debug('[PWA] Using globally captured prompt');
             setDeferredPrompt(window.deferredPrompt);
             setShowInstallBanner(true);
             window.deferredPrompt = null; // Clean up

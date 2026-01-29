@@ -15,7 +15,6 @@ export const googleDriveService = {
    * Initialize - No-op for fetch implementation, kept for compatibility
    */
   initClient: async () => {
-    logger.debug('googleDriveService: Init (Fetch mode) - Ready');
     return Promise.resolve(true);
   },
 
@@ -114,11 +113,9 @@ export const googleDriveService = {
       }
 
       const result = await response.json();
-      logger.debug('Download successful');
 
       // Normalize to { trips: [], settings: {}, charges: [] }
       if (Array.isArray(result)) {
-        logger.debug('Migrating legacy array format to object...');
         return { trips: result, settings: {}, charges: [] };
       }
 
@@ -167,7 +164,6 @@ export const googleDriveService = {
         }
         const createData = await createRes.json();
         fileId = createData.id;
-        logger.debug('Created new file ID:', fileId);
       }
 
       // Step 2: Upload Content (Simple Upload)
