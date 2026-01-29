@@ -20,6 +20,8 @@ const CURRENT_LEVEL = import.meta.env.PROD ? LOG_LEVELS.WARN : LOG_LEVELS.DEBUG;
  * - ERROR: Error messages (shown in production)
  */
 export const logger = {
+    level: 'info', // Default log level logging - only in development
+
     /**
      * Debug level logging - only in development
      * @param {...any} args - Arguments to log

@@ -107,7 +107,6 @@ export const DataProvider = ({ children }) => {
         if (rawTrips.length === 0 && charges.length === 0) return;
 
         const timer = setTimeout(() => {
-            logger.debug("[Auto-Sync] Data changed locally, triggering background sync...");
             googleSync.syncNow();
         }, 10000); // 10 second debounce to be safe and non-intrusive
 

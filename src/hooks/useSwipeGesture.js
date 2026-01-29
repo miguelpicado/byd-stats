@@ -57,7 +57,7 @@ export const useSwipeGesture = ({
             const touch = e.touches[0];
             touchStartRef.current = touch.clientX;
             touchStartYRef.current = touch.clientY;
-            swipeDirection = null;
+            swipeDirection = null; // Reset direction on new touch
             // Capture initial scroll position at start of touch
             initialScrollTop = container.scrollTop;
         };
@@ -71,13 +71,15 @@ export const useSwipeGesture = ({
 
             // Detect direction only once
             if (!swipeDirection) {
-                swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
+                if (diffX > 10 || diffY > 10) { // Add threshold for initial direction lock
+                    swipeDirection = diffX > diffY ? 'horizontal' : 'vertical';
+                }
             }
 
             const currentMode = layoutModeRef.current;
 
             // In vertical mode: prevent scroll if horizontal swipe (for tab change)
-            if (currentMode === 'vertical' && swipeDirection === 'horizontal' && diffX > 10) {
+            if (currentMode === 'vertical' && swipeDirection === 'horizontal') {
                 if (e.cancelable) e.preventDefault();
             }
             // In horizontal mode: ONLY prevent native scroll if:
@@ -119,11 +121,19 @@ export const useSwipeGesture = ({
                     }
                 }
             } else {
-                // Horizontal mode: vertical swipe to change tabs
-                // PRIORITY: native scroll always works
-                // Only change tab when:
-                // - Swipe DOWN + scroll at TOP = go to prev tab
-                // - Swipe UP + scroll at BOTTOM = go to next tab
+                // Horizontal mode:
+                // 1. Horizontal swipes to change tabs (standard)
+                if (swipeDirection === 'horizontal' && Math.abs(diffX) > minSwipeDistance) {
+                    if (diffX < 0 && currentIndex < tabs.length - 1) {
+                        // Swipe left - next tab
+                        handleTabClickRef.current(tabs[currentIndex + 1].id);
+                    } else if (diffX > 0 && currentIndex > 0) {
+                        // Swipe right - prev tab
+                        handleTabClickRef.current(tabs[currentIndex - 1].id);
+                    }
+                }
+
+                // 2. Vertical swipes (special scroll navigation)
                 if (swipeDirection === 'vertical' && Math.abs(diffY) > minSwipeDistance) {
                     const wasAtTop = initialScrollTop <= 5;
                     const scrollHeight = container.scrollHeight;
@@ -137,7 +147,6 @@ export const useSwipeGesture = ({
                         // Swipe up + at bottom = next tab
                         handleTabClickRef.current(tabs[currentIndex + 1].id);
                     }
-                    // In any other position, native scroll works
                 }
             }
 

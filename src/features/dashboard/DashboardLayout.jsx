@@ -12,7 +12,7 @@ const DashboardLayout = memo((props) => {
     const { layoutMode } = useLayout();
 
     if (layoutMode === 'vertical') {
-        return <MobileDashboardView {...props} />;
+        return <MobileDashboardView {...props} setSwipeContainer={props.setSwipeContainer} />;
     }
 
     return <DesktopDashboardView {...props} />;

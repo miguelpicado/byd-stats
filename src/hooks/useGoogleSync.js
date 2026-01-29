@@ -130,7 +130,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             if (Capacitor.isNativePlatform()) {
                 try {
                     await SocialLogin.logout({ provider: 'google' });
-                    logger.debug('Native SocialLogin logout completed');
                 } catch (nativeErr) {
                     logger.warn('Native logout error (ignoring):', nativeErr);
                 }
@@ -177,11 +176,38 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             let legacyImport = false;
 
             if (files && files.length > 0) {
-                fileId = files[0].id;
-                logger.debug(`[Sync] Using existing file: ${fileId}`);
+                // Sort by size (heaviest first)
+                // Note: size is string in API response
+                files.sort((a, b) => {
+                    const sizeA = parseInt(a.size || '0', 10);
+                    const sizeB = parseInt(b.size || '0', 10);
+                    return sizeB - sizeA;
+                });
+
+                // Pick the heaviest
+                const heaviestFile = files[0];
+                fileId = heaviestFile.id;
+
+                logger.info(`[Sync] Selected heaviest file: ${heaviestFile.name} (${heaviestFile.size} bytes)`);
+
+                // Cleanup: Delete duplicates (smaller files)
+                if (files.length > 1) {
+                    const duplicates = files.slice(1);
+                    logger.warn(`[Sync] Found ${duplicates.length} smaller duplicates. Cleaning up...`);
+
+                    // Process deletions in background to not block sync too much
+                    // or await if we want strict safety. Let's await to ensure clean state.
+                    for (const dup of duplicates) {
+                        try {
+                            await googleDriveService.deleteFile(dup.id);
+                            logger.info(`[Sync] Deleted duplicate: ${dup.id} (${dup.size} bytes)`);
+                        } catch (delErr) {
+                            logger.error(`[Sync] Failed to delete duplicate ${dup.id}`, delErr);
+                        }
+                    }
+                }
             } else if (localTrips.length === 0 && !newTripsData && totalCars === 1) {
                 // Recovery Mode for fresh install with only 1 car
-                logger.debug('[Sync] Checking for legacy backup (Recovery Mode)...');
                 const legacyFiles = await googleDriveService.listFiles('byd_stats_data.json');
                 if (legacyFiles && legacyFiles.length > 0) {
                     fileId = legacyFiles[0].id;
@@ -208,7 +234,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 merged = remoteData;
             } else {
                 // Standard Merge
-                logger.debug('[Sync] Merging local and remote data...');
                 merged = googleDriveService.mergeData(
                     { trips: currentTrips, settings: settings, charges: currentCharges },
                     remoteData
@@ -230,7 +255,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             // 5. Upload Merged State
             // If legacyImport, create NEW file (targetFileId = null)
             const uploadId = legacyImport ? null : fileId;
-            logger.debug(`[Sync] Uploading merged data (to: ${uploadId || 'NEW FILE'})...`);
             const uploadResult = await googleDriveService.uploadFile(merged, uploadId, targetFilename);
             const finalFileId = uploadResult.id;
 
@@ -259,7 +283,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 currentReg.lastUpdated = now;
 
                 await googleDriveService.updateRegistry(currentReg);
-                logger.debug('[Sync] Registry updated');
             } catch (regErr) {
                 logger.warn('[Sync] Registry update failed (non-critical)', regErr);
             }
@@ -323,7 +346,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     // Web login hook (only used on web)
     const webLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
-            logger.debug('Web Login Success:', tokenResponse);
             // Use ref to ensure we call the latest version with fresh state (localTrips)
             if (handleLoginSuccessRef.current) {
                 await handleLoginSuccessRef.current(tokenResponse.access_token);
@@ -339,7 +361,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     // Platform-aware login function
     const login = useCallback(async () => {
         const isNative = Capacitor.isNativePlatform();
-        logger.debug('Login attempt. Platform:', isNative ? 'Native' : 'Web');
 
         if (isNative) {
             // Native Android/iOS - use Capacitor SocialLogin
@@ -352,7 +373,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                         scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata']
                     }
                 });
-                logger.debug('Native Login Success:', JSON.stringify(result));
 
                 // Get access token from authentication - try multiple paths
                 const accessToken = result.result?.accessToken?.token
@@ -363,7 +383,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 // Get access token from authentication - try multiple paths
 
                 if (accessToken) {
-                    logger.debug('Access token found, handling success...');
                     await handleLoginSuccess(accessToken);
                 } else {
                     logger.error('No accessToken found. Result:', JSON.stringify(result));
@@ -548,7 +567,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             currentReg.lastUpdated = now;
 
             await googleDriveService.updateRegistry(currentReg);
-            logger.debug('Registry updated');
         } catch (e) {
             logger.error('Registry update failed', e);
         }
@@ -569,7 +587,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                         webClientId: "721727786401-l61n23pt50lq34789851610211116124.apps.googleusercontent.com"
                     }
                 }).catch(err => {
-                    logger.debug('SocialLogin init error', err);
+                    // logger.debug('SocialLogin init error', err);
                 });
             }
 

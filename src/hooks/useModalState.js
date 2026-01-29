@@ -120,7 +120,10 @@ const useModalState = () => {
     editingCharge,
     setEditingCharge,
     // Convenience boolean getters for common checks
-    isAnyModalOpen: Object.values(modals).some(Boolean),
+    isAnyModalOpen: Object.entries(modals).some(([key, value]) => {
+      if (key === 'registryCars') return false; // Skip the data prop
+      return Boolean(value);
+    }),
     openRegistryModal,
     closeRegistryModal
   }), [modals, openModal, closeModal, toggleModal, closeAllModals, openLegalModal, legalInitialSection, selectedTrip, selectedCharge, editingCharge, openRegistryModal, closeRegistryModal]);

@@ -35,7 +35,8 @@ const MobileDashboardView = memo(({
     fadingTab,
     backgroundLoad,
     onTripSelect,
-    onChargeSelect
+    onChargeSelect,
+    setSwipeContainer
 }) => {
     const { t } = useTranslation();
 
@@ -107,12 +108,14 @@ const MobileDashboardView = memo(({
                                 }}
                             >
                                 <div
+                                    ref={isActive ? setSwipeContainer : null}
                                     style={{
                                         height: '100%',
                                         width: '100%',
                                         overflowY: 'auto',
                                         display: isActive ? 'block' : 'none', // Truly hide background content from layout if inactive
-                                        padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING
+                                        padding: isCompact ? COMPACT_TAB_PADDING : TAB_PADDING,
+                                        touchAction: 'pan-y'
                                     }}
                                 >
                                     {(isActive || backgroundLoad) && (
