@@ -150,9 +150,9 @@ const OverviewContent = ({
         <div className={`${overviewSpacing}`}>
             {/* Stats Grid */}
             <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                {statItems.slice(0, 4).map(item => (
+                {statItems.slice(0, 4).map(({ key, ...item }) => (
                     <StatCard
-                        key={item.key}
+                        key={key}
                         isVerticalMode={isVertical}
                         isLarger={isLargerCard}
                         isCompact={isCompact}
