@@ -12,7 +12,8 @@
         "showAll": "Dena erakutsi",
         "noData": "Ez dago daturik erakusteko",
         "allTrips": "Bidaia guztiak",
-        "last10Trips": "Azken 10 bidaiak"
+        "last10Trips": "Azken 10 bidaiak",
+        "errorLoadingTab": "Errorea fitxa kargatzean"
     },
     "tabs": {
         "overview": "Laburpena",

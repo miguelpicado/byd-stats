@@ -4,7 +4,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { Plus } from '../Icons.jsx';
-import { BYD_RED } from '../../utils/constants';
+import { BYD_RED } from '@core/constants';
 
 /**
  * Floating Action Button component
@@ -36,3 +36,6 @@ FloatingActionButton.propTypes = {
 };
 
 export default FloatingActionButton;
+
+
+

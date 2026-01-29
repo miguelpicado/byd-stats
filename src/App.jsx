@@ -5,46 +5,46 @@ import { Link } from 'react-router-dom';
 
 import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
-import { formatMonth } from './utils/dateUtils';
+import { formatMonth } from '@core/dateUtils';
 
-import { logger } from './utils/logger';
-import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPACT_SPACE_Y } from './utils/constants';
-import './utils/chartSetup'; // Register Chart.js components
+import { logger } from '@core/logger';
+import { STORAGE_KEY, TRIP_HISTORY_KEY, TAB_PADDING, COMPACT_TAB_PADDING, COMPACT_SPACE_Y } from '@core/constants';
+import '@core/chartSetup'; // Register Chart.js components
 
 import { Toaster, toast } from 'react-hot-toast';
 
 // Components
-import { Zap, Clock, TrendingUp, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Shield, FileText, List, Battery, BYD_RED } from './components/Icons.jsx';
-import useModalState from './hooks/useModalState';
-import useAppVersion from './hooks/useAppVersion'; // Default export
-import { useApp } from './context/AppContext';
-import { useLayout } from './context/LayoutContext';
-import { useData } from './providers/DataProvider';
-import VirtualizedTripList from './components/lists/VirtualizedTripList';
-import VirtualizedChargeList from './components/lists/VirtualizedChargeList';
+import { Zap, Clock, TrendingUp, Activity, BarChart3, Filter, Settings, Database, HelpCircle, GitHub, Maximize, Minimize, Shield, FileText, List, Battery, BYD_RED } from '@components/Icons.jsx';
+import useModalState from '@hooks/useModalState';
+import useAppVersion from '@hooks/useAppVersion'; // Default export
+import { useApp } from '@/context/AppContext';
+import { useLayout } from '@/context/LayoutContext';
+import { useData } from '@/providers/DataProvider';
+import VirtualizedTripList from '@components/lists/VirtualizedTripList';
+import VirtualizedChargeList from '@components/lists/VirtualizedChargeList';
 
 // New Extracted Hooks
-import { useChartDimensions } from './hooks/useChartDimensions';
-import { useTabNavigation } from './hooks/useTabNavigation';
-import { useChargeImporter } from './hooks/useChargeImporter';
+import { useChartDimensions } from '@hooks/useChartDimensions';
+import { useTabNavigation } from '@hooks/useTabNavigation';
+import { useChargeImporter } from '@hooks/useChargeImporter';
 
 // Lazy load modals for code splitting
-const LandingPageLazy = lazy(() => import('./pages/LandingPage'));
-const PWAManagerLazy = lazy(() => import('./components/PWAManager'));
+const LandingPageLazy = lazy(() => import('@/pages/LandingPage'));
+const PWAManagerLazy = lazy(() => import('@components/PWAManager'));
 
-import ModalCoordinator from './components/common/ModalCoordinator';
-import MainLayout from './components/layout/MainLayout';
+import ModalCoordinator from '@components/common/ModalCoordinator';
+import MainLayout from '@components/layout/MainLayout';
 // New Feature Components
-import Header from './features/navigation/Header';
-import TabNavigation from './features/navigation/TabNavigation';
-import DashboardLayout from './features/dashboard/DashboardLayout';
-import DesktopSidebar from './components/layout/DesktopSidebar'; // Restored
+import Header from '@features/navigation/Header';
+import TabNavigation from '@features/navigation/TabNavigation';
+import DashboardLayout from '@features/dashboard/DashboardLayout';
+import DesktopSidebar from '@components/layout/DesktopSidebar'; // Restored
 
-import ErrorBoundary from './components/common/ErrorBoundary';
-import { useSwipeGesture } from './hooks/useSwipeGesture';
+import ErrorBoundary from '@components/common/ErrorBoundary';
+import { useSwipeGesture } from '@hooks/useSwipeGesture';
 // Lazy load heavy views to optimize bundle size
-const AllTripsViewLazy = lazy(() => import('./features/dashboard/AllTripsView'));
-const AllChargesViewLazy = lazy(() => import('./features/dashboard/AllChargesView'));
+const AllTripsViewLazy = lazy(() => import('@features/dashboard/AllTripsView'));
+const AllChargesViewLazy = lazy(() => import('@features/dashboard/AllChargesView'));
 
 // Helper to determine if a tab should have fade-in animation
 // Removed: getTabClassName moved to TabsManager
@@ -489,7 +489,7 @@ export default function BYDStatsAnalyzer() {
     );
   }
 
-  if (rawTrips.length === 0) {
+  if (rawTrips.length === 0 && charges.length === 0) {
     return (
       <>
         <Suspense fallback={null}>
@@ -716,7 +716,50 @@ export default function BYDStatsAnalyzer() {
           style={{ touchAction: 'pan-y' }}
         />
 
-        <Toaster position="bottom-center" />
+        <Toaster
+          position="bottom-center"
+          containerStyle={{
+            bottom: 100, // Move it up to clear the bottom navigation bar
+          }}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: 'rgba(15, 23, 42, 0.85)',
+              color: '#fff',
+              backdropFilter: 'blur(12px) saturate(180%)',
+              border: '1px solid rgba(255, 255, 255, 0.1)',
+              borderRadius: '16px',
+              padding: '12px 20px',
+              fontSize: '14px',
+              fontWeight: '500',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2)',
+              maxWidth: '350px',
+            },
+            success: {
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#fff',
+              },
+              style: {
+                border: '1px solid rgba(16, 185, 129, 0.3)',
+              }
+            },
+            error: {
+              iconTheme: {
+                primary: '#EA0029',
+                secondary: '#fff',
+              },
+              style: {
+                border: '1px solid rgba(234, 0, 41, 0.3)',
+              }
+            },
+            loading: {
+              style: {
+                background: 'rgba(30, 41, 59, 0.9)',
+              }
+            }
+          }}
+        />
 
         {/* PWA Manager */}
         <Suspense fallback={null}>
@@ -729,3 +772,4 @@ export default function BYDStatsAnalyzer() {
     </MainLayout>
   );
 }
+

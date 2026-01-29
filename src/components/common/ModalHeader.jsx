@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { BYD_RED } from '../../utils/constants';
+import { BYD_RED } from '@core/constants';
 import { Plus } from '../Icons';
 
 /**
@@ -41,3 +41,6 @@ ModalHeader.propTypes = {
 };
 
 export default ModalHeader;
+
+
+

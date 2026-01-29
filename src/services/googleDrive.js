@@ -1,4 +1,4 @@
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
@@ -57,7 +57,7 @@ export const googleDriveService = {
   listFiles: async (filename = DB_FILENAME) => {
     try {
       const query = `name = '${filename}'`;
-      const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime)&pageSize=10&q=${encodeURIComponent(query)}`;
+      const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=10&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
 
       const response = await fetch(url, {
         headers: googleDriveService._getHeaders()
@@ -71,6 +71,30 @@ export const googleDriveService = {
       return data.files;
     } catch (error) {
       logger.error('Error listing files', error);
+      throw error;
+    }
+  },
+
+  /**
+   * List ALL BYD Stats database files (including UUIDs)
+   */
+  listAllDatabaseFiles: async () => {
+    try {
+      const query = `name contains 'byd_stats_data' and mimeType = 'application/json'`;
+      const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=20&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
+
+      const response = await fetch(url, {
+        headers: googleDriveService._getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error listing all files: ${response.status} ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.files;
+    } catch (error) {
+      logger.error('Error listing all database files', error);
       throw error;
     }
   },
@@ -169,6 +193,62 @@ export const googleDriveService = {
   },
 
   /**
+   * Delete a file
+   */
+  deleteFile: async (fileId) => {
+    try {
+      const url = `${DRIVER_API_URL}/files/${fileId}`;
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: googleDriveService._getHeaders()
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error deleting file: ${response.status} ${response.statusText}`);
+      }
+      return true;
+    } catch (error) {
+      logger.error('Error deleting file', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get Registry File
+   */
+  getRegistry: async () => {
+    try {
+      const files = await googleDriveService.listFiles('byd_stats_registry.json');
+      if (files && files.length > 0) {
+        const fileContent = await googleDriveService.downloadFile(files[0].id);
+        // Normalize
+        return {
+          lastUpdated: fileContent.lastUpdated,
+          cars: Array.isArray(fileContent.cars) ? fileContent.cars : []
+        };
+      }
+      return null;
+    } catch (e) {
+      logger.error('Error getting registry', e);
+      return null;
+    }
+  },
+
+  /**
+   * Update Registry File
+   */
+  updateRegistry: async (registryData) => {
+    try {
+      const files = await googleDriveService.listFiles('byd_stats_registry.json');
+      const fileId = files && files.length > 0 ? files[0].id : null;
+      await googleDriveService.uploadFile(registryData, fileId, 'byd_stats_registry.json');
+    } catch (e) {
+      logger.error('Error updating registry', e);
+      throw e;
+    }
+  },
+
+  /**
    * Merge logic:
    * Returns merged { trips, settings, charges }
    */
@@ -239,3 +319,4 @@ export const googleDriveService = {
     };
   }
 };
+

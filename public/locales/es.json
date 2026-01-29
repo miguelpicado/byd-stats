@@ -12,7 +12,8 @@
         "showAll": "Mostrar todo",
         "noData": "No hay datos para mostrar",
         "allTrips": "Todos los viajes",
-        "last10Trips": "Últimos 10 viajes"
+        "last10Trips": "Últimos 10 viajes",
+        "errorLoadingTab": "Error al cargar la pestaña"
     },
     "tabs": {
         "overview": "Resumen",
@@ -548,7 +549,10 @@
         "conflictDescription": "Hay diferencias entre tus ajustes locales y los de la nube. ¿Qué deseas hacer?",
         "keepLocal": "Mantener Local",
         "useCloud": "Usar Nube",
-        "mergeBoth": "Combinar Ambos"
+        "mergeBoth": "Combinar Ambos",
+        "syncing": "Sincronizando...",
+        "error": "Error de sincronización",
+        "upToDate": "Sincronizado"
     },
     "hybrid": {
         "vehicleType": "Tipo de vehículo",

@@ -3,8 +3,8 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { calculateScore, getScoreColor } from '../../utils/formatters';
-import { formatDate, formatTime } from '../../utils/dateUtils';
+import { calculateScore, getScoreColor } from '@core/formatters';
+import { formatDate, formatTime } from '@core/dateUtils';
 
 /**
  * Trip card component displaying trip details with efficiency score
@@ -114,3 +114,6 @@ TripCard.propTypes = {
 TripCard.displayName = 'TripCard';
 
 export default TripCard;
+
+
+

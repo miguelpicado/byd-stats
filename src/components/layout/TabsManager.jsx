@@ -1,6 +1,6 @@
 import React, { Suspense, memo } from 'react';
 import { AlertCircle } from '../Icons';
-import { TAB_PADDING, COMPACT_TAB_PADDING } from '../../utils/constants';
+import { TAB_PADDING, COMPACT_TAB_PADDING } from '@core/constants';
 
 // Tabs
 import OverviewTab from '../tabs/OverviewTab';
@@ -372,3 +372,6 @@ const TabsManager = memo(({
 TabsManager.displayName = 'TabsManager';
 
 export default TabsManager;
+
+
+

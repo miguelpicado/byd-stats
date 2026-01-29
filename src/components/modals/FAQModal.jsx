@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HelpCircle, ChevronDown, ChevronUp } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
-import { BYD_RED } from '../../utils/constants';
+import { BYD_RED } from '@core/constants';
 import { useData } from '../../providers/DataProvider';
 
 const FAQItem = ({ title, content }) => {
@@ -61,10 +61,10 @@ const FAQModal = () => {
     ];
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-backdrop" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
-                className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[80vh]"
+                className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-lg shadow-xl overflow-hidden flex flex-col max-h-[80vh] animate-modal-content"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
@@ -95,3 +95,6 @@ const FAQModal = () => {
 };
 
 export default FAQModal;
+
+
+

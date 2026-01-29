@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { useApp } from '../context/AppContext';
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 
 const ThemeManager = () => {
     const { settings } = useApp();
@@ -68,3 +68,5 @@ const ThemeManager = () => {
 };
 
 export default ThemeManager;
+
+
