@@ -212,12 +212,12 @@ const PatternsTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
           <div key="bar-container-h" style={{ width: '100%', height: patternsChartHeight }}>
-            <BarJS key="patterns-bar-h" redraw={true} options={BAR_CHART_OPTIONS_HORIZONTAL} data={barChartData} />
+            <BarJS key={`patterns-bar-h-${isActive}`} options={BAR_CHART_OPTIONS_HORIZONTAL} data={barChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
           <div key="radar-container-h" style={{ width: '100%', height: patternsChartHeight }}>
-            <RadarJS key="patterns-radar-h" redraw={true} options={RADAR_CHART_OPTIONS_HORIZONTAL} data={radarChartDataHorizontal} />
+            <RadarJS key={`patterns-radar-h-${isActive}`} options={RADAR_CHART_OPTIONS_HORIZONTAL} data={radarChartDataHorizontal} />
           </div>
         </ChartCard>
       </div>
