@@ -164,8 +164,11 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         setError(null);
         try {
             const targetFilename = getTargetFilename();
+            logger.info(`[Sync] Active Car ID: ${activeCarId || 'None'} | Target Filename: ${targetFilename}`);
+
             // 1. Find or Create File
             const files = await googleDriveService.listFiles(targetFilename);
+            logger.info(`[Sync] Files found for ${targetFilename}: ${files?.length || 0}`, files);
             let fileId = null;
             let legacyImport = false;
 
