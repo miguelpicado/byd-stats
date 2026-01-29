@@ -148,6 +148,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, []);
 
     const performSync = useCallback(async (newTripsData = null, options = {}) => {
+        logger.info(`Sync initiated. Local trips: ${localTrips?.length}, New data: ${newTripsData?.length}, Online: ${navigator.onLine}`);
         if (!navigator.onLine) {
             setError("Sin conexión a Internet");
             setIsSyncing(false);
@@ -192,6 +193,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             const isFreshLogin = localTrips.length === 0 && !newTripsData && remoteData.trips.length > 0;
 
             if (isFreshLogin) {
+                logger.warn(`Fresh login detected (Local: ${localTrips.length}, Remote: ${remoteData.trips.length}). Overwriting local data.`);
                 logger.debug('Fresh login detected: Loading data from Cloud.');
                 setLocalTrips(remoteData.trips);
                 if (remoteData.settings && Object.keys(remoteData.settings).length > 0) {
@@ -279,6 +281,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                     { trips: tripsToMerge, settings: settings, charges: currentCharges },
                     remoteData
                 );
+                logger.info(`Merge result: ${merged.trips.length} trips (Remote was: ${remoteData.trips.length})`);
 
                 // Update Local State
                 setLocalTrips(merged.trips);
