@@ -2,6 +2,7 @@
 // Form for adding/editing charging sessions
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED, DEFAULT_FUEL_PRICE } from '../../utils/constants';
@@ -106,12 +107,12 @@ const AddChargeModal = () => {
         // Basic validation based on type
         if (isElectric) {
             if (!formData.kwhCharged || !formData.odometer || !formData.finalPercentage) {
-                alert(t('charges.fillRequired'));
+                toast.error(t('charges.fillRequired'));
                 return;
             }
         } else {
             if (!formData.litersCharged || !formData.odometer) {
-                alert(t('charges.fillRequired'));
+                toast.error(t('charges.fillRequired'));
                 return;
             }
         }

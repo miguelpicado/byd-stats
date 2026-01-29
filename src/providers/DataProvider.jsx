@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { logger } from '../utils/logger';
+import { toast } from 'react-hot-toast';
 import { useApp } from '../context/AppContext';
 import useAppData from '../hooks/useAppData';
 import { useDatabase } from '../hooks/useDatabase';
@@ -125,8 +126,10 @@ export const DataProvider = ({ children }) => {
             const lines = text.split('\n').filter(line => line.trim());
 
             if (lines.length < 2) {
-                alert(t('errors.noDataFound'));
-                return;
+                if (lines.length < 2) {
+                    toast.error(t('errors.noDataFound'));
+                    return;
+                }
             }
 
             const chargesArray = [];
@@ -216,18 +219,18 @@ export const DataProvider = ({ children }) => {
                         types: newChargerTypes.map(ct => ct.name).join(', ')
                     });
                 }
-                alert(message);
+                toast.success(message);
 
                 // Auto-sync after import
                 if (googleSync.isAuthenticated) {
                     googleSync.syncNow();
                 }
             } else {
-                alert(t('errors.noDataFound'));
+                toast.error(t('errors.noDataFound'));
             }
         } catch (error) {
             logger.error('Error loading charge registry:', error);
-            alert(t('errors.processingFile') || 'Error processing file');
+            toast.error(t('errors.processingFile') || 'Error processing file');
         }
     }, [settings, updateSettings, chargesData, googleSync, t]);
 
@@ -274,8 +277,33 @@ export const DataProvider = ({ children }) => {
         ...modalState,
     };
 
+    // Memoize the context value to prevent unnecessary re-renders
+    const memoizedValue = useMemo(() => value, [
+        // Dependencies for value object
+        // 1. Data State
+        rawTrips, filtered, data, charges, tripHistory,
+
+        // 2. App Data Actions (spread from restAppData) - hooks should yield stable functions
+        restAppData,
+
+        // 3. Charges Actions (spread from restChargesData)
+        replaceCharges, restChargesData,
+
+        // 4. Safe Actions
+        confirmation.clearData, confirmation.saveToHistory, confirmation.loadFromHistory, confirmation.clearHistory,
+
+        // 5. Confirmation UI
+        confirmation.confirmModalState, confirmation.closeConfirmation, confirmation.showConfirmation,
+
+        // 6. Sub-contexts (Memoized in their own hooks now)
+        database, fileHandling, googleSync, modalState,
+
+        // 7. Functions defined here
+        setRawTrips, loadFile, exportData, loadChargeRegistry
+    ]);
+
     return (
-        <DataContext.Provider value={value}>
+        <DataContext.Provider value={memoizedValue}>
             {children}
         </DataContext.Provider>
     );

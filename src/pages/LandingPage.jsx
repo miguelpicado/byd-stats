@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '../components/Icons'; // Assuming BYD_RED is exported from Icons or another constant file
 import { Upload, Cloud } from '../components/Icons';
@@ -26,7 +27,7 @@ const LandingPage = ({
         if (f) {
             const fileName = f.name.toLowerCase();
             if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-                alert(t('errors.invalidFile'));
+                toast.error(t('errors.invalidFile'));
                 return;
             }
             onFileProcess(f, false);
@@ -38,7 +39,7 @@ const LandingPage = ({
         if (f) {
             const fileName = f.name.toLowerCase();
             if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
-                alert(t('errors.invalidFile'));
+                toast.error(t('errors.invalidFile'));
                 e.target.value = '';
                 return;
             }
