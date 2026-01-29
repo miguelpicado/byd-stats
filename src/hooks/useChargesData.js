@@ -278,7 +278,7 @@ const useChargesData = (activeCarId = null) => {
         };
     }, [charges]);
 
-    return {
+    return useMemo(() => ({
         charges,
         addCharge,
         addMultipleCharges,
@@ -289,7 +289,18 @@ const useChargesData = (activeCarId = null) => {
         replaceCharges,
         exportCharges,
         summary
-    };
+    }), [
+        charges,
+        addCharge,
+        addMultipleCharges,
+        updateCharge,
+        deleteCharge,
+        getChargeById,
+        clearCharges,
+        replaceCharges,
+        exportCharges,
+        summary
+    ]);
 };
 
 export default useChargesData;

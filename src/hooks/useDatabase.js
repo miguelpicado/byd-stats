@@ -1,7 +1,8 @@
 // BYD Stats - useDatabase Hook
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { logger } from '@utils/logger';
+import { toast } from 'react-hot-toast';
 
 /**
  * Custom hook for database operations
@@ -123,7 +124,7 @@ export function useDatabase() {
                 }
 
                 if (rows.length === 0) {
-                    alert(`CSV leído (${lines.length} líneas) pero 0 filas válidas detectadas. Verifica el formato.`);
+                    toast.error(`CSV leído (${lines.length} líneas) pero 0 filas válidas detectadas. Verifica el formato.`);
                     logger.warn(`CSV Parsing failed. Lines: ${lines.length}, Rows: 0`);
                     return [];
                 }
@@ -186,7 +187,7 @@ export function useDatabase() {
             }
         } catch (e) {
             const msg = `Error importando: ${e.message}`;
-            alert(msg); // Make error visible
+            toast.error(msg);
             setError(e.message);
             logger.error('Database/File processing error:', e);
             return null;
@@ -262,7 +263,7 @@ export function useDatabase() {
         return true;
     }, []);
 
-    return {
+    return useMemo(() => ({
         sqlReady,
         loading,
         error,
@@ -271,7 +272,15 @@ export function useDatabase() {
         exportDatabase,
         validateFile,
         setError
-    };
+    }), [
+        sqlReady,
+        loading,
+        error,
+        initSql,
+        processDB,
+        exportDatabase,
+        validateFile
+    ]);
 }
 
 export default useDatabase;

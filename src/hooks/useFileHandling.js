@@ -226,13 +226,13 @@ export function useFileHandling() {
         throw new Error('Unknown file source');
     };
 
-    return {
+    return useMemo(() => ({
         pendingFile,
         error,
         clearPendingFile,
         readFile,
         isNative
-    };
+    }), [pendingFile, error, clearPendingFile, readFile, isNative]);
 }
 
 /**

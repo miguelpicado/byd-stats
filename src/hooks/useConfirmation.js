@@ -93,7 +93,7 @@ export const useConfirmation = ({
         );
     }, [showConfirmation, rawClearHistory, t]);
 
-    return {
+    return useMemo(() => ({
         confirmModalState,
         closeConfirmation,
         showConfirmation,
@@ -101,5 +101,5 @@ export const useConfirmation = ({
         saveToHistory,
         loadFromHistory,
         clearHistory
-    };
+    }), [confirmModalState, closeConfirmation, showConfirmation, clearData, saveToHistory, loadFromHistory, clearHistory]);
 };

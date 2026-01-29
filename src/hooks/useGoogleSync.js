@@ -384,7 +384,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, [webLogin, handleLoginSuccess]);
 
 
-    return {
+    return useMemo(() => ({
         isAuthenticated,
         isSyncing,
         lastSyncTime,
@@ -396,5 +396,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         login,
         logout,
         syncNow: (data, options) => performSync(data, options)
-    };
+    }), [
+        isAuthenticated, isSyncing, lastSyncTime, error, userProfile, pendingConflict,
+        resolveConflict, login, logout, performSync
+    ]);
 }

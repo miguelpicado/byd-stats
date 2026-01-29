@@ -221,7 +221,8 @@ const useAppData = (settings, charges = [], activeCarId = null) => {
         return true;
     }, [historyKey]);
 
-    return {
+    // Memoize the return value to ensure reference stability
+    return useMemo(() => ({
         // Trip data
         rawTrips,
         setRawTrips,
@@ -248,7 +249,12 @@ const useAppData = (settings, charges = [], activeCarId = null) => {
         saveToHistory,
         loadFromHistory,
         clearHistory
-    };
+    }), [
+        rawTrips, tripHistory,
+        filterType, selMonth, dateFrom, dateTo,
+        months, filtered, data,
+        clearData, saveToHistory, loadFromHistory, clearHistory
+    ]);
 };
 
 export default useAppData;
