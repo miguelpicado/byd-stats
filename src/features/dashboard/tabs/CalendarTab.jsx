@@ -14,9 +14,9 @@ import {
     parseISO
 } from 'date-fns';
 import { enGB, es } from 'date-fns/locale';
-import { ChevronLeft, ChevronDown as ChevronRight, Car, Zap, Calendar as CalendarIcon } from '../Icons'; // ChevronRight mapped to ChevronDown rotated or correct icon if exists
-import DayDetailsModal from '../modals/DayDetailsModal';
-import { useData } from '../../providers/DataProvider';
+import { ChevronLeft, ChevronDown as ChevronRight, Car, Zap, Calendar as CalendarIcon } from '@components/Icons'; // ChevronRight mapped to ChevronDown rotated or correct icon if exists
+import DayDetailsModal from '@components/modals/DayDetailsModal';
+import { useData } from '@/providers/DataProvider';
 
 const CalendarTab = ({
     trips = [],
@@ -226,3 +226,5 @@ const CalendarTab = ({
 };
 
 export default CalendarTab;
+
+

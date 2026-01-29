@@ -4,7 +4,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { HYBRID_COLORS } from '../../utils/constants';
+import { HYBRID_COLORS } from '@core/constants';
 
 /**
  * HybridStatsCard - Shows energy split between electric and fuel modes
@@ -120,3 +120,6 @@ HybridStatsCard.propTypes = {
 };
 
 export default HybridStatsCard;
+
+
+

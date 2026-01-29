@@ -3,9 +3,9 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { BYD_RED } from '../../utils/constants';
-import { formatDate, formatTime } from '../../utils/dateUtils';
-import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '../../utils/formatters';
+import { BYD_RED } from '@core/constants';
+import { formatDate, formatTime } from '@core/dateUtils';
+import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons.jsx';
 
 import { useApp } from '../../context/AppContext';
@@ -53,13 +53,13 @@ const TripDetailModal = () => {
     if (!isOpen || !trip) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-backdrop" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="trip-detail-modal-title"
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700"
+                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700 animate-modal-content"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header con título, fecha y score en la misma fila */}
@@ -198,3 +198,6 @@ const TripDetailModal = () => {
 TripDetailModal.propTypes = {};
 
 export default TripDetailModal;
+
+
+

@@ -5,7 +5,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { BYD_RED, DEFAULT_FUEL_PRICE } from '../../utils/constants';
+import { BYD_RED, DEFAULT_FUEL_PRICE } from '@core/constants';
 import { Battery, Fuel } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { useApp } from '../../context/AppContext';
@@ -152,14 +152,14 @@ const AddChargeModal = () => {
     const labelClass = "block text-sm text-slate-600 dark:text-slate-400 mb-1.5";
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-backdrop" onClick={onClose}>
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="add-charge-modal-title"
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-md w-full max-h-[85vh] overflow-y-auto border border-slate-200 dark:border-slate-700"
+                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-md w-full max-h-[85vh] overflow-y-auto border border-slate-200 dark:border-slate-700 animate-modal-content"
                 style={{ paddingBottom: 'max(20px, env(safe-area-inset-bottom))' }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -391,3 +391,6 @@ const AddChargeModal = () => {
 AddChargeModal.propTypes = {};
 
 export default AddChargeModal;
+
+
+

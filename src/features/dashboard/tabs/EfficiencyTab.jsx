@@ -2,10 +2,10 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Scatter as ScatterJS } from 'react-chartjs-2';
-import { Battery, Zap, MapPin, TrendingUp, Fuel, BYD_RED } from '../Icons.jsx';
-import StatCard from '../ui/StatCard';
-import ChartCard from '../ui/ChartCard';
-import { useLayout } from '../../context/LayoutContext';
+import { Battery, Zap, MapPin, TrendingUp, Fuel, BYD_RED } from '@components/Icons.jsx';
+import StatCard from '@components/ui/StatCard';
+import ChartCard from '@components/ui/ChartCard';
+import { useLayout } from '@/context/LayoutContext';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
@@ -380,3 +380,5 @@ const EfficiencyTab = React.memo(({
 EfficiencyTab.displayName = 'EfficiencyTab';
 
 export default EfficiencyTab;
+
+

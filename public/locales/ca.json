@@ -12,7 +12,8 @@
         "showAll": "Mostrar tot",
         "noData": "No hi ha dades per mostrar",
         "allTrips": "Tots els viatges",
-        "last10Trips": "Últims 10 viatges"
+        "last10Trips": "Últims 10 viatges",
+        "errorLoadingTab": "Error en carregar la pestanya"
     },
     "tabs": {
         "overview": "Resum",

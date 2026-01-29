@@ -13,6 +13,8 @@ const HelpModalLazy = React.lazy(() => import('../modals/HelpModal'));
 const UploadOptionsModalLazy = React.lazy(() => import('../modals/UploadOptionsModal'));
 const SyncConflictModalLazy = React.lazy(() => import('../modals/SyncConflictModal'));
 const ConfirmationModalLazy = React.lazy(() => import('../common/ConfirmationModal'));
+const CloudBackupsModalLazy = React.lazy(() => import('../modals/CloudBackupsModal'));
+const RegistryRestoreModalLazy = React.lazy(() => import('../modals/RegistryRestoreModal'));
 
 const ModalContainer = () => {
     const { modals, googleSync, confirmModalState } = useData();
@@ -51,8 +53,22 @@ const ModalContainer = () => {
 
             {/* Confirmation Modal */}
             {confirmModalState?.isOpen && <ConfirmationModalLazy />}
+
+            {/* Cloud Backups Modal */}
+            {modals.backups && <CloudBackupsModalLazy />}
+
+            {/* Registry Restore Modal */}
+            {modals.registryRestore && (
+                <RegistryRestoreModalLazy
+                    registryCars={modals.registryCars}
+                    onRestore={googleSync.restoreFromRegistry} // We need to implement this in googleSync
+                    onSkip={googleSync.skipRegistryRestore}   // And this
+                />
+            )}
         </Suspense>
     );
 };
 
 export default React.memo(ModalContainer);
+
+

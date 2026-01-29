@@ -2,6 +2,7 @@ import React, { Suspense, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle } from '@components/Icons';
 import { TAB_PADDING, COMPACT_TAB_PADDING } from '@utils/constants';
+import ErrorBoundary from '@components/common/ErrorBoundary';
 
 // Contexts & Hooks
 import { useData } from '@/providers/DataProvider';
@@ -10,18 +11,18 @@ import { useLayout } from '@/context/LayoutContext';
 import { useChartDimensions } from '@hooks/useChartDimensions';
 
 // Tabs
-import OverviewTab from '@components/tabs/OverviewTab';
+import OverviewTab from '@tabs/OverviewTab';
 import TabFallback from '@components/common/TabFallback';
 import FloatingActionButton from '@components/common/FloatingActionButton';
 
 // Lazy loaded tabs
-const CalendarTab = React.lazy(() => import('@components/tabs/CalendarTab'));
-const HistoryTab = React.lazy(() => import('@components/tabs/HistoryTab'));
-const RecordsTab = React.lazy(() => import('@components/tabs/RecordsTab'));
-const TrendsTab = React.lazy(() => import('@components/tabs/TrendsTab'));
-const PatternsTab = React.lazy(() => import('@components/tabs/PatternsTab'));
-const EfficiencyTab = React.lazy(() => import('@components/tabs/EfficiencyTab'));
-const ChargesTab = React.lazy(() => import('@components/tabs/ChargesTab'));
+const CalendarTab = React.lazy(() => import('@tabs/CalendarTab'));
+const HistoryTab = React.lazy(() => import('@tabs/HistoryTab'));
+const RecordsTab = React.lazy(() => import('@tabs/RecordsTab'));
+const TrendsTab = React.lazy(() => import('@tabs/TrendsTab'));
+const PatternsTab = React.lazy(() => import('@tabs/PatternsTab'));
+const EfficiencyTab = React.lazy(() => import('@tabs/EfficiencyTab'));
+const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
 
 /**
  * Mobile Dashboard View - Optimized for touch gestures and vertical slider navigation
@@ -117,99 +118,115 @@ const MobileDashboardView = memo(({
                                     {(isActive || backgroundLoad) && (
                                         <>
                                             {tab.id === 'overview' && (
-                                                <OverviewTab
-                                                    summary={summary}
-                                                    monthly={monthly}
-                                                    tripDist={tripDist}
-                                                    smallChartHeight={smallChartHeight}
-                                                    overviewSpacing={overviewSpacingVertical}
-                                                    onAddCharge={handleAddCharge}
-                                                    trips={rawTrips}
-                                                    settings={settings}
-                                                    isActive={isActive}
-                                                />
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <OverviewTab
+                                                        summary={summary}
+                                                        monthly={monthly}
+                                                        tripDist={tripDist}
+                                                        smallChartHeight={smallChartHeight}
+                                                        overviewSpacing={overviewSpacingVertical}
+                                                        onAddCharge={handleAddCharge}
+                                                        trips={rawTrips}
+                                                        settings={settings}
+                                                        isActive={isActive}
+                                                    />
+                                                </ErrorBoundary>
                                             )}
                                             {tab.id === 'calendar' && (
-                                                <Suspense fallback={<TabFallback />}>
-                                                    <CalendarTab
-                                                        trips={rawTrips}
-                                                        charges={charges}
-                                                        isActive={isActive}
-                                                        onTripSelect={onTripSelect}
-                                                        onChargeSelect={onChargeSelect}
-                                                    />
-                                                </Suspense>
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <Suspense fallback={<TabFallback />}>
+                                                        <CalendarTab
+                                                            trips={rawTrips}
+                                                            charges={charges}
+                                                            isActive={isActive}
+                                                            onTripSelect={onTripSelect}
+                                                            onChargeSelect={onChargeSelect}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
                                             )}
                                             {tab.id === 'trends' && (
-                                                <Suspense fallback={<TabFallback />}>
-                                                    <TrendsTab
-                                                        filtered={filtered}
-                                                        summary={summary}
-                                                        monthly={monthly}
-                                                        daily={daily}
-                                                        settings={settings}
-                                                        largeChartHeight={largeChartHeight}
-                                                        isActive={isActive}
-                                                    />
-                                                </Suspense>
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <Suspense fallback={<TabFallback />}>
+                                                        <TrendsTab
+                                                            filtered={filtered}
+                                                            summary={summary}
+                                                            monthly={monthly}
+                                                            daily={daily}
+                                                            settings={settings}
+                                                            largeChartHeight={largeChartHeight}
+                                                            isActive={isActive}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
                                             )}
                                             {tab.id === 'patterns' && (
-                                                <Suspense fallback={<TabFallback />}>
-                                                    <PatternsTab
-                                                        weekday={weekday}
-                                                        hourly={hourly}
-                                                        summary={summary}
-                                                        patternsSpacing={patternsSpacing}
-                                                        patternsChartHeight={patternsChartHeight}
-                                                        isActive={isActive}
-                                                    />
-                                                </Suspense>
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <Suspense fallback={<TabFallback />}>
+                                                        <PatternsTab
+                                                            weekday={weekday}
+                                                            hourly={hourly}
+                                                            summary={summary}
+                                                            patternsSpacing={patternsSpacing}
+                                                            patternsChartHeight={patternsChartHeight}
+                                                            isActive={isActive}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
                                             )}
                                             {tab.id === 'efficiency' && (
-                                                <Suspense fallback={<TabFallback />}>
-                                                    <EfficiencyTab
-                                                        summary={summary}
-                                                        monthly={monthly}
-                                                        effScatter={effScatter}
-                                                        largeChartHeight={largeChartHeight}
-                                                        isActive={isActive}
-                                                    />
-                                                </Suspense>
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <Suspense fallback={<TabFallback />}>
+                                                        <EfficiencyTab
+                                                            summary={summary}
+                                                            monthly={monthly}
+                                                            effScatter={effScatter}
+                                                            largeChartHeight={largeChartHeight}
+                                                            isActive={isActive}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
                                             )}
                                             {tab.id === 'records' && (
-                                                <Suspense fallback={<TabFallback />}>
-                                                    <RecordsTab
-                                                        summary={summary}
-                                                        top={top}
-                                                        recordsItemPadding={recordsItemPadding}
-                                                        recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                                                        recordsListHeightHorizontal={recordsListHeightHorizontal}
-                                                        isActive={isActive}
-                                                    />
-                                                </Suspense>
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <Suspense fallback={<TabFallback />}>
+                                                        <RecordsTab
+                                                            summary={summary}
+                                                            top={top}
+                                                            recordsItemPadding={recordsItemPadding}
+                                                            recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
+                                                            recordsListHeightHorizontal={recordsListHeightHorizontal}
+                                                            isActive={isActive}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
                                             )}
                                             {tab.id === 'history' && (
-                                                <Suspense fallback={<TabFallback />}>
-                                                    <HistoryTab
-                                                        filtered={filtered}
-                                                        openTripDetail={onTripSelect}
-                                                        setShowAllTripsModal={handleShowAllTrips}
-                                                        isActive={isActive}
-                                                    />
-                                                </Suspense>
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <Suspense fallback={<TabFallback />}>
+                                                        <HistoryTab
+                                                            filtered={filtered}
+                                                            openTripDetail={onTripSelect}
+                                                            setShowAllTripsModal={handleShowAllTrips}
+                                                            isActive={isActive}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
                                             )}
                                             {tab.id === 'charges' && (
-                                                <Suspense fallback={<TabFallback />}>
-                                                    <ChargesTab
-                                                        charges={charges}
-                                                        chargerTypes={settings.chargerTypes || []}
-                                                        onChargeClick={onChargeSelect}
-                                                        onAddClick={handleAddCharge}
-                                                        setShowAllChargesModal={handleShowAllCharges}
-                                                        batterySize={settings.batterySize}
-                                                        isActive={isActive}
-                                                    />
-                                                </Suspense>
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <Suspense fallback={<TabFallback />}>
+                                                        <ChargesTab
+                                                            charges={charges}
+                                                            chargerTypes={settings.chargerTypes || []}
+                                                            onChargeClick={onChargeSelect}
+                                                            onAddClick={handleAddCharge}
+                                                            setShowAllChargesModal={handleShowAllCharges}
+                                                            batterySize={settings.batterySize}
+                                                            isActive={isActive}
+                                                        />
+                                                    </Suspense>
+                                                </ErrorBoundary>
                                             )}
                                         </>
                                     )}
@@ -234,3 +251,5 @@ const MobileDashboardView = memo(({
 MobileDashboardView.displayName = 'MobileDashboardView';
 
 export default MobileDashboardView;
+
+

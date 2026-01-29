@@ -12,7 +12,8 @@
         "showAll": "Show all",
         "noData": "No data to display",
         "allTrips": "All trips",
-        "last10Trips": "Last 10 trips"
+        "last10Trips": "Last 10 trips",
+        "errorLoadingTab": "Error loading tab"
     },
     "tabs": {
         "overview": "Overview",
@@ -548,7 +549,10 @@
         "conflictDescription": "There are differences between your local settings and the cloud. What would you like to do?",
         "keepLocal": "Keep Local",
         "useCloud": "Use Cloud",
-        "mergeBoth": "Merge Both"
+        "mergeBoth": "Merge Both",
+        "syncing": "Syncing...",
+        "error": "Sync Error",
+        "upToDate": "Up to Date"
     },
     "hybrid": {
         "vehicleType": "Vehicle type",

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Download } from './Icons.jsx';
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 
 // Simple icons for PWA Manager (not in Icons.jsx)
 const LogOut = ({ className }) => (
@@ -261,3 +261,5 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
         </>
     );
 }
+
+

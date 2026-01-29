@@ -2,7 +2,7 @@
 
 import React from 'react';
 import PropTypes from 'prop-types';
-import { BYD_RED } from '../../utils/constants';
+import { BYD_RED } from '@core/constants';
 
 /**
  * Loading spinner component with BYD branding
@@ -56,3 +56,6 @@ InlineSpinner.propTypes = {
 };
 
 export default LoadingSpinner;
+
+
+

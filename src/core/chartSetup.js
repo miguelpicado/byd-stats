@@ -98,3 +98,4 @@ ChartJS.defaults.plugins.tooltip.titleFont = { size: 13, weight: 'bold' };
 ChartJS.defaults.plugins.tooltip.bodyFont = { size: 12 };
 // Dark mode defaults will be handled by updating ChartJS.defaults dynamically or using CSS variables if possible,
 // but typically Chart.js needs explicit colors. We might need a helper to update defaults on theme change.
+

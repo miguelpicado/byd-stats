@@ -28,3 +28,5 @@ const DesktopSidebar = memo(({ tabs, activeTab, handleTabClick }) => {
 DesktopSidebar.displayName = 'DesktopSidebar';
 
 export default DesktopSidebar;
+
+
