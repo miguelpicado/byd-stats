@@ -88,6 +88,7 @@ const OverviewTab = React.memo(({
       onCloseOdometerModal={() => setShowOdometerModal(false)}
       insightType={insightType}
       onCloseInsightModal={() => setInsightType(null)}
+      isActive={isActive}
     />
   );
 });
