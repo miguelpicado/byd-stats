@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { googleDriveService } from '../services/googleDrive';
 import { Capacitor } from '@capacitor/core';
@@ -311,11 +311,20 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout, detectConflict, getTargetFilename]); // Added detectConflict
 
+    // Ref to hold the latest handleLoginSuccess to avoid stale closures in useGoogleLogin
+    const handleLoginSuccessRef = useRef(handleLoginSuccess);
+    useEffect(() => {
+        handleLoginSuccessRef.current = handleLoginSuccess;
+    }, [handleLoginSuccess]);
+
     // Web login hook (only used on web)
     const webLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
             logger.debug('Web Login Success:', tokenResponse);
-            await handleLoginSuccess(tokenResponse.access_token);
+            // Use ref to ensure we call the latest version with fresh state (localTrips)
+            if (handleLoginSuccessRef.current) {
+                await handleLoginSuccessRef.current(tokenResponse.access_token);
+            }
         },
         onError: (error) => {
             logger.error('Web Login Failed:', error);
