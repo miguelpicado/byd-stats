@@ -1,88 +1,143 @@
-# Auditoría de Calidad y Rendimiento - BYD Stats
-
-> **Fecha:** 15 de Enero de 2026
-> **Auditor:** Gemini (Antigravity Agent)
-> **Versión Analizada:** 1.3.0
+# Auditoría Técnica y Arquitectónica - BYD Stats
 
 ## 1. Resumen Ejecutivo
-El proyecto `byd-stats` es una aplicación React (Vite) robusta y funcional que ha crecido orgánicamente. Sin embargo, su arquitectura actual basada en un componente monolítico (`App.jsx`) y el procesamiento síncrono de datos en el hilo principal presentan cuellos de botella importantes para la escalabilidad y la experiencia de usuario (UX) en dispositivos móviles.
 
-**Principales Hallazgos:**
-*   🔴 **Crítico:** Procesamiento de Base de Datos (SQL.js) en el hilo principal (Main Thread Blocking).
-*   🟠 **Alto:** Componente `App.jsx` monolítico (~1450 líneas) difícil de mantener.
-*   🟡 **Medio:** Bundle size elevado en vendors (`chart.js`, `sql.js`), aunque mitardo por el reciente Code Splitting.
+### 1.1. Objetivos
+Esta auditoría tiene como objetivo analizar la calidad, escalabilidad, rendimiento y organización del código de **byd-stats**. Se busca identificar cuellos de botella técnicos, riesgos de mantenimiento y oportunidades de mejora funcional para garantizar la evolución sostenible del proyecto.
 
----
+### 1.2. Puntos Fuertes
+*   **Separación de Responsabilidades en el Núcleo**: La lógica de negocio pesada (cálculo de estadísticas, procesamiento de CSV) está correctamente aislada en `src/core/dataProcessing.js` y `src/core/formatters.js`, separada de los componentes UI.
+*   **Stack Moderno y Eficiente**: Uso de **Vite + React 19** proporciona una excelente experiencia de desarrollo (DX) y rendimiento en runtime. La integración con **Capacitor** está bien configurada para móvil.
+*   **Gestión de Datos Local**: El uso de **SQL.js** con `AppProviders` demuestra una solución ingeniosa para mantener la privacidad de los datos del usuario (local-first) al mismo tiempo que se permite una manipulación compleja de datos.
+*   **Organización por Features**: La estructura de carpetas `src/features/dashboard/...` facilita la navegación y escalabilidad vertical de funcionalidades.
+*   **Memoización Extensiva**: Uso correcto de `useMemo` y `React.memo` en componentes críticos como `OverviewTab` y hooks como `useAppData`, previniendo renderizados innecesarios.
 
-## 2. Análisis de Rendimiento (Performance)
-
-### 2.1. Carga y Bundle Size
-El build actual muestra un buen trabajo inicial de división de código (Code Splitting), pero hay áreas de mejora.
-
-| Chunk | Tamaño (Gzip) | Notas |
-| :--- | :--- | :--- |
-| `index.js` (Core) | ~108 kB | Contiene mucha lógica que podría diferirse. |
-| `chart-vendor.js` | ~69 kB | Chart.js es pesado. Se carga globalmente. |
-| `sql-wasm.js` | ~16 kB | El motor WASM se descarga correctamente. |
-| Tabs (Chunks) | ~1-2 kB c/u | **Excelente.** La carga diferida de pestañas (`React.lazy`) está bien implementada. |
-
-**Recomendaciones:**
-1.  **Lazy Load de Chart.js:** No cargar `chart.js` ni `react-chartjs-2` hasta que el usuario visite una pestaña que realmente use gráficos (Trends, Patterns, Efficiency). La pestaña "Overview" podría usar versiones simplificadas o cargar los gráficos bajo demanda.
-2.  **Optimización de Assets:** Verificar si los iconos (actualmente en `Icons.jsx`) se están importando todos a la vez. Usar `import { Icon } from ...` con Tree Shaking activo es correcto, pero un archivo de iconos único puede prevenir el code-splitting efectivo si es muy grande.
-
-### 2.2. Bloqueo del Hilo Principal (Main Thread)
-Este es el punto más crítico detectado.
-*   **Situación Actual:** `src/hooks/useDatabase.js` inicializa y ejecuta consultas SQL directamente en el hilo principal UI.
-*   **Impacto:** Al cargar un archivo `.db` grande (e.g. historial de varios años), la interfaz se congelará ("jank") mientras se procesa el archivo.
-*   **Solución:** Mover toda la lógica de `sql.js` y `processData` a un **Web Worker**. Esto permitirá que la UI muestre un spinner fluido mientras los datos se procesan en segundo plano.
+### 1.3. Riesgos Principales
+*   **"God Component" (`App.jsx`)**: El componente `App.jsx` es excesivamente grande (>750 líneas) y asume demasiadas responsabilidades: gestión de estado global, layout UI, lógica de modals, listeners de eventos nativos y enrutamiento. Esto hace que sea difícil de mantener y propenso a bugs por efectos colaterales.
+*   **Contexto Monolítico**: `DataProvider` expone un objeto de valor masivo que contiene tanto estado (data, trips) como funciones acciones. Cualquier cambio en un dato "pequeño" (ej: cerrar un modal) podría provocar re-renderizados en todos los consumidores del contexto si no se tiene cuidado (aunque está memoizado, la granularidad es baja).
+*   **Modelado de Datos**: La dependencia de `processData` para recalcular *todo* en cada cambio de filtro u ordenación (O(N)) puede volverse un cuello de botella con historiales de viaje muy grandes (>10k viajes).
 
 ---
 
-## 3. Calidad y Arquitectura del Código
+## 2. Visión General de la Arquitectura
 
-### 3.1. Mantensibilidad (App.jsx)
-El archivo `src/App.jsx` actúa como un "God Component".
-*   Maneja routing (condicional manual).
-*   Maneja estado global (aunque extraído a hooks, `App.jsx` sigue orquestándolo todo).
-*   Contiene lógica de UI mezclada con lógica de negocio (JSX nesting muy profundo).
+### 2.1. Descripción
+La aplicación sigue una arquitectura **SPA (Single Page Application)** modularizada por funcionalidades (Feature-based), envuelta en un contenedor **Capacitor** para despliegue nativo.
+*   **Capa de Presentación**: Componentes React en `src/features` y `src/components`.
+*   **Capa de Estado**: Context API (`DataProvider`, `LayoutContext`, `AppContext`) actuando como store global.
+*   **Capa de Dominio/Core**: Funciones puras en `src/core` (`dataProcessing`, `dateUtils`).
+*   **Capa de Infraestructura**: Servicios en `src/services` y hooks de integración (`useGoogleSync`, `useDatabase`).
 
-**Recomendaciones:**
-1.  **Router Real:** Implementar `react-router-dom` o similar para manejar la navegación entre vistas principales (aunque sea una SPA, el routing ayuda al manejo de historial y deep linking).
-2.  **Composition Pattern:** Extraer la barra de navegación y el layout general a un componente `MainLayout` que reciba `children`.
-3.  **Context Split:** Ya se ha avanzado con `AppContext` y `LayoutContext`, lo cual es excelente. Se debería continuar moviendo lógica de estado de `App.jsx` a estos contextos o a nuevos contextos específicos (e.g., `DataContext` para manejar `rawTrips`, `filtered`, etc.).
+### 2.2. Calidad del Diseño
+*   **Acoplamiento**: Bajo entre `core` y componentes UI (bueno). Alto acoplamiento dentro de `App.jsx` hacia múltiples hooks y contextos (mejorable).
+*   **Cohesión**: Los módulos en `core` tienen alta cohesión. `features/dashboard` agrupa bien su lógica. `App.jsx` tiene baja cohesión al mezclar UI de layout con lógica de negocio.
 
-### 3.2. Estándares y Limpieza
-*   **Duplicidad:** Se detectaron (y corrigieron) declaraciones duplicadas en `App.jsx`. Esto indica que a veces se copia y pega código sin revisar el contexto global del archivo.
-*   **Utils:** La extracción de lógica a `src/utils/` es correcta y debe fomentarse. `dataProcessing.js` es un buen ejemplo.
+### 2.3. Patrones de Diseño
+*   **Container/Presentational**: Se observa en `DashboardLayout` (container) vs `MobileDashboardView`/`DesktopDashboardView` (presentational). Bien aplicado.
+*   **Custom Hooks**: Abuso positivo de hooks (`useAppData`, `useSwipeGesture`, `useChartDimensions`) para extraer lógica de los componentes.
+*   **Lazy Loading**: Correctamente implementado con `React.lazy` y `Suspense` para rutas y componentes pesados (`AllTripsView`), reduciendo el bundle inicial.
 
----
-
-## 4. Seguridad y Buenas Prácticas
-
-### 4.1. Manejo de Secretos
-Se observan variables de entorno `VITE_GOOGLE_...`.
-*   ✅ **Bueno:** Se usan variables de entorno.
-*   ⚠️ **Riesgo:** Verificar estrictamente que el archivo `.env` **NO** esté en el repositorio (añadido a `.gitignore`). De lo contrario, los Client IDs están expuestos en el historial de git (aunque los Client IDs de Google suelen ser públicos/restringidos por origen, es mala práctica commitearlos).
-
-### 4.2. Dependencias
-*   `sql.js`: Librería mantenida pero compleja. Asegurarse de actualizar la versión WASM periódicamente.
-*   `vite`: El archivo package.json lista una versión `^7.2.4`, lo cual parece incorrecto (Vite actual estable es v6.x). Podría ser un error tipográfico o el uso de una versión inestable. **Acción requerida:** Verificar y corregir a una versión LTS estable (e.g., `^6.0.0` o `^5.x`).
+### 2.4. Problemas Detectados
+*   **Inconsistencia en Routing**: `AppRoutes.jsx` define rutas estáticas (`/legal`, `/faq`) pero delega todo `/*` a `App.jsx`, el cual *intermanente* no parece manejar sub-rutas anidadas de forma estándar, sino que gestiona "vistas" mediante estado (`activeTab`). Esto crea una dualidad entre "Rutas React Router" y "Navegación por Estado (Tabs)".
 
 ---
 
-## 5. Plan de Acción Recomendado (Roadmap)
+## 3. Calidad del Código
 
-### Fase 1: Optimización Crítica (Inmediato)
-- [ ] **Refactor a Web Worker:** Mover `sql.js` y `processData` a un worker (`comlink` es una buena librería para facilitar esto).
-- [ ] **Corregir package.json:** Investigar la versión de Vite `^7.2.4` y ajustar si es errónea.
+### 3.1. Legibilidad y Estilo
+*   **Naming**: Excelente. Variables descriptivas (`isStationaryTrip`, `calculateTripCost`).
+*   **Documentación**: Uso consistente de JSDoc en módulos `core` (ej. `dataProcessing.js`), lo cual es vital para el tipado implícito en JS.
+*   **Formato**: Código limpio, indentación consistente.
 
-### Fase 2: Arquitectura (Corto Plazo)
-- [ ] **Desacoplar App.jsx:** Crear `Layout.jsx` y mover la lógica de navegación.
-- [ ] **Contexto de Datos:** Mover `useAppData` completamente dentro de un `DataProvider` que envuelva la app, evitando pasar props manualmente nivel tras nivel ("prop drilling").
+### 3.2. Complejidad
+*   **`processData` (Core)**: Aunque es compleja, está bien estructurada secuencialmente.
+*   **`useAppData`**: Complejidad ciclomática moderada debido a múltiples `useEffect` interdependientes para `localStorage` y sincronización.
 
-### Fase 3: UX y PWA (Medio Plazo)
-- [ ] **Virtualización:** Verificar que `VirtualizedTripList` se esté usando correctamente en todas las listas largas para asegurar 60fps en scroll.
-- [ ] **Service Worker:** Revisar estrategia de caché para asegurar funcionamiento offline robusto (clave para una app de "stats" en el coche).
+### 3.3. Duplicidad
+*   Detectada duplicidad en la lógica de ordenamiento (`getTopN` implementado manualmente en `dataProcessing.js` vs lógica ad-hoc en componentes).
+*   Lógica de filtrado de fechas repetida en `useAppData` y componentes visuales.
+
+### 3.4. Manejo de Errores
+*   Uso de `toast` para feedback al usuario es bueno. `ErrorBoundary` envuelve el Dashboard, lo cual es excelente práctica para evitar pantallas blancas completas.
+
+### 3.5. Tipado
+*   No usa TypeScript. Se mitiga parcialmente con JSDoc (`@typedef`), pero un proyecto de esta envergadura se beneficiaría enormemente de una migración gradual a TS para evitar errores de tipo en tiempo de compilación.
 
 ---
-*Fin del informe de auditoría.*
+
+## 4. Rendimiento y Eficiencia
+
+### 4.1. Cuellos de Botella
+*   **Recálculo de Estadísticas**: `processData` itera sobre todos los viajes. Si el usuario tiene años de historial, esto bloqueará el main thread brevemente al cambiar filtros.
+*   **Renderizado de Listas**: Se usa `VirtualizedTripList`, lo cual es **excelente** y mitiga el problema de rendimiento UI con grandes listas.
+
+### 4.2. Algoritmos
+*   **Top N Items**: `getTopN` en `dataProcessing.js` es una implementación O(N*M) simple. Para N=10 es despreciable, pero correcto.
+*   **Filtrado**: O(N). Correcto.
+
+### 4.3. Estrategias de Caché
+*   **Memoización**: `useMemo` envuelve el resultado de `processData`. Esto es crucial y está bien hecho.
+*   **Service Worker**: `vite-plugin-pwa` está configurado, permitiendo caché de assets y funcionamiento offline.
+
+---
+
+## 5. Organización del Repositorio
+
+### 5.1. Estructura
+```
+src/
+  ├── components/  (Atomos y moléculas UI)
+  ├── core/        (Lógica pura de negocio y tipos)
+  ├── features/    (Vistas y lógica compleja agrupada)
+  ├── hooks/       (Lógica de React reutilizable)
+  ├── providers/   (Contextos)
+```
+La estructura es sólida y escalable.
+
+### 5.2. Tests
+*   Existen pruebas unitarias en `src/**/__tests__`.
+*   **Cobertura**: `dataProcessing.test.js` cubre bien la lógica crítica. Faltan tests de integración para `App.jsx` y flujos de usuario completos (aunque hay carpeta `e2e` con Playwright, habría que extenderla).
+
+---
+
+## 6. Lista Priorizada de Mejoras Técnicas
+
+| ID | Mejora | Detalle Técnico / Acciones | Tipo | Dificultad | Prioridad |
+|----|--------|----------------------------|------|------------|-----------|
+| **M1** | **Refactorizar `App.jsx`** | Extraer lógica de `App.jsx` a `features/MainLayout` y `hooks/useAppOrchestrator`. Mover listeners globales a un componente `GlobalListeners` nulo. | Mantenibilidad | Alta | **Alta** |
+| **M2** | **Optimizar `DataProvider`** | Dividir `DataProvider` en `DataStateContext` (lectura) y `DataDispatchContext` (escritura) para evitar re-renderizados en componentes que solo despachan acciones. | Rendimiento | Media | **Alta** |
+| **M3** | **Migración Gradual a TypeScript** | Renombrar `dataProcessing.js` a `.ts` y definir interfaces reales para `Trip` y `Charge`. Configurar `tsconfig.json`. | Seguridad/DX | Media | Media |
+| **M4** | **Unificar Routing** | Mover la lógica de "Tabs" actual (`DashboardLayout`) a sub-rutas reales de React Router (`/dashboard/overview`, `/dashboard/trips`). | Arquitectura | Alta | Media |
+| **M5** | **Worker para Procesamiento** | Mover `processData` a un Web Worker usando `comlink` o API nativa para liberar el main thread durante cargas masivas. | Rendimiento | Alta | Baja |
+| **M6** | **Estandarización de Tests** | Crear script `npm run test:core` y asegurar que cada feature tenga su `__tests__` colocalizado. Añadir tests de integración para el flujo de "Importar DB". | Calidad | Baja | Media |
+| **M7** | **Virtualización en Gráficos** | Si se muestran muchos puntos en los gráficos de Chart.js, implementar "decimation" (muestreo) para reducir puntos renderizados. | Rendimiento | Media | Baja |
+
+---
+
+## 7. Nuevas Funcionalidades Sugeridas
+
+| ID | Nombre | Descripción y Valor | Diseño Alto Nivel | Ganancia | Dificultad |
+|----|--------|---------------------|-------------------|----------|------------|
+| **F1** | **Calculadora de "Ahorro vs Gasolina"** | Mostrar cuánto dinero ha ahorrado el usuario comparado con un coche de combustión equivalente. | Módulo en `OverviewTab` que tome `totalKm` y un `input` de usuario "Consumo L/100km referencia" y "Precio Gasolina". | Alta (Engagement) | Baja |
+| **F2** | **Predicción de Autonomía Real** | Estimar autonomía basada en el historial de eficiencia reciente del usuario, no en WLTP. | Algoritmo en `core` que analice los últimos 500km. UI en `OverviewTab` con un widget "Real Range". | Media | Media |
+| **F3** | **Heatmap de Recargas** | Mapa (geográfico o temporal) de dónde/cuándo se recarga más. | Integar librería de mapas o usar Chart.js scatter plot con ejes Hora vs Día Semana para identificar patrones. | Media | Alta |
+| **F4** | **Metas y Logros** | Gamificación simple (ej: "1000km eléctricos", "Efficiency Master"). | Sistema de logros en `core` que evalúe `stats` al finalizar `processData`. Persistencia en `localStorage`. | Media | Baja |
+
+---
+
+## 8. Plan de Acción Recomendado
+
+### Fase 1: Saneamiento (Semana 1)
+1.  **Ejecutar M1 (`App.jsx` Refactor)**: Es crítico para cualquier desarrollo futuro. Romper el monolito.
+2.  **Ejecutar M6 (Tests Críticos)**: Asegurar que el refactor no rompa la carga de bases de datos.
+
+### Fase 2: Optimización y Estabilidad (Semana 2)
+1.  **Ejecutar M2 (`DataProvider` Split)**: Mejorar rendimiento de UI.
+2.  **Implementar F1 (Ahorro vs Gasolina)**: "Quick win" funcional que aporta mucho valor al usuario final.
+
+### Fase 3: Evolución (Largo Plazo)
+1.  **M3 (TypeScript)**: Empezar con nuevos módulos.
+2.  **F2 y F4 (Predicción y Logros)**: Para aumentar la retención.
+
+---
+**Conclusión del Auditor**: El proyecto tiene una calidad técnica superior a la media. La base es sólida. La principal amenaza es la complejidad creciente de `App.jsx` y la gestión de estado. Atacando esto primero, el proyecto escalará sin problemas.
