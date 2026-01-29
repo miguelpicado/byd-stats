@@ -1,7 +1,7 @@
 // BYD Stats - Overview Tab Component
 import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
-import { BYD_RED } from '../Icons.jsx';
+import { BYD_RED } from '@components/Icons.jsx';
 import OverviewContent from './OverviewContent';
 
 // Static chart options that don't change
@@ -129,3 +129,5 @@ OverviewTab.propTypes = {
 OverviewTab.displayName = 'OverviewTab';
 
 export default OverviewTab;
+
+

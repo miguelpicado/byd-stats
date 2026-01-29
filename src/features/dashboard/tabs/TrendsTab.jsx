@@ -2,10 +2,10 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar as BarJS, Line as LineJS } from 'react-chartjs-2';
-import { Navigation, Battery, Zap, TrendingUp, BYD_RED } from '../Icons.jsx';
-import StatCard from '../ui/StatCard';
-import ChartCard from '../ui/ChartCard';
-import { useLayout } from '../../context/LayoutContext';
+import { Navigation, Battery, Zap, TrendingUp, BYD_RED } from '@components/Icons.jsx';
+import StatCard from '@components/ui/StatCard';
+import ChartCard from '@components/ui/ChartCard';
+import { useLayout } from '@/context/LayoutContext';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
@@ -228,3 +228,5 @@ const TrendsTab = React.memo(({
 TrendsTab.displayName = 'TrendsTab';
 
 export default TrendsTab;
+
+

@@ -84,8 +84,10 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
       '@components': path.resolve(__dirname, './src/components'),
       '@hooks': path.resolve(__dirname, './src/hooks'),
-      '@utils': path.resolve(__dirname, './src/utils'),
+      '@utils': path.resolve(__dirname, './src/core'),
+      '@core': path.resolve(__dirname, './src/core'),
       '@features': path.resolve(__dirname, './src/features'),
+      '@tabs': path.resolve(__dirname, './src/features/dashboard/tabs'),
     },
   },
   base: '', // Relative base for better subfolder support (GH Pages)

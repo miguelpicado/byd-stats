@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import ModalHeader from '../common/ModalHeader';
 import { Car } from '../../components/Icons';
-import { BYD_RED } from '../../utils/constants';
+import { BYD_RED } from '@core/constants';
 
 const AddCarModal = ({ isOpen, onClose, onSave }) => {
     const { t } = useTranslation();
@@ -30,10 +30,10 @@ const AddCarModal = ({ isOpen, onClose, onSave }) => {
     const labelClass = "block text-sm text-slate-600 dark:text-slate-400 mb-1.5";
 
     return createPortal(
-        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-24 sm:pt-32">
+        <div className="fixed inset-0 z-50 flex items-start justify-center p-4 pt-24 sm:pt-32 animate-modal-backdrop">
             <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
 
-            <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl"
+            <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-md w-full border border-slate-200 dark:border-slate-700 shadow-xl animate-modal-content"
                 onClick={e => e.stopPropagation()}>
 
                 <ModalHeader
@@ -89,3 +89,6 @@ const AddCarModal = ({ isOpen, onClose, onSave }) => {
 };
 
 export default AddCarModal;
+
+
+

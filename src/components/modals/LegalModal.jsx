@@ -31,7 +31,7 @@ const LegalModal = () => {
     ];
 
     return (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-modal-backdrop">
             <div
                 className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                 onClick={onClose}
@@ -41,7 +41,7 @@ const LegalModal = () => {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="legal-modal-title"
-                className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl h-[80vh] flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden"
+                className="relative bg-white dark:bg-slate-900 rounded-2xl w-full max-w-2xl h-[80vh] flex flex-col border border-slate-200 dark:border-slate-800 shadow-2xl overflow-hidden animate-modal-content"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header */}
@@ -112,3 +112,5 @@ const LegalModal = () => {
 LegalModal.propTypes = {};
 
 export default LegalModal;
+
+

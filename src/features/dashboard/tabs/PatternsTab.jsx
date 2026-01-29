@@ -2,10 +2,10 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar as BarJS, Radar as RadarJS } from 'react-chartjs-2';
-import { Calendar, Clock, MapPin, TrendingUp, BYD_RED } from '../Icons.jsx';
-import StatCard from '../ui/StatCard';
-import ChartCard from '../ui/ChartCard';
-import { useLayout } from '../../context/LayoutContext';
+import { Calendar, Clock, MapPin, TrendingUp, BYD_RED } from '@components/Icons.jsx';
+import StatCard from '@components/ui/StatCard';
+import ChartCard from '@components/ui/ChartCard';
+import { useLayout } from '@/context/LayoutContext';
 
 // Static chart options
 const BAR_CHART_OPTIONS_VERTICAL = {
@@ -237,3 +237,5 @@ const PatternsTab = React.memo(({
 PatternsTab.displayName = 'PatternsTab';
 
 export default PatternsTab;
+
+

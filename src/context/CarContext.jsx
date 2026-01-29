@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { logger } from '../utils/logger';
-import { STORAGE_KEY, TRIP_HISTORY_KEY, CHARGES_STORAGE_KEY, SETTINGS_KEY } from '../utils/constants';
+import { logger } from '@core/logger';
+import { STORAGE_KEY, TRIP_HISTORY_KEY, CHARGES_STORAGE_KEY, SETTINGS_KEY } from '@core/constants';
 
 const CarContext = createContext();
 
@@ -147,3 +147,5 @@ export const CarProvider = ({ children }) => {
 };
 
 export default CarContext;
+
+

@@ -38,6 +38,41 @@ body,
   animation: fadeIn 400ms ease-out;
 }
 
+/* Modal Animations */
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-backdrop {
+  animation: modalFadeIn 300ms ease-out forwards;
+}
+
+.animate-modal-content {
+  animation: modalScaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Logic for backdrop blur transition */
+.backdrop-blur-sm {
+  backdrop-filter: blur(4px);
+  transition: backdrop-filter 300ms ease-out;
+}
+
 /* CRITICAL: Force light theme in WebView (prevent car system dark mode override) */
 /* This aggressively overrides Android WebView's force-dark algorithm */
 html:not(.dark) {

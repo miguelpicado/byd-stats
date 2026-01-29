@@ -78,3 +78,4 @@ const LegalPage = ({ forcedTab }) => {
 };
 
 export default LegalPage;
+

@@ -16,9 +16,11 @@ const useModalState = () => {
     settings: false,
     history: false,
     help: false,
-    legal: false,
     addCharge: false,
-    chargeDetail: false
+    chargeDetail: false,
+    backups: false,
+    registryRestore: false,
+    registryCars: [] // Prop to pass data to modal
   });
 
   // Track additional modal-related state
@@ -66,13 +68,29 @@ const useModalState = () => {
       settings: false,
       history: false,
       help: false,
-      legal: false,
       addCharge: false,
-      chargeDetail: false
+      chargeDetail: false,
+      backups: false,
+      registryRestore: false,
+      registryCars: []
     });
     setSelectedTrip(null);
     setSelectedCharge(null);
     setEditingCharge(null);
+  }, []);
+
+  /**
+   * Open registry restore modal
+   */
+  const openRegistryModal = useCallback((cars) => {
+    setModals(prev => ({ ...prev, registryRestore: true, registryCars: cars }));
+  }, []);
+
+  /**
+   * Close registry restore modal
+   */
+  const closeRegistryModal = useCallback(() => {
+    setModals(prev => ({ ...prev, registryRestore: false, registryCars: [] }));
   }, []);
 
   /**
@@ -102,10 +120,14 @@ const useModalState = () => {
     editingCharge,
     setEditingCharge,
     // Convenience boolean getters for common checks
-    isAnyModalOpen: Object.values(modals).some(Boolean)
-  }), [modals, openModal, closeModal, toggleModal, closeAllModals, openLegalModal, legalInitialSection, selectedTrip, selectedCharge, editingCharge]);
+    isAnyModalOpen: Object.values(modals).some(Boolean),
+    openRegistryModal,
+    closeRegistryModal
+  }), [modals, openModal, closeModal, toggleModal, closeAllModals, openLegalModal, legalInitialSection, selectedTrip, selectedCharge, editingCharge, openRegistryModal, closeRegistryModal]);
 
   return value;
 };
 
 export default useModalState;
+
+

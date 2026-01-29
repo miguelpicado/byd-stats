@@ -69,3 +69,5 @@ export const useChartDimensions = ({ isVertical, isFullscreenBYD, isCompact }) =
         recordsListHeightHorizontal
     };
 };
+
+

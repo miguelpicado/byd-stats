@@ -118,3 +118,5 @@ describe('ChartCard', () => {
         expect(screen.getByText('Legend here')).toBeInTheDocument();
     });
 });
+
+

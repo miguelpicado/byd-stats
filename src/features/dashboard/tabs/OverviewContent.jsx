@@ -2,13 +2,13 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
-import StatCard from '../ui/StatCard';
-import ChartCard from '../ui/ChartCard';
-import HybridStatsCard from '../cards/HybridStatsCard';
-import TripInsightsModal from '../modals/TripInsightsModal';
-import OdometerAdjustmentModal from '../modals/OdometerAdjustmentModal';
-import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Activity, Fuel } from '../Icons.jsx'; // Removed unused icons if any
-import { useLayout } from '../../context/LayoutContext';
+import StatCard from '@components/ui/StatCard';
+import ChartCard from '@components/ui/ChartCard';
+import HybridStatsCard from '@components/cards/HybridStatsCard';
+import TripInsightsModal from '@components/modals/TripInsightsModal';
+import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
+import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Activity, Fuel } from '@components/Icons.jsx'; // Removed unused icons if any
+import { useLayout } from '@/context/LayoutContext';
 
 const PIE_CHART_OPTIONS = {
     maintainAspectRatio: false,
@@ -161,9 +161,9 @@ const OverviewContent = ({
                 ))}
             </div>
             <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                {statItems.slice(4, 8).map(item => (
+                {statItems.slice(4, 8).map(({ key, ...item }) => (
                     <StatCard
-                        key={item.key}
+                        key={key}
                         isVerticalMode={isVertical}
                         isLarger={isLargerCard}
                         isCompact={isCompact}
@@ -245,3 +245,5 @@ OverviewContent.propTypes = {
 };
 
 export default OverviewContent;
+
+

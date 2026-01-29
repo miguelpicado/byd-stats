@@ -74,3 +74,4 @@ describe('useLocalStorage', () => {
         expect(result2.current[0]).toBeUndefined();
     });
 });
+

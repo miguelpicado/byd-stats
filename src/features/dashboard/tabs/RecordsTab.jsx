@@ -1,11 +1,11 @@
 // BYD Stats - Records Tab Component
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { Navigation, Zap, Clock, MapPin, Euro } from '../Icons.jsx';
-import StatCard from '../ui/StatCard';
-import ChartCard from '../ui/ChartCard';
-import { formatDate } from '../../utils/dateUtils';
-import { useLayout } from '../../context/LayoutContext';
+import { Navigation, Zap, Clock, MapPin, Euro } from '@components/Icons.jsx';
+import StatCard from '@components/ui/StatCard';
+import ChartCard from '@components/ui/ChartCard';
+import { formatDate } from '@core/dateUtils';
+import { useLayout } from '@/context/LayoutContext';
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
@@ -246,3 +246,6 @@ const RecordsTab = React.memo(({
 RecordsTab.displayName = 'RecordsTab';
 
 export default RecordsTab;
+
+
+

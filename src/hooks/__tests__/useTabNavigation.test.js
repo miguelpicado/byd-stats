@@ -104,3 +104,4 @@ describe('useTabNavigation', () => {
         expect(result.current.activeTab).toBe('trends');
     });
 });
+

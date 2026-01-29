@@ -31,3 +31,5 @@ StatItem.propTypes = {
 };
 
 export default React.memo(StatItem);
+
+

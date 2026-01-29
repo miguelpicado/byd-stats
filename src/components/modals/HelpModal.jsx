@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, HelpCircle, Bug, GitHub, Mail, Shield, Heart } from '../Icons.jsx';
-import { BYD_RED } from '../../utils/constants';
+import { BYD_RED } from '@core/constants';
 import { useData } from '../../providers/DataProvider';
 
 const HelpModal = () => {
@@ -40,10 +40,10 @@ const HelpModal = () => {
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-backdrop" onClick={onClose}>
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
             <div
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700"
+                className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 animate-modal-content"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
@@ -148,3 +148,6 @@ const HelpModal = () => {
 };
 
 export default HelpModal;
+
+
+

@@ -27,3 +27,5 @@ const TabNavigation = memo(({ tabs, activeTab, handleTabClick }) => {
 TabNavigation.displayName = 'TabNavigation';
 
 export default TabNavigation;
+
+

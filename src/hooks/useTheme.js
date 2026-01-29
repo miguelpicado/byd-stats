@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 
 /**
  * Custom hook for managing app theme
@@ -50,3 +50,5 @@ export function useTheme(theme) {
 }
 
 export default useTheme;
+
+

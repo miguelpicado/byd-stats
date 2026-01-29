@@ -2,8 +2,8 @@
 // Manages charging session data persistence and CRUD operations
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { CHARGES_STORAGE_KEY as BASE_CHARGES_KEY } from '../utils/constants';
-import { logger } from '../utils/logger';
+import { CHARGES_STORAGE_KEY as BASE_CHARGES_KEY } from '@core/constants';
+import { logger } from '@core/logger';
 
 // ... (comments)
 
@@ -304,3 +304,5 @@ const useChargesData = (activeCarId = null) => {
 };
 
 export default useChargesData;
+
+

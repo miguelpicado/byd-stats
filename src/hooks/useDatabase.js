@@ -6,7 +6,16 @@ import { toast } from 'react-hot-toast';
 
 /**
  * Custom hook for database operations
- * @returns {Object} Database operation functions and state
+ * @returns {{
+ *   sqlReady: boolean,
+ *   loading: boolean,
+ *   error: string|null,
+ *   initSql: function(): Promise<boolean>,
+ *   processDB: function(File, import('@core/types').Trip[], boolean): Promise<import('@core/types').Trip[]|null>,
+ *   exportDatabase: function(import('@core/types').Trip[]): Promise<{success: boolean, reason?: string, message?: string}>,
+ *   validateFile: function(File): boolean,
+ *   setError: function(string|null): void
+ * }}
  */
 export function useDatabase() {
     const [sqlReady, setSqlReady] = useState(false);
@@ -284,3 +293,5 @@ export function useDatabase() {
 }
 
 export default useDatabase;
+
+

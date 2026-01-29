@@ -4,7 +4,7 @@ import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
-import { BYD_RED, TAB_ORDER } from '../../utils/constants';
+import { BYD_RED, TAB_ORDER } from '@core/constants';
 import { Settings, Zap, Trash2, Eye, EyeOff } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag } from '../FlagIcons.jsx';
@@ -82,12 +82,12 @@ const SettingsModal = () => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-modal-backdrop" onClick={onClose}>
             <div
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="settings-modal-title"
-                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[70vh] overflow-y-auto"
+                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 max-h-[70vh] overflow-y-auto animate-modal-content"
                 style={{ paddingBottom: 'max(24px, env(safe-area-inset-bottom))' }}
                 onClick={(e) => e.stopPropagation()}
             >
@@ -491,3 +491,6 @@ const SettingsModal = () => {
 SettingsModal.propTypes = {};
 
 export default SettingsModal;
+
+
+

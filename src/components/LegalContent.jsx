@@ -85,3 +85,5 @@ const LegalContent = ({ section = 'privacy' }) => {
 };
 
 export default LegalContent;
+
+

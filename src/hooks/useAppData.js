@@ -258,3 +258,5 @@ const useAppData = (settings, charges = [], activeCarId = null) => {
 };
 
 export default useAppData;
+
+

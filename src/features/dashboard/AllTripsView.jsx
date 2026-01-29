@@ -258,3 +258,5 @@ const AllTripsView = ({
 };
 
 export default AllTripsView;
+
+

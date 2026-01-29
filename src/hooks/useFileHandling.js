@@ -4,7 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { registerPlugin } from '@capacitor/core';
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 
 // Register the custom FileOpener plugin for Android native
 const FileOpener = registerPlugin('FileOpener');
@@ -254,3 +254,5 @@ function openDB() {
 }
 
 export default useFileHandling;
+
+

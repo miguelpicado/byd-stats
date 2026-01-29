@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, Minimize, Maximize, Database, Settings, Filter, ChevronDown, Plus, Car, Check } from '../../components/Icons';
+import { HelpCircle, Minimize, Maximize, Database, Settings, Filter, ChevronDown, Plus, Car, Check, Cloud, RefreshCw, AlertCircle } from '../../components/Icons';
 import { useLayout } from '../../context/LayoutContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
@@ -11,7 +11,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 const Header = memo(() => {
     const { t } = useTranslation();
     const { layoutMode, isFullscreenBYD, toggleFullscreen } = useLayout();
-    const { trips, openModal } = useData();
+    const { trips, openModal, googleSync } = useData();
     const { cars, activeCar, activeCarId, setActiveCarId, addCar } = useCar();
     const [showCarDropdown, setShowCarDropdown] = useState(false);
     const [showAddCarModal, setShowAddCarModal] = useState(false);
@@ -134,6 +134,26 @@ const Header = memo(() => {
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        {/* Sync Status Indicator */}
+                        {googleSync.isAuthenticated && (
+                            <div
+                                className={`flex items-center justify-center transition-all ${googleSync.error
+                                    ? 'text-red-500'
+                                    : googleSync.isSyncing
+                                        ? 'text-blue-500'
+                                        : 'text-green-500'
+                                    }`}
+                                title={googleSync.error ? t('sync.error', 'Error de sincronización') : googleSync.isSyncing ? t('sync.syncing', 'Sincronizando...') : t('sync.upToDate', 'Sincronizado')}
+                            >
+                                {googleSync.isSyncing ? (
+                                    <RefreshCw className="w-5 h-5 animate-spin" />
+                                ) : googleSync.error ? (
+                                    <AlertCircle className="w-5 h-5" />
+                                ) : (
+                                    <Cloud className="w-5 h-5" />
+                                )}
+                            </div>
+                        )}
                         <button
                             onClick={() => openModal('help')}
                             className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
@@ -185,3 +205,5 @@ const Header = memo(() => {
 
 Header.displayName = 'Header';
 export default Header;
+
+

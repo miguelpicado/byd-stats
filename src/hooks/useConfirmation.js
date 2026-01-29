@@ -103,3 +103,5 @@ export const useConfirmation = ({
         clearHistory
     }), [confirmModalState, closeConfirmation, showConfirmation, clearData, saveToHistory, loadFromHistory, clearHistory]);
 };
+
+

@@ -103,3 +103,5 @@ describe('StatCard', () => {
         expect(card.className).toContain('dark:bg-slate-800/50');
     });
 });
+
+

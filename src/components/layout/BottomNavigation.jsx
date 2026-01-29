@@ -27,3 +27,5 @@ const BottomNavigation = memo(({ tabs, activeTab, handleTabClick }) => {
 BottomNavigation.displayName = 'BottomNavigation';
 
 export default BottomNavigation;
+
+

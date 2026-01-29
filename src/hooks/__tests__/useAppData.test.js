@@ -116,3 +116,4 @@ describe('useAppData', () => {
         expect(result.current.rawTrips).toEqual([]);
     });
 });
+

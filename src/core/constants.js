@@ -68,3 +68,4 @@ export const FUEL_ENERGY_EQUIVALENT_KWH = 9.7; // kWh per liter of gasoline
 
 // Default fuel price (€/L) - can be overridden in settings
 export const DEFAULT_FUEL_PRICE = 1.50;
+

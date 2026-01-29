@@ -25,9 +25,9 @@ const UploadOptionsModal = () => {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-modal-backdrop" onClick={onClose}>
             <div
-                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700"
+                className="bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-md w-full border border-slate-200 dark:border-slate-700 animate-modal-content"
                 onClick={(e) => e.stopPropagation()}
                 role="dialog"
                 aria-modal="true"
@@ -81,3 +81,5 @@ const UploadOptionsModal = () => {
 };
 
 export default UploadOptionsModal;
+
+

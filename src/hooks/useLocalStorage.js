@@ -1,7 +1,7 @@
 // BYD Stats - useLocalStorage Hook
 
 import { useState, useEffect, useCallback } from 'react';
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 
 /**
  * Custom hook for localStorage with automatic serialization
@@ -48,3 +48,5 @@ export function useLocalStorage(key, initialValue) {
 }
 
 export default useLocalStorage;
+
+

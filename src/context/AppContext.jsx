@@ -3,9 +3,9 @@
 // Manages application settings and theme (layout moved to LayoutContext)
 
 import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
-import { logger } from '../utils/logger';
+import { logger } from '@core/logger';
 import { useCar } from './CarContext';
-import { SETTINGS_KEY as BASE_SETTINGS_KEY } from '../utils/constants';
+import { SETTINGS_KEY as BASE_SETTINGS_KEY } from '@core/constants';
 
 const AppContext = createContext();
 
@@ -159,3 +159,5 @@ export const AppProvider = ({ children }) => {
 };
 
 export default AppContext;
+
+

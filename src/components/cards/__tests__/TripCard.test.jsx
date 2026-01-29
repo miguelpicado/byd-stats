@@ -144,3 +144,5 @@ describe('TripCard', () => {
         expect(scoreElement).toBeTruthy();
     });
 });
+
+
