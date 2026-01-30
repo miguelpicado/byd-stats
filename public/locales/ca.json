@@ -207,6 +207,9 @@
         "custom": "Preu Fix",
         "average": "Preu Mig",
         "dynamic": "Dinàmic",
+        "dangerZone": "Zona de Perill",
+        "history": "Historial",
+        "clearHistory": "Esborrar Historial",
         "dataManagement": "Gestió de dades",
         "updateData": "Actualitzar dades"
     },

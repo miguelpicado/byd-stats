@@ -198,7 +198,10 @@
         "fuelPriceHint": "Precio medio de gasolina para calcular costes (solo híbridos)",
         "priceStrategy": "Modo de precio",
         "priceDynamics": "Dinámico",
-        "priceDynamicsHint": "Usa el precio de la carga más reciente anterior al viaje"
+        "priceDynamicsHint": "Usa el precio de la carga más reciente anterior al viaje",
+        "dangerZone": "Zona de Peligro",
+        "history": "Historial",
+        "clearHistory": "Borrar Historial"
     },
     "upload": {
         "title": "Estadísticas BYD",
