@@ -308,7 +308,15 @@
     "modals": {
         "odometerTitle": "Ajuste de Odómetro",
         "odometerDesc": "Ajuste visual para corrigir a diferença com o marcador do carro.",
-        "offset": "Desvio (km)"
+        "offset": "Desvio (km)",
+        "mfgDate": {
+            "title": "Data de Fabrico",
+            "desc": "Para calcular com precisão o estado de saúde (SoH) da sua bateria LFP, precisamos de saber quando o carro foi fabricado.",
+            "instructions": "Abra a porta do passageiro (por vezes a do condutor) e procure uma placa metálica ou autocolante preto na moldura da porta (o pilar central onde o cinto está ancorado). Nesta placa, para além do VIN, costuma aparecer o campo 'Date of mfg' ou 'Built date' com o formato MM/YY.",
+            "formatHint": "Formato: MM/YY (Ex. 03/24)",
+            "save": "Confirmar Data",
+            "invalid": "Formato inválido (MM/YY)"
+        }
     },
     "errors": {
         "invalidFile": "Apenas ficheiros *.DB o *.JPG (base de dados renomeada) são permitidos\nEncontre EC_Database.db na pasta \"Energydata\" do seu carro",

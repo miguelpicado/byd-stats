@@ -314,9 +314,9 @@
         "offset": "Offset (km)",
         "mfgDate": {
             "title": "Manufacturing Date",
-            "desc": "To accurately calculate the State of Health (SoH) of your LFP battery, we need to know when the car was built.",
-            "instructions": "Open the passenger door (sometimes the driver's) and look for a metal plate or black sticker on the door frame (the central pillar where the seatbelt anchors). On that plate, besides the VIN, you will usually find the 'Date of mfg' or 'Built date' field in MM/YY format.",
-            "formatHint": "Format: MM/YY (e.g. 03/24)",
+            "desc": "To accurately calculate the State of Health (SoH) of your LFP battery, we need to know when the car was manufactured.",
+            "instructions": "Open the passenger door (sometimes the driver's) and look for a metal plate or black sticker on the door frame (the central pillar where the belt is anchored). On this plate, in addition to the VIN, the field 'Date of mfg' or 'Built date' usually appears with the format MM/YY.",
+            "formatHint": "Format: MM/YY (Ex. 03/24)",
             "save": "Confirm Date",
             "invalid": "Invalid format (MM/YY)"
         },

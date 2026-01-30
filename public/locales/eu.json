@@ -199,7 +199,10 @@
         "priceCalculatedNoCharges": "Gehitu kargak prezioa automatikoki kalkulatzeko",
         "custom": "Prezio Finkoa",
         "average": "Batez besteko Prezioa",
-        "dynamic": "Dinamikoa"
+        "dynamic": "Dinamikoa",
+        "dangerZone": "Arrisku Zona",
+        "history": "Historia",
+        "clearHistory": "Garbitu Historia"
     },
     "upload": {
         "title": "Datuen kudeaketa",
