@@ -19,7 +19,31 @@
         "allowJs": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
-        "noFallthroughCasesInSwitch": true
+        "noFallthroughCasesInSwitch": true,
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@components/*": [
+                "./src/components/*"
+            ],
+            "@hooks/*": [
+                "./src/hooks/*"
+            ],
+            "@utils/*": [
+                "./src/core/*"
+            ],
+            "@core/*": [
+                "./src/core/*"
+            ],
+            "@features/*": [
+                "./src/features/*"
+            ],
+            "@tabs/*": [
+                "./src/features/dashboard/tabs/*"
+            ]
+        }
     },
     "include": [
         "src"
