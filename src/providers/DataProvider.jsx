@@ -15,22 +15,6 @@ import useModalState from '@hooks/useModalState';
 
 const DataContext = createContext();
 
-/**
- * Global data and operations hook
- * @returns {{
- *   rawTrips: import('@core/types').Trip[],
- *   filtered: { filteredTrips: import('@core/types').Trip[], stats: import('@core/types').Summary, ... },
- *   data: import('@core/types').ProcessedData,
- *   charges: import('@core/types').Charge[],
- *   database: ReturnType<typeof import('@hooks/useDatabase').useDatabase>,
- *   googleSync: ReturnType<typeof import('@hooks/useGoogleSync').useGoogleSync>,
- *   fileHandling: Object,
- *   modals: Object,
- *   closeModal: function(string): void,
- *   openModal: function(string): void,
- *   loadFile: function(File, boolean=): Promise<void>
- * }}
- */
 export const useData = () => {
     const context = useContext(DataContext);
     if (!context) {
@@ -42,32 +26,38 @@ export const useData = () => {
 export const DataProvider = ({ children }) => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
-    const { activeCarId, cars } = useCar();
+    const { activeCarId, cars, updateCar } = useCar();
 
-    // 1. Charges Data (Moved up to be available for AppData dynamic pricing)
+    // 1. Charges Data
     const chargesData = useChargesData(activeCarId);
-    const {
-        charges,
-        replaceCharges,
-        ...restChargesData
-    } = chargesData;
 
-    // 2. Core App Data (Trips, Filtering, Stats history)
+    // Defensive destructuring for charges
+    const charges = chargesData?.charges || [];
+    const replaceCharges = chargesData?.replaceCharges || (() => { });
+    const restChargesData = chargesData || {};
+
+    // 2. Core App Data
     const appData = useAppData(settings, charges, activeCarId);
-    const {
-        rawTrips,
-        setRawTrips,
-        tripHistory,
-        filtered, // { filteredTrips, stats, ... }
-        data, // data object with stats
-        clearData: rawClearData,
-        saveToHistory: rawSaveToHistory,
-        clearHistory: rawClearHistory,
-        loadFromHistory: rawLoadFromHistory,
-        ...restAppData
-    } = appData;
 
-    // 3. Confirmation Logic (wraps data actions)
+    // Defensive destructuring for appData
+    const safeAppData = appData || {};
+    const rawTrips = safeAppData.rawTrips || [];
+    const setRawTrips = safeAppData.setRawTrips || (() => { });
+    const tripHistory = safeAppData.tripHistory || [];
+    const filtered = safeAppData.filtered || [];
+    const data = safeAppData.data || null;
+
+    // Extract raw actions for internal use by confirmation hook
+    const rawClearData = safeAppData.clearData || (() => { });
+    const rawSaveToHistory = safeAppData.saveToHistory || (() => { });
+    const rawClearHistory = safeAppData.clearHistory || (() => { });
+    const rawLoadFromHistory = safeAppData.loadFromHistory || (() => { });
+
+    // 3. Database Layer
+    const database = useDatabase();
+
+    // 4. Confirmation Dialogs
+    // Must pass the raw actions to the hook
     const confirmation = useConfirmation({
         rawClearData,
         rawSaveToHistory,
@@ -76,17 +66,13 @@ export const DataProvider = ({ children }) => {
         tripHistory
     });
 
-    // 4. Database (SQL.js)
-    const database = useDatabase();
-
-    // 5. File Handling (Import/Export/Share)
+    // 5. File Handling
     const fileHandling = useFileHandling();
 
-    // 7. Global Modal State (Moved up for googleSync dependency)
+    // 6. Global Modal State
     const modalState = useModalState();
 
-    // 6. Google Sync (Side Effects & Cloud Sync)
-    // Needs access to state setters to update local data from cloud
+    // 7. Google Sync
     const googleSync = useGoogleSync(
         rawTrips,
         setRawTrips,
@@ -96,42 +82,34 @@ export const DataProvider = ({ children }) => {
         replaceCharges,
         activeCarId,
         cars.length,
-        modalState.openRegistryModal
+        modalState?.openRegistryModal,
+        modalState?.modals?.registryRestore,
+        updateCar
     );
 
-    // 7. Auto-Sync Effect (Background)
+    // 8. Auto-Sync Effect
     useEffect(() => {
         if (!googleSync.isAuthenticated || googleSync.isSyncing) return;
-
-        // Skip if everything is empty (initial load)
-        if (rawTrips.length === 0 && charges.length === 0) return;
+        if (rawTrips?.length === 0 && charges?.length === 0) return;
+        if (modalState?.modals?.registryRestore) return;
 
         const timer = setTimeout(() => {
             googleSync.syncNow();
-        }, 10000); // 10 second debounce to be safe and non-intrusive
+        }, 10000);
 
         return () => clearTimeout(timer);
-    }, [rawTrips.length, charges.length, settings, googleSync.isAuthenticated]);
+    }, [rawTrips?.length, charges?.length, settings, googleSync.isAuthenticated, modalState?.modals?.registryRestore]);
 
-    // 8. File Loading Functions
-    // Load file (database .db) and optionally merge with existing trips
+    // 9. File Loading Functions
     const loadFile = useCallback(async (file, merge = false) => {
         try {
-            // Initialize SQL.js if not ready
             if (!database.sqlReady) {
                 await database.initSql();
             }
-
-            // Process the database file
             const newTrips = await database.processDB(file, rawTrips, merge);
-
             if (newTrips && newTrips.length > 0) {
                 setRawTrips(newTrips);
                 logger.info(`Loaded ${newTrips.length} trips (merge: ${merge})`);
-
-                // Auto-sync after import if authenticated
-                // IMPORTANT: Pass newTrips explicitly because React state update is async
-                // If replacing data (merge=false), forcing conflict check to allow user to choose source
                 if (googleSync.isAuthenticated) {
                     googleSync.syncNow(newTrips, { checkData: !merge });
                 }
@@ -142,7 +120,6 @@ export const DataProvider = ({ children }) => {
         }
     }, [database, rawTrips, setRawTrips, googleSync]);
 
-    // Export trips to .db file
     const exportData = useCallback(async () => {
         if (!database.sqlReady) {
             await database.initSql();
@@ -150,17 +127,14 @@ export const DataProvider = ({ children }) => {
         return database.exportDatabase(rawTrips);
     }, [database, rawTrips]);
 
-    // Load charge registry from CSV file
     const loadChargeRegistry = useCallback(async (file) => {
         try {
             const text = await file.text();
             const lines = text.split('\n').filter(line => line.trim());
 
             if (lines.length < 2) {
-                if (lines.length < 2) {
-                    toast.error(t('errors.noDataFound'));
-                    return;
-                }
+                toast.error(t('errors.noDataFound'));
+                return;
             }
 
             const chargesArray = [];
@@ -265,71 +239,36 @@ export const DataProvider = ({ children }) => {
         }
     }, [settings, updateSettings, chargesData, googleSync, t]);
 
-    // Bundle the value
     const value = {
-        // Data State
         trips: rawTrips,
-        filtered: filtered, // The filtered array of trips
-        filteredTrips: filtered, // Alias for compatibility if needed
-        stats: data, // aggregated stats
+        filtered,
+        filteredTrips: filtered,
+        stats: data,
         charges,
         tripHistory,
         setRawTrips,
-
-        // App Data Actions & State (filtering, dates, etc)
-        ...restAppData,
-
-        // Charges Actions
-        replaceCharges, // needed for sync/restore
+        ...safeAppData,
+        replaceCharges,
         ...restChargesData,
-
-        // Safe Actions (Wrapped with Confirmation)
-        clearData: confirmation.clearData,
-        saveToHistory: confirmation.saveToHistory,
-        loadFromHistory: confirmation.loadFromHistory,
-        clearHistory: confirmation.clearHistory,
-
-        // Confirmation Modal Interface (for UI to render)
-        confirmModalState: confirmation.confirmModalState,
-        closeConfirmation: confirmation.closeConfirmation,
-        showConfirmation: confirmation.showConfirmation,
-
-        // Database & File Interface
-        database, // { sqlReady, exportDatabase, ... }
-        fileHandling, // { pendingFile, readFile ... }
-        loadFile, // Load .db file and optionally merge trips
-        exportData, // Export trips to .db file
-        loadChargeRegistry, // Load charges from CSV file
-
-        // Sync Interface
-        googleSync, // { isSyncing, lastSync, ... }
-
-        // UI State (Modals)
+        clearData: confirmation?.clearData,
+        saveToHistory: confirmation?.saveToHistory,
+        loadFromHistory: confirmation?.loadFromHistory,
+        clearHistory: confirmation?.clearHistory,
+        confirmModalState: confirmation?.confirmModalState,
+        closeConfirmation: confirmation?.closeConfirmation,
+        showConfirmation: confirmation?.showConfirmation,
+        database,
+        fileHandling,
+        loadFile,
+        exportData,
+        loadChargeRegistry,
+        googleSync,
         ...modalState,
     };
 
-    // Memoize the context value to prevent unnecessary re-renders
     const memoizedValue = useMemo(() => value, [
-        // Dependencies for value object
-        // 1. Data State
         rawTrips, filtered, data, charges, tripHistory,
-
-        // 2. App Data Actions (spread from restAppData) - hooks should yield stable functions
-        restAppData,
-
-        // 3. Charges Actions (spread from restChargesData)
-        replaceCharges, restChargesData,
-
-        // 4. Safe Actions
-        confirmation.clearData, confirmation.saveToHistory, confirmation.loadFromHistory, confirmation.clearHistory,
-
-        // 5. Confirmation UI
-        confirmation.confirmModalState, confirmation.closeConfirmation, confirmation.showConfirmation,
-
-        // 6. Sub-contexts (Memoized in their own hooks now)
-        database, fileHandling, googleSync, modalState,
-
-        // 7. Functions defined here
+        safeAppData, restChargesData, confirmation, database, fileHandling, googleSync, modalState,
         setRawTrips, loadFile, exportData, loadChargeRegistry
     ]);
 
@@ -339,4 +278,3 @@ export const DataProvider = ({ children }) => {
         </DataContext.Provider>
     );
 };
-
