@@ -1,23 +1,28 @@
 // BYD Stats - Battery Calculations Utility
 // Implements advanced SoH estimation for LFP batteries
 
+import { Charge, SoHData, ChargerType } from '../types';
+
 /**
  * Estimates Battery State of Health (SoH) based on usage patterns
- * 
- * @param {Array} charges - List of charge sessions
- * @param {string} mfgDate - Vehicle manufacturing date (YYYY-MM-DD or similar)
- * @param {number} batteryNetCapacity - Net capacity in kWh (e.g. 82.5)
- * @returns {Object} Estimated SoH data and metrics
  */
-export const calculateAdvancedSoH = (charges = [], mfgDate, batteryNetCapacity = 60.48, chargerTypes = [], thermalStressFactor = 1.0) => {
+export const calculateAdvancedSoH = (
+    charges: Charge[] = [],
+    mfgDate: string,
+    batteryNetCapacity: number | string = 60.48,
+    chargerTypes: ChargerType[] = [],
+    thermalStressFactor: number = 1.0
+): SoHData => {
     // Fallback for battery capacity if 0 is passed
-    const netCapacity = parseFloat(batteryNetCapacity) || 60.48;
+    const netCapacity = (typeof batteryNetCapacity === 'string' ? parseFloat(batteryNetCapacity) : batteryNetCapacity) || 60.48;
 
     if (!charges || charges.length === 0 || !mfgDate) {
         return {
             estimated_soh: 100,
             real_cycles_count: 0,
             stress_score: 1.0 * thermalStressFactor,
+            charging_stress: 1.0,
+            thermal_stress: thermalStressFactor,
             calibration_warning: false,
             degradation: { sei: 0, cycle: 0, calendar: 0 }
         };
@@ -35,13 +40,13 @@ export const calculateAdvancedSoH = (charges = [], mfgDate, batteryNetCapacity =
 
     validCharges.forEach(charge => {
         // Handle kwh / kwhCharged alias
-        const kwh = parseFloat(charge.kwhCharged || charge.kwh) || 0;
-        const speed = parseFloat(charge.speedKw) || 0;
+        const kwh = checkNum(charge.kwhCharged) || checkNum(charge.kwh);
+        const speed = checkNum(charge.speedKw);
         const chargerType = chargerTypes.find(ct => ct.id === charge.chargerTypeId);
         const userEfficiency = chargerType?.efficiency;
 
         // Efficiency correction
-        let efficiency;
+        let efficiency = 1.0;
         if (userEfficiency !== undefined && userEfficiency < 1.0 && userEfficiency > 0) {
             efficiency = userEfficiency;
         } else {
@@ -93,7 +98,7 @@ export const calculateAdvancedSoH = (charges = [], mfgDate, batteryNetCapacity =
         const mfg = new Date(mfgDate);
         if (!isNaN(mfg.getTime())) {
             const now = new Date();
-            const age_years = (now - mfg) / (1000 * 60 * 60 * 24 * 365.25);
+            const age_years = (now.getTime() - mfg.getTime()) / (1000 * 60 * 60 * 24 * 365.25);
             calendar_degradation = Math.max(0, age_years * 0.75);
         }
     } catch (e) {
@@ -121,17 +126,21 @@ export const calculateAdvancedSoH = (charges = [], mfgDate, batteryNetCapacity =
     };
 };
 
+function checkNum(val: any): number {
+    return typeof val === 'number' ? val : 0;
+}
+
 /**
  * Estimates Initial SoC based on odometer and previous charge
- * 
- * @param {Object} previousCharge - Charge object with { odometer, finalPercentage }
- * @param {number} currentOdometer - New odometer reading
- * @param {number} avgEfficiency - Average consumption kWh/100km
- * @param {number} batterySize - Battery capacity in kWh
- * @returns {number|null} Estimated Initial SoC % (0-100) or null
  */
-export const estimateInitialSoC = (previousCharge, currentOdometer, avgEfficiency, batterySize) => {
+export const estimateInitialSoC = (
+    previousCharge: { odometer?: number; finalPercentage?: number },
+    currentOdometer: number,
+    avgEfficiency: number,
+    batterySize: number
+): number | null => {
     if (!previousCharge || !currentOdometer || !avgEfficiency || !batterySize) return null;
+    if (typeof previousCharge.odometer !== 'number' || typeof previousCharge.finalPercentage !== 'number') return null;
 
     const distance = currentOdometer - previousCharge.odometer;
     if (distance <= 0) return null;

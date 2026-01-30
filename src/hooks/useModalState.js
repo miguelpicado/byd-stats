@@ -1,5 +1,5 @@
 // BYD Stats - Modal State Management Hook
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 
 /**
  * Hook to manage all modal states in a centralized way
@@ -31,11 +31,44 @@ const useModalState = () => {
   const [selectedCharge, setSelectedCharge] = useState(null);
   const [editingCharge, setEditingCharge] = useState(null);
 
+  // Sync Hash on mount and hash change (popstate)
+  useEffect(() => {
+    const handlePopState = () => {
+      const hash = window.location.hash;
+      const showAllTrips = hash === '#all-trips';
+      const showAllCharges = hash === '#all-charges';
+
+      setModals(prev => {
+        // Only trigger update if state actually changes to avoid loops
+        if (prev.allTrips === showAllTrips && prev.allCharges === showAllCharges) return prev;
+
+        return {
+          ...prev,
+          allTrips: showAllTrips,
+          allCharges: showAllCharges
+        };
+      });
+    };
+
+    // Check on mount
+    handlePopState();
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   /**
    * Open a specific modal
    * @param {string} name - Modal name to open
    */
   const openModal = useCallback((name) => {
+    // History handling for specific modals
+    if (name === 'allTrips') {
+      if (window.location.hash !== '#all-trips') window.history.pushState(null, '', '/#all-trips');
+    } else if (name === 'allCharges') {
+      if (window.location.hash !== '#all-charges') window.history.pushState(null, '', '/#all-charges');
+    }
+
     setModals(prev => ({ ...prev, [name]: true }));
   }, []);
 
@@ -44,6 +77,18 @@ const useModalState = () => {
    * @param {string} name - Modal name to close
    */
   const closeModal = useCallback((name) => {
+    // History handling for specific modals
+    if ((name === 'allTrips' && window.location.hash === '#all-trips') ||
+      (name === 'allCharges' && window.location.hash === '#all-charges')) {
+      window.history.back();
+      // State update happens in popstate listener, but we can optimistically set it here too
+      // However, standard flow relies on popstate. 
+      // Force closing just in case back doesn't fire immediately or is blocked?
+      // Better to let the logic flow naturally. But if history stack is weird, might fail.
+      // Let's rely on history.back() triggering popstate for clean nav.
+      // If we force setModals(false) here, and THEN popstate fires, it's redundant but safe.
+    }
+
     setModals(prev => ({ ...prev, [name]: false }));
   }, []);
 

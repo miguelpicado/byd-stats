@@ -1,45 +1,51 @@
 // BYD Stats - Date Utilities
 
-import i18n from '../i18n';
+// BYD Stats - Date Utilities
+
+// Removed i18n dependency for Worker compatibility
+// Functions now accept 'locale' string argument
 
 /**
  * Format month string (YYYYMM) to readable format (Short Month YYYY)
  * @param {string} m - Month string in YYYYMM format
+ * @param {string} locale - Locale string (e.g. 'es', 'en')
  * @returns {string} Formatted month string
  */
-export const formatMonth = (m) => {
+export const formatMonth = (m, locale = 'es') => {
     if (!m || m.length < 6) return m || '';
     const year = parseInt(m.slice(0, 4), 10);
     const month = parseInt(m.slice(4, 6), 10) - 1;
     const date = new Date(year, month);
     // Capitalize first letter
-    const formatted = date.toLocaleDateString(i18n.language, { month: 'short', year: 'numeric' });
+    const formatted = date.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
     return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 };
 
 /**
  * Format date string (YYYYMMDD) to readable format (DD/MM/YYYY or locale default)
  * @param {string} d - Date string in YYYYMMDD format
+ * @param {string} locale - Locale string
  * @returns {string} Formatted date string
  */
-export const formatDate = (d) => {
+export const formatDate = (d, locale = 'es') => {
     if (!d || d.length < 8) return d || '';
     const year = parseInt(d.slice(0, 4), 10);
     const month = parseInt(d.slice(4, 6), 10) - 1;
     const day = parseInt(d.slice(6, 8), 10);
     const date = new Date(year, month, day);
-    return date.toLocaleDateString(i18n.language, { day: '2-digit', month: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
 };
 
 /**
  * Format timestamp to time string (HH:MM)
  * @param {number} timestamp - Unix timestamp in seconds
+ * @param {string} locale - Locale string
  * @returns {string} Formatted time string
  */
-export const formatTime = (timestamp) => {
+export const formatTime = (timestamp, locale = 'es') => {
     if (!timestamp) return '';
     const date = new Date(timestamp * 1000);
-    return date.toLocaleTimeString(i18n.language, { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
 };
 
 /**
