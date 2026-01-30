@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useChargeImporter } from '../useChargeImporter';
+import { toast } from 'react-hot-toast';
 
 // Mock dependencies
 const mockT = vi.fn((key, params) => key + (params ? JSON.stringify(params) : ''));
@@ -33,8 +34,7 @@ vi.mock('@/providers/DataProvider', () => ({
     })
 }));
 
-// Mock window.alert
-global.alert = vi.fn();
+// No need to mock alert as we use toast now
 
 describe('useChargeImporter', () => {
     beforeEach(() => {
@@ -87,8 +87,8 @@ describe('useChargeImporter', () => {
         // Verify sync triggered
         expect(mockSyncNow).toHaveBeenCalled();
 
-        // Verify alert shown
-        expect(global.alert).toHaveBeenCalledWith(expect.stringContaining('charges.chargesImported'));
+        // Verify toast shown
+        expect(toast.success).toHaveBeenCalledWith(expect.stringContaining('charges.chargesImported'));
     });
 
     it('should handle empty or invalid files', async () => {
@@ -100,7 +100,7 @@ describe('useChargeImporter', () => {
             await result.current.loadChargeRegistry(file);
         });
 
-        expect(global.alert).toHaveBeenCalledWith('errors.noDataFound');
+        expect(toast.error).toHaveBeenCalledWith('errors.noDataFound');
         expect(mockAddMultipleCharges).not.toHaveBeenCalled();
     });
 });

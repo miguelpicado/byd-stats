@@ -15,12 +15,33 @@ vi.mock('react-i18next', () => ({
 
 vi.mock('@/providers/DataProvider', () => ({
     useData: () => ({
-        stats: { summary: {}, monthly: {}, daily: {}, hourly: {}, weekday: {}, tripDist: {}, effScatter: {}, top: {} },
-        trips: [], // rawTrips
+        stats: {
+            summary: {},
+            monthly: [],
+            daily: [],
+            hourly: Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0 })),
+            weekday: [],
+            tripDist: [],
+            effScatter: [],
+            top: { km: [], kwh: [], dur: [], fuel: [] }
+        },
+        trips: [],
         filtered: [],
         charges: [],
         openModal: vi.fn(),
         modals: {}
+    }),
+    useDataState: () => ({
+        stats: { summary: {}, monthly: [], daily: [], hourly: [], weekday: [], tripDist: [], effScatter: [], top: { km: [], kwh: [], dur: [], fuel: [] } },
+        trips: [],
+        filtered: [],
+        charges: [],
+        modals: {}
+    }),
+    useDataDispatch: () => ({
+        openModal: vi.fn(),
+        closeModal: vi.fn(),
+        setRawTrips: vi.fn()
     })
 }));
 
@@ -64,26 +85,26 @@ vi.mock('@/hooks/useChartDimensions', () => ({
     })
 }));
 
-// Mock Child Components to avoid rendering charts
-vi.mock('@/components/tabs/OverviewTab', () => ({
+// Mock Child Components to avoid rendering charts - using the correct alias path
+vi.mock('@tabs/OverviewTab', () => ({
     default: () => <div data-testid="tab-overview">Overview Tab Content</div>
 }));
-vi.mock('@/components/tabs/TrendsTab', () => ({
+vi.mock('@tabs/TrendsTab', () => ({
     default: () => <div data-testid="tab-trends">Trends Tab Content</div>
 }));
-vi.mock('@/components/tabs/PatternsTab', () => ({
+vi.mock('@tabs/PatternsTab', () => ({
     default: () => <div data-testid="tab-patterns">Patterns Tab Content</div>
 }));
-vi.mock('@/components/tabs/EfficiencyTab', () => ({
+vi.mock('@tabs/EfficiencyTab', () => ({
     default: () => <div data-testid="tab-efficiency">Efficiency Tab Content</div>
 }));
-vi.mock('@/components/tabs/RecordsTab', () => ({
+vi.mock('@tabs/RecordsTab', () => ({
     default: () => <div data-testid="tab-records">Records Tab Content</div>
 }));
-vi.mock('@/components/tabs/HistoryTab', () => ({
+vi.mock('@tabs/HistoryTab', () => ({
     default: () => <div data-testid="tab-history">History Tab Content</div>
 }));
-vi.mock('@/components/tabs/ChargesTab', () => ({
+vi.mock('@tabs/ChargesTab', () => ({
     default: () => <div data-testid="tab-charges">Charges Tab Content</div>
 }));
 
