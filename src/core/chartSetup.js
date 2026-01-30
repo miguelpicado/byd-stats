@@ -12,7 +12,8 @@ import {
     Legend,
     Filler,
     TimeScale,
-    LogarithmicScale
+    LogarithmicScale,
+    Decimation
 } from 'chart.js';
 
 // Register all necessary components
@@ -29,7 +30,8 @@ ChartJS.register(
     Legend,
     Filler,
     TimeScale,
-    LogarithmicScale
+    LogarithmicScale,
+    Decimation
 );
 
 // Custom plugin to prevent subpixel rounding issues from canceling animations
@@ -47,7 +49,7 @@ const subpixelResizePlugin = {
         chart._firstResize = true;
 
         // Override resize function
-        chart.resize = function(width, height) {
+        chart.resize = function (width, height) {
             const now = Date.now();
             const timeSinceMount = now - chart._mountTime;
 

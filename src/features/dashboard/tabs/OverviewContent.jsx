@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
@@ -7,7 +7,7 @@ import ChartCard from '@components/ui/ChartCard';
 import HybridStatsCard from '@components/cards/HybridStatsCard';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
-import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Activity, Fuel } from '@components/Icons.jsx'; // Removed unused icons if any
+import { MapPin, Zap, Car, Clock, Battery, TrendingUp, Activity, Fuel } from '@components/Icons.jsx';
 import { useLayout } from '@/context/LayoutContext';
 
 const PIE_CHART_OPTIONS = {
@@ -41,6 +41,8 @@ const OverviewContent = ({
     settings,
     onInsightClick,
     onOdometerClick,
+    onMfgDateClick,
+    onThermalStressClick,
     showOdometerModal,
     onCloseOdometerModal,
     insightType,
@@ -49,6 +51,28 @@ const OverviewContent = ({
 }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
+
+    // Refs to chart instances for manual animation control
+    const lineChartRef = useRef(null);
+    const pieChartRef = useRef(null);
+
+    // Effect to trigger animation when tab becomes active
+    useEffect(() => {
+        if (isActive) {
+            // Slight delay to ensure visibility before animating
+            const timer = setTimeout(() => {
+                if (lineChartRef.current) {
+                    lineChartRef.current.reset();
+                    lineChartRef.current.update();
+                }
+                if (pieChartRef.current) {
+                    pieChartRef.current.reset();
+                    pieChartRef.current.update();
+                }
+            }, 50);
+            return () => clearTimeout(timer);
+        }
+    }, [isActive]);
 
     const getStatsConfig = () => [
         {
@@ -71,14 +95,13 @@ const OverviewContent = ({
             onClick: () => onInsightClick('energy')
         },
         {
-            key: 'trips',
-            icon: Car,
-            label: t('stats.trips'),
-            value: summary.totalTrips,
-            unit: "",
+            key: 'range',
+            icon: Battery,
+            label: t('stats.estimatedRange'),
+            value: summary.estimatedRange,
+            unit: t('units.km'),
             color: "bg-amber-500/20 text-amber-400",
-            sub: `${summary.tripsDay}/${t('units.day')}`,
-            onClick: () => onInsightClick('trips')
+            onClick: () => onInsightClick('range')
         },
         summary.isHybrid ? {
             key: 'stationary',
@@ -124,14 +147,13 @@ const OverviewContent = ({
             onClick: () => onInsightClick('stationary')
         },
         {
-            key: 'avgTrip',
-            icon: MapPin,
-            label: t('stats.avgTrip'),
-            value: summary.avgKm,
-            unit: t('units.km'),
-            color: "bg-orange-500/20 text-orange-400",
-            sub: `${summary.avgMin} min`,
-            onClick: () => onInsightClick('avgTrip')
+            key: 'soh',
+            icon: Battery,
+            label: t('settings.soh'),
+            value: summary.soh,
+            unit: "%",
+            color: "bg-emerald-500/20 text-emerald-400",
+            onClick: () => onInsightClick('soh')
         },
         {
             key: 'speed',
@@ -183,16 +205,14 @@ const OverviewContent = ({
             <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
                 <ChartCard isCompact={isCompact} title={t('charts.monthlyDist')}>
                     <div key="line-container-h" style={{ width: '100%', height: smallChartHeight }}>
-                        {/* Used isActive in key to force remount and animation on tab switch */}
-                        <LineJS key={`overview-line-h-${isActive}`} options={lineChartOptions} data={lineChartData} />
+                        <LineJS ref={lineChartRef} options={lineChartOptions} data={lineChartData} />
                     </div>
                 </ChartCard>
                 <ChartCard isCompact={isCompact} title={t('charts.tripDist')}>
                     <div className="flex flex-row items-center gap-4">
                         <div className="w-1/2">
                             <div key="pie-container-h" style={{ width: '100%', height: smallChartHeight }}>
-                                {/* Used isActive in key to force remount and animation on tab switch */}
-                                <PieJS key={`overview-pie-h-${isActive}`} options={PIE_CHART_OPTIONS} data={pieChartData} />
+                                <PieJS ref={pieChartRef} options={PIE_CHART_OPTIONS} data={pieChartData} />
                             </div>
                         </div>
                         <div className="w-1/2 grid grid-cols-1 gap-1 text-center">
@@ -216,6 +236,9 @@ const OverviewContent = ({
                 type={insightType || 'distance'}
                 trips={trips}
                 settings={settings}
+                summary={summary}
+                onMfgDateClick={onMfgDateClick}
+                onThermalStressClick={onThermalStressClick}
             />
             <OdometerAdjustmentModal
                 isOpen={showOdometerModal}
@@ -238,10 +261,13 @@ OverviewContent.propTypes = {
     settings: PropTypes.object,
     onInsightClick: PropTypes.func.isRequired,
     onOdometerClick: PropTypes.func.isRequired,
+    onMfgDateClick: PropTypes.func.isRequired,
+    onThermalStressClick: PropTypes.func,
     showOdometerModal: PropTypes.bool.isRequired,
     onCloseOdometerModal: PropTypes.func.isRequired,
     insightType: PropTypes.string,
-    onCloseInsightModal: PropTypes.func.isRequired
+    onCloseInsightModal: PropTypes.func.isRequired,
+    isActive: PropTypes.bool
 };
 
 export default OverviewContent;

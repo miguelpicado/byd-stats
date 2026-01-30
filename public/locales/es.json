@@ -56,6 +56,7 @@
         "consumption": "Consumo",
         "stationaryConsumption": "Consumo en parado",
         "stationary": "Consumo en parado",
+        "estimatedRange": "Autonomía estimada",
         "cost": "Coste"
     },
     "units": {
@@ -152,7 +153,16 @@
         "licensePlate": "Matrícula",
         "insurancePolicy": "Nº Póliza del seguro",
         "batterySize": "Tamaño de la batería (kWh)",
-        "soh": "State of Health - SoH (%)",
+        "soh": "Estado de Salud - SoH (%)",
+        "sohMode": "Modo de cálculo SoH",
+        "sohManual": "Manual",
+        "sohCalculated": "Calculado (LFP)",
+        "mfgDate": "Fecha de fabricación",
+        "mfgDateHint": "Necesaria para degradación por tiempo",
+        "estimatedSoh": "SoH Estimado",
+        "stressScore": "Índice de Estrés",
+        "cyclesCount": "Ciclos Reales",
+        "calibrationWarning": "¡BMS requiere calibración!",
         "electricityPrice": "Precio electricidad",
         "priceCustom": "Personalizado",
         "priceCalculated": "Calculado",
@@ -188,10 +198,7 @@
         "fuelPriceHint": "Precio medio de gasolina para calcular costes (solo híbridos)",
         "priceStrategy": "Modo de precio",
         "priceDynamics": "Dinámico",
-        "priceDynamicsHint": "Usa el precio de la carga más reciente anterior al viaje",
-        "custom": "Precio Fijo",
-        "average": "Precio Medio",
-        "dynamic": "Dinámico"
+        "priceDynamicsHint": "Usa el precio de la carga más reciente anterior al viaje"
     },
     "upload": {
         "title": "Estadísticas BYD",
@@ -301,7 +308,26 @@
     "modals": {
         "odometerTitle": "Ajuste de Odómetro",
         "odometerDesc": "Ajuste visual para corregir la diferencia con el marcador del coche.",
-        "offset": "Desfase (km)"
+        "offset": "Desfase (km)",
+        "mfgDate": {
+            "title": "Fecha de Fabricación",
+            "desc": "Para calcular con precisión el estado de salud (SoH) de tu batería LFP, necesitamos saber cuándo se fabricó el coche.",
+            "instructions": "Abre la puerta del copiloto (a veces la del conductor) y busca una placa metálica o pegatina negra en el marco de la puerta (el pilar central donde ancla el cinturón). En esa placa, además del VIN, suele aparecer el campo 'Date of mfg' o 'Built date' con el formato MM/YY.",
+            "formatHint": "Formato: MM/YY (Ej. 03/24)",
+            "save": "Confirmar Fecha",
+            "invalid": "Formato no válido (MM/YY)"
+        },
+        "thermalStress": {
+            "title": "Factor de Estrés Térmico",
+            "desc": "Ajusta el factor multiplicador según la temperatura media anual de donde vives. El calor acelera la degradación química de las celdas LFP.",
+            "info": "Este valor afecta globalmente al desgaste por ciclos y degradación SEI.",
+            "factor": "Factor Seleccionado",
+            "recommendations": "Recomendaciones",
+            "recCold": "Clima frío / Templado",
+            "recIdeal": "Clima ideal / Estándar",
+            "recHot": "Clima cálido / Veranos calurosos",
+            "recExtreme": "Clima extremo / Desértico"
+        }
     },
     "errors": {
         "invalidFile": "Solo se admiten archivos *.DB o *.JPG (base de datos renombrada)\nEncuentra EC_Database.db en la carpeta \"Energydata\" del coche",
@@ -516,8 +542,29 @@
         "speedTitle": "Insights de Velocidad",
         "avgTripTitle": "Insights de Viaje Medio",
         "activeDaysTitle": "Insights de Actividad",
+        "rangeTitle": "Detalle de Autonomía",
+        "rangeDesc": "Este cálculo utiliza tu historial de viajes y la configuración actual de batería. Es fundamental introducir el tamaño real de la batería y su salud (SoH) en los ajustes para que los datos sean precisos. La autonomía real puede variar según el clima, la carga y el estilo de conducción.",
+        "rangeHighway": "Autonomía Autopista",
+        "rangeHighwayDesc": "Estimada con un consumo 20% superior al habitual.",
+        "rangeCity": "Autonomía Ciudad",
+        "rangeCityDesc": "Estimada con un consumo 20% inferior al habitual.",
         "stationaryTitle": "Consumo en Parado",
         "stationaryDesc": "Aquí se contabiliza todo el consumo de todos los viajes registrados de menos de 0.5km.",
+        "sohTitle": "Salud de la Batería (SoH)",
+        "sohDesc": "Estimación avanzada basada en el degradado natural de las celdas LFP y el historial de uso.",
+        "sohMethodology": "Metodología de cálculo",
+        "sohBreakdown": "Desglose por factores",
+        "sohSei": "Formación de SEI (Capa Inicial)",
+        "sohCycle": "Desgaste por Ciclos de Carga",
+        "sohCalendar": "Degradación por Calendario",
+        "sohStressFactor": "Factor de Estrés Térmico",
+        "sohRealCycles": "Ciclos Reales (corregidos)",
+        "sohCalibration": "Estado de Calibración BMS",
+        "sohFormula": "Fórmula aplicada",
+        "sohFormulaText": "Degradación Total = SEI + (Ciclos * 0.005% * Estrés) + (Años * 0.75%)",
+        "sohSeiDesc": "Caída lineal de hasta el 2% durante los primeros 50 ciclos.",
+        "sohStressDesc": "La potencia de carga afecta: Lenta 8A (0.9x), AC (1.0x), DC (1.2x), HPC (2.8x).",
+        "sohCalendarDesc": "Envejecimiento natural por paso del tiempo (0.75% anual).",
         "totalKm": "Total Km",
         "kmPerDay": "Km/día activo",
         "avgPerTrip": "Media/viaje",
@@ -542,7 +589,13 @@
         "avgDist": "Distancia media",
         "avgTime": "Tiempo",
         "avgCons": "Consumo",
-        "totalDays": "Días activos"
+        "totalDays": "Días activos",
+        "fuelTitle": "Insights de Gasolina",
+        "avgFuelEff": "Media General",
+        "totalFuel": "Total Litros",
+        "byDistance": "Por Distancia",
+        "shortTrips": "Viajes < 100km",
+        "longTrips": "Viajes > 100km"
     },
     "sync": {
         "conflictDetected": "Conflicto de Sincronización",

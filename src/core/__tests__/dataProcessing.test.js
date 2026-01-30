@@ -10,12 +10,13 @@ describe('dataProcessing', () => {
             expect(processData(undefined)).toBeNull();
         });
 
-        it('should return null for array with no valid trips (trip <= 0)', () => {
-            const invalidTrips = [
+        it('should handle zero distance trips as stationary consumption', () => {
+            const trips = [
                 { trip: 0, electricity: 1.0 },
-                { trip: -5, electricity: 1.0 },
             ];
-            expect(processData(invalidTrips)).toBeNull();
+            const result = processData(trips);
+            expect(result).not.toBeNull();
+            expect(result.summary.stationaryConsumption).toBe('1.0');
         });
 
         it('should process valid trips correctly', () => {
@@ -148,11 +149,14 @@ describe('dataProcessing', () => {
             expect(result.top.dur[0].duration).toBe(3000);
         });
 
-        it('should handle zero totalKm gracefully', () => {
+        it('should handle zero totalKm as stationary consumption only', () => {
             const trips = [
                 { trip: 0, electricity: 1.0 }, // All zero trips
             ];
-            expect(processData(trips)).toBeNull();
+            const result = processData(trips);
+            expect(result).not.toBeNull();
+            expect(result.summary.totalKm).toBe('0.0');
+            expect(result.summary.stationaryConsumption).toBe('1.0');
         });
 
         it('should skip malformed trips without crashing', () => {

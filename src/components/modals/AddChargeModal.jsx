@@ -11,6 +11,7 @@ import ModalHeader from '../common/ModalHeader';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
+import { estimateInitialSoC } from '../../core/batteryCalculations';
 
 /**
  * Modal for adding or editing a charging session
@@ -26,7 +27,8 @@ const AddChargeModal = () => {
         updateCharge,
         editingCharge,
         setEditingCharge,
-        stats
+        stats,
+        charges
     } = useData();
 
     const onClose = () => closeModal('addCharge');
@@ -45,8 +47,10 @@ const AddChargeModal = () => {
         pricePerKwh: '',
         finalPercentage: '',
         initialPercentage: '',
+        initialPercentage: '',
         litersCharged: '',
-        pricePerLiter: ''
+        pricePerLiter: '',
+        isSOCEstimated: false
     });
 
     // Reset or Load data when opening/editing
@@ -66,7 +70,8 @@ const AddChargeModal = () => {
                 finalPercentage: editingCharge.finalPercentage || '',
                 initialPercentage: editingCharge.initialPercentage || '',
                 litersCharged: editingCharge.litersCharged || '',
-                pricePerLiter: editingCharge.pricePerLiter || ''
+                pricePerLiter: editingCharge.pricePerLiter || '',
+                isSOCEstimated: editingCharge.isSOCEstimated || false
             });
         } else {
             // Defaults for new charge
@@ -83,13 +88,19 @@ const AddChargeModal = () => {
                 finalPercentage: '',
                 initialPercentage: '',
                 litersCharged: '',
-                pricePerLiter: ''
+                pricePerLiter: '',
+                isSOCEstimated: false
             }));
         }
     }, [modals.addCharge, editingCharge, chargerTypes, isHybrid, stats]);
 
     const handleChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData(prev => ({
+            ...prev,
+            [field]: value,
+            // If user manually changes initialPercentage, mark as NOT estimated
+            isSOCEstimated: field === 'initialPercentage' ? false : prev.isSOCEstimated
+        }));
     };
 
     const getRealKwh = useCallback(() => {
@@ -98,6 +109,40 @@ const AddChargeModal = () => {
         if (!type || !type.efficiency) return null;
         return (parseFloat(formData.kwhCharged) * type.efficiency).toFixed(2);
     }, [formData.kwhCharged, formData.chargerTypeId, chargerTypes]);
+
+    // Auto-estimate Initial SoC when odometer changes
+    useEffect(() => {
+        // Only run if not editing an existing charge (or if we want to allow re-estimation? Better safe: only for new or if field is empty/estimated)
+        // Let's run if: electric type AND odometer valid AND (initialPct invalid/empty OR isSOCEstimated)
+        if (formData.type !== 'electric' || !formData.odometer) return;
+
+        // Don't overwrite if user manually set it (unless it was already estimated)
+        if (formData.initialPercentage && !formData.isSOCEstimated && !editingCharge) return;
+
+        const currentOdo = parseFloat(formData.odometer);
+        if (isNaN(currentOdo)) return;
+
+        // Find previous charge (closest odometer < current)
+        // Assuming charges are sorted date DESC. We need to find the first one with odo < current.
+        // Or better: sort all by odometer DESC and find first < current
+        const sortedCharges = [...(charges || [])].sort((a, b) => (b.odometer || 0) - (a.odometer || 0));
+        const previousCharge = sortedCharges.find(c => (c.odometer || 0) < currentOdo && c.id !== editingCharge?.id);
+
+        if (previousCharge) {
+            const avgEfficiency = stats?.summary?.avgEfficiency || 18.0; // Fallback or use settings?
+            const batterySize = settings.batterySize || 60.48;
+
+            const estimated = estimateInitialSoC(previousCharge, currentOdo, avgEfficiency, batterySize);
+
+            if (estimated !== null) {
+                setFormData(prev => ({
+                    ...prev,
+                    initialPercentage: estimated.toString(),
+                    isSOCEstimated: true
+                }));
+            }
+        }
+    }, [formData.odometer, formData.type, charges, editingCharge, stats?.summary?.avgEfficiency, settings.batterySize]);
 
     // ... (rest of the file until handleSubmit)
 
@@ -131,6 +176,7 @@ const AddChargeModal = () => {
             chargeData.pricePerKwh = parseFloat(formData.pricePerKwh) || 0;
             chargeData.finalPercentage = parseFloat(formData.finalPercentage) || 0;
             chargeData.initialPercentage = formData.initialPercentage ? parseFloat(formData.initialPercentage) : null;
+            chargeData.isSOCEstimated = formData.isSOCEstimated;
         } else {
             chargeData.litersCharged = parseFloat(formData.litersCharged) || 0;
             chargeData.pricePerLiter = parseFloat(formData.pricePerLiter) || 0;
@@ -323,7 +369,7 @@ const AddChargeModal = () => {
                                         value={formData.initialPercentage}
                                         onChange={(e) => handleChange('initialPercentage', e.target.value)}
                                         placeholder={t('charges.optional')}
-                                        className={inputClass}
+                                        className={`${inputClass} ${formData.isSOCEstimated ? 'text-orange-500 font-bold border-orange-200 bg-orange-50 dark:bg-orange-900/10' : ''}`}
                                     />
                                 </div>
                             </div>
