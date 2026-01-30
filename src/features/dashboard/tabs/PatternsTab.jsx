@@ -1,13 +1,15 @@
 // BYD Stats - Patterns Tab Component
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar as BarJS, Radar as RadarJS } from 'react-chartjs-2';
-import { Calendar, Clock, MapPin, TrendingUp, BYD_RED } from '@components/Icons.jsx';
+import { Calendar, Clock, MapPin, TrendingUp, BYD_RED, Car } from '@components/Icons.jsx';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
 import { useLayout } from '@/context/LayoutContext';
 
-// Static chart options
+const COMPACT_SPACE_Y = 'space-y-3';
+
+// Static chart options that don't change
 const BAR_CHART_OPTIONS_VERTICAL = {
   maintainAspectRatio: false,
   scales: {
@@ -17,6 +19,13 @@ const BAR_CHART_OPTIONS_VERTICAL = {
   plugins: { legend: { display: false } }
 };
 
+const RADAR_CHART_OPTIONS_VERTICAL = {
+  maintainAspectRatio: false,
+  scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
+  plugins: { legend: { display: false } },
+  interaction: { mode: 'index', intersect: false }
+};
+
 const BAR_CHART_OPTIONS_HORIZONTAL = {
   maintainAspectRatio: false,
   scales: {
@@ -24,13 +33,6 @@ const BAR_CHART_OPTIONS_HORIZONTAL = {
     x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
   },
   plugins: { legend: { display: false } }
-};
-
-const RADAR_CHART_OPTIONS_VERTICAL = {
-  maintainAspectRatio: false,
-  scales: { r: { grid: { color: '#94a3b8', borderDash: [3, 3] }, ticks: { display: false }, pointLabels: { font: { size: 10 }, color: '#64748b' } } },
-  plugins: { legend: { display: false } },
-  interaction: { mode: 'index', intersect: false }
 };
 
 const RADAR_CHART_OPTIONS_HORIZONTAL = {
@@ -53,21 +55,47 @@ const PatternsTab = React.memo(({
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
 
-  // Calculate top day and hour
+  // Refs for animation control
+  const barChartRef = useRef(null);
+  const radarChartRef = useRef(null);
+
+  // Trigger animation on activation
+  useEffect(() => {
+    if (isActive) {
+      const timer = setTimeout(() => {
+        if (barChartRef.current) {
+          barChartRef.current.reset();
+          barChartRef.current.update();
+        }
+        if (radarChartRef.current) {
+          radarChartRef.current.reset();
+          radarChartRef.current.update();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
+
+  // Calculate top day and hour based on TRIPS
   const topDay = useMemo(() =>
-    weekday.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b),
+    weekday.length > 0 ? weekday.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b) : { day: 'mon', trips: 0 },
     [weekday]
   );
 
   const topHour = useMemo(() =>
-    hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b),
+    hourly.length > 0 ? hourly.reduce((a, b) => (a.trips || 0) > (b.trips || 0) ? a : b) : { hour: 0, trips: 0 },
     [hourly]
   );
 
-  // Memoize chart data
+  // Memoize chart data - USING TRIPS
   const barChartData = useMemo(() => ({
     labels: hourly.map(h => `${h.hour}h`),
-    datasets: [{ label: t('stats.trips'), data: hourly.map(h => h.trips), backgroundColor: '#f59e0b', borderRadius: 2 }]
+    datasets: [{
+      label: t('stats.trips'),
+      data: hourly.map(h => h.trips),
+      backgroundColor: '#f59e0b',
+      borderRadius: 2
+    }]
   }), [hourly, t]);
 
   const radarChartDataVertical = useMemo(() => ({
@@ -84,23 +112,13 @@ const PatternsTab = React.memo(({
     }]
   }), [weekday, t]);
 
-  const radarChartDataHorizontal = useMemo(() => ({
-    labels: weekday.map(d => t(`daysShort.${d.day}`)),
-    datasets: [{
-      label: t('stats.trips'),
-      data: weekday.map(d => d.trips),
-      borderColor: '#f59e0b',
-      backgroundColor: 'rgba(245, 158, 11, 0.3)',
-      borderWidth: 2,
-      pointBackgroundColor: '#f59e0b',
-      pointRadius: 3
-    }]
-  }), [weekday, t]);
+  // Reuse data for horizontal layout
+  const radarChartDataHorizontal = radarChartDataVertical;
 
-  // Render vertical layout
+
   if (isVertical) {
     return (
-      <div className={patternsSpacing}>
+      <div className={isCompact ? 'space-y-3' : 'space-y-4'}>
         <div className={`grid gap-3 sm:gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
           <StatCard
             isVerticalMode={true}
@@ -126,11 +144,12 @@ const PatternsTab = React.memo(({
             isVerticalMode={true}
             isLarger={isLargerCard}
             isCompact={isCompact}
-            icon={MapPin}
-            label={t('stats.totalKm')}
-            value={summary.totalKm}
-            unit={t('units.km')}
-            color="bg-red-500/20 text-red-400"
+            icon={Car}
+            label={t('stats.trips')}
+            value={summary.totalTrips}
+            unit=""
+            color="bg-amber-500/20 text-amber-400"
+            sub={summary.tripsDay ? `${summary.tripsDay}/${t('units.day')}` : ''}
           />
           <StatCard
             isVerticalMode={true}
@@ -146,12 +165,12 @@ const PatternsTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
             <div style={{ width: '100%', height: patternsChartHeight }}>
-              <BarJS key={`patterns-bar-v-${isActive}`} options={BAR_CHART_OPTIONS_VERTICAL} data={barChartData} />
+              <BarJS ref={barChartRef} options={BAR_CHART_OPTIONS_VERTICAL} data={barChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
             <div style={{ width: '100%', height: patternsChartHeight }}>
-              <RadarJS key={`patterns-radar-v-${isActive}`} options={RADAR_CHART_OPTIONS_VERTICAL} data={radarChartDataVertical} />
+              <RadarJS ref={radarChartRef} options={RADAR_CHART_OPTIONS_VERTICAL} data={radarChartDataVertical} />
             </div>
           </ChartCard>
         </div>
@@ -168,9 +187,9 @@ const PatternsTab = React.memo(({
     );
   }
 
-  // Render horizontal layout
+  // Horizontal layout
   return (
-    <div className={patternsSpacing}>
+    <div className={isCompact ? COMPACT_SPACE_Y : 'space-y-4 sm:space-y-6'}>
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-4 !gap-3' : 'grid-cols-2 md:grid-cols-4'}`}>
         <StatCard
           isLarger={isLargerCard}
@@ -193,11 +212,12 @@ const PatternsTab = React.memo(({
         <StatCard
           isLarger={isLargerCard}
           isCompact={isCompact}
-          icon={MapPin}
-          label={t('stats.totalKm')}
-          value={summary.totalKm}
-          unit={t('units.km')}
-          color="bg-red-500/20 text-red-400"
+          icon={Car}
+          label={t('stats.trips')}
+          value={summary.totalTrips}
+          unit=""
+          color="bg-amber-500/20 text-amber-400"
+          sub={summary.tripsDay ? `${summary.tripsDay}/${t('units.day')}` : ''}
         />
         <StatCard
           isLarger={isLargerCard}
@@ -212,12 +232,12 @@ const PatternsTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.byHour')}>
           <div key="bar-container-h" style={{ width: '100%', height: patternsChartHeight }}>
-            <BarJS key={`patterns-bar-h-${isActive}`} options={BAR_CHART_OPTIONS_HORIZONTAL} data={barChartData} />
+            <BarJS ref={barChartRef} options={BAR_CHART_OPTIONS_HORIZONTAL} data={barChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.byDay')}>
           <div key="radar-container-h" style={{ width: '100%', height: patternsChartHeight }}>
-            <RadarJS key={`patterns-radar-h-${isActive}`} options={RADAR_CHART_OPTIONS_HORIZONTAL} data={radarChartDataHorizontal} />
+            <RadarJS ref={radarChartRef} options={RADAR_CHART_OPTIONS_HORIZONTAL} data={radarChartDataHorizontal} />
           </div>
         </ChartCard>
       </div>
@@ -237,5 +257,3 @@ const PatternsTab = React.memo(({
 PatternsTab.displayName = 'PatternsTab';
 
 export default PatternsTab;
-
-

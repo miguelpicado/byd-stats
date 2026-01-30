@@ -8,60 +8,59 @@ const LOG_LEVELS = {
     ERROR: 3
 };
 
-// In production, only show errors (suppress warnings and info)
-// In development, show warnings and errors (suppress info/debug) to keep console clean
-const CURRENT_LEVEL = import.meta.env.PROD ? LOG_LEVELS.ERROR : LOG_LEVELS.WARN;
+// Default levels based on environment
+const DEFAULT_LEVEL = import.meta.env?.PROD ? LOG_LEVELS.ERROR : LOG_LEVELS.WARN;
 
 /**
  * Leveled logger that filters output based on environment
- * - DEBUG: Development debugging information
- * - INFO: General informational messages
- * - WARN: Warning messages (shown in production)
- * - ERROR: Error messages (shown in production)
  */
 export const logger = {
-    level: 'info', // Default log level logging - only in development
+    _currentLevel: DEFAULT_LEVEL,
 
     /**
-     * Debug level logging - only in development
-     * @param {...any} args - Arguments to log
+     * Manually set the log level (useful for testing)
+     * @param {number} level - Level from LOG_LEVELS
+     */
+    setLevel: (level) => {
+        logger._currentLevel = level;
+    },
+
+    /**
+     * Debug level logging
      */
     debug: (...args) => {
-        if (CURRENT_LEVEL <= LOG_LEVELS.DEBUG) {
+        if (logger._currentLevel <= LOG_LEVELS.DEBUG) {
             console.log('[DEBUG]', ...args);
         }
     },
 
     /**
-     * Info level logging - only in development
-     * @param {...any} args - Arguments to log
+     * Info level logging
      */
     info: (...args) => {
-        if (CURRENT_LEVEL <= LOG_LEVELS.INFO) {
+        if (logger._currentLevel <= LOG_LEVELS.INFO) {
             console.info('[INFO]', ...args);
         }
     },
 
     /**
-     * Warning level logging - shown in production
-     * @param {...any} args - Arguments to log
+     * Warning level logging
      */
     warn: (...args) => {
-        if (CURRENT_LEVEL <= LOG_LEVELS.WARN) {
+        if (logger._currentLevel <= LOG_LEVELS.WARN) {
             console.warn('[WARN]', ...args);
         }
     },
 
     /**
-     * Error level logging - shown in production
-     * @param {...any} args - Arguments to log
+     * Error level logging
      */
     error: (...args) => {
-        if (CURRENT_LEVEL <= LOG_LEVELS.ERROR) {
+        if (logger._currentLevel <= LOG_LEVELS.ERROR) {
             console.error('[ERROR]', ...args);
         }
     }
 };
 
 export default logger;
-
+export { LOG_LEVELS };

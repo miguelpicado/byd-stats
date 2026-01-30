@@ -45,7 +45,11 @@ const DEFAULT_SETTINGS = {
     theme: 'auto',
     chargerTypes: DEFAULT_CHARGER_TYPES,
     hiddenTabs: [],
-    odometerOffset: 0
+    odometerOffset: 0,
+    thermalStressFactor: 1.0,
+    mfgDate: '',
+    mfgDateDisplay: '',
+    sohMode: 'manual'
 };
 
 /**
@@ -111,7 +115,11 @@ export const AppProvider = ({ children }) => {
                 theme: updated.theme ?? prev.theme ?? 'auto',
                 chargerTypes: updated.chargerTypes ?? prev.chargerTypes ?? DEFAULT_CHARGER_TYPES,
                 hiddenTabs: updated.hiddenTabs ?? prev.hiddenTabs ?? [],
-                odometerOffset: updated.odometerOffset ?? prev.odometerOffset ?? 0
+                odometerOffset: updated.odometerOffset ?? prev.odometerOffset ?? 0,
+                thermalStressFactor: updated.thermalStressFactor ?? prev.thermalStressFactor ?? 1.0,
+                mfgDate: updated.mfgDate ?? prev.mfgDate ?? '',
+                mfgDateDisplay: updated.mfgDateDisplay ?? prev.mfgDateDisplay ?? '',
+                sohMode: updated.sohMode ?? prev.sohMode ?? 'manual'
             };
 
             if (settingsKey) {

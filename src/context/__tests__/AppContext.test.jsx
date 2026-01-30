@@ -4,7 +4,7 @@ import React from 'react';
 import { AppProvider, useApp } from '../AppContext';
 
 // Mock logger
-vi.mock('../utils/logger', () => ({
+vi.mock('@core/logger', () => ({
     logger: {
         error: vi.fn(),
         warn: vi.fn(),
@@ -13,20 +13,12 @@ vi.mock('../utils/logger', () => ({
     }
 }));
 
-// Mock matchMedia
-Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    value: vi.fn().mockImplementation(query => ({
-        matches: false,
-        media: query,
-        onchange: null,
-        addListener: vi.fn(),
-        removeListener: vi.fn(),
-        addEventListener: vi.fn(),
-        removeEventListener: vi.fn(),
-        dispatchEvent: vi.fn(),
-    })),
-});
+// Mock CarContext
+vi.mock('../CarContext', () => ({
+    useCar: () => ({ activeCarId: 'test-car' })
+}));
+
+
 
 describe('AppContext', () => {
     beforeEach(() => {
@@ -50,7 +42,7 @@ describe('AppContext', () => {
             theme: 'dark',
             carModel: 'BYD Seal'
         };
-        window.localStorage.setItem('byd_settings', JSON.stringify(savedSettings));
+        window.localStorage.setItem('byd_settings_test-car', JSON.stringify(savedSettings));
 
         const { result } = renderHook(() => useApp(), { wrapper });
 
@@ -71,7 +63,7 @@ describe('AppContext', () => {
         expect(result.current.settings.carModel).toBe('BYD Atto 3');
         expect(result.current.settings.theme).toBe('light');
 
-        const saved = JSON.parse(window.localStorage.getItem('byd_settings'));
+        const saved = JSON.parse(window.localStorage.getItem('byd_settings_test-car'));
         expect(saved.carModel).toBe('BYD Atto 3');
         expect(saved.theme).toBe('light');
     });
@@ -98,6 +90,9 @@ describe('AppContext', () => {
         // Ensure other keys are preserved from defaults or previous state
         expect(result.current.settings.theme).toBe('auto');
         expect(result.current.settings.chargerTypes).toHaveLength(4);
+
+        const saved = JSON.parse(window.localStorage.getItem('byd_settings_test-car'));
+        expect(saved.batterySize).toBe(100);
     });
 
     it('should apply theme classes to document element', () => {
