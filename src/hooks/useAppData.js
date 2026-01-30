@@ -1,10 +1,12 @@
 // BYD Stats - App Data Management Hook
 // Centralized hook for managing trip data, filtering, and history
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { processData } from '@utils/dataProcessing';
+// processData imported for type support or fallback if needed, but we use worker
 import { logger } from '@utils/logger';
 import { STORAGE_KEY as BASE_STORAGE_KEY, TRIP_HISTORY_KEY as BASE_TRIP_HISTORY_KEY } from '@utils/constants';
+
+import * as Comlink from 'comlink';
 
 /**
  * Hook to manage application data: trips, filtering, and history
@@ -12,6 +14,21 @@ import { STORAGE_KEY as BASE_STORAGE_KEY, TRIP_HISTORY_KEY as BASE_TRIP_HISTORY_
  */
 const useAppData = (settings, charges = [], activeCarId = null) => {
     const { t, i18n } = useTranslation();
+
+    // Worker Reference
+    const workerRef = useRef(null);
+    useEffect(() => {
+        // Initialize worker
+        if (!workerRef.current) {
+            workerRef.current = Comlink.wrap(
+                new Worker(new URL('../workers/dataWorker.js', import.meta.url), { type: 'module' })
+            );
+        }
+    }, []);
+
+    // ... (rest of code) ...
+
+
 
     // specific keys for current car
     const storageKey = activeCarId ? `${BASE_STORAGE_KEY}_${activeCarId}` : null;
@@ -109,18 +126,90 @@ const useAppData = (settings, charges = [], activeCarId = null) => {
 
     // --- Computed: Filter trips based on current filter settings ---
     const filtered = useMemo(() => {
-        if (rawTrips.length === 0) return [];
+        if (!rawTrips || rawTrips.length === 0) return [];
+
         if (filterType === 'month' && selMonth) {
-            return rawTrips.filter(t => t.month === selMonth);
+            return rawTrips.filter(t => {
+                // Robust check: use existing month property OR derive from date
+                const m = t.month || (t.date ? t.date.substring(0, 6) : '');
+                return m === selMonth;
+            });
         }
+
         if (filterType === 'range') {
             let r = [...rawTrips];
-            if (dateFrom) r = r.filter(t => t.date >= dateFrom.replace(/-/g, ''));
-            if (dateTo) r = r.filter(t => t.date <= dateTo.replace(/-/g, ''));
+            if (dateFrom) {
+                const limit = dateFrom.replace(/-/g, '');
+                r = r.filter(t => (t.date || '') >= limit);
+            }
+            if (dateTo) {
+                const limit = dateTo.replace(/-/g, '');
+                r = r.filter(t => (t.date || '') <= limit);
+            }
             return r;
         }
+
         return rawTrips;
     }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
+
+    // --- Computed: Process filtered data for charts and stats (Async with Worker) ---
+    const [data, setData] = useState(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const process = async () => {
+            if (!filtered || filtered.length === 0) {
+                if (isMounted) setData(null);
+                return;
+            }
+
+            setIsProcessing(true);
+            try {
+                const processingSettings = {
+                    electricStrategy: settings?.priceStrategy || (settings?.useCalculatedPrice ? 'average' : 'custom'),
+                    fuelStrategy: settings?.fuelPriceStrategy || (settings?.useCalculatedFuelPrice ? 'average' : 'custom'),
+                    electricPrice: settings?.electricityPrice || 0,
+                    fuelPrice: settings?.fuelPrice || 0,
+                    batterySize: settings?.batterySize || 0,
+                    soh: settings?.soh || 100,
+                    sohMode: settings?.sohMode || 'manual',
+                    mfgDate: settings?.mfgDate,
+                    chargerTypes: settings?.chargerTypes || [],
+                    thermalStressFactor: parseFloat(settings?.thermalStressFactor) || 1.0,
+                    odometerOffset: parseFloat(settings?.odometerOffset) || 0
+                };
+
+                // Offload to worker
+                if (workerRef.current) {
+                    const result = await workerRef.current.processData(
+                        filtered,
+                        JSON.parse(JSON.stringify(processingSettings)),
+                        JSON.parse(JSON.stringify(charges)),
+                        i18n.language
+                    );
+
+                    if (result && processingSettings.odometerOffset) {
+                        const baseKm = parseFloat(result.summary.totalKm);
+                        if (!isNaN(baseKm)) {
+                            result.summary.totalKm = (baseKm + processingSettings.odometerOffset).toFixed(1);
+                        }
+                    }
+
+                    if (isMounted) setData(result);
+                }
+            } catch (e) {
+                logger.error('Worker processing error:', e);
+            } finally {
+                if (isMounted) setIsProcessing(false);
+            }
+        };
+
+        process();
+
+        return () => { isMounted = false; };
+    }, [filtered, i18n.language, settings, charges]);
 
     // --- Computed: Effective Prices (Dynamic vs Static) ---
     const effectiveElectricityPrice = useMemo(() => {
@@ -143,39 +232,7 @@ const useAppData = (settings, charges = [], activeCarId = null) => {
         return settings?.fuelPrice || 0;
     }, [settings?.useCalculatedFuelPrice, settings?.fuelPrice, charges]);
 
-    // --- Computed: Process filtered data for charts and stats ---
-    const data = useMemo(() => {
-        try {
-            const processingSettings = {
-                electricStrategy: settings?.priceStrategy || (settings?.useCalculatedPrice ? 'average' : 'custom'),
-                fuelStrategy: settings?.fuelPriceStrategy || (settings?.useCalculatedFuelPrice ? 'average' : 'custom'),
-                electricPrice: settings?.electricityPrice || 0,
-                fuelPrice: settings?.fuelPrice || 0,
-                batterySize: settings?.batterySize || 0,
-                soh: settings?.soh || 100,
-                sohMode: settings?.sohMode || 'manual',
-                mfgDate: settings?.mfgDate,
-                chargerTypes: settings?.chargerTypes || [],
-                thermalStressFactor: parseFloat(settings?.thermalStressFactor) || 1.0
-            };
-
-            const result = filtered.length > 0 ? processData(filtered, processingSettings, charges) : null;
-
-            // Apply Odometer Offset (Visual Only)
-            if (result && settings?.odometerOffset) {
-                const baseKm = parseFloat(result.summary.totalKm);
-                if (!isNaN(baseKm)) {
-                    result.summary.totalKm = (baseKm + parseFloat(settings.odometerOffset)).toFixed(1);
-                }
-            }
-
-            return result;
-        } catch (e) {
-            logger.error('Error processing data:', e);
-            return null;
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [filtered, i18n.language, settings, charges]);
+    // Replaced by async worker effect above (managed via useState [data, setData])
 
     // --- Action: Clear all trip data ---
     const clearData = useCallback(() => {

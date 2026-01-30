@@ -1,99 +1,44 @@
 // BYD Stats - Data Processing Utilities
 
 import { BYD_RED } from './constants';
+// @ts-ignore
 import { formatMonth, formatDate } from './dateUtils';
-import { logger } from './logger';
-import { calculateAdvancedSoH } from './batteryCalculations';
+import { Trip, Charge, ProcessedData, Summary, MonthlyData, DailyData, Settings } from '../types';
+import { calculateAdvancedSoH } from './batteryCalculations.ts';
 
-/**
- * @typedef {Object} Trip
- * @property {string} date - Date in YYYYMMDD format
- * @property {number} trip - Distance in km
- * @property {number} electricity - Energy consumed in kWh
- * @property {number} [fuel] - Fuel consumed in liters (hybrid vehicles)
- * @property {number} duration - Duration in minutes
- * @property {number} start_timestamp - Unix timestamp of trip start
- * @property {number} end_timestamp - Unix timestamp of trip end
- * @property {string} [month] - Month string for filtering (YYYYMM)
- * @property {number} [start_soc] - Starting battery percentage
- * @property {number} [end_soc] - Ending battery percentage
- */
+interface AggregatedStats {
+    totalKm: number;
+    totalKwh: number;
+    drivingKwh: number;
+    stationaryKwh: number;
+    totalFuel: number;
+    totalDuration: number;
+    hasAnyFuel: boolean;
+    electricOnlyKm: number;
+    fuelUsedKm: number;
+    electricOnlyTrips: number;
+    fuelUsedTrips: number;
+    maxKmVal: number;
+    minKmVal: number;
+    maxKwhVal: number;
+    maxDurVal: number;
+    maxFuelVal: number;
+    maxCostVal: number;
+    maxCostDate: string | null;
+}
 
-/**
- * @typedef {Object} Charge
- * @property {string} id - Unique identifier
- * @property {string} date - Date in YYYYMMDD format
- * @property {string} time - Time in HH:MM format
- * @property {number} kwhCharged - Energy charged in kWh
- * @property {number} totalCost - Total cost in currency
- * @property {number} pricePerKwh - Price per kWh
- * @property {string} chargerTypeId - ID of the charger type used
- * @property {number} [initialPercentage] - Starting battery percentage
- * @property {number} [finalPercentage] - Final battery percentage
- * @property {number} [odometer] - Odometer reading in km
- */
+interface PriceStrategies {
+    elec: { strategy: string; custom: number; avg: number; processed: Charge[] };
+    fuel: { strategy: string; custom: number; avg: number; processed: Charge[] };
+}
 
-/**
- * @typedef {Object} ChartDataPoint
- * @property {string|number} label - X-axis label
- * @property {number} value - Y-axis value
- */
-
-/**
- * @typedef {Object} MonthlyData
- * @property {string} month - Month label (e.g., "Jan 2024")
- * @property {number} km - Total km for month
- * @property {number} kwh - Total kWh for month
- * @property {number} [fuel] - Total fuel for month (hybrid only)
- * @property {number} trips - Trip count for month
- */
-
-/**
- * @typedef {Object} Summary
- * @property {number} totalKm - Total distance traveled
- * @property {number} totalKwh - Total energy consumed
- * @property {number} [totalFuel] - Total fuel consumed (hybrid only)
- * @property {number} totalDuration - Total time in minutes
- * @property {number} avgEfficiency - Average kWh/100km
- * @property {number} [avgFuelEfficiency] - Average L/100km (hybrid only)
- * @property {number} avgSpeed - Average speed in km/h
- * @property {number} tripCount - Number of trips
- * @property {number} activeDays - Number of unique driving days
- * @property {number} minEfficiency - Minimum efficiency value
- * @property {number} maxEfficiency - Maximum efficiency value
- * @property {boolean} [isHybrid] - Whether the vehicle is a hybrid
- * @property {number} [electricPercentage] - % of km on electricity (hybrid)
- * @property {number} [fuelPercentage] - % of km on fuel (hybrid)
- * @property {number} stationaryConsumption - Energy consumed when stationary (trips < 0.5km)
- */
-
-/**
- * @typedef {Object} ProcessedData
- * @property {Summary} summary - Aggregated statistics
- * @property {MonthlyData[]} monthly - Monthly aggregated data
- * @property {Object[]} daily - Daily aggregated data
- * @property {Object[]} hourly - Hourly trip distribution
- * @property {Object[]} weekday - Weekday trip distribution
- * @property {Object[]} tripDist - Trip distance distribution buckets
- * @property {Object[]} effScatter - Efficiency scatter plot data
- * @property {Object} top - Top records (distance, consumption, duration)
- * @property {boolean} isHybrid - Whether the data is from a hybrid vehicle
- */
-
-/**
- * Process raw trip data into statistics and aggregated data
- * @param {Trip[]} rows - Array of raw trip objects
- * @returns {ProcessedData|null} Processed data object or null if invalid
- */
 /**
  * Checks if a trip is considered stationary (distance < 0.5km)
- * @param {Trip} trip 
- * @returns {boolean}
  */
-export const isStationaryTrip = (trip) => (trip.trip || 0) < 0.5;
+export const isStationaryTrip = (trip: Trip): boolean => (trip.trip || 0) < 0.5;
 
 // Helper to get top N items without full sort - O(N) for small K
-function getTopN(arr, compareFn, n) {
+function getTopN<T>(arr: T[], compareFn: (a: T, b: T) => number, n: number): T[] {
     if (arr.length <= n) return [...arr].sort(compareFn);
 
     // Sort first N items
@@ -102,11 +47,7 @@ function getTopN(arr, compareFn, n) {
     // Process remaining items
     for (let i = n; i < arr.length; i++) {
         const item = arr[i];
-        // If item belongs in top N (compare with last/smallest in result)
-        // compareFn(a, b) > 0 means a comes before b. 
-        // We want descending order usually, so if compareFn(item, last) < 0, item is "larger/better"
         if (compareFn(item, result[n - 1]) < 0) {
-            // Find insertion point
             let j = n - 2;
             while (j >= 0 && compareFn(item, result[j]) < 0) {
                 result[j + 1] = result[j];
@@ -119,7 +60,7 @@ function getTopN(arr, compareFn, n) {
 }
 
 // Helper to determine cost based on strategy
-function getPriceForTrip(trip, strategy, customPrice, avgPrice, processedCharges) {
+function getPriceForTrip(trip: Trip, strategy: string, customPrice: number, avgPrice: number, processedCharges: Charge[]): number {
     if (strategy === 'custom') return customPrice;
 
     if (strategy === 'average') {
@@ -129,7 +70,7 @@ function getPriceForTrip(trip, strategy, customPrice, avgPrice, processedCharges
     // Dynamic Strategy: Find last charge before trip start
     if (processedCharges && processedCharges.length > 0) {
         const tripStart = trip.start_timestamp || 0;
-        let lastCharge = null;
+        let lastCharge: Charge | null = null;
 
         for (let i = processedCharges.length - 1; i >= 0; i--) {
             const charge = processedCharges[i];
@@ -140,34 +81,27 @@ function getPriceForTrip(trip, strategy, customPrice, avgPrice, processedCharges
             }
         }
 
-        if (lastCharge) {
-            // If dynamic price is 0, it is valid (free charge), so return it directly.
-            // Do NOT fallback if price is 0.
+        if (lastCharge && lastCharge.effectivePrice !== undefined) {
             return lastCharge.effectivePrice;
         }
     }
 
-    // Fallback if no prior charge found (e.g. first trip)
-    // Use Custom Price
     return customPrice;
 }
 
 /**
  * Formats and pre-processes price settings and charges for lookup
- * @param {Object} priceSettings
- * @param {Object[]} charges
- * @returns {PriceStrategies}
  */
-function preparePriceStrategies(priceSettings, charges) {
+function preparePriceStrategies(priceSettings: Settings, charges: Charge[]): PriceStrategies {
     const elecStrategy = priceSettings.electricStrategy || 'custom';
     const fuelStrategy = priceSettings.fuelStrategy || 'custom';
-    const elecCustomPrice = parseFloat(priceSettings.electricPrice) || 0;
-    const fuelCustomPrice = parseFloat(priceSettings.fuelPrice) || 0;
+    const elecCustomPrice = typeof priceSettings.electricPrice === 'string' ? parseFloat(priceSettings.electricPrice) : (priceSettings.electricPrice || 0);
+    const fuelCustomPrice = typeof priceSettings.fuelPrice === 'string' ? parseFloat(priceSettings.fuelPrice) : (priceSettings.fuelPrice || 0);
 
     let elecAvgPrice = 0;
     let fuelAvgPrice = 0;
-    let processedElectricCharges = [];
-    let processedFuelCharges = [];
+    let processedElectricCharges: Charge[] = [];
+    let processedFuelCharges: Charge[] = [];
 
     if (charges && charges.length > 0) {
         const eCharges = charges.filter(c => !c.type || c.type === 'electric');
@@ -183,14 +117,14 @@ function preparePriceStrategies(priceSettings, charges) {
             processedElectricCharges = eCharges.map(c => {
                 const ts = new Date(`${c.date}T${c.time || "00:00"}:00`).getTime() / 1000;
                 return { ...c, timestamp: ts, effectivePrice: c.kwhCharged > 0 ? (c.totalCost / c.kwhCharged) : 0 };
-            }).sort((a, b) => a.timestamp - b.timestamp);
+            }).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         }
 
         if (fuelStrategy === 'dynamic') {
             processedFuelCharges = fCharges.map(c => {
                 const ts = new Date(`${c.date}T${c.time || "00:00"}:00`).getTime() / 1000;
-                return { ...c, timestamp: ts, effectivePrice: c.litersCharged > 0 ? (c.totalCost / c.litersCharged) : 0 };
-            }).sort((a, b) => a.timestamp - b.timestamp);
+                return { ...c, timestamp: ts, effectivePrice: (c.litersCharged || 0) > 0 ? (c.totalCost / (c.litersCharged || 1)) : 0 };
+            }).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         }
     }
 
@@ -202,11 +136,8 @@ function preparePriceStrategies(priceSettings, charges) {
 
 /**
  * Calculates the cost for a single trip based on current price strategies
- * @param {Trip} trip 
- * @param {PriceStrategies} strategies 
- * @returns {number} The total calculated cost
  */
-function calculateTripCost(trip, strategies) {
+function calculateTripCost(trip: Trip, strategies: PriceStrategies): number {
     const tElec = trip.electricity || 0;
     const tFuel = trip.fuel || 0;
 
@@ -226,7 +157,17 @@ function calculateTripCost(trip, strategies) {
 /**
  * Updates aggregators and stats with trip data
  */
-function updateAggregators(trip, tStats, monthlyData, dailyData, uniqueDates, hourlyData, weekdayData, tripDistribution, efficiencyScatter) {
+function updateAggregators(
+    trip: Trip,
+    tStats: AggregatedStats,
+    monthlyData: Record<string, MonthlyData>,
+    dailyData: Record<string, DailyData>,
+    uniqueDates: Set<string>,
+    hourlyData: { hour: number; trips: number; km: number }[],
+    weekdayData: { day: string; trips: number; km: number }[],
+    tripDistribution: { range: string; count: number; color: string }[],
+    efficiencyScatter: { x: number; y: number; fuel: number }[]
+) {
     const tTrip = trip.trip || 0;
     const tElec = trip.electricity || 0;
     const tFuel = trip.fuel || 0;
@@ -287,12 +228,21 @@ function updateAggregators(trip, tStats, monthlyData, dailyData, uniqueDates, ho
 /**
  * Generates the final summary object
  */
-function finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips, settings = {}, charges = []) {
+function finalizeSummary(
+    stats: AggregatedStats,
+    validTrips: Trip[],
+    daysActive: number,
+    totalDays: number,
+    allTrips: Trip[],
+    settings: Settings = {} as Settings,
+    charges: Charge[] = [],
+    language: string = 'es'
+): Summary {
     const firstTrip = allTrips[0];
     const lastTrip = allTrips[allTrips.length - 1];
     const avgEffVal = stats.totalKm > 0 ? (stats.drivingKwh / stats.totalKm * 100) : 0;
-    const batterySize = parseFloat(settings.batterySize) || 0;
-    let soh = parseFloat(settings.soh) || 100;
+    const batterySize = typeof settings.batterySize === 'string' ? parseFloat(settings.batterySize) : (settings.batterySize || 0);
+    let soh = typeof settings.soh === 'string' ? parseFloat(settings.soh) : (settings.soh || 100);
     let sohData = null;
 
     // Advanced SoH Calculation
@@ -334,7 +284,7 @@ function finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips, set
         avgSpeed: stats.totalDuration > 0 ? (stats.totalKm / (stats.totalDuration / 3600)).toFixed(1) : '0',
         daysActive,
         totalDays,
-        dateRange: firstTrip && lastTrip ? `${formatDate(firstTrip.date)} - ${formatDate(lastTrip.date)}` : '',
+        dateRange: firstTrip && lastTrip ? `${formatDate(firstTrip.date, language)} - ${formatDate(lastTrip.date, language)}` : '',
         maxKm: stats.maxKmVal > -Infinity ? stats.maxKmVal.toFixed(1) : '0.0',
         minKm: stats.minKmVal < Infinity ? stats.minKmVal.toFixed(1) : '0.0',
         maxKwh: stats.maxKwhVal > -Infinity ? stats.maxKwhVal.toFixed(1) : '0.0',
@@ -359,16 +309,9 @@ function finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips, set
 
 /**
  * Core data processing function
- */
-/**
- * Core data processing function
  * Processes raw trip data into statistics and aggregated data
- * @param {Trip[]} rows - Array of raw trip objects
- * @param {Object} [priceSettings={}] - User price settings for electric and fuel
- * @param {Charge[]} [charges=[]] - User charging history
- * @returns {ProcessedData|null} Processed data object or null if invalid
  */
-export function processData(rows, priceSettings = {}, charges = []) {
+export function processData(rows: Trip[], priceSettings: Settings = {} as Settings, charges: Charge[] = [], language: string = 'es'): ProcessedData | null {
     if (!rows || rows.length === 0) return null;
 
     const strategies = preparePriceStrategies(priceSettings, charges);
@@ -376,16 +319,16 @@ export function processData(rows, priceSettings = {}, charges = []) {
     if (allTrips.length === 0) return null;
 
     // Aggregators & Stats
-    const stats = {
+    const stats: AggregatedStats = {
         totalKm: 0, totalKwh: 0, drivingKwh: 0, stationaryKwh: 0, totalFuel: 0, totalDuration: 0,
         hasAnyFuel: false, electricOnlyKm: 0, fuelUsedKm: 0, electricOnlyTrips: 0, fuelUsedTrips: 0,
         maxKmVal: -Infinity, minKmVal: Infinity, maxKwhVal: -Infinity, maxDurVal: -Infinity, maxFuelVal: 0,
         maxCostVal: -Infinity, maxCostDate: null
     };
 
-    const monthlyData = {};
-    const dailyData = {};
-    const uniqueDates = new Set();
+    const monthlyData: Record<string, MonthlyData> = {};
+    const dailyData: Record<string, DailyData> = {};
+    const uniqueDates = new Set<string>();
     const hourlyData = Array.from({ length: 24 }, (_, i) => ({ hour: i, trips: 0, km: 0 }));
     const weekdayData = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'].map(d => ({ day: d, trips: 0, km: 0 }));
     const tripDistribution = [
@@ -393,14 +336,14 @@ export function processData(rows, priceSettings = {}, charges = []) {
         { range: '15-30', count: 0, color: '#f59e0b' }, { range: '30-50', count: 0, color: BYD_RED },
         { range: '50+', count: 0, color: '#8b5cf6' }
     ];
-    const efficiencyScatter = [];
-    const validTrips = [];
+    const efficiencyScatter: { x: number; y: number; fuel: number }[] = [];
+    const validTrips: Trip[] = [];
 
     // Main Processing Loop
     for (const trip of allTrips) {
         const tripCost = calculateTripCost(trip, strategies);
 
-        if (trip.fuel > 0) stats.hasAnyFuel = true;
+        if ((trip.fuel || 0) > 0) stats.hasAnyFuel = true;
 
         if (isStationaryTrip(trip)) {
             stats.stationaryKwh += (trip.electricity || 0);
@@ -420,14 +363,14 @@ export function processData(rows, priceSettings = {}, charges = []) {
     monthlyArray.forEach(m => {
         m.efficiency = m.km > 0 ? (m.kwh / m.km * 100) : 0;
         m.fuelEfficiency = m.km > 0 ? (m.fuel / m.km * 100) : 0;
-        m.monthLabel = formatMonth(m.month);
+        m.monthLabel = formatMonth(m.month, language);
     });
 
     const dailyArray = Object.values(dailyData).sort((a, b) => a.date.localeCompare(b.date));
     dailyArray.forEach(d => {
         d.efficiency = d.km > 0 ? (d.kwh / d.km * 100) : 0;
         d.fuelEfficiency = d.km > 0 ? (d.fuel / d.km * 100) : 0;
-        d.dateLabel = formatDate(d.date);
+        d.dateLabel = formatDate(d.date, language);
     });
 
     allTrips.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
@@ -445,7 +388,7 @@ export function processData(rows, priceSettings = {}, charges = []) {
     const lastTs = allTrips[allTrips.length - 1]?.start_timestamp;
     const totalDays = (firstTs && lastTs) ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1) : daysActive;
 
-    const summary = finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips, priceSettings, charges);
+    const summary = finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips, priceSettings, charges, language);
 
     return {
         summary,
@@ -459,6 +402,3 @@ export function processData(rows, priceSettings = {}, charges = []) {
         isHybrid: stats.hasAnyFuel
     };
 }
-
-
-

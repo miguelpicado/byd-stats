@@ -1,10 +1,18 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, TrendingUp, Clock, Zap, BarChart3, List, Battery, Calendar } from '../components/Icons';
 
 export const useTabNavigation = ({ settings }) => {
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState('overview');
+
+    // Initial tab from URL hash or default 'overview'
+    const getInitialTab = () => {
+        const hash = window.location.hash.replace('#', '');
+        const validTabs = ['overview', 'calendar', 'trends', 'patterns', 'efficiency', 'records', 'history', 'charges'];
+        return validTabs.includes(hash) ? hash : 'overview';
+    };
+
+    const [activeTab, setActiveTab] = useState(getInitialTab);
     const [fadingTab, setFadingTab] = useState(null);
     const [isTransitioning, setIsTransitioning] = useState(false);
 
@@ -21,6 +29,35 @@ export const useTabNavigation = ({ settings }) => {
         { id: 'history', label: t('tabs.history'), icon: List },
         { id: 'charges', label: t('tabs.charges'), icon: Battery }
     ].filter(t => t.id === 'overview' || !(settings.hiddenTabs || []).includes(t.id)), [t, settings.hiddenTabs]);
+
+    // Handle browser back/forward buttons
+    useEffect(() => {
+        const handlePopState = () => {
+            const hash = window.location.hash.replace('#', '');
+            const validTabs = tabs.map(t => t.id);
+            const newTab = validTabs.includes(hash) ? hash : 'overview';
+
+            if (newTab !== activeTab) {
+                setActiveTab(newTab);
+            }
+        };
+
+        window.addEventListener('popstate', handlePopState);
+        return () => window.removeEventListener('popstate', handlePopState);
+    }, [activeTab, tabs]);
+
+    // Sync state changes to URL
+    useEffect(() => {
+        const currentHash = window.location.hash.replace('#', '');
+        if (currentHash !== activeTab) {
+            // Use replaceState if initial load to avoid pushing 'overview' history if generic
+            if (activeTab === 'overview' && !currentHash) {
+                window.history.replaceState(null, '', `/#${activeTab}`);
+            } else {
+                window.history.pushState(null, '', `/#${activeTab}`);
+            }
+        }
+    }, [activeTab]);
 
     const handleTabClick = useCallback((tabId) => {
         if (tabId === activeTab) return;

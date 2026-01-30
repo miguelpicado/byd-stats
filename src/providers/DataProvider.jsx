@@ -83,6 +83,15 @@ export const DataProvider = ({ children }) => {
     const rawClearHistory = safeAppData.clearHistory || (() => { });
     const rawLoadFromHistory = safeAppData.loadFromHistory || (() => { });
 
+    // Filter State & Setters from useAppData
+    const {
+        filterType, setFilterType,
+        selMonth, setSelMonth,
+        dateFrom, setDateFrom,
+        dateTo, setDateTo,
+        months
+    } = safeAppData;
+
     // 3. Database Layer
     const database = useDatabase();
 
@@ -296,10 +305,20 @@ export const DataProvider = ({ children }) => {
         },
         database, // contains error, sqlReady state
         ...modalState, // modals, etc.
-        fileHandling
+        settings, // from AppContext
+        googleSync: {
+            ...googleSync,
+        },
+        database, // contains error, sqlReady state
+        ...modalState, // modals, etc.
+        fileHandling,
+
+        // Filter State
+        filterType, selMonth, dateFrom, dateTo, months
     }), [
         rawTrips, filtered, data, charges, tripHistory,
-        settings, googleSync, database, modalState, fileHandling
+        settings, googleSync, database, modalState, fileHandling,
+        filterType, selMonth, dateFrom, dateTo, months
     ]);
 
     // Dispatch Value (Actions)
@@ -324,6 +343,22 @@ export const DataProvider = ({ children }) => {
         exportData,
         loadChargeRegistry,
 
+        // Modal actions
+        confirmModalState: confirmation?.confirmModalState,
+        closeConfirmation: confirmation?.closeConfirmation,
+        showConfirmation: confirmation?.showConfirmation,
+
+        // File actions
+        loadFile,
+        exportData,
+        loadChargeRegistry,
+
+        // Filter Actions
+        setFilterType,
+        setSelMonth,
+        setDateFrom,
+        setDateTo,
+
         // Modal State Actions
         openModal: modalState.openModal,
         closeModal: modalState.closeModal,
@@ -332,6 +367,7 @@ export const DataProvider = ({ children }) => {
         setRawTrips, replaceCharges, restChargesData,
         confirmation,
         loadFile, exportData, loadChargeRegistry,
+        setFilterType, setSelMonth, setDateFrom, setDateTo,
         modalState.openModal, modalState.closeModal
     ]);
 
