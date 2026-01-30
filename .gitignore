@@ -36,3 +36,5 @@ coverage/
 
 # Env
 .envdev-dist
+
+EC_database_Hybrid.db
