@@ -67,7 +67,7 @@ const DesktopDashboardView = memo(({
                     const content = (
                         <>
                             {tab.id === 'overview' && (
-                                <ErrorBoundary key={isActive ? 'overview-active' : 'overview-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <OverviewTab
                                         summary={summary}
                                         monthly={monthly}
@@ -76,11 +76,12 @@ const DesktopDashboardView = memo(({
                                         overviewSpacing={overviewSpacingHorizontal}
                                         trips={rawTrips}
                                         settings={settings}
+                                        isActive={isActive}
                                     />
                                 </ErrorBoundary>
                             )}
                             {tab.id === 'calendar' && (
-                                <ErrorBoundary key={isActive ? 'calendar-active' : 'calendar-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <CalendarTab
                                         trips={rawTrips}
                                         charges={charges}
@@ -91,7 +92,7 @@ const DesktopDashboardView = memo(({
                                 </ErrorBoundary>
                             )}
                             {tab.id === 'trends' && (
-                                <ErrorBoundary key={isActive ? 'trends-active' : 'trends-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <TrendsTab
                                         filtered={filtered}
                                         summary={summary}
@@ -99,52 +100,57 @@ const DesktopDashboardView = memo(({
                                         daily={daily}
                                         settings={settings}
                                         largeChartHeight={largeChartHeight}
+                                        isActive={isActive}
                                     />
                                 </ErrorBoundary>
                             )}
                             {tab.id === 'patterns' && (
-                                <ErrorBoundary key={isActive ? 'patterns-active' : 'patterns-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <PatternsTab
                                         weekday={weekday}
                                         hourly={hourly}
                                         summary={summary}
                                         patternsSpacing={patternsSpacing}
                                         patternsChartHeight={patternsChartHeight}
+                                        isActive={isActive}
                                     />
                                 </ErrorBoundary>
                             )}
                             {tab.id === 'efficiency' && (
-                                <ErrorBoundary key={isActive ? 'efficiency-active' : 'efficiency-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <EfficiencyTab
                                         summary={summary}
                                         monthly={monthly}
                                         effScatter={effScatter}
                                         largeChartHeight={largeChartHeight}
+                                        isActive={isActive}
                                     />
                                 </ErrorBoundary>
                             )}
                             {tab.id === 'records' && (
-                                <ErrorBoundary key={isActive ? 'records-active' : 'records-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <RecordsTab
                                         summary={summary}
                                         top={top}
                                         recordsItemPadding={recordsItemPadding}
                                         recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
                                         recordsListHeightHorizontal={recordsListHeightHorizontal}
+                                        isActive={isActive}
                                     />
                                 </ErrorBoundary>
                             )}
                             {tab.id === 'history' && (
-                                <ErrorBoundary key={isActive ? 'history-active' : 'history-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <HistoryTab
                                         filtered={filtered}
                                         openTripDetail={onTripSelect}
                                         setShowAllTripsModal={handleShowAllTrips}
+                                        isActive={isActive}
                                     />
                                 </ErrorBoundary>
                             )}
                             {tab.id === 'charges' && (
-                                <ErrorBoundary key={isActive ? 'charges-active' : 'charges-bg'} isTab title={t('common.errorLoadingTab')}>
+                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <ChargesTab
                                         charges={charges}
                                         chargerTypes={settings.chargerTypes || []}
@@ -152,6 +158,7 @@ const DesktopDashboardView = memo(({
                                         onAddClick={handleAddCharge}
                                         setShowAllChargesModal={handleShowAllCharges}
                                         batterySize={settings.batterySize}
+                                        isActive={isActive}
                                     />
                                 </ErrorBoundary>
                             )}

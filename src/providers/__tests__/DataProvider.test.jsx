@@ -1,6 +1,7 @@
-import { render, screen } from '@testing-library/react';
+import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import { DataProvider, useData } from '../DataProvider';
+import React from 'react';
+import { DataProvider, useData, useDataState, useDataDispatch } from '../DataProvider';
 
 // Mock all dependencies
 vi.mock('@/context/AppContext', () => ({
@@ -14,13 +15,6 @@ vi.mock('@/hooks/useAppData', () => ({
     default: () => ({
         rawTrips: [],
         setRawTrips: vi.fn(),
-        tripHistory: [],
-        filtered: [],
-        data: {},
-        clearData: vi.fn(),
-        saveToHistory: vi.fn(),
-        clearHistory: vi.fn(),
-        loadFromHistory: vi.fn()
     })
 }));
 
@@ -46,46 +40,52 @@ vi.mock('@/hooks/useGoogleSync', () => ({
 }));
 
 vi.mock('@/hooks/useConfirmation', () => ({
-    useConfirmation: () => ({
-        clearData: vi.fn(),
-        saveToHistory: vi.fn(),
-        loadFromHistory: vi.fn(),
-        clearHistory: vi.fn()
-    })
+    useConfirmation: () => ({})
 }));
 
 vi.mock('@/hooks/useModalState', () => ({
-    default: () => ({})
+    default: () => ({
+        modals: {},
+        openModal: vi.fn(),
+        closeModal: vi.fn()
+    })
 }));
 
-// Test Component to consume context
-const TestComponent = () => {
-    const data = useData();
-    return (
-        <div>
-            <span data-testid="sql-status">{data.sqlReady ? 'Ready' : 'Not Ready'}</span>
-        </div>
-    );
-};
+vi.mock('@/context/CarContext', () => ({
+    useCar: () => ({
+        activeCarId: 'test',
+        cars: [],
+        updateCar: vi.fn()
+    })
+}));
 
 describe('DataProvider', () => {
-    it('provides data to children', () => {
-        render(
-            <DataProvider>
-                <TestComponent />
-            </DataProvider>
-        );
+    const wrapper = ({ children }) => <DataProvider>{children}</DataProvider>;
 
-        expect(screen.getByTestId('sql-status')).toHaveTextContent('Ready');
+    it('provides data via useDataState', () => {
+        const { result } = renderHook(() => useDataState(), { wrapper });
+        expect(result.current).toBeDefined();
+        expect(result.current.database.sqlReady).toBe(true);
     });
 
-    it('throws error if useData is used outside provider', () => {
-        // Suppress console.error for this test
-        const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+    it('provides actions via useDataDispatch', () => {
+        const { result } = renderHook(() => useDataDispatch(), { wrapper });
+        expect(result.current).toBeDefined();
+        expect(typeof result.current.openModal).toBe('function');
+    });
 
-        expect(() => render(<TestComponent />)).toThrow('useData must be used within a DataProvider');
+    it('provides unified data via useData', () => {
+        const { result } = renderHook(() => useData(), { wrapper });
+        expect(result.current.database.sqlReady).toBe(true);
+        expect(typeof result.current.openModal).toBe('function');
+    });
 
-        consoleSpy.mockRestore();
+    it('throws error if used outside provider', () => {
+        // Suppress console.error as React will log the error even if we catch it
+        vi.spyOn(console, 'error').mockImplementation(() => { });
+
+        expect(() => renderHook(() => useData())).toThrow(/must be used within a DataProvider/);
+        expect(() => renderHook(() => useDataState())).toThrow(/must be used within a DataProvider/);
+        expect(() => renderHook(() => useDataDispatch())).toThrow(/must be used within a DataProvider/);
     });
 });
-

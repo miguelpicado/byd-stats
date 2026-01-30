@@ -39,7 +39,7 @@ import { logger } from '@core/logger';
  *   updateCloudRegistry: function(): Promise<void>
  * }}
  */
-export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, localCharges, setLocalCharges, activeCarId, totalCars = 1, openRegistryModal, isRegistryModalOpen = false, updateCar = null) {
+export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, localCharges, setLocalCharges, activeCarId, totalCars = 1, openRegistryModal, isRegistryModalOpen = false, updateCar = null, carName = null) {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         const token = localStorage.getItem('google_access_token');
         const expiry = localStorage.getItem('google_token_expiry');
@@ -262,8 +262,9 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             return;
         }
 
-        if (!googleDriveService.isInited || !isAuthenticated) {
-            logger.warn('[Sync] Aborted: service not inited or not authenticated');
+        // We rely on service state primarily, as isAuthenticated state might lag during login flow
+        if (!googleDriveService.isInited) {
+            logger.warn('[Sync] Aborted: service not inited');
             return;
         }
 
@@ -341,7 +342,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             } else {
                 // Standard Merge
                 merged = googleDriveService.mergeData(
-                    { trips: currentTrips, settings: settings, charges: currentCharges },
+                    { trips: currentTrips, settings: { ...settings, carName: carName || settings.carName }, charges: currentCharges },
                     remoteData
                 );
 
@@ -401,8 +402,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             }
 
         } catch (e) {
-            logger.error('[Sync] Error:', e);
-
             // Handle Auth Errors (Redirect to Landing if token dead)
             const isAuthError = e.status === 401 || e.status === 403 ||
                 (e.result?.error?.code === 401 || e.result?.error?.code === 403) ||
@@ -411,6 +410,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             if (isAuthError) {
                 logger.warn('[Sync] Authentication expired, logging out...');
                 logout();
+            } else {
+                logger.error('[Sync] Error:', e);
             }
 
             setError(e.message || "Error de sincronización");

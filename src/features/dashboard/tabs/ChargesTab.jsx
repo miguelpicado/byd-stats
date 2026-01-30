@@ -262,6 +262,7 @@ const ChargesTab = React.memo(({
                     type={insightType || 'kwh'}
                     charges={charges}
                     batterySize={batterySize}
+                    chargerTypes={chargerTypes}
                 />
             </div>
         );
@@ -333,6 +334,7 @@ const ChargesTab = React.memo(({
                 type={insightType || 'kwh'}
                 charges={charges}
                 batterySize={batterySize}
+                chargerTypes={chargerTypes}
             />
 
             {/* Bottom row: Buttons aligned with columns above */}

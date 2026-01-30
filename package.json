@@ -10,6 +10,7 @@
     "predeploy": "npm run build",
     "deploy": "npx gh-pages -d dist",
     "test": "vitest",
+    "test:core": "vitest src/core",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest --coverage",
     "android:sync": "npm run build && npx cap sync android",
