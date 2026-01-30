@@ -65,7 +65,7 @@ const RegistryRestoreModal = ({ registryCars, onRestore, onSkip }) => {
                                     <div>
                                         <p className="font-semibold text-slate-900 dark:text-white">{car.name}</p>
                                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                                            {car.model || 'BYD'} • Última sinc: {car.lastSync ? new Date(car.lastSync).toLocaleDateString() : 'N/A'}
+                                            {car.model || 'BYD'} • Última sinc: {car.lastSync ? new Date(car.lastSync).toLocaleString() : 'N/A'}
                                         </p>
                                     </div>
                                 </div>
@@ -78,8 +78,16 @@ const RegistryRestoreModal = ({ registryCars, onRestore, onSkip }) => {
                         ))}
                     </div>
 
-                    <div className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-200 text-xs rounded-lg">
-                        <span className="font-bold">Nota:</span> Si eliges "Crear nuevo", se generará un nuevo ID y un nuevo archivo de datos independiente.
+                    <div className="mt-4 p-4 bg-amber-50 dark:bg-amber-900/20 text-amber-900 dark:text-amber-100 text-sm rounded-lg border border-amber-200 dark:border-amber-800">
+                        <div className="flex items-start gap-2">
+                            <div className="mt-0.5 min-w-[16px]">⚠️</div>
+                            <div>
+                                <span className="font-bold block mb-1">¡Importante!</span>
+                                Si pulsas "Crear NUEVO coche", este dispositivo generará un identificador único nuevo y <strong>NO compartirá datos</strong> con tus otros dispositivos.
+                                <br /><br />
+                                Para ver los datos de tu otro móvil/ordenador, debes seleccionar uno de la lista y pulsar <strong>"Restaurar"</strong>.
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -87,9 +95,9 @@ const RegistryRestoreModal = ({ registryCars, onRestore, onSkip }) => {
                 <div className="p-5 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row gap-3">
                     <button
                         onClick={onSkip}
-                        className="flex-1 py-3 px-4 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors text-sm"
+                        className="flex-1 py-3 px-4 text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors text-sm border border-slate-200 dark:border-slate-700"
                     >
-                        {t('sync.createNew', 'No, es un coche nuevo')}
+                        {t('sync.createNew', 'Crear NUEVO Coche (Empezar de cero)')}
                     </button>
                     <button
                         onClick={handleConfirm}

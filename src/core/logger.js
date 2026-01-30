@@ -8,9 +8,9 @@ const LOG_LEVELS = {
     ERROR: 3
 };
 
-// In production, only show warnings and errors
-// In development, show everything
-const CURRENT_LEVEL = import.meta.env.PROD ? LOG_LEVELS.WARN : LOG_LEVELS.DEBUG;
+// In production, only show errors (suppress warnings and info)
+// In development, show warnings and errors (suppress info/debug) to keep console clean
+const CURRENT_LEVEL = import.meta.env.PROD ? LOG_LEVELS.ERROR : LOG_LEVELS.WARN;
 
 /**
  * Leveled logger that filters output based on environment

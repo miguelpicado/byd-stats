@@ -18,6 +18,7 @@ import { logger } from '@core/logger';
  * @param {string} activeCarId
  * @param {number} totalCars
  * @param {Function} openRegistryModal
+ * @param {boolean} isRegistryModalOpen
  * @returns {{
  *   isAuthenticated: boolean,
  *   isSyncing: boolean,
@@ -38,7 +39,7 @@ import { logger } from '@core/logger';
  *   updateCloudRegistry: function(): Promise<void>
  * }}
  */
-export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, localCharges, setLocalCharges, activeCarId, totalCars = 1, openRegistryModal) {
+export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, localCharges, setLocalCharges, activeCarId, totalCars = 1, openRegistryModal, isRegistryModalOpen = false, updateCar = null) {
     const [isAuthenticated, setIsAuthenticated] = useState(() => {
         const token = localStorage.getItem('google_access_token');
         const expiry = localStorage.getItem('google_token_expiry');
@@ -70,6 +71,111 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             logger.error('Error fetching profile', e);
         }
     }, []);
+
+    // Helper: Check Registry (Reusable)
+    const checkAndPromptRegistry = useCallback(async () => {
+        if (!googleDriveService.isInited) return false;
+
+        try {
+            logger.info("[Sync] Checking registry for existing cars...");
+            let registry = await googleDriveService.getRegistry();
+
+            // FALLBACK: If registry is empty/missing, scan for data files directly
+            if (!registry || !registry.cars || registry.cars.length === 0) {
+                logger.warn("[Sync] Registry empty/missing. Attempting FALLBACK scan for data files...");
+
+                try {
+                    const allFiles = await googleDriveService.listAllDatabaseFiles();
+                    // files typically have name, id, modifiedTime
+                    // We look for "byd_stats_data_UUID.json" or legacy "byd_stats_data.json"
+
+                    const recoveredCars = [];
+
+                    for (const file of allFiles) {
+                        if (file.name.startsWith('byd_stats_data')) {
+                            let carId = 'unknown';
+                            let carName = 'Coche Recuperado';
+
+                            if (file.name === 'byd_stats_data.json') {
+                                carId = 'legacy';
+                                carName = 'Coche (Legacy/Antiguo)';
+                            } else {
+                                // Extract UUID from "byd_stats_data_UUID.json"
+                                const match = file.name.match(/byd_stats_data_(.+)\.json/);
+                                if (match && match[1]) {
+                                    carId = match[1];
+                                    carName = `BYD Recuperado (${carId.substring(0, 8)}...)`;
+                                }
+                            }
+
+                            // Prevent duplicates if multiple files exist for same ID (cleanup needed?)
+                            // Assuming one file per ID for now.
+                            recoveredCars.push({
+                                id: carId,
+                                name: carName,
+                                model: 'BYD (Backup)',
+                                lastSync: file.modifiedTime, // Use file modification time
+                                fileId: file.id,
+                                isRecovered: true
+                            });
+                        }
+                    }
+
+                    if (recoveredCars.length > 0) {
+                        logger.info(`[Sync] Fallback successful. Found ${recoveredCars.length} recovered cars.`);
+                        registry = { cars: recoveredCars, lastUpdated: new Date().toISOString() };
+
+                        // PERSIST: Save the reconstructed registry so we don't scan again
+                        try {
+                            logger.info("[Sync] Persisting reconstructed registry to cloud...");
+                            await googleDriveService.updateRegistry(registry);
+                        } catch (persistErr) {
+                            logger.warn("[Sync] Failed to persist reconstructed registry", persistErr);
+                        }
+                    } else {
+                        logger.warn("[Sync] Fallback scan found no valid data files.");
+                        return false;
+                    }
+
+                } catch (fallbackErr) {
+                    logger.error("[Sync] Fallback scan failed", fallbackErr);
+                    return false;
+                }
+            }
+
+            // Check if CURRENT activeCarId is known
+            const isKnown = registry.cars.some(c => c.id === activeCarId);
+            logger.info(`[Sync] Registry Check: ActiveID=${activeCarId}, Known=${isKnown}, CloudCars=${registry.cars.length}`);
+
+            if (isKnown) {
+                logger.info(`[Sync] Car ${activeCarId} is known. Proceeding.`);
+                return false; // All good, proceed
+            }
+
+            // Unknown Car ID but Registry has data -> Potential Duplicate or Re-install
+            logger.info(`[Sync] Unknown Car ID ${activeCarId} but found ${registry.cars.length} cars in cloud. Prompting user.`);
+
+            // Sort by lastSync (newest first)
+            const sortedCars = [...registry.cars].sort((a, b) => {
+                const dateA = a.lastSync ? new Date(a.lastSync) : new Date(0);
+                const dateB = b.lastSync ? new Date(b.lastSync) : new Date(0);
+                return dateB - dateA;
+            });
+
+            if (openRegistryModal) {
+                logger.info("[Sync] Opening Registry Modal...");
+                openRegistryModal(sortedCars);
+                return true; // Modal opened
+            } else {
+                logger.error("[Sync] openRegistryModal is NOT defined! Cannot prompt user.");
+            }
+
+            return false;
+        } catch (e) {
+            logger.warn("[Sync] Registry check failed", e);
+            return false;
+        }
+    }, [activeCarId, openRegistryModal]);
 
 
 
@@ -258,6 +364,13 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             const uploadResult = await googleDriveService.uploadFile(merged, uploadId, targetFilename);
             const finalFileId = uploadResult.id;
 
+            // 5b. Update Local Car Name if found in settings
+            // This ensures "BYD Recuperado..." is replaced by real name "My Seal" after sync
+            if (updateCar && merged.settings?.carName && activeCarId) {
+                logger.info(`[Sync] Updating car name to: ${merged.settings.carName}`);
+                updateCar(activeCarId, { name: merged.settings.carName });
+            }
+
             setLastSyncTime(new Date());
             logger.info('[Sync] Successfully synchronized and uploaded.');
 
@@ -319,23 +432,15 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);
 
-        // Registry Check for Fresh Install
-        // Heuristic: No local trips AND single car (default)
-        if (localTrips.length === 0 && totalCars === 1) {
-            logger.info("Fresh install detected, checking registry...");
-            const registry = await googleDriveService.getRegistry();
-            if (registry && registry.cars && registry.cars.length > 0) {
-                logger.info("Found cars in registry:", registry.cars);
-                // Trigger Modal
-                if (openRegistryModal) {
-                    openRegistryModal(registry.cars);
-                    return; // Stop auto-sync until user decides
-                }
-            }
-        }
+        // Registry Check with Conflict Prevention
+        const modalOpened = await checkAndPromptRegistry();
 
-        performSync();
-    }, [fetchUserProfile, performSync, localTrips, totalCars, openRegistryModal]);
+        if (!modalOpened) {
+            performSync();
+        } else {
+            logger.info("[Sync] Suspended pending registry action");
+        }
+    }, [fetchUserProfile, performSync, checkAndPromptRegistry]);
 
     // Ref to hold the latest handleLoginSuccess to avoid stale closures in useGoogleLogin
     const handleLoginSuccessRef = useRef(handleLoginSuccess);
@@ -516,14 +621,10 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, []);
 
     const skipRegistryRestore = useCallback(async () => {
-        // Just proceed with standard sync (which will create new file since ID is new/default)
-        // We might want to "mark" this device as ignored for registry? No.
-        // Just create new entry in registry later.
-        // We need to close the modal.
-        // The modal is closed by the caller usually?
-        // Let's return true.
+        logger.info("[Sync] User chose new car/skip restore. Proceeding with sync.");
+        await performSync();
         return true;
-    }, []);
+    }, [performSync]);
 
     // Helper to update registry
     const updateCloudRegistry = useCallback(async () => {
@@ -600,15 +701,20 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 // fetch profile
                 fetchUserProfile(token);
 
-                // Registry Check for Fresh Install even on session restore (auto-recovery)
-                if (localTrips.length === 0 && totalCars === 1) {
-                    logger.info("[Auth] Session restored on fresh install, checking registry for recovery...");
-                    googleDriveService.getRegistry().then(registry => {
-                        if (registry && registry.cars && registry.cars.length > 0 && openRegistryModal) {
-                            openRegistryModal(registry.cars);
-                        }
-                    }).catch(err => logger.warn('[Auth] Registry check failed during session restore', err));
-                }
+                // Registry Check on Session Restore
+                checkAndPromptRegistry().then(opened => {
+                    if (opened) {
+                        logger.info("[Auth] Registry modal opened, waiting for user action.");
+                    } else {
+                        // Optional: Trigger sync if not opened?
+                        // Standard behavior for session restore is usually passive or auto-refresh on visibility.
+                        // But if token is valid, we might want to sync?
+                        // The original code didn't force sync on session restore immediately unless fresh install.
+                        // Let's keep it passive unless fresh install?
+                        // Actually, if we just logged in (restored session), we should probably sync eventually.
+                        // But let's stick to the prompt logic first.
+                    }
+                });
             } else if (token || expiry) {
                 // Token expired - attempt silent refresh if native
                 if (Capacitor.isNativePlatform()) {
@@ -626,6 +732,9 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     // Visibility Listener for Auto-Refresh
     useEffect(() => {
         const handleVisibilityChange = () => {
+            // Block auto-sync if registry modal is waiting for user input
+            if (isRegistryModalOpen) return;
+
             if (document.visibilityState === 'visible' && isAuthenticated && !isSyncing) {
                 const now = Date.now();
                 const lastSync = lastSyncTime ? lastSyncTime.getTime() : 0;
@@ -639,7 +748,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, [isAuthenticated, isSyncing, lastSyncTime, performSync]);
+    }, [isAuthenticated, isSyncing, lastSyncTime, performSync, isRegistryModalOpen]);
 
     return useMemo(() => ({
         isAuthenticated,

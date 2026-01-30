@@ -21,7 +21,6 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       window.deferredPrompt = e;
-      console.log('[PWA] Captured beforeinstallprompt event');
     });
   </script>
 </head>
@@ -34,11 +33,8 @@
     if ('serviceWorker' in navigator && location.hostname !== 'localhost' && !location.hostname.includes('github.dev') && !location.hostname.includes('.app.github.dev')) {
       window.addEventListener('load', () => {
         navigator.serviceWorker.register('./sw.js')
-          .then(reg => console.log('[PWA] SW registered'))
           .catch(err => console.error('[PWA] SW error:', err));
       });
-    } else {
-      console.log('[PWA] SW registration skipped in development');
     }
   </script>
 </body>
