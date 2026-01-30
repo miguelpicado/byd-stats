@@ -19,6 +19,8 @@ import { logger } from '@core/logger';
  * @param {number} totalCars
  * @param {Function} openRegistryModal
  * @param {boolean} isRegistryModalOpen
+ * @param {Function} [updateCar]
+ * @param {string} [carName]
  * @returns {{
  *   isAuthenticated: boolean,
  *   isSyncing: boolean,

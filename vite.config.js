@@ -110,5 +110,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     exclude: ['fs'] // Exclude fs from optimization
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
+    setupFiles: './src/setupTests.js',
+    css: false,
   }
 })
