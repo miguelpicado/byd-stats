@@ -309,6 +309,14 @@
         "odometerTitle": "Axuste de Odómetro",
         "odometerDesc": "Axuste visual para corrixir a diferenza co marcador do coche.",
         "offset": "Desfase (km)",
+        "mfgDate": {
+            "title": "Data de Fabricación",
+            "desc": "Para calcular con precisión o estado de saúde (SoH) da túa batería LFP, necesitamos saber cando se fabricou o coche.",
+            "instructions": "Abre a porta do copiloto (ás veces a do condutor) e busca unha placa metálica ou adhesivo negro no marco da porta (o piar central onde se ancora o cinto). Nesta placa, ademais do VIN, adoita aparecer o campo 'Date of mfg' ou 'Built date' co formato MM/YY.",
+            "formatHint": "Formato: MM/YY (Ex. 03/24)",
+            "save": "Confirmar Data",
+            "invalid": "Formato non válido (MM/YY)"
+        },
         "stationaryTitle": "Viaxes Estacionarias",
         "stationaryDesc": "Estas viaxes teñen unha distancia de 0 km. Podes eliminalas ou editalas para que non afecten ás túas estatísticas.",
         "csvImportTitle": "Importar CSV",
