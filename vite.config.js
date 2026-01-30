@@ -15,6 +15,9 @@ export default defineConfig({
     viteCompression(),
     VitePWA({
       registerType: 'prompt', // Let the app handle updates (PWAManager)
+      devOptions: {
+        enabled: true
+      },
       includeAssets: ['favicon.png', 'app_icon_v2.png', 'app_logo.png', 'byd_logo.png'],
       manifest: {
         name: 'BYD Stats',
