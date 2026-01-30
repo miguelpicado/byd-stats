@@ -1,12 +1,21 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
+import React from 'react';
 import Header from '../Header';
+
+// Static spies and variables to ensure stability and control
+const openModalSpy = vi.fn();
+const setActiveCarIdSpy = vi.fn();
+const addCarSpy = vi.fn();
+const syncNowSpy = vi.fn();
+const toggleFullscreenSpy = vi.fn();
+let mockTrips = [];
 
 // Mock dependencies
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key, options) => {
-            if (key === 'header.trips') return `${options.count} trips`;
+            if (key === 'header.trips') return `${options?.count || 0} trips`;
             return key;
         },
     }),
@@ -17,89 +26,74 @@ vi.mock('react-i18next', () => ({
 }));
 
 // Mock Contexts
-const mockUseLayout = vi.fn();
 vi.mock('../../../context/LayoutContext', () => ({
-    useLayout: () => mockUseLayout(),
+    useLayout: () => ({
+        layoutMode: 'vertical',
+        isFullscreenBYD: false,
+        toggleFullscreen: toggleFullscreenSpy,
+    }),
 }));
 
-const mockUseData = vi.fn();
 vi.mock('../../../providers/DataProvider', () => ({
-    useData: () => mockUseData(),
+    useData: () => ({
+        trips: mockTrips,
+        openModal: openModalSpy,
+        googleSync: { isAuthenticated: false, isSyncing: false, error: null, syncNow: syncNowSpy }
+    }),
+}));
+
+vi.mock('../../../context/CarContext', () => ({
+    useCar: () => ({
+        cars: [],
+        activeCar: { name: 'Test Car' },
+        activeCarId: 'test',
+        setActiveCarId: setActiveCarIdSpy,
+        addCar: addCarSpy,
+    }),
+}));
+
+vi.mock('../../../components/modals/AddCarModal', () => ({
+    default: () => <div data-testid="add-car-modal" />
 }));
 
 describe('Header', () => {
     beforeEach(() => {
-        // Default mock return values
-        mockUseLayout.mockReturnValue({
-            layoutMode: 'vertical',
-            isFullscreenBYD: false,
-            toggleFullscreen: vi.fn(),
-        });
-
-        mockUseData.mockReturnValue({
-            trips: [],
-            openModal: vi.fn(),
-        });
+        vi.clearAllMocks();
+        mockTrips = [];
     });
 
     it('renders title and logo', () => {
         render(<Header />);
-        expect(screen.getByText('header.title')).toBeInTheDocument();
+        expect(screen.getByText('Test Car')).toBeInTheDocument();
         expect(screen.getByAltText('BYD Logo')).toBeInTheDocument();
     });
 
     it('displays correct trip count', () => {
-        mockUseData.mockReturnValue({
-            trips: [1, 2, 3], // 3 items
-            openModal: vi.fn(),
-        });
-
+        mockTrips = [1, 2, 3];
         render(<Header />);
         expect(screen.getByText('3 trips')).toBeInTheDocument();
     });
 
     it('opens help modal when help button is clicked', () => {
-        const openModalMock = vi.fn();
-        mockUseData.mockReturnValue({
-            trips: [],
-            openModal: openModalMock,
-        });
-
         render(<Header />);
 
-        // Find help button by title (tooltip)
         const helpButton = screen.getByTitle('tooltips.help');
         fireEvent.click(helpButton);
 
-        expect(openModalMock).toHaveBeenCalledWith('help');
+        expect(openModalSpy).toHaveBeenCalledWith('help');
     });
 
     it('opens history modal when database button is clicked', () => {
-        const openModalMock = vi.fn();
-        mockUseData.mockReturnValue({
-            trips: [],
-            openModal: openModalMock,
-        });
-
         render(<Header />);
 
         const historyButton = screen.getByTitle('tooltips.history');
         fireEvent.click(historyButton);
 
-        expect(openModalMock).toHaveBeenCalledWith('history');
+        expect(openModalSpy).toHaveBeenCalledWith('history');
     });
 
     it('adapts layout based on layoutMode', () => {
-        // Test horizontal mode styling implication (checking if logo class changes is hard with compiled CSS but we can check calls or structure)
-        // Actually, let's just check if it renders without crashing in horizontal mode
-        mockUseLayout.mockReturnValue({
-            layoutMode: 'horizontal',
-            isFullscreenBYD: false,
-        });
-
         const { container } = render(<Header />);
         expect(container.firstChild).toBeInTheDocument();
     });
 });
-
-

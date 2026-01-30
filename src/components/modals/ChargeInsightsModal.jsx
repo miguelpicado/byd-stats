@@ -11,7 +11,7 @@ import ModalPortal from '../common/ModalPortal';
 /**
  * Calculate advanced charge statistics
  */
-const useChargeInsights = (charges, batterySize, type) => {
+const useChargeInsights = (charges, batterySize, chargerTypes = []) => {
     return useMemo(() => {
         if (!charges || charges.length === 0) return null;
 
@@ -25,6 +25,17 @@ const useChargeInsights = (charges, batterySize, type) => {
 
         const totalKwh = kwhValues.reduce((a, b) => a + b, 0);
         const totalCost = costValues.reduce((a, b) => a + b, 0);
+
+        // Calculate Real kWh (entering battery) using charger efficiency
+        const realKwhValues = charges.map(c => {
+            const kwh = c.kwhCharged || 0;
+            if (c.type === 'fuel') return 0; // Skip fuel for cycles/kwh stats if any mixed data
+
+            const chargerType = chargerTypes.find(ct => ct.id === c.chargerTypeId);
+            const efficiency = chargerType?.efficiency || 1;
+            return kwh * efficiency;
+        });
+        const totalRealKwh = realKwhValues.reduce((a, b) => a + b, 0);
 
         // Date range for monthly calculations
         const timestamps = charges.map(c => c.timestamp).filter(Boolean);
@@ -55,8 +66,8 @@ const useChargeInsights = (charges, batterySize, type) => {
                 sum + (c.finalPercentage - c.initialPercentage), 0) / chargesWithBothPercentages.length
             : 0;
 
-        // Battery cycles calculation
-        const cycles = batterySize > 0 ? totalKwh / batterySize : 0;
+        // Battery cycles calculation - USE REAL ENERGY (battery side)
+        const cycles = batterySize > 0 ? totalRealKwh / batterySize : 0;
 
         // Free charges
         const freeCharges = charges.filter(c => !c.totalCost || c.totalCost === 0);
@@ -118,7 +129,7 @@ const useChargeInsights = (charges, batterySize, type) => {
                 daysActive: Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1
             }
         };
-    }, [charges, batterySize, type]);
+    }, [charges, batterySize, chargerTypes]);
 };
 
 /**
@@ -130,10 +141,11 @@ const ChargeInsightsModal = ({
     onClose,
     type, // 'kwh' | 'cost' | 'price' | 'count'
     charges,
-    batterySize = 60.48
+    batterySize = 60.48,
+    chargerTypes = []
 }) => {
     const { t } = useTranslation();
-    const insights = useChargeInsights(charges, batterySize, type);
+    const insights = useChargeInsights(charges, batterySize, chargerTypes);
 
     if (!isOpen || !insights) return null;
 
@@ -408,7 +420,8 @@ ChargeInsightsModal.propTypes = {
     onClose: PropTypes.func.isRequired,
     type: PropTypes.oneOf(['kwh', 'cost', 'price', 'count']).isRequired,
     charges: PropTypes.array.isRequired,
-    batterySize: PropTypes.number
+    batterySize: PropTypes.number,
+    chargerTypes: PropTypes.array
 };
 
 export default ChargeInsightsModal;

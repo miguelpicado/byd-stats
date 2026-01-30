@@ -56,6 +56,7 @@
         "consumption": "Kontsumoa",
         "stationaryConsumption": "Geldiko kontsumoa",
         "stationary": "Geldiko kontsumoa",
+        "estimatedRange": "Aurreikusitako autonomia",
         "cost": "Kostua"
     },
     "units": {
@@ -298,7 +299,15 @@
     "modals": {
         "odometerTitle": "Odometroaren doikuntza",
         "odometerDesc": "Autoaren markagailuaren aldea zuzentzeko doikuntza bisuala.",
-        "offset": "Desfasea (km)"
+        "offset": "Desfasea (km)",
+        "mfgDate": {
+            "title": "Fabrikazio Data",
+            "desc": "Zure LFP bateriaren osasun egoera (SoH) zehaztasunez kalkulatzeko, autoa noiz fabrikatu zen jakin behar dugu.",
+            "instructions": "Ireki kopilotuaren atea (batzuetan gidariarena) eta bilatu metalezko plaka bat edo pegatina beltz bat atearen markoan (segurtasun-uhala ainguratzen den erdiko zutabean). Plaka horretan, VIN zenbakiaz gain, normalean 'Date of mfg' edo 'Built date' eremua agertzen da MM/YY formatuarekin.",
+            "formatHint": "Formatua: MM/YY (Adib. 03/24)",
+            "save": "Data Baieztatu",
+            "invalid": "Formatu ez-balioduna (MM/YY)"
+        }
     },
     "errors": {
         "invalidFile": "*.DB edo *.JPG fitxategiak soilik onartzen dira (izena aldatutako datu-basea)\nAurkitu EC_Database.db autoaren \"Energydata\" karpetan",
@@ -522,8 +531,29 @@
         "speedTitle": "Abiadura Analisiak",
         "avgTripTitle": "Batez besteko Bidaia",
         "activeDaysTitle": "Jarduera Analisiak",
+        "rangeTitle": "Autonomiaren xehetasuna",
+        "rangeDesc": "Kalkulu honek zure bidaia-historia eta uneko bateria-ezarpenak erabiltzen ditu. Funtsezkoa da bateriaren benetako tamaina eta osasuna (SoH) ezarpenetan sartzea datuak zehatzak izan daitezen. Benetako autonomia aldatu egin daiteke eguraldiaren, kargaren eta gidatzeko estiloaren arabera.",
+        "rangeHighway": "Autobideko autonomia",
+        "rangeHighwayDesc": "Ohikoa baino %20 kontsumo altuagoarekin kalkulatua.",
+        "rangeCity": "Hiriko autonomia",
+        "rangeCityDesc": "Ohikoa baino %20 kontsumo baxuagoarekin kalkulatua.",
         "stationaryTitle": "Geldiko kontsumoa",
         "stationaryDesc": "Hemen erregistratutako 0.5km-tik beherako bidaia guztien kontsumoa kontabilizatzen da.",
+        "sohTitle": "Bateriaren Osasuna (SoH)",
+        "sohDesc": "LFP zelulen narriadura naturalean eta erabilera-historian oinarritutako estimazio aurreratua.",
+        "sohMethodology": "Kalkulu Metodologia",
+        "sohBreakdown": "Faktoreen banakapena",
+        "sohSei": "SEI Eraketa (Hasierako Geruza)",
+        "sohCycle": "Karga-zikloagatiko Higadura",
+        "sohCalendar": "Egutegiagatiko Degradazioa",
+        "sohStressFactor": "Estres Termikoaren Faktorea",
+        "sohRealCycles": "Ziklo Realak (zuzenduak)",
+        "sohCalibration": "BMS Kalibratze Egoera",
+        "sohFormula": "Aplikatutako Formula",
+        "sohFormulaText": "Degradazio Totala = SEI + (Zikloak * 0.005% * Estresa) + (Urteak * 0.75%)",
+        "sohSeiDesc": "Lehenengo 50 zikloetan %2rainoko beherakada lineala.",
+        "sohStressDesc": "Karga-potentziak eragina du: Geldoa 8A (0.9x), AC (1.0x), DC (1.2x), HPC (2.8x).",
+        "sohCalendarDesc": "Denboraren igarotzeagatiko zahartze naturala (urteko %0.75).",
         "totalKm": "Km Guztira",
         "kmPerDay": "Km/egun aktibo",
         "avgPerTrip": "B.B./bidaia",

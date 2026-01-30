@@ -1,17 +1,19 @@
 // BYD Stats - SettingsModal Component
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
 import { BYD_RED, TAB_ORDER } from '@core/constants';
-import { Settings, Zap, Trash2, Eye, EyeOff } from '../Icons.jsx';
+import { Settings, Zap, Trash2, Eye, EyeOff, Calendar, Info, TrendingUp } from '../Icons.jsx';
 import ModalHeader from '../common/ModalHeader';
 import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag } from '../FlagIcons.jsx';
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
+
+import MfgDateModal from './MfgDateModal';
 
 /**
  * Settings modal for app configuration
@@ -20,7 +22,19 @@ const SettingsModal = () => {
     const { t, i18n } = useTranslation();
     const { settings, updateSettings: onSettingsChange } = useApp();
     const { activeCar, updateCar, activeCarId } = useCar();
-    const { googleSync, charges = [], modals, closeModal, stats } = useData();
+    const { googleSync, charges = [], modals, closeModal, stats, replaceCharges } = useData();
+    const [showMfgModal, setShowMfgModal] = useState(false);
+
+    // Import estimateInitialSoC (assuming it's available, otherwise need to import it at top)
+    // imports were static, adding them at top via another replace if needed, or using dynamic import is not ideal here.
+    // Let's rely on the module system. I'll add the import in a separate block if not present.
+    // Checking imports... I need to add `estimateInitialSoC` to imports first.
+
+
+
+    // Get SoH data from summary
+    const sohData = stats?.summary?.sohData;
+    const currentSohMode = settings?.sohMode || 'manual';
 
     // Derived State
     const isOpen = modals.settings;
@@ -149,16 +163,86 @@ const SettingsModal = () => {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.soh')}</label>
-                        <input
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={settings?.soh || 100}
-                            onChange={(e) => onSettingsChange({ ...settings, soh: parseInt(e.target.value) || 100 })}
-                            className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                        />
+                    <div className="space-y-3">
+                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">{t('settings.sohMode')}</label>
+
+                        <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
+                            {['manual', 'calculated'].map(mode => (
+                                <button
+                                    key={mode}
+                                    onClick={() => {
+                                        if (mode === 'calculated' && !settings.mfgDate) {
+                                            setShowMfgModal(true);
+                                        }
+                                        onSettingsChange({ ...settings, sohMode: mode });
+                                    }}
+                                    className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${currentSohMode === mode
+                                        ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-white shadow-sm'
+                                        : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
+                                        }`}
+                                >
+                                    {t(`settings.soh${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
+                                </button>
+                            ))}
+                        </div>
+
+                        {currentSohMode === 'manual' ? (
+                            <div className="space-y-3">
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={settings?.soh || 100}
+                                    onChange={(e) => onSettingsChange({ ...settings, soh: parseInt(e.target.value) || 100 })}
+                                    className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
+                                />
+                                <button
+                                    onClick={() => setShowMfgModal(true)}
+                                    className="w-full flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <Calendar className="w-4 h-4 text-slate-400" />
+                                        <span className="text-xs text-slate-600 dark:text-slate-400">{t('settings.mfgDate')}</span>
+                                    </div>
+                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                        {settings.mfgDateDisplay || t('common.notSet', 'No definida')}
+                                    </span>
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 space-y-3 border border-slate-100 dark:border-slate-700/50">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">{t('settings.estimatedSoh')}</span>
+                                    <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{sohData?.estimated_soh || 100}%</span>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/50 dark:border-slate-600/50">
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{t('settings.stressScore')}</p>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{sohData?.stress_score || 1.0}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{t('settings.cyclesCount')}</p>
+                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{sohData?.real_cycles_count || 0}</p>
+                                    </div>
+                                </div>
+
+                                {sohData?.calibration_warning && (
+                                    <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center gap-2 border border-amber-100 dark:border-amber-900/30">
+                                        <Info className="w-4 h-4 text-amber-600 dark:text-amber-500" />
+                                        <span className="text-[10px] font-medium text-amber-700 dark:text-amber-300">{t('settings.calibrationWarning')}</span>
+                                    </div>
+                                )}
+
+                                <button
+                                    onClick={() => setShowMfgModal(true)}
+                                    className="w-full mt-1 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1"
+                                >
+                                    <Calendar className="w-3 h-3" />
+                                    {settings.mfgDateDisplay || t('settings.mfgDate')}
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     <div className="space-y-2">
@@ -484,6 +568,19 @@ const SettingsModal = () => {
                     {t('common.save')}
                 </button>
             </div>
+
+            <MfgDateModal
+                isOpen={showMfgModal}
+                onClose={() => setShowMfgModal(false)}
+                initialValue={settings.mfgDateDisplay || ''}
+                onSave={(isoDate, displayDate) => {
+                    onSettingsChange({
+                        ...settings,
+                        mfgDate: isoDate,
+                        mfgDateDisplay: displayDate
+                    });
+                }}
+            />
         </div>
     );
 };

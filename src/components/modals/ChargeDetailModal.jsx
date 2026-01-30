@@ -170,7 +170,7 @@ const ChargeDetailModal = () => {
                                 <p className="text-xs text-slate-500 flex items-center gap-1.5 mb-1">
                                     {t('charges.initialPercentage')}
                                 </p>
-                                <p className="text-sm font-medium text-slate-900 dark:text-white">
+                                <p className={`text-sm font-medium ${charge.isSOCEstimated ? 'text-orange-500 font-bold' : 'text-slate-900 dark:text-white'}`}>
                                     {charge.initialPercentage ? `${charge.initialPercentage}%` : '-'}
                                 </p>
                             </div>

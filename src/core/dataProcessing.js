@@ -3,6 +3,7 @@
 import { BYD_RED } from './constants';
 import { formatMonth, formatDate } from './dateUtils';
 import { logger } from './logger';
+import { calculateAdvancedSoH } from './batteryCalculations';
 
 /**
  * @typedef {Object} Trip
@@ -286,9 +287,36 @@ function updateAggregators(trip, tStats, monthlyData, dailyData, uniqueDates, ho
 /**
  * Generates the final summary object
  */
-function finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips) {
+function finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips, settings = {}, charges = []) {
     const firstTrip = allTrips[0];
     const lastTrip = allTrips[allTrips.length - 1];
+    const avgEffVal = stats.totalKm > 0 ? (stats.drivingKwh / stats.totalKm * 100) : 0;
+    const batterySize = parseFloat(settings.batterySize) || 0;
+    let soh = parseFloat(settings.soh) || 100;
+    let sohData = null;
+
+    // Advanced SoH Calculation
+    if (settings.mfgDate) {
+        sohData = calculateAdvancedSoH(charges, settings.mfgDate, batterySize, settings.chargerTypes, settings.thermalStressFactor || 1.0);
+        if (settings.sohMode === 'calculated') {
+            soh = sohData.estimated_soh;
+        }
+    }
+
+    // Calculate Estimated Range: (Effective Battery Energy / Efficiency) * 100
+    // Effective Battery = batterySize * (SoH / 100)
+    const effectiveBattery = batterySize * (soh / 100);
+    const estimatedRange = (effectiveBattery > 0 && avgEffVal > 0)
+        ? (effectiveBattery / avgEffVal * 100).toFixed(0)
+        : '0';
+
+    const estimatedRangeHighway = (effectiveBattery > 0 && avgEffVal > 0)
+        ? (effectiveBattery / (avgEffVal * 1.2) * 100).toFixed(0)
+        : '0';
+
+    const estimatedRangeCity = (effectiveBattery > 0 && avgEffVal > 0)
+        ? (effectiveBattery / (avgEffVal * 0.8) * 100).toFixed(0)
+        : '0';
 
     return {
         totalTrips: validTrips.length,
@@ -297,7 +325,10 @@ function finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips) {
         drivingKwh: stats.drivingKwh.toFixed(1),
         stationaryConsumption: stats.stationaryKwh.toFixed(1),
         totalHours: (stats.totalDuration / 3600).toFixed(1),
-        avgEff: stats.totalKm > 0 ? (stats.drivingKwh / stats.totalKm * 100).toFixed(2) : '0',
+        avgEff: avgEffVal.toFixed(2),
+        estimatedRange,
+        estimatedRangeHighway,
+        estimatedRangeCity,
         avgKm: validTrips.length > 0 ? (stats.totalKm / validTrips.length).toFixed(1) : '0',
         avgMin: stats.totalDuration > 0 ? (stats.totalDuration / validTrips.length / 60).toFixed(0) : '0',
         avgSpeed: stats.totalDuration > 0 ? (stats.totalKm / (stats.totalDuration / 3600)).toFixed(1) : '0',
@@ -320,7 +351,9 @@ function finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips) {
         evModeUsage: validTrips.length > 0 ? (stats.electricOnlyTrips / validTrips.length * 100).toFixed(1) : '100',
         maxFuel: stats.maxFuelVal.toFixed(2),
         maxCost: stats.maxCostVal > -Infinity ? stats.maxCostVal.toFixed(2) : '0.00',
-        maxCostDate: stats.maxCostDate || ''
+        maxCostDate: stats.maxCostDate || '',
+        soh: soh,
+        sohData: sohData
     };
 }
 
@@ -412,7 +445,7 @@ export function processData(rows, priceSettings = {}, charges = []) {
     const lastTs = allTrips[allTrips.length - 1]?.start_timestamp;
     const totalDays = (firstTs && lastTs) ? Math.max(1, Math.ceil((lastTs - firstTs) / (24 * 3600)) + 1) : daysActive;
 
-    const summary = finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips);
+    const summary = finalizeSummary(stats, validTrips, daysActive, totalDays, allTrips, priceSettings, charges);
 
     return {
         summary,

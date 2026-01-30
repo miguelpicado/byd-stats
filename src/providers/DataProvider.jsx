@@ -13,20 +13,48 @@ import { useCar } from '@/context/CarContext';
 
 import useModalState from '@hooks/useModalState';
 
-const DataContext = createContext();
+// Split contexts for performance optimization (M2)
+const DataStateContext = createContext();
+const DataDispatchContext = createContext();
 
-export const useData = () => {
-    const context = useContext(DataContext);
+// Hook for accessing data state (trips, stats, charges, etc.)
+export const useDataState = () => {
+    const context = useContext(DataStateContext);
     if (!context) {
-        throw new Error('useData must be used within a DataProvider');
+        throw new Error('useDataState must be used within a DataProvider');
     }
     return context;
+};
+
+// Hook for accessing data actions (loadFile, save, clear, etc.)
+export const useDataDispatch = () => {
+    const context = useContext(DataDispatchContext);
+    if (!context) {
+        throw new Error('useDataDispatch must be used within a DataProvider');
+    }
+    return context;
+};
+
+// Legacy unified hook for backward compatibility
+export const useData = () => {
+    const state = useContext(DataStateContext);
+    const dispatch = useContext(DataDispatchContext);
+
+    if (!state || !dispatch) {
+        throw new Error('useData must be used within a DataProvider');
+    }
+
+    // Merge both for the original API surface
+    return useMemo(() => ({
+        ...state,
+        ...dispatch
+    }), [state, dispatch]);
 };
 
 export const DataProvider = ({ children }) => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
-    const { activeCarId, cars, updateCar } = useCar();
+    const { activeCarId, cars, updateCar, activeCar } = useCar();
 
     // 1. Charges Data
     const chargesData = useChargesData(activeCarId);
@@ -34,7 +62,9 @@ export const DataProvider = ({ children }) => {
     // Defensive destructuring for charges
     const charges = chargesData?.charges || [];
     const replaceCharges = chargesData?.replaceCharges || (() => { });
-    const restChargesData = chargesData || {};
+    // restChargesData might contain other state or functions, usually just helpers. 
+    // We assume mostly functions if not 'charges'.
+    const { charges: _c, replaceCharges: _rc, ...restChargesData } = chargesData || {};
 
     // 2. Core App Data
     const appData = useAppData(settings, charges, activeCarId);
@@ -84,7 +114,9 @@ export const DataProvider = ({ children }) => {
         cars.length,
         modalState?.openRegistryModal,
         modalState?.modals?.registryRestore,
-        updateCar
+        modalState?.modals?.registryRestore,
+        updateCar,
+        activeCar?.name // Pass current car name for backup
     );
 
     // 8. Auto-Sync Effect
@@ -239,42 +271,75 @@ export const DataProvider = ({ children }) => {
         }
     }, [settings, updateSettings, chargesData, googleSync, t]);
 
-    const value = {
+
+    // --- Context Values Construction ---
+
+    // State Value
+    const stateValue = useMemo(() => ({
         trips: rawTrips,
         filtered,
         filteredTrips: filtered,
         stats: data,
         charges,
         tripHistory,
+        // Spread the parts of appData that are state, not functions
+        // Excluding direct function references (we'll capture them in dispatch)
+        // However, useAppData returns a mixed bag. For safety, we include everything in state
+        // that isn't explicitly an action we moved to dispatch, OR we can accept some duplication.
+        // For strict M2 optimization, we should ideally separate them, but safely:
+        settings, // from AppContext
+        googleSync: {
+            ...googleSync,
+            // Optimization: googleSync has methods like syncNow. 
+            // Ideally should be in dispatch, but it's an object property.
+            // Keeping it here for now as it contains state like isSyncing.
+        },
+        database, // contains error, sqlReady state
+        ...modalState, // modals, etc.
+        fileHandling
+    }), [
+        rawTrips, filtered, data, charges, tripHistory,
+        settings, googleSync, database, modalState, fileHandling
+    ]);
+
+    // Dispatch Value (Actions)
+    const dispatchValue = useMemo(() => ({
         setRawTrips,
-        ...safeAppData,
         replaceCharges,
-        ...restChargesData,
+        ...restChargesData, // helpers from useChargesData
+
+        // Actions from useAppData
         clearData: confirmation?.clearData,
         saveToHistory: confirmation?.saveToHistory,
         loadFromHistory: confirmation?.loadFromHistory,
         clearHistory: confirmation?.clearHistory,
+
+        // Modal actions
         confirmModalState: confirmation?.confirmModalState,
         closeConfirmation: confirmation?.closeConfirmation,
         showConfirmation: confirmation?.showConfirmation,
-        database,
-        fileHandling,
+
+        // File actions
         loadFile,
         exportData,
         loadChargeRegistry,
-        googleSync,
-        ...modalState,
-    };
 
-    const memoizedValue = useMemo(() => value, [
-        rawTrips, filtered, data, charges, tripHistory,
-        safeAppData, restChargesData, confirmation, database, fileHandling, googleSync, modalState,
-        setRawTrips, loadFile, exportData, loadChargeRegistry
+        // Modal State Actions
+        openModal: modalState.openModal,
+        closeModal: modalState.closeModal,
+        // ... any other functions from modalState? check hook.
+    }), [
+        setRawTrips, replaceCharges, restChargesData,
+        confirmation,
+        loadFile, exportData, loadChargeRegistry,
+        modalState.openModal, modalState.closeModal
     ]);
 
     return (
-        <DataContext.Provider value={memoizedValue}>
-            {children}
-        </DataContext.Provider>
+        <DataDispatchContext.Provider value={dispatchValue}>
+            <DataStateContext.Provider value={stateValue}>
+                {children}
+            </DataStateContext.Provider>
+        </DataDispatchContext.Provider>
     );
 };

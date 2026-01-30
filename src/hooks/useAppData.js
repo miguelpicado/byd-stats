@@ -146,14 +146,20 @@ const useAppData = (settings, charges = [], activeCarId = null) => {
     // --- Computed: Process filtered data for charts and stats ---
     const data = useMemo(() => {
         try {
-            const priceSettings = {
+            const processingSettings = {
                 electricStrategy: settings?.priceStrategy || (settings?.useCalculatedPrice ? 'average' : 'custom'),
                 fuelStrategy: settings?.fuelPriceStrategy || (settings?.useCalculatedFuelPrice ? 'average' : 'custom'),
                 electricPrice: settings?.electricityPrice || 0,
-                fuelPrice: settings?.fuelPrice || 0
+                fuelPrice: settings?.fuelPrice || 0,
+                batterySize: settings?.batterySize || 0,
+                soh: settings?.soh || 100,
+                sohMode: settings?.sohMode || 'manual',
+                mfgDate: settings?.mfgDate,
+                chargerTypes: settings?.chargerTypes || [],
+                thermalStressFactor: parseFloat(settings?.thermalStressFactor) || 1.0
             };
 
-            const result = filtered.length > 0 ? processData(filtered, priceSettings, charges) : null;
+            const result = filtered.length > 0 ? processData(filtered, processingSettings, charges) : null;
 
             // Apply Odometer Offset (Visual Only)
             if (result && settings?.odometerOffset) {

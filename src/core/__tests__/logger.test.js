@@ -13,31 +13,28 @@ describe('logger', () => {
             warn: vi.spyOn(console, 'warn').mockImplementation(() => { }),
             error: vi.spyOn(console, 'error').mockImplementation(() => { }),
         };
+        // Set to DEBUG level for all tests to ensure they are captured
+        logger.setLevel(0);
     });
 
     afterEach(() => {
         vi.restoreAllMocks();
+        // Reset to default level (usually 2 for dev)
+        logger.setLevel(2);
     });
 
     describe('debug', () => {
         it('should call console.log with DEBUG prefix in development', () => {
-            // Assuming development mode or logger.isEnabled
             logger.debug('Test debug message');
-            // In production mode, it may not log, so we need conditional testing
-            // For this test, we assume it logs
-            if (import.meta.env.MODE !== 'production') {
-                expect(consoleSpy.log).toHaveBeenCalledWith(
-                    expect.stringContaining('[DEBUG]'),
-                    'Test debug message'
-                );
-            }
+            expect(consoleSpy.log).toHaveBeenCalledWith(
+                expect.stringContaining('[DEBUG]'),
+                'Test debug message'
+            );
         });
 
         it('should handle multiple arguments', () => {
             logger.debug('Message', 'arg1', { key: 'value' });
-            if (import.meta.env.MODE !== 'production') {
-                expect(consoleSpy.log).toHaveBeenCalled();
-            }
+            expect(consoleSpy.log).toHaveBeenCalled();
         });
 
         it('should handle objects and arrays', () => {
@@ -53,19 +50,15 @@ describe('logger', () => {
     describe('info', () => {
         it('should call console.info with INFO prefix', () => {
             logger.info('Test info message');
-            if (import.meta.env.MODE !== 'production') {
-                expect(consoleSpy.info).toHaveBeenCalledWith(
-                    expect.stringContaining('[INFO]'),
-                    'Test info message'
-                );
-            }
+            expect(consoleSpy.info).toHaveBeenCalledWith(
+                expect.stringContaining('[INFO]'),
+                'Test info message'
+            );
         });
 
         it('should handle null and undefined', () => {
             logger.info(null, undefined);
-            if (import.meta.env.MODE !== 'production') {
-                expect(consoleSpy.info).toHaveBeenCalled();
-            }
+            expect(consoleSpy.info).toHaveBeenCalled();
         });
     });
 

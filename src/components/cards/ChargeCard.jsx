@@ -36,7 +36,12 @@ const ChargeCard = memo(({ charge, onClick, formattedDate, chargerTypeName }) =>
                     </p>
                     {charge.finalPercentage && (
                         <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {charge.initialPercentage ? `${charge.initialPercentage}% → ` : ''}
+                            {charge.initialPercentage ? (
+                                <span className={charge.isSOCEstimated ? 'text-orange-500 font-bold' : ''}>
+                                    {charge.initialPercentage}%
+                                </span>
+                            ) : ''}
+                            {charge.initialPercentage ? ' → ' : ''}
                             {charge.finalPercentage}%
                         </p>
                     )}

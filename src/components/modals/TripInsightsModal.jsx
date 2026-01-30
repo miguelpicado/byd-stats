@@ -4,7 +4,7 @@
 import React, { useMemo } from 'react';
 import PropTypes from 'prop-types';
 import { useTranslation } from 'react-i18next';
-import { X, Zap, TrendingUp, Calendar, Battery, MapPin, Clock, Car } from '../Icons.jsx';
+import { X, Zap, TrendingUp, Calendar, Battery, MapPin, Clock, Car, Fuel } from '../Icons.jsx';
 import StatItem from '../ui/StatItem';
 import ModalPortal from '../common/ModalPortal';
 import { isStationaryTrip } from '@core/dataProcessing';
@@ -12,7 +12,7 @@ import { isStationaryTrip } from '@core/dataProcessing';
 /**
  * Calculate advanced trip statistics
  */
-const useTripInsights = (trips, electricityPrice = 0.15) => {
+const useTripInsights = (trips, electricityPrice = 0.15, settings = {}) => {
     return useMemo(() => {
         if (!trips || trips.length === 0) return null;
 
@@ -118,6 +118,20 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
         // But here we approximate: totalKwh (Total or Driving?) -> likely Driving for Avg Trip stats.
         const avgCostPerTrip = len > 0 ? (drivingKwh / len) * electricityPrice : 0;
 
+        const fuelTrips = validTrips.filter(t => (t.fuel || 0) > 0);
+        const totalFuel = fuelTrips.reduce((acc, t) => acc + (t.fuel || 0), 0);
+        const totalKmFuel = fuelTrips.reduce((acc, t) => acc + (t.trip || 0), 0);
+
+        // Split by distance (>100km vs <=100km)
+        const longTrips = fuelTrips.filter(t => (t.trip || 0) > 100);
+        const shortTrips = fuelTrips.filter(t => (t.trip || 0) <= 100);
+
+        const longTripsFuel = longTrips.reduce((acc, t) => acc + (t.fuel || 0), 0);
+        const longTripsKm = longTrips.reduce((acc, t) => acc + (t.trip || 0), 0);
+
+        const shortTripsFuel = shortTrips.reduce((acc, t) => acc + (t.fuel || 0), 0);
+        const shortTripsKm = shortTrips.reduce((acc, t) => acc + (t.trip || 0), 0);
+
         const validSpeedTrips = validTrips.filter(t => (t.duration || 0) > 60);
         const minSpeedTrip = validSpeedTrips.length > 0 ? validSpeedTrips.reduce((min, t) => (getAvgSpeed(t) < getAvgSpeed(min) ? t : min), validSpeedTrips[0]) : null;
 
@@ -130,13 +144,13 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
                 maxDate: maxDistTrip.date
             },
             energy: {
-                total: totalKwh, // Show Total (Driving + Stationary) or just Driving? Usually "Energy" implies total used.
-                avgPerTrip: len > 0 ? drivingKwh / len : 0, // Per trip based on driving kwh
+                total: totalKwh,
+                avgPerTrip: len > 0 ? drivingKwh / len : 0,
                 perDay: daysActive > 0 ? drivingKwh / daysActive : 0,
                 maxCons: Math.max(...energies, 0)
             },
             trips: {
-                total: len, // Matches StatCard (Valid trips)
+                total: len,
                 perDay: daysActive > 0 ? len / daysActive : 0,
                 mostActiveDayIndex,
                 maxStreak
@@ -153,6 +167,15 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
                 best: bestEffTrip ? getEfficiency(bestEffTrip) : 0,
                 worst: worstEffTrip ? getEfficiency(worstEffTrip) : 0,
                 bestDate: bestEffTrip ? bestEffTrip.date : ''
+            },
+            fuel: {
+                total: totalFuel,
+                avg: totalKmFuel > 0 ? (totalFuel / totalKmFuel * 100) : 0,
+                longTripsAvg: longTripsKm > 0 ? (longTripsFuel / longTripsKm * 100) : 0,
+                shortTripsAvg: shortTripsKm > 0 ? (shortTripsFuel / shortTripsKm * 100) : 0,
+                count: fuelTrips.length,
+                longCount: longTrips.length,
+                shortCount: shortTrips.length
             },
             speed: {
                 avg: totalSeconds > 0 ? (totalKm / (totalSeconds / 3600)) : 0,
@@ -171,11 +194,15 @@ const useTripInsights = (trips, electricityPrice = 0.15) => {
                 maxStreak,
                 percentage: 0
             },
+            range: {
+                highway: (settings?.batterySize > 0 && globalEfficiency > 0) ? (settings.batterySize * (settings.soh / 100) / (globalEfficiency * 1.2) * 100) : 0,
+                city: (settings?.batterySize > 0 && globalEfficiency > 0) ? (settings.batterySize * (settings.soh / 100) / (globalEfficiency * 0.8) * 100) : 0
+            },
             // Pass stationary data specifically if needed
             stationaryCount: stationaryTrips.length,
             stationaryEnergy: stationaryEnergy
         };
-    }, [trips, electricityPrice]);
+    }, [trips, electricityPrice, settings]);
 };
 
 const TripInsightsModal = ({
@@ -183,11 +210,14 @@ const TripInsightsModal = ({
     onClose,
     type, // 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays'
     trips,
-    settings
+    settings,
+    summary,
+    onMfgDateClick,
+    onThermalStressClick
 }) => {
     const { t } = useTranslation();
     const electricityPrice = settings?.electricityPrice || 0.15;
-    const insights = useTripInsights(trips, electricityPrice);
+    const insights = useTripInsights(trips, electricityPrice, settings);
 
     if (!isOpen) return null;
 
@@ -198,10 +228,13 @@ const TripInsightsModal = ({
         trips: { title: t('tripInsights.tripsTitle', 'Insights de Viajes'), icon: Car, color: 'text-amber-500', bgColor: 'bg-amber-100 dark:bg-amber-900/30' },
         time: { title: t('tripInsights.timeTitle', 'Insights de Tiempo'), icon: Clock, color: 'text-purple-500', bgColor: 'bg-purple-100 dark:bg-purple-900/30' },
         efficiency: { title: t('tripInsights.efficiencyTitle', 'Insights de Eficiencia'), icon: Battery, color: 'text-green-500', bgColor: 'bg-green-100 dark:bg-green-900/30' },
+        fuel: { title: t('tripInsights.fuelTitle', 'Insights de Gasolina'), icon: Fuel, color: 'text-amber-600', bgColor: 'bg-amber-100 dark:bg-amber-900/30' },
         speed: { title: t('tripInsights.speedTitle', 'Insights de Velocidad'), icon: TrendingUp, color: 'text-blue-500', bgColor: 'bg-blue-100 dark:bg-blue-900/30' },
         avgTrip: { title: t('tripInsights.avgTripTitle', 'Insights de Viaje Medio'), icon: MapPin, color: 'text-orange-500', bgColor: 'bg-orange-100 dark:bg-orange-900/30' },
         activeDays: { title: t('tripInsights.activeDaysTitle', 'Insights de Actividad'), icon: Calendar, color: 'text-pink-500', bgColor: 'bg-pink-100 dark:bg-pink-900/30' },
-        stationary: { title: t('tripInsights.stationaryTitle', 'Consumo en Parado'), icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' }
+        stationary: { title: t('tripInsights.stationaryTitle', 'Consumo en Parado'), icon: Zap, color: 'text-yellow-500', bgColor: 'bg-yellow-100 dark:bg-yellow-900/30' },
+        range: { title: t('tripInsights.rangeTitle', 'Detalle de Autonomía'), icon: Battery, color: 'text-amber-500', bgColor: 'bg-amber-100 dark:bg-amber-900/30' },
+        soh: { title: t('tripInsights.sohTitle', 'Salud de la Batería (SoH)'), icon: Battery, color: 'text-emerald-500', bgColor: 'bg-emerald-100 dark:bg-emerald-900/30' }
     };
 
     const currentConfig = config[type] || config.distance;
@@ -277,6 +310,55 @@ const TripInsightsModal = ({
                         <StatItem label={t('tripInsights.worstEff', 'Peor')} value={insights.efficiency.worst.toFixed(2)} unit="kWh/100" color="text-red-500" />
                     </div>
                 );
+            case 'fuel':
+                return (
+                    <div className="grid grid-cols-1 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
+                            <StatItem
+                                label={t('tripInsights.avgFuelEff', 'Media General')}
+                                value={insights.fuel.avg.toFixed(2)}
+                                unit="L/100"
+                                highlight
+                                color="text-amber-600"
+                            />
+                            <StatItem
+                                label={t('tripInsights.totalFuel', 'Total Litros')}
+                                value={insights.fuel.total.toFixed(1)}
+                                unit="L"
+                            />
+                        </div>
+
+                        <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 space-y-3">
+                            <div className="border-b border-slate-200 dark:border-slate-600 pb-2 mb-2">
+                                <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t('tripInsights.byDistance', 'Por Distancia')}</h4>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p className="text-xs text-slate-500">{t('tripInsights.shortTrips', 'Viajes < 100km')}</p>
+                                    <p className="text-[10px] text-slate-400">{insights.fuel.shortCount} {t('common.trips', 'viajes')}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">
+                                        {insights.fuel.shortTripsAvg.toFixed(2)} <span className="text-xs font-normal text-slate-500">L/100</span>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-between items-center">
+                                <div>
+                                    <p className="text-xs text-slate-500">{t('tripInsights.longTrips', 'Viajes > 100km')}</p>
+                                    <p className="text-[10px] text-slate-400">{insights.fuel.longCount} {t('common.trips', 'viajes')}</p>
+                                </div>
+                                <div className="text-right">
+                                    <p className="font-bold text-slate-700 dark:text-slate-300">
+                                        {insights.fuel.longTripsAvg.toFixed(2)} <span className="text-xs font-normal text-slate-500">L/100</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
             case 'speed':
                 return (
                     <div className="grid grid-cols-2 gap-3">
@@ -300,6 +382,106 @@ const TripInsightsModal = ({
                     <div className="grid grid-cols-2 gap-3">
                         <StatItem label={t('tripInsights.totalDays', 'Días activos')} value={insights.activeDays.count} highlight />
                         <StatItem label={t('tripInsights.streak', 'Racha')} value={insights.activeDays.maxStreak} unit={t('units.days', 'días')} />
+                    </div>
+                );
+            case 'range':
+                return (
+                    <div className="flex flex-col gap-6">
+                        <div className="text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                {t('tripInsights.rangeDesc')}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                            <StatItem
+                                label={t('tripInsights.rangeHighway')}
+                                value={insights.range.highway.toFixed(0)}
+                                unit="km"
+                                highlight
+                                color="text-amber-500"
+                            />
+                            <StatItem
+                                label={t('tripInsights.rangeCity')}
+                                value={insights.range.city.toFixed(0)}
+                                unit="km"
+                                highlight
+                                color="text-green-500"
+                            />
+                        </div>
+                    </div>
+                );
+            case 'soh':
+                const sohData = summary?.sohData;
+                return (
+                    <div className="flex flex-col gap-4">
+                        <div className="text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">
+                                {t('tripInsights.sohFormula', 'Fórmula aplicada')}
+                            </p>
+                            <p className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">
+                                {t('tripInsights.sohFormulaText')}
+                            </p>
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-3">
+                            <StatItem
+                                label={t('tripInsights.sohSei')}
+                                value={`${sohData?.degradation?.sei.toFixed(2) || 0}`}
+                                unit="%"
+                                sub={t('tripInsights.sohSeiDesc')}
+                                color="text-amber-500"
+                            />
+                            <StatItem
+                                label={t('tripInsights.sohCycle')}
+                                value={`${sohData?.degradation?.cycle.toFixed(2) || 0}`}
+                                unit="%"
+                                sub={`${t('tripInsights.sohRealCycles')}: ${sohData?.real_cycles_count || 0}`}
+                                color="text-orange-500"
+                            />
+                            <StatItem
+                                label={t('tripInsights.sohCalendar')}
+                                value={`${sohData?.degradation?.calendar.toFixed(2) || 0}`}
+                                unit="%"
+                                sub={t('tripInsights.sohCalendarDesc')}
+                                color="text-red-500"
+                            />
+                        </div>
+
+                        <div className="mt-2 grid grid-cols-2 gap-3">
+                            <button
+                                onClick={onMfgDateClick}
+                                className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-slate-700/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-600 hover:border-slate-400 transition-colors"
+                            >
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{t('settings.mfgDate')}</span>
+                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                                    {settings?.mfgDateDisplay || t('common.notSet', 'No definida')}
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={onThermalStressClick}
+                                className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-slate-700/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-600 hover:border-slate-400 transition-colors"
+                            >
+                                <span className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{t('tripInsights.sohStressFactor')}</span>
+                                <span className={`text-xs font-bold ${summary?.sohData?.thermal_stress > 1.0 ? 'text-orange-500' : 'text-slate-700 dark:text-slate-300'}`}>
+                                    {summary?.sohData?.thermal_stress ? `${summary.sohData.thermal_stress}x` : '1.0x'}
+                                </span>
+                            </button>
+                        </div>
+
+                        <div className="p-3 bg-slate-100 dark:bg-slate-700/30 rounded-lg">
+                            <div className="flex justify-between items-center text-xs">
+                                <span className="text-slate-500">{t('tripInsights.sohCalibration')}</span>
+                                <span className={`font-bold ${sohData?.calibration_warning ? 'text-amber-500' : 'text-emerald-500'}`}>
+                                    {sohData?.calibration_warning ? t('settings.calibrationWarning') : 'OK'}
+                                </span>
+                            </div>
+                        </div>
+
+                        <p className="text-[10px] text-center text-slate-400 italic">
+                            {t('tripInsights.sohDesc')}
+                        </p>
                     </div>
                 );
             case 'stationary':
@@ -385,11 +567,14 @@ const TripInsightsModal = ({
 TripInsightsModal.propTypes = {
     isOpen: PropTypes.bool.isRequired,
     onClose: PropTypes.func.isRequired,
-    type: PropTypes.oneOf(['distance', 'energy', 'trips', 'time', 'efficiency', 'speed', 'avgTrip', 'activeDays', 'stationary']).isRequired,
+    type: PropTypes.oneOf(['distance', 'energy', 'trips', 'time', 'efficiency', 'speed', 'avgTrip', 'activeDays', 'stationary', 'soh', 'fuel']).isRequired,
     trips: PropTypes.array.isRequired,
     settings: PropTypes.shape({
         electricityPrice: PropTypes.number
-    })
+    }),
+    summary: PropTypes.object,
+    onMfgDateClick: PropTypes.func,
+    onThermalStressClick: PropTypes.func
 };
 
 export default TripInsightsModal;
