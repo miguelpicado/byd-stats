@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BYD_RED } from '@components/Icons.jsx';
+import '@/core/chartSetup';
 
 // Hooks
 import { useAppOrchestrator } from '@hooks/useAppOrchestrator';

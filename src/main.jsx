@@ -7,11 +7,9 @@ import ThemeManager from './components/ThemeManager';
 import './i18n';
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <AppProviders>
-      <ThemeManager />
-      <AppRoutes />
-    </AppProviders>
-  </StrictMode>,
+  <AppProviders>
+    <ThemeManager />
+    <AppRoutes />
+  </AppProviders>
 )
 

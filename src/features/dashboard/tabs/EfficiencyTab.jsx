@@ -1,5 +1,5 @@
 // BYD Stats - Efficiency Tab Component
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Scatter as ScatterJS } from 'react-chartjs-2';
 import { Battery, Zap, MapPin, TrendingUp, Fuel, BYD_RED } from '@components/Icons.jsx';
@@ -38,6 +38,27 @@ const EfficiencyTab = React.memo(({
 }) => {
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
+
+  // Refs for animation control
+  const lineChartRef = useRef(null);
+  const scatterChartRef = useRef(null);
+
+  // Trigger animation on activation
+  useEffect(() => {
+    if (isActive) {
+      const timer = setTimeout(() => {
+        if (lineChartRef.current) {
+          lineChartRef.current.reset();
+          lineChartRef.current.update();
+        }
+        if (scatterChartRef.current) {
+          scatterChartRef.current.reset();
+          scatterChartRef.current.update();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
 
   // Calculate consumption per trip
   const consumptionPerTrip = useMemo(() => {
@@ -132,6 +153,9 @@ const EfficiencyTab = React.memo(({
     },
     plugins: {
       legend: { display: false },
+      decimation: {
+        enabled: false, // Scatter doesn't support built-in decimation well with log scales
+      },
       tooltip: { callbacks: { label: scatterTooltipCallback } }
     },
     interaction: { mode: 'nearest', axis: 'xy', intersect: true }
@@ -170,14 +194,32 @@ const EfficiencyTab = React.memo(({
     return { labels: monthly.map(m => m.monthLabel), datasets };
   }, [monthly, hasHybridData]);
 
+  const sampledScatterData = useMemo(() => {
+    if (!effScatter || effScatter.length <= 1000) return effScatter;
+
+    // Stratified sampling: keep extreme values (highest/lowest efficiency) 
+    // and sample the rest to preserve the point cloud shape
+    const sorted = [...effScatter].sort((a, b) => a.y - b.y);
+    const extremes = [
+      ...sorted.slice(0, 50),   // 50 lowest
+      ...sorted.slice(-50)      // 50 highest
+    ];
+
+    const remaining = sorted.slice(50, -50);
+    const stride = Math.ceil(remaining.length / 900);
+    const sampledRemaining = remaining.filter((_, i) => i % stride === 0);
+
+    return [...extremes, ...sampledRemaining];
+  }, [effScatter]);
+
   const scatterChartData = useMemo(() => ({
     datasets: [{
       label: 'Eficiencia',
-      data: effScatter,
+      data: sampledScatterData,
       backgroundColor: BYD_RED,
-      pointRadius: 4
+      pointRadius: isCompact ? 2 : 4
     }]
-  }), [effScatter]);
+  }), [sampledScatterData, isCompact]);
 
   // Render vertical layout
   if (isVertical) {
@@ -268,12 +310,12 @@ const EfficiencyTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <LineJS key={`efficiency-line-v-${isActive}`} options={lineChartOptions} data={lineChartData} />
+              <LineJS ref={lineChartRef} options={lineChartOptions} data={lineChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={`📍 ${t('charts.effVsDist')}`}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <ScatterJS key={`efficiency-scatter-v-${isActive}`} options={scatterChartOptions} data={scatterChartData} />
+              <ScatterJS ref={scatterChartRef} options={scatterChartOptions} data={scatterChartData} />
             </div>
           </ChartCard>
         </div>
@@ -364,12 +406,12 @@ const EfficiencyTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={`📈 ${t('charts.monthlyEff')}`}>
           <div key="line-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <LineJS key={`efficiency-line-h-${isActive}`} options={lineChartOptions} data={lineChartData} />
+            <LineJS ref={lineChartRef} options={lineChartOptions} data={lineChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={`📍 ${t('charts.effVsDist')}`}>
           <div key="scatter-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <ScatterJS key={`efficiency-scatter-h-${isActive}`} options={scatterChartOptions} data={scatterChartData} />
+            <ScatterJS ref={scatterChartRef} options={scatterChartOptions} data={scatterChartData} />
           </div>
         </ChartCard>
       </div>
