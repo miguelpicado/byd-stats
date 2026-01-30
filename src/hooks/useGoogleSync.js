@@ -181,25 +181,51 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
 
 
     // Conflict Detection
-    const detectConflict = useCallback((localData, remoteData, options) => {
-        if (options.forcePush) return null;
-        if (options.forcePull) return null; // Logic handled in performSync for pull? Actually pull overrides? Let's assume standard logic.
+    const detectConflict = useCallback((localData, remoteData) => {
+        const localSettings = localData.settings || {};
+        const remoteSettings = remoteData.settings || {};
+        const differences = [];
 
-        // Simple check: if detailed checks needed, implement comparison.
-        // For now, if both have data and different timestamps (tracked?) or simply different content length/IDs 
-        // we might claim conflict if not a simple strict subset.
-        // Given current logic in `googleDriveService.mergeData` handles merging, 
-        // true "Conflict" requiring user intervention is rare unless we implement versioning.
-        // But the previous code had this function. Let's restore a basic version or the full one if we recall.
+        // Check Car Model
+        if (localSettings.carModel && remoteSettings.carModel && localSettings.carModel !== remoteSettings.carModel) {
+            differences.push({
+                label: 'Modelo de Coche',
+                local: localSettings.carModel,
+                cloud: remoteSettings.carModel
+            });
+        }
 
-        // Let's implement a heuristic: If we have pending local changes (not tracked efficiently yet without dirty flag)
-        // AND remote is newer? 
-        // The robust way: AppData doesn't strictly track "modification time" vs "sync time" perfectly yet.
-        // We will rely on `googleDriveService.mergeData` doing its best, 
-        // and only flag conflict if explicitly structurally incompatible or if we want to be safe.
-        // For this restoration, we'll return null to rely on auto-merge unless we want to block.
-        // However, the missing reference causes the crash. So we MUST define it.
-        return null;
+        // Check Odometer Offset
+        if (localSettings.odometerOffset !== undefined && remoteSettings.odometerOffset !== undefined &&
+            localSettings.odometerOffset !== remoteSettings.odometerOffset &&
+            localSettings.odometerOffset !== 0 && remoteSettings.odometerOffset !== 0) {
+            differences.push({
+                label: 'Ajuste de Odómetro',
+                local: `${localSettings.odometerOffset} km`,
+                cloud: `${remoteSettings.odometerOffset} km`
+            });
+        }
+
+        // Check Data Volume (significant difference)
+        const localTripsCount = (localData.trips || []).length;
+        const remoteTripsCount = (remoteData.trips || []).length;
+        if (Math.abs(localTripsCount - remoteTripsCount) > 10) {
+            differences.push({
+                label: 'Cantidad de Viajes',
+                local: `${localTripsCount} viajes`,
+                cloud: `${remoteTripsCount} viajes`
+            });
+        }
+
+        if (differences.length > 0) {
+            return {
+                localData,
+                remoteData,
+                differences
+            };
+        }
+
+        return null; // No significant conflict
     }, []);
 
     // Resolve Conflict
@@ -208,10 +234,13 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
 
         const { localData, remoteData, fileId } = pendingConflict;
         let finalData;
+
         if (resolution === 'local') {
             finalData = localData;
-        } else {
+        } else if (resolution === 'cloud') {
             finalData = remoteData;
+        } else if (resolution === 'merge') {
+            finalData = googleDriveService.mergeData(localData, remoteData);
         }
 
         try {
@@ -224,8 +253,10 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
 
             setPendingConflict(null);
             setLastSyncTime(new Date());
+            logger.info(`[Sync] Conflict resolved using: ${resolution}`);
         } catch (e) {
             setError("Error resolviendo conflicto: " + e.message);
+            logger.error('[Sync] Resolution failed', e);
         }
     }, [pendingConflict, setLocalTrips, setSettings, setLocalCharges, getTargetFilename]);
 
@@ -330,21 +361,35 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 logger.info(`[Sync] Remote data downloaded: ${remoteData.trips?.length} trips`);
             }
 
-            // 3. Determine Merge Strategy
+            // 3. Conflict Check
             const currentTrips = newTripsData || localTrips;
             const currentCharges = Array.isArray(localCharges) ? localCharges : [];
+            const localDataToMerge = { trips: currentTrips, settings: settings, charges: currentCharges };
+
+            // Only detect conflict if not a fresh install and not forced
+            if (currentTrips.length > 0 && remoteData.trips.length > 0 && !options.forcePull && !options.forcePush) {
+                const conflict = detectConflict(localDataToMerge, remoteData);
+                if (conflict) {
+                    logger.warn('[Sync] Conflict detected. Pausing for user action.');
+                    setPendingConflict({ ...conflict, fileId });
+                    setIsSyncing(false);
+                    return;
+                }
+            }
+
+            // 4. Determine Merge Strategy
             const isFreshLogin = currentTrips.length === 0 && remoteData.trips.length > 0;
 
             let merged;
-            if (isFreshLogin) {
-                logger.warn(`[Sync] Fresh login/Clean install. Loading ${remoteData.trips.length} trips from Cloud.`);
+            if (isFreshLogin || options.forcePull) {
+                logger.warn(`[Sync] Pulling data from Cloud. Remote: ${remoteData.trips.length} trips.`);
                 merged = remoteData;
+            } else if (options.forcePush) {
+                logger.warn(`[Sync] Pushing local data to Cloud. Local: ${currentTrips.length} trips.`);
+                merged = localDataToMerge;
             } else {
                 // Standard Merge
-                merged = googleDriveService.mergeData(
-                    { trips: currentTrips, settings: { ...settings, carName: carName || settings.carName }, charges: currentCharges },
-                    remoteData
-                );
+                merged = googleDriveService.mergeData(localDataToMerge, remoteData);
 
                 // Safety check: Don't allow clearing all trips if we had some before
                 if (merged.trips.length === 0 && currentTrips.length > 0) {
@@ -353,29 +398,29 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 }
             }
 
-            // 4. Update Local State
+            // 5. Update Local State
             logger.info(`[Sync] Updating local state with ${merged.trips.length} trips`);
             setLocalTrips(merged.trips);
             setSettings(merged.settings);
             setLocalCharges(merged.charges);
 
-            // 5. Upload Merged State
+            // 6. Upload Merged State
             // If legacyImport, create NEW file (targetFileId = null)
             const uploadId = legacyImport ? null : fileId;
             const uploadResult = await googleDriveService.uploadFile(merged, uploadId, targetFilename);
             const finalFileId = uploadResult.id;
 
-            // 5b. Update Local Car Name if found in settings
+            // 6b. Update Local Car Name if found in settings
             // This ensures "BYD Recuperado..." is replaced by real name "My Seal" after sync
-            if (updateCar && merged.settings?.carName && activeCarId) {
-                logger.info(`[Sync] Updating car name to: ${merged.settings.carName}`);
-                updateCar(activeCarId, { name: merged.settings.carName });
+            if (updateCar && merged.settings?.carModel && activeCarId) {
+                logger.info(`[Sync] Updating car name to: ${merged.settings.carModel}`);
+                updateCar(activeCarId, { name: merged.settings.carModel });
             }
 
             setLastSyncTime(new Date());
             logger.info('[Sync] Successfully synchronized and uploaded.');
 
-            // 6. Update Cloud Registry (background)
+            // 7. Update Cloud Registry (background)
             try {
                 const now = new Date().toISOString();
                 const currentReg = await googleDriveService.getRegistry() || { cars: [] };
@@ -383,7 +428,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
 
                 const carEntry = {
                     id: activeCarId,
-                    name: settings.carName || 'Mi BYD',
+                    name: settings.carModel || 'Mi BYD',
                     model: 'BYD',
                     lastSync: now,
                     fileId: finalFileId
@@ -645,7 +690,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
 
             // Update/Add current car
             const now = new Date().toISOString();
-            const carName = settings.carName || 'Mi BYD'; // Where do we get name? Settings or CarContext?
+            const carName = settings.carModel || 'Mi BYD'; // Where do we get name? Settings or CarContext?
             // settings doesn't have name usually? Car object does.
             // But useGoogleSync doesn't have full car object? 
             // We might need to pass it or read from settings if we added it there.

@@ -265,27 +265,69 @@ export const googleDriveService = {
     const mergedTrips = Array.from(tripMap.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
 
     // 2. Merge Settings
-    // Strategy: Local settings have priority. Remote settings fill in missing values.
-    // Special handling for chargerTypes array - merge by id instead of replacing
+    // Strategy: Non-default values win. Local settings have priority for same-value changes.
     const localSettings = localData.settings || {};
     const remoteSettings = remoteData.settings || {};
 
-    // Merge chargerTypes arrays by id (local wins for same id)
+    // Helper: Is a value a "default" or "empty" value?
+    const isDefault = (key, val) => {
+        if (val === undefined || val === null || val === '') return true;
+        if (key === 'odometerOffset' && val === 0) return true;
+        if (key === 'soh' && val === 100) return true;
+        if (key === 'batterySize' && val === 60.48) return true;
+        return false;
+    };
+
+    // Merge other settings (non-default wins, then local wins)
+    const mergedSettings = { ...remoteSettings, ...localSettings };
+    Object.keys(mergedSettings).forEach(key => {
+        if (key === 'chargerTypes' || key === 'hiddenTabs') return;
+        
+        const localVal = localSettings[key];
+        const remoteVal = remoteSettings[key];
+
+        if (isDefault(key, localVal) && !isDefault(key, remoteVal)) {
+            mergedSettings[key] = remoteVal;
+        } else if (!isDefault(key, localVal)) {
+            mergedSettings[key] = localVal;
+        }
+    });
+
+    // Special handling for chargerTypes array
     const localChargerTypes = localSettings.chargerTypes || [];
     const remoteChargerTypes = remoteSettings.chargerTypes || [];
+    
+    // Default chargers used for comparison
+    const DEFAULT_IDS = ['domestic', 'slow', 'fast', 'ultrafast'];
+    
+    // Logic: 
+    // 1. If both are identical (same IDs), just use local.
+    // 2. If one has custom (non-DEFAULT_IDS), keep them.
+    // 3. If a default ID is missing on one side but present on the other, it might have been deleted.
+    // To be safe but smart:
     const chargerTypeMap = new Map();
 
-    // Remote first, then local overwrites (local wins for same id)
+    // Fill with remote first
     remoteChargerTypes.forEach(ct => chargerTypeMap.set(ct.id, ct));
+    // Overwrite with local
     localChargerTypes.forEach(ct => chargerTypeMap.set(ct.id, ct));
 
-    const mergedChargerTypes = Array.from(chargerTypeMap.values());
+    // Cleanup: If a default charger was present in remote but is missing in local, 
+    // it likely means the user deleted it locally. We should keep it deleted.
+    // ONLY if localChargerTypes is not empty (it shouldn't be as it has defaults usually).
+    if (localChargerTypes.length > 0) {
+        DEFAULT_IDS.forEach(id => {
+            const inLocal = localChargerTypes.some(ct => ct.id === id);
+            const inRemote = remoteChargerTypes.some(ct => ct.id === id);
+            if (inRemote && !inLocal) {
+                chargerTypeMap.delete(id);
+            }
+        });
+    }
 
-    // Merge other settings (local wins)
-    const mergedSettings = { ...remoteSettings, ...localSettings };
-    // Override with properly merged chargerTypes
+    const mergedChargerTypes = Array.from(chargerTypeMap.values());
     if (mergedChargerTypes.length > 0) {
-      mergedSettings.chargerTypes = mergedChargerTypes;
+        mergedSettings.chargerTypes = mergedChargerTypes;
     }
 
     // 3. Merge Charges (Union by timestamp - unique per charge session)
