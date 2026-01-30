@@ -20,13 +20,15 @@ vi.mock('../components/Icons', () => ({
     Zap: () => 'ZapIcon',
     BarChart3: () => 'BarChart3Icon',
     List: () => 'ListIcon',
-    Battery: () => 'BatteryIcon'
+    Battery: () => 'BatteryIcon',
+    Calendar: () => 'CalendarIcon'
 }));
 
 describe('useTabNavigation', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useFakeTimers();
+        window.location.hash = '';
     });
 
     it('should initialize with default active tab', () => {
@@ -57,6 +59,8 @@ describe('useTabNavigation', () => {
 
     it('should not allow clicking the current active tab', () => {
         const { result } = renderHook(() => useTabNavigation({ settings: {} }));
+
+        expect(result.current.activeTab).toBe('overview');
 
         act(() => {
             result.current.handleTabClick('overview');
