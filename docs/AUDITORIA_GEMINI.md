@@ -38,7 +38,7 @@ Este documento detalla el estado técnico actual de la aplicación **BYD Stats**
 | **M1** | **Refactor App.jsx** | Dividir el componente gigante en `DashboardLayout`, `MobileView`, etc. | Mantenibilidad | Alta | **Completado** |
 | **M2** | **Optimizar DataProvider** | Separar Context de Datos y Context de Acciones para evitar re-renders masivos. | Rendimiento | Alta | **Completado** |
 | **M3** | **Migración Gradual a TypeScript** | Renombrar `dataProcessing.js` a `.ts` y definir interfaces reales para `Trip` y `Charge`. Configurar `tsconfig.json`. | Seguridad/DX | Media | Pendiente |
-| **M4** | **Unificar Routing** | Mover la lógica de "Tabs" actual (`DashboardLayout`) a sub-rutas reales de React Router (`/dashboard/overview`, `/dashboard/trips`). | Arquitectura | Alta | Pendiente |
+| **M4** | **Unificar Routing (Hybrid)** | Sincronización de URL (#hash) para deep-linking sin sacrificar rendimiento (Renderizado condicional `display:none`). | Arquitectura | Alta | **Completado** |
 | **M5** | **Worker para Procesamiento** | Mover `processData` a un Web Worker usando `comlink` o API nativa para liberar el main thread durante cargas masivas. | Rendimiento | Alta | Baja |
 | **M6** | **Estandarización de Tests** | Crear script `npm run test:core` y asegurar que cada feature tenga su `__tests__` colocalizado. Añadir tests de integración para el flujo de "Importar DB". | Calidad | Baja | **Completado** |
 | **M7** | **Virtualización en Gráficos** | Si se muestran muchos puntos en los gráficos de Chart.js, implementar "decimation" (muestreo) para reducir puntos renderizados. | Rendimiento | Media | Baja |
