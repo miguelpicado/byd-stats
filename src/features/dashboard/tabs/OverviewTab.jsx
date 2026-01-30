@@ -3,6 +3,9 @@ import React, { useMemo, useState } from 'react';
 import PropTypes from 'prop-types';
 import { BYD_RED } from '@components/Icons.jsx';
 import OverviewContent from './OverviewContent';
+import MfgDateModal from '@components/modals/MfgDateModal';
+import ThermalStressModal from '@components/modals/ThermalStressModal';
+import { useApp } from '@/context/AppContext';
 
 // Static chart options that don't change
 const LINE_CHART_OPTIONS_BASE = {
@@ -26,8 +29,11 @@ const OverviewTab = React.memo(({
   settings,
   isActive = true
 }) => {
+  const { updateSettings } = useApp();
   const [insightType, setInsightType] = useState(null);
   const [showOdometerModal, setShowOdometerModal] = useState(false);
+  const [showMfgModal, setShowMfgModal] = useState(false);
+  const [showThermalModal, setShowThermalModal] = useState(false);
 
   const handleCardClick = (type) => {
     if (type === 'distance') {
@@ -35,6 +41,19 @@ const OverviewTab = React.memo(({
     } else {
       setInsightType(type);
     }
+  };
+
+  const handleMfgDateSave = (isoDate, displayDate) => {
+    updateSettings({
+      mfgDate: isoDate,
+      mfgDateDisplay: displayDate
+    });
+  };
+
+  const handleThermalStressSave = (factor) => {
+    updateSettings({
+      thermalStressFactor: factor
+    });
   };
 
   const lineChartOptionsHorizontal = useMemo(() => ({
@@ -71,25 +90,41 @@ const OverviewTab = React.memo(({
   }), [tripDist]);
 
   return (
-    <OverviewContent
-      summary={summary}
-      monthly={monthly}
-      tripDist={tripDist}
-      smallChartHeight={smallChartHeight}
-      overviewSpacing={overviewSpacing}
-      lineChartOptions={lineChartOptionsHorizontal}
-      lineChartData={lineChartData}
-      pieChartData={pieChartData}
-      trips={trips}
-      settings={settings}
-      onInsightClick={handleCardClick}
-      onOdometerClick={() => handleCardClick('distance')}
-      showOdometerModal={showOdometerModal}
-      onCloseOdometerModal={() => setShowOdometerModal(false)}
-      insightType={insightType}
-      onCloseInsightModal={() => setInsightType(null)}
-      isActive={isActive}
-    />
+    <>
+      <OverviewContent
+        summary={summary}
+        monthly={monthly}
+        tripDist={tripDist}
+        smallChartHeight={smallChartHeight}
+        overviewSpacing={overviewSpacing}
+        lineChartOptions={lineChartOptionsHorizontal}
+        lineChartData={lineChartData}
+        pieChartData={pieChartData}
+        trips={trips}
+        settings={settings}
+        onInsightClick={handleCardClick}
+        onOdometerClick={() => handleCardClick('distance')}
+        showOdometerModal={showOdometerModal}
+        onCloseOdometerModal={() => setShowOdometerModal(false)}
+        insightType={insightType}
+        onCloseInsightModal={() => setInsightType(null)}
+        onMfgDateClick={() => setShowMfgModal(true)}
+        onThermalStressClick={() => setShowThermalModal(true)}
+        isActive={isActive}
+      />
+      <MfgDateModal
+        isOpen={showMfgModal}
+        onClose={() => setShowMfgModal(false)}
+        onSave={handleMfgDateSave}
+        initialValue={settings.mfgDateDisplay}
+      />
+      <ThermalStressModal
+        isOpen={showThermalModal}
+        onClose={() => setShowThermalModal(false)}
+        onSave={handleThermalStressSave}
+        initialValue={parseFloat(settings.thermalStressFactor) || 1.0}
+      />
+    </>
   );
 });
 

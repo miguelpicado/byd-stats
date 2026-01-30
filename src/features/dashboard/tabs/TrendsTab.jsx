@@ -1,8 +1,8 @@
 // BYD Stats - Trends Tab Component
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar as BarJS, Line as LineJS } from 'react-chartjs-2';
-import { Navigation, Battery, Zap, TrendingUp, BYD_RED } from '@components/Icons.jsx';
+import { Navigation, Battery, Zap, TrendingUp, BYD_RED, MapPin } from '@components/Icons.jsx';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
 import { useLayout } from '@/context/LayoutContext';
@@ -45,6 +45,27 @@ const TrendsTab = React.memo(({
 }) => {
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
+
+  // Refs for animation control
+  const barChartRef = useRef(null);
+  const lineChartRef = useRef(null);
+
+  // Trigger animation on activation
+  useEffect(() => {
+    if (isActive) {
+      const timer = setTimeout(() => {
+        if (barChartRef.current) {
+          barChartRef.current.reset();
+          barChartRef.current.update();
+        }
+        if (lineChartRef.current) {
+          lineChartRef.current.reset();
+          lineChartRef.current.update();
+        }
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isActive]);
 
   // Calculate insights based on filtered data
   const insights = useMemo(() => {
@@ -125,11 +146,12 @@ const TrendsTab = React.memo(({
             isVerticalMode={true}
             isLarger={isLargerCard}
             isCompact={isCompact}
-            icon={Battery}
-            label={t('stats.medianEff')}
-            value={insights.medianEfficiency.toFixed(2)}
-            unit={t('units.kWh100km')}
-            color="bg-green-500/20 text-green-400"
+            icon={MapPin}
+            label={t('stats.avgTrip')}
+            value={summary.avgKm}
+            unit={t('units.km')}
+            sub={`${summary.avgMin} min`}
+            color="bg-orange-500/20 text-orange-400"
           />
           <StatCard
             isVerticalMode={true}
@@ -155,12 +177,12 @@ const TrendsTab = React.memo(({
         <div className={`grid md:grid-cols-2 gap-4 sm:gap-6 ${isCompact ? '!gap-3' : ''}`}>
           <ChartCard isCompact={isCompact} title={t('charts.monthlyKmKwh')}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <BarJS key={`trends-bar-v-${isActive}`} options={BAR_CHART_OPTIONS} data={barChartData} />
+              <BarJS ref={barChartRef} options={BAR_CHART_OPTIONS} data={barChartData} />
             </div>
           </ChartCard>
           <ChartCard isCompact={isCompact} title={t('charts.last60Days')}>
             <div style={{ width: '100%', height: largeChartHeight }}>
-              <LineJS key={`trends-line-v-${isActive}`} options={LINE_CHART_OPTIONS} data={lineChartData} />
+              <LineJS ref={lineChartRef} options={LINE_CHART_OPTIONS} data={lineChartData} />
             </div>
           </ChartCard>
         </div>
@@ -184,11 +206,12 @@ const TrendsTab = React.memo(({
         <StatCard
           isLarger={isLargerCard}
           isCompact={isCompact}
-          icon={Battery}
-          label={t('stats.medianEff')}
-          value={insights.medianEfficiency.toFixed(2)}
-          unit={t('units.kWh100km')}
-          color="bg-green-500/20 text-green-400"
+          icon={MapPin}
+          label={t('stats.avgTrip')}
+          value={summary.avgKm}
+          unit={t('units.km')}
+          sub={`${summary.avgMin} min`}
+          color="bg-orange-500/20 text-orange-400"
         />
         <StatCard
           isLarger={isLargerCard}
@@ -212,12 +235,12 @@ const TrendsTab = React.memo(({
       <div className={`grid gap-4 ${isCompact ? 'grid-cols-1 lg:grid-cols-2 !gap-3' : 'grid-cols-1 lg:grid-cols-2'}`}>
         <ChartCard isCompact={isCompact} title={t('charts.monthlyKmKwh')}>
           <div key="bar-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <BarJS key={`trends-bar-h-${isActive}`} options={BAR_CHART_OPTIONS} data={barChartData} />
+            <BarJS ref={barChartRef} options={BAR_CHART_OPTIONS} data={barChartData} />
           </div>
         </ChartCard>
         <ChartCard isCompact={isCompact} title={t('charts.last60Days')}>
           <div key="line-container-h" style={{ width: '100%', height: largeChartHeight }}>
-            <LineJS key={`trends-line-h-${isActive}`} options={LINE_CHART_OPTIONS} data={lineChartData} />
+            <LineJS ref={lineChartRef} options={LINE_CHART_OPTIONS} data={lineChartData} />
           </div>
         </ChartCard>
       </div>
