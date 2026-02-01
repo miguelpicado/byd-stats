@@ -125,6 +125,36 @@
         "topDuration": "⏱️ Top Duración",
         "last10Trips": "Últimas 10 viaxes"
     },
+    "insights": {
+        "chargingTitle": "Análise de Carga con IA",
+        "aiPowered": "Potenciado por IA",
+        "dailyGoal": "Meta Diaria Recomendada",
+        "dailyDesc": "Baseado no teu consumo dos últimos 30 días, cargar {{kwh}} kWh diarios manterá a túa batería estable.",
+        "bestDay": "Día Óptimo para Carga",
+        "type": "Tipo de Carga",
+        "slow": "Lenta",
+        "fast": "Rápida",
+        "costSavings": "Aforro Potencial",
+        "costDesc": "Movendo as túas cargas nocturnas a horas fora de punta ({{window}}) poderías aforrar ~{{amount}}€/ano.",
+        "chargerStatus": "✅ Cargador {{amps}}A suficiente",
+        "chargerWarning": "⚠️ Cargador {{amps}}A insuficiente",
+        "comfortZone": "Zona de Confort",
+        "comfortDesc": "Raramente baixas dos {{soc}}% de batería. Tes marxe para espazar as cargas cada {{days}} días.",
+        "howItWorks": "Como funciona",
+        "aiCheck": "A IA analiza o teu historial de condución (velocidade vs eficiencia) e temperatura para predicir a autonomía con máis precisión.",
+        "notEnoughData": "Non hai datos suficientes. Usando estimación estándar ata ter ~5 viaxes válidas.",
+        "predictedRange": "Autonomía Predita por Escenario",
+        "rangeAxis": "Autonomía (km)",
+        "dailyExplanation": "A IA analiza o teu consumo medio diario e aplica correccións estacionais para suxerir unha carga que manteña o SoC estable sen ciclos profundos innecesarios.",
+        "optimalDayDesc": "Os teus patróns de condución indican que este é o día con menor uso do vehículo ou maior dispoñibilidade para carga lenta, ideal para balanceo de celas.",
+        "recommendation": "Recomendación",
+        "noData": "Non hai datos suficientes para xerar unha recomendación.",
+        "scenario": "Escenario",
+        "city": "Cidade",
+        "mixed": "Misto",
+        "highway": "Autoestrada",
+        "optimal_maintenance": "Mantemento Óptimo (Balanceo)"
+    },
     "tripDetail": {
         "title": "Detalle da viaxe",
         "dateTime": "Data e hora",
@@ -316,6 +346,28 @@
             "formatHint": "Formato: MM/YY (Ex. 03/24)",
             "save": "Confirmar Data",
             "invalid": "Formato non válido (MM/YY)"
+        },
+        "batteryHealth": {
+            "title": "Saúde da Batería (SoH)",
+            "aiAnalysis": "Análise AI Empírica",
+            "aiAnalysisTitle": "Análise do SoH con IA",
+            "realSoH": "SoH Real (AI)",
+            "samples": "Mostras",
+            "aiDesc": "A IA analiza as túas cargas profundas (>20%) para calcular a degradación real, ignorando as flutuacións diarias.",
+            "notEnoughData": "Necesítanse máis datos",
+            "requirements": "Rexistra polo menos 3 cargas con máis do 20% de enerxía engadida para calibrar a IA."
+        },
+        "thermalStress": {
+            "configuration": "Configuración Térmica",
+            "title": "Factor de Estrés Térmico",
+            "desc": "Axusta o factor multiplicador segundo a temperatura media anual de onde vives. A calor acelera a degradación química das celas LFP.",
+            "info": "Este valor afecta globalmente ao desgaste por ciclos e degradación SEI.",
+            "factor": "Factor Seleccionado",
+            "recommendations": "Recomendacións",
+            "recCold": "Clima frío / Temperado",
+            "recIdeal": "Clima ideal / Estándar",
+            "recHot": "Clima cálido / Veráns calorosos",
+            "recExtreme": "Clima extremo / Desértico"
         },
         "stationaryTitle": "Viaxes Estacionarias",
         "stationaryDesc": "Estas viaxes teñen unha distancia de 0 km. Podes eliminalas ou editalas para que non afecten ás túas estatísticas.",
@@ -691,6 +743,32 @@
             "a1": "Se a aplicación che resulta útil e queres apoiar o seu mantemento e desenvolvemento continuo, podes facer unha pequena doazón voluntaria a través de Ko-fi. Calquera achega é inmensamente agradecida!",
             "q2": "Tes dúbidas ou suxestións?",
             "a2": "Para calquera consulta, idea, achega ou se atopas algún problema, non dubides en escribirme a"
+        },
+        "modals": {
+            "bms": {
+                "title": "BMS e Calibración LFP",
+                "definition": "En baterías LFP, a curva de voltaxe é moi plana, o que dificulta á BMS saber a enerxía exacta sen chegar aos extremos. Por iso, o desbalanceo é habitual e esperable nesta tecnoloxía.",
+                "calculation": "O aviso aparece se a BMS detecta diferenzas de voltaxe entre celas ou se pasou moito tempo sen chegar ao 100%. Necesita ese punto de referencia (top balancing) para resincronizarse.",
+                "impact": "Recoméndase cargar ao 100% polo menos unha vez ao mes e deixalo enchufado unhas horas extra para o balanceo. As baterías LFP son robustas e toleran ben o 100%, especialmente se se usa o coche pouco despois de rematar o balanceo."
+            },
+            "formula": {
+                "title": "Fórmula Teórica SoH",
+                "definition": "Estimación matemática baseada na química das celas LFP e o historial de uso do vehículo.\n\nConstantes utilizadas:\n• SEI: Máximo 2% (primeiros 50 ciclos)\n• Ciclos: 0.005% por ciclo (axustado por estrés)\n• Tempo: 0.75% por ano",
+                "calculation": "SoH = 100% - SEI - (Ciclos × 0.005% × Estrés) - (Anos × 0.75%)",
+                "impact": "Este valor é unha aproximación teórica. O SoH real pode variar e a BMS do coche é a que ten a última palabra sobre a capacidade utilizable actual."
+            },
+            "ai_soh": {
+                "title": "SoH Real (Análise IA)",
+                "definition": "Cálculo empírico baseado nas túas sesións de carga reais. A IA analiza canta enerxía entra realmente na batería vs. a porcentaxe reportada polo coche.",
+                "calculation": "Usa regresión lineal sobre as túas cargas históricas para atopar a 'capacidade total efectiva' actual. Se cargar un 50% de batería require 30kWh, a túa capacidade total é 60kWh.",
+                "impact": "Este valor é máis preciso que o teórico porque reflicte a saúde real das túas celas. Pode ser menor que o teórico (se hai celas desbalanceadas) ou maior (se a batería rende mellor do esperado)."
+            },
+            "samples": {
+                "title": "Mostras de Calidade",
+                "definition": "Número de sesións de carga que a IA considerou válidas para o seu cálculo.",
+                "calculation": "A IA descarta automaticamente cargas pequenas (<15-20%), cargas moi lentas ou con interrupcións, xa que introducen moito 'ruído' e erro nos datos.",
+                "impact": "É normal ter menos mostras que cargas totais. Cantas máis mostras de calidade (cargas profundas) teñas, máis preciso será o cálculo do SoH Real."
+            }
         }
     }
 }
