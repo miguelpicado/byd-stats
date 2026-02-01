@@ -19,6 +19,9 @@ interface DataWorkerApi {
 
     trainSoH(charges: Charge[], capacity: number): Promise<{ loss: number; samples: number; predictedSoH: number }>;
     getSoHStats(charges: Charge[], capacity: number): Promise<{ points: any[]; trend: any[] }>;
+
+    trainParking(trips: Trip[]): Promise<{ loss: number; samples: number }>;
+    predictDeparture(startTime: number): Promise<{ departureTime: number; duration: number } | null>;
 }
 
 export interface UseProcessedDataReturn {
@@ -29,6 +32,7 @@ export interface UseProcessedDataReturn {
     aiSoH: number | null;
     aiSoHStats: { points: any[]; trend: any[] } | null;
     isAiTraining: boolean;
+    predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
 }
 
 export const useProcessedData = (
@@ -174,9 +178,15 @@ export const useProcessedData = (
                             });
                         })
                             .catch(err => logger.warn('AI Training error:', err))
-                            .finally(() => {
-                                if (isMounted) setIsAiTraining(false);
-                            });
+                    }
+
+                    // Train AI Parking Model
+                    if (filteredTrips.length > 5) {
+                        workerRef.current.trainParking(filteredTrips)
+                            .then(({ loss }) => {
+                                logger.debug(`AI Parking Trained. Loss: ${loss.toFixed(4)}`);
+                            })
+                            .catch(err => logger.warn('AI Parking Training error:', err));
                     }
 
                     // Train AI SoH Model
@@ -208,8 +218,12 @@ export const useProcessedData = (
 
         process();
 
-        return () => { isMounted = false; };
     }, [filteredTrips, i18n.language, settings, charges]);
 
-    return { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats };
+    const predictDeparture = async (startTime: number) => {
+        if (!workerRef.current) return null;
+        return await workerRef.current.predictDeparture(startTime);
+    };
+
+    return { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture };
 };
