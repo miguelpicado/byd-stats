@@ -12,9 +12,23 @@ import ModalCoordinator from '@components/common/ModalCoordinator';
 // Lazy load
 const PWAManagerLazy = lazy(() => import('@components/PWAManager'));
 
+interface MainLayoutProps {
+    layoutMode: string;
+    isCompact?: boolean;
+    activeTab: string;
+    tabs: any[];
+    handleTabClick: (id: string) => void;
+    isTransitioning: boolean;
+    fadingTab?: string;
+    backgroundLoad?: boolean;
+    onTripSelect?: (trip: any) => void;
+    onChargeSelect?: (charge: any) => void;
+    setSwipeContainer?: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
+}
+
 const MainLayout = ({
     layoutMode,
-    isCompact, // Added this prop
+    isCompact,
     activeTab,
     tabs,
     handleTabClick,
@@ -24,7 +38,7 @@ const MainLayout = ({
     onTripSelect,
     onChargeSelect,
     setSwipeContainer
-}) => {
+}: MainLayoutProps) => {
     return (
         <BaseLayout>
             <div className="flex flex-col h-full w-full bg-slate-50 dark:bg-slate-950 transition-colors duration-300">

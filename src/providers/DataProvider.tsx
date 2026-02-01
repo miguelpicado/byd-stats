@@ -16,12 +16,11 @@ import { Trip, Charge, ProcessedData, Settings } from '@/types';
 // Define context interfaces
 export interface DataState {
     trips: Trip[];
-    filtered: ProcessedData['daily'] | any[]; // filtered trips actually return ProcessedData usually? No, "filtered" in appData might be trips? 
-    // Checking useAppData: returns "filtered" which is Trip[].
+    filtered: Trip[];
     filteredTrips: Trip[];
     stats: ProcessedData | null;
     charges: Charge[];
-    tripHistory: any[]; // History item type?
+    tripHistory: Trip[];
     settings: Settings;
     googleSync: any;
     database: any;
@@ -45,6 +44,12 @@ export interface DataState {
     editingCharge: Charge | null;
     setEditingCharge: React.Dispatch<React.SetStateAction<Charge | null>>;
 
+    // AI Data
+    aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
+    aiLoss: number | null;
+    aiSoH: number | null;
+    aiSoHStats: { points: any[]; trend: any[] } | null;
+
     // ... other state
 }
 
@@ -59,7 +64,7 @@ export interface DataDispatch {
 
     confirmModalState: any;
     closeConfirmation: () => void;
-    showConfirmation: (options: any) => void;
+    showConfirmation: (title: string, message: string, onConfirm: () => void, isDangerous?: boolean) => void;
 
     loadFile: (file: File, merge?: boolean) => Promise<void>;
     exportData: () => Promise<{ success: boolean; reason?: string }>;
@@ -142,6 +147,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const rawClearHistory = appData.clearHistory;
     const rawLoadFromHistory = appData.loadFromHistory;
 
+    // AI Data from useProcessedData (via appData)
+    const aiScenarios = appData.aiScenarios || [];
+    const aiLoss = appData.aiLoss || null;
+    const aiSoH = appData.aiSoH || null;
+    const aiSoHStats = appData.aiSoHStats || null;
+
     const {
         filterType, setFilterType,
         selMonth, setSelMonth,
@@ -169,20 +180,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const modalState = useModalState();
 
     // 7. Google Sync
-    const googleSync = useGoogleSync(
-        rawTrips,
-        setRawTrips,
+    const googleSync = useGoogleSync({
+        localTrips: rawTrips,
+        setLocalTrips: setRawTrips,
         settings,
-        updateSettings,
-        charges,
-        replaceCharges,
-        activeCarId || '',
-        cars.length,
-        modalState?.openRegistryModal,
-        modalState?.modals?.registryRestore,
+        setSettings: updateSettings,
+        localCharges: charges,
+        setLocalCharges: replaceCharges,
+        activeCarId: activeCarId || '',
+        totalCars: cars.length,
+        openRegistryModal: modalState?.openRegistryModal,
+        isRegistryModalOpen: modalState?.modals?.registryRestore,
         updateCar,
-        activeCar?.name || ''
-    );
+        carName: activeCar?.name || ''
+    });
 
     // 8. Auto-Sync Effect
     useEffect(() => {
@@ -208,7 +219,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setRawTrips(newTrips);
                 logger.info(`Loaded ${newTrips.length} trips (merge: ${merge})`);
                 if (googleSync.isAuthenticated) {
-                    googleSync.syncNow(newTrips, { checkData: !merge });
+                    googleSync.syncNow(newTrips);
                 }
             }
         } catch (error: any) {
@@ -341,11 +352,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         database,
         ...modalState, // Spread remaining modal state
         fileHandling,
-        filterType, selMonth, dateFrom, dateTo, months
+        filterType, selMonth, dateFrom, dateTo, months,
+        aiScenarios, aiLoss, aiSoH, aiSoHStats
     }), [
         rawTrips, filtered, data, charges, tripHistory,
         settings, googleSync, database, modalState, fileHandling,
-        filterType, selMonth, dateFrom, dateTo, months
+        filterType, selMonth, dateFrom, dateTo, months,
+        aiScenarios, aiLoss, aiSoH, aiSoHStats
     ]);
 
     // Dispatch Value

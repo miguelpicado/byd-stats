@@ -125,6 +125,36 @@
         "topDuration": "⏱️ Top Duração",
         "last10Trips": "Últimas 10 viagens"
     },
+    "insights": {
+        "chargingTitle": "Análise de Carga com IA",
+        "aiPowered": "Potenciado por IA",
+        "dailyGoal": "Meta Diária Recomendada",
+        "dailyDesc": "Com base no seu consumo dos últimos 30 dias, carregar {{kwh}} kWh diários manterá a sua bateria estável.",
+        "bestDay": "Dia Ideal para Carga",
+        "type": "Tipo de Carga",
+        "slow": "Lenta",
+        "fast": "Rápida",
+        "costSavings": "Poupança Potencial",
+        "costDesc": "Movendo as suas cargas noturnas para horas fora de pico ({{window}}) poderia poupar ~{{amount}}€/ano.",
+        "chargerStatus": "✅ Carregador {{amps}}A suficiente",
+        "chargerWarning": "⚠️ Carregador {{amps}}A insuficiente",
+        "comfortZone": "Zona de Conforto",
+        "comfortDesc": "Raramente baixa dos {{soc}}% de bateria. Tem margem para espaçar as cargas a cada {{days}} dias.",
+        "howItWorks": "Como funciona",
+        "aiCheck": "A IA analisa o seu histórico de condução (velocidade vs eficiência) e temperatura para prever a autonomia com mais precisão.",
+        "notEnoughData": "Dados insuficientes. Usando estimativa padrão até ter ~5 viagens válidas.",
+        "predictedRange": "Autonomia Prevista por Cenário",
+        "rangeAxis": "Autonomia (km)",
+        "dailyExplanation": "A IA analisa o seu consumo médio diário e aplica correções sazonais para sugerir uma carga que mantenha o SoC estável sem ciclos profundos desnecessários.",
+        "optimalDayDesc": "Os seus padrões de condução indicam que este é o dia com menor uso do veículo ou maior disponibilidade para carga lenta, ideal para balanceamento de células.",
+        "recommendation": "Recomendação",
+        "noData": "Não há dados suficientes para gerar uma recomendação.",
+        "scenario": "Cenário",
+        "city": "Cidade",
+        "mixed": "Misto",
+        "highway": "Autoestrada",
+        "optimal_maintenance": "Manutenção Otimizada (Balanceamento)"
+    },
     "tripDetail": {
         "title": "Detalhes da viagem",
         "dateTime": "Data e hora",
@@ -312,10 +342,32 @@
         "mfgDate": {
             "title": "Data de Fabrico",
             "desc": "Para calcular com precisão o estado de saúde (SoH) da sua bateria LFP, precisamos de saber quando o carro foi fabricado.",
-            "instructions": "Abra a porta do passageiro (por vezes a do condutor) e procure uma placa metálica ou autocolante preto na moldura da porta (o pilar central onde o cinto está ancorado). Nesta placa, para além do VIN, costuma aparecer o campo 'Date of mfg' ou 'Built date' com o formato MM/YY.",
+            "instructions": "Abra a porta do passageiro (por vezes a do condutor) e procure uma placa metálica ou autocolante preto na moldura da porta (o pilar central onde o cinto está ancorado). Nesta placa, para além do VIN, costuma aparecer o campo 'Date of mfg' o 'Built date' com o formato MM/YY.",
             "formatHint": "Formato: MM/YY (Ex. 03/24)",
             "save": "Confirmar Data",
             "invalid": "Formato inválido (MM/YY)"
+        },
+        "batteryHealth": {
+            "title": "Saúde da Bateria (SoH)",
+            "aiAnalysis": "Análise AI Empírica",
+            "aiAnalysisTitle": "Análise do SoH com IA",
+            "realSoH": "SoH Real (AI)",
+            "samples": "Amostras",
+            "aiDesc": "A IA analisa as suas cargas profundas (>20%) para calcular a degradação real, ignorando as flutuações diárias.",
+            "notEnoughData": "São necessários mais dados",
+            "requirements": "Registe pelo menos 3 cargas com mais de 20% de energia adicionada para calibrar a IA."
+        },
+        "thermalStress": {
+            "configuration": "Configuração Térmica",
+            "title": "Factor de Estresse Térmico",
+            "desc": "Ajuste o fator multiplicador de acordo com a temperatura média anual de onde vive. O calor acelera a degradação química das células LFP.",
+            "info": "Este valor afeta globalmente o desgaste por ciclos e degradação SEI.",
+            "factor": "Fator Selecionado",
+            "recommendations": "Recomendações",
+            "recCold": "Clima frio / Temperado",
+            "recIdeal": "Clima ideal / Padrão",
+            "recHot": "Clima quente / Verões quentes",
+            "recExtreme": "Clima extremo / Desértico"
         }
     },
     "errors": {
@@ -684,6 +736,32 @@
             "a1": "Se a aplicação lhe for útil e quiser apoiar a sua manutenção e desenvolvimento contínuo, pode fazer uma pequena doação voluntária através do Ko-fi. Qualquer contribuição é imensamente agradecida!",
             "q2": "Tem dúvidas ou sugestões?",
             "a2": "Para qualquer consulta, ideia, contribuição ou se encontrar algum problema, não hesite em escrever-me para"
+        },
+        "modals": {
+            "bms": {
+                "title": "BMS e Calibração LFP",
+                "definition": "Em baterias LFP, a curva de voltagem é muito plana, o que dificulta à BMS saber a energia exata sem chegar aos extremos. Por isso, o desbalanceamento é habitual e esperado nesta tecnologia.",
+                "calculation": "O aviso aparece se a BMS detetar diferenças de voltagem entre células ou se passou muito tempo sem chegar a 100%. Necessita desse ponto de referência (top balancing) para ressincronizar.",
+                "impact": "Recomenda-se carregar a 100% pelo menos uma vez por mês e deixá-lo ligado umas horas extra para o balanceamento. As baterias LFP são robustas e toleram bem o 100%, especialmente se usar o carro pouco depois de terminar o balanceamento."
+            },
+            "formula": {
+                "title": "Fórmula Teórica SoH",
+                "definition": "Estimativa matemática baseada na química das células LFP e no histórico de uso do veículo.\n\nConstantes utilizadas:\n• SEI: Máximo 2% (primeiros 50 ciclos)\n• Ciclos: 0.005% por ciclo (ajustado por estresse)\n• Tempo: 0.75% por ano",
+                "calculation": "SoH = 100% - SEI - (Ciclos × 0.005% × Estresse) - (Anos × 0.75%)",
+                "impact": "Este valor é uma aproximação teórica. O SoH real pode variar e a BMS do carro tem a última palavra sobre a capacidade utilizável atual."
+            },
+            "ai_soh": {
+                "title": "SoH Real (Análise IA)",
+                "definition": "Cálculo empírico baseado nas suas sessões de carga reais. A IA analisa quanta energia entra realmente na bateria vs. a percentagem reportada pelo carro.",
+                "calculation": "Usa regressão linear sobre as suas cargas históricas para encontrar a 'capacidade total efetiva' atual. Se carregar 50% de bateria requer 30kWh, a sua capacidade total é 60kWh.",
+                "impact": "Este valor é mais preciso que o teórico porque reflete a saúde real das suas células. Pode ser menor que o teórico (se houver células desbalanceadas) ou maior (se a bateria render melhor do que o esperado)."
+            },
+            "samples": {
+                "title": "Amostras de Qualidade",
+                "definition": "Número de sessões de carga que a IA considerou válidas para o seu cálculo.",
+                "calculation": "A IA descarta automaticamente cargas pequenas (<15-20%), cargas muito lentas ou com interrupções, pois introduzem muito 'ruído' e erro nos dados.",
+                "impact": "É normal ter menos amostras que cargas totais. Quanto mais amostras de qualidade (cargas profundas) tiver, mais preciso será o cálculo do SoH Real."
+            }
         }
     }
 }

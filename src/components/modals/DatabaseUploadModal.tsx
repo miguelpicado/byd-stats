@@ -1,13 +1,10 @@
-// BYD Stats - Database Upload Modal Component
-
 import React, { ChangeEvent } from 'react';
-import { BYD_RED } from '@core/constants';
+import { useTranslation } from 'react-i18next';
 import { Upload, Download, FileText, Trash2, Database } from '../Icons';
 import ModalHeader from '../common/ModalHeader';
-import { useTranslation } from 'react-i18next';
-import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
+import { Capacitor } from '@capacitor/core';
 
 // Electric blue color for accent buttons
 const ELECTRIC_BLUE = '#3b82f6';
@@ -17,7 +14,7 @@ const ELECTRIC_BLUE = '#3b82f6';
  */
 const DatabaseUploadModal: React.FC = () => {
     const { t } = useTranslation();
-    const { isNative } = useApp();
+    const isNative = Capacitor.isNativePlatform();
     const {
         modals,
         closeModal,
@@ -25,7 +22,7 @@ const DatabaseUploadModal: React.FC = () => {
         loadFile,
         exportData,
         clearData,
-        clearCharges,
+        replaceCharges,
         loadChargeRegistry,
         exportCharges,
         trips,
@@ -156,8 +153,10 @@ const DatabaseUploadModal: React.FC = () => {
                                     onClick={() => {
                                         if (window.confirm(t('confirmations.deleteCar', '¿Estás seguro de que quieres eliminar este coche y todos sus datos?'))) {
                                             clearData();
-                                            clearCharges();
-                                            deleteCar(activeCarId);
+                                            replaceCharges([]);
+                                            if (activeCarId) {
+                                                deleteCar(activeCarId);
+                                            }
                                             onClose();
                                         }
                                     }}

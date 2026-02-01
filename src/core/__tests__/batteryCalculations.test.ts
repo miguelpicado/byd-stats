@@ -76,4 +76,35 @@ describe('batteryCalculations', () => {
             expect(result).toBe(0); // Math.max(0, ...)
         });
     });
+
+    describe('Edge Cases', () => {
+        it('should flag calibration warning if no charges reach 100%', () => {
+            const charges = [
+                { kwhCharged: 10, finalPercentage: 80, type: 'electric' },
+                { kwhCharged: 10, finalPercentage: 90, type: 'electric' }
+            ] as Charge[];
+            const mfgDate = '2024-01-01';
+
+            const result = calculateAdvancedSoH(charges, mfgDate, 60);
+            expect(result.calibration_warning).toBe(true);
+        });
+
+        it('should not flag warning if enough charges reach 100%', () => {
+            const charges = [
+                { kwhCharged: 10, finalPercentage: 100, type: 'electric' },
+                { kwhCharged: 10, finalPercentage: 90, type: 'electric' }
+            ] as Charge[];
+            const mfgDate = '2024-01-01';
+            // 1 out of 2 is 50% > 10% threshold
+            const result = calculateAdvancedSoH(charges, mfgDate, 60);
+            expect(result.calibration_warning).toBe(false);
+        });
+
+        it('should handle invalid string date for mfgDate', () => {
+            const charges = [] as Charge[];
+            const result = calculateAdvancedSoH(charges, 'invalid-date', 60);
+            // Should not crash, degradation.calendar should be 0
+            expect(result.degradation.calendar).toBe(0);
+        });
+    });
 });

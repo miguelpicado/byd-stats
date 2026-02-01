@@ -147,6 +147,51 @@
         "energyRecovered": "Energy recovered",
         "percentile": "Percentile"
     },
+    "dashboard": {
+        "rangeInsights": "AI Range Insights"
+    },
+    "insights": {
+        "dailyGoal": "Daily Goal",
+        "dailyDesc": "Based on your recent usage, we suggest charging {{kwh}} kWh today.",
+        "dailyExplanation": "AI analyzes your average daily consumption and applies seasonal corrections to suggest a charge that maintains stable SoC without unnecessary deep cycles.",
+        "bestDay": "Optimal Day",
+        "bestWindows": "Optimal Windows",
+        "analysis": "AI Analysis",
+        "optimalDayDesc": "Your driving patterns indicate this is the day with least vehicle usage or highest availability for slow charging, ideal for cell balancing.",
+        "optimalWindowDesc": "Based on your parking habits and weekly consumption, these windows offer enough time to complete your charge efficiently and economically.",
+        "type": "Charge Type",
+        "slow": "Slow (AC)",
+        "fast": "Fast (DC)",
+        "recommendation": "Assistant Recommendation",
+        "recommend_calibration": "Calibration Required: LFP battery needs a slow charge to 100% regularly. Your {{kwh}} kWh/week consumption allows doing this overnight.",
+        "recommend_offpeak": "Smart Savings: Your estimated weekly consumption is {{kwh}} kWh. You can cover this perfectly using off-peak windows (or weekends) without affecting your routine.",
+        "optimal_maintenance": "Optimal Maintenance: For your {{kwh}} kWh/week consumption, we recommend slow charging. This maximizes battery lifespan and reduces thermal stress.",
+        "aiCheck": "Verifying battery patterns...",
+        "costSavings": "Potential Savings",
+        "costDesc": "Charging during {{window}} could save you ~{{amount}}€/month.",
+        "comfortZone": "Comfort Zone",
+        "comfortDesc": "You rarely drop below {{soc}}% battery. You have room to space out your charges every {{days}} days.",
+        "chargingTitle": "Charging Analysis",
+        "aiPowered": "Powered by AI",
+        "cityDesc": "Low speed, high efficiency due to regenerative braking. Ideal for EVs.",
+        "highwayDesc": "High speed increases aerodynamic drag, significantly reducing range.",
+        "mixedDesc": "A balance of city and highway driving.",
+        "tips": {
+            "city1": "Use Eco mode for smoother acceleration",
+            "city2": "Maximize regen settings"
+        },
+        "tips_hwy": {
+            "hwy1": "Keep speed under 110km/h for best range",
+            "hwy2": "Close windows to improve aerodynamics"
+        },
+        "tips_mixed": {
+            "mixed1": "Anticipate traffic to avoid harsh braking",
+            "mixed2": "Maintain steady momentum"
+        },
+        "stats": "Statistics",
+        "improve": "Tips to improve",
+        "speedAvg": "Avg Speed (approx)"
+    },
     "settings": {
         "title": "Settings",
         "carModel": "Car model",
@@ -693,6 +738,32 @@
             "a1": "If you find the application useful and want to support its maintenance and ongoing development, you can make a small voluntary donation via Ko-fi. Any contribution is immensely appreciated!",
             "q2": "Do you have questions or suggestions?",
             "a2": "For any questions, ideas, contributions, or if you find any issues, feel free to write to me at"
+        },
+        "modals": {
+            "bms": {
+                "title": "BMS & LFP Calibration",
+                "definition": "In LFP batteries, the voltage curve is very flat, making it difficult for the BMS to know the exact energy without reaching the extremes. Therefore, imbalance is common and expected in this technology.",
+                "calculation": "The warning appears if the BMS detects voltage differences between cells or if it has been a long time without reaching 100%. It needs that reference point (top balancing) to resynchronize.",
+                "impact": "It is recommended to charge to 100% at least once a month and leave it plugged in for a few extra hours for balancing. LFP batteries are robust and tolerate 100% well, especially if the car is used shortly after balancing finishes."
+            },
+            "formula": {
+                "title": "Theoretical SoH Formula",
+                "definition": "Mathematical estimation based on LFP cell chemistry and vehicle usage history.\n\nConstants used:\n• SEI: Max 2% (first 50 cycles)\n• Cycles: 0.005% per cycle (adjusted by stress)\n• Time: 0.75% per year",
+                "calculation": "SoH = 100% - SEI - (Cycles × 0.005% × Stress) - (Years × 0.75%)",
+                "impact": "This value is a theoretical approximation. The actual SoH may vary, and the car's BMS has the final say on current usable capacity."
+            },
+            "ai_soh": {
+                "title": "Real SoH (AI Analysis)",
+                "definition": "Empirical calculation based on your actual charging sessions. The AI analyzes how much energy really goes into the battery vs. the percentage reported by the car.",
+                "calculation": "Uses linear regression on your historical charges to find the current 'effective total capacity'. If charging 50% battery requires 30kWh, your total capacity is 60kWh.",
+                "impact": "This value is more accurate than the theoretical one because it reflects the actual health of your cells. It may be lower than theoretical (if there are unbalanced cells) or higher (if the battery performs better than expected)."
+            },
+            "samples": {
+                "title": "Quality Samples",
+                "definition": "Number of charging sessions that the AI has considered valid for its calculation.",
+                "calculation": "The AI automatically discards small charges (<15-20%), very slow charges, or charges with interruptions, as they introduce a lot of 'noise' and error into the data.",
+                "impact": "It is normal to have fewer samples than total charges. The more quality samples (deep charges) you have, the more accurate the Real SoH calculation will be."
+            }
         }
     }
 }

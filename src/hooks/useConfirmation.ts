@@ -1,6 +1,23 @@
 import { useState, useCallback, useMemo } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { Trip } from '@/types';
+
+export interface UseConfirmationProps {
+    rawClearData: () => void;
+    rawSaveToHistory: () => { success: boolean; total?: number; added?: number; reason?: string };
+    rawClearHistory: () => void;
+    rawLoadFromHistory: () => { success: boolean; reason?: string };
+    tripHistory: Trip[];
+}
+
+export interface ConfirmModalState {
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    isDangerous: boolean;
+}
 
 export const useConfirmation = ({
     rawClearData,
@@ -8,10 +25,10 @@ export const useConfirmation = ({
     rawClearHistory,
     rawLoadFromHistory,
     tripHistory
-}) => {
+}: UseConfirmationProps) => {
     const { t } = useTranslation();
 
-    const [confirmModalState, setConfirmModalState] = useState({
+    const [confirmModalState, setConfirmModalState] = useState<ConfirmModalState>({
         isOpen: false,
         title: '',
         message: '',
@@ -19,7 +36,7 @@ export const useConfirmation = ({
         isDangerous: false
     });
 
-    const showConfirmation = useCallback((title, message, onConfirm, isDangerous = false) => {
+    const showConfirmation = useCallback((title: string, message: string, onConfirm: () => void, isDangerous: boolean = false) => {
         setConfirmModalState({
             isOpen: true,
             title,
@@ -103,5 +120,3 @@ export const useConfirmation = ({
         clearHistory
     }), [confirmModalState, closeConfirmation, showConfirmation, clearData, saveToHistory, loadFromHistory, clearHistory]);
 };
-
-

@@ -5,13 +5,10 @@ import { logger } from '@core/logger';
 
 /**
  * Custom hook for localStorage with automatic serialization
- * @param {string} key - Storage key
- * @param {any} initialValue - Initial value if not found in storage
- * @returns {[any, Function, Function]} [value, setValue, removeValue]
  */
-export function useLocalStorage(key, initialValue) {
+export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void, () => void] {
     // Get initial value from localStorage or use default
-    const [storedValue, setStoredValue] = useState(() => {
+    const [storedValue, setStoredValue] = useState<T>(() => {
         try {
             const item = localStorage.getItem(key);
             return item ? JSON.parse(item) : initialValue;
@@ -48,5 +45,3 @@ export function useLocalStorage(key, initialValue) {
 }
 
 export default useLocalStorage;
-
-

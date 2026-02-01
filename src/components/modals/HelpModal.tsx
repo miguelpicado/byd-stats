@@ -29,7 +29,7 @@ const HelpModal: React.FC = () => {
                         }
                     }
                 } catch (error) {
-                    // console.log('Error fetching version:', error);
+
                 }
             };
 

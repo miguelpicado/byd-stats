@@ -9,6 +9,7 @@ interface HistoryTabProps {
   filtered: Trip[];
   openTripDetail: (trip: Trip) => void;
   setShowAllTripsModal: (show: boolean) => void;
+  isActive?: boolean;
 }
 
 /**

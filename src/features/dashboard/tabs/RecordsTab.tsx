@@ -18,6 +18,7 @@ interface RecordsTabProps {
   recordsItemPadding: string;
   recordsItemPaddingHorizontal: string;
   recordsListHeightHorizontal: string;
+  isActive?: boolean;
 }
 
 const COMPACT_SPACE_Y = 'space-y-3';

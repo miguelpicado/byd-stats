@@ -1,5 +1,5 @@
 import React, { ElementType } from 'react';
-import { BYD_RED } from '../Icons';
+
 
 interface StatCardProps {
     icon: ElementType;
@@ -40,7 +40,7 @@ const StatCard: React.FC<StatCardProps> = React.memo(({
             <p className="font-black text-slate-900 dark:text-white leading-none mt-1" style={{ fontSize: isCompact ? (isLarger ? '28px' : '22px') : (isVerticalMode ? '22px' : '28px') }}>
                 {value}<span className="text-slate-500 dark:text-slate-400 ml-1 font-bold" style={{ fontSize: isCompact ? (isLarger ? '14px' : '10px') : (isVerticalMode ? '10px' : '14px') }}>{unit}</span>
             </p>
-            {sub && <p className="leading-tight font-bold mt-1 truncate w-full" style={{ color: BYD_RED, fontSize: isCompact ? (isLarger ? '11px' : '9px') : (isVerticalMode ? '9px' : '11px') }}>{sub}</p>}
+            {sub && <p className="leading-tight font-bold mt-1 truncate w-full text-slate-500 dark:text-slate-400" style={{ fontSize: isCompact ? (isLarger ? '11px' : '9px') : (isVerticalMode ? '9px' : '11px') }}>{sub}</p>}
         </div>
     </div>
 ));

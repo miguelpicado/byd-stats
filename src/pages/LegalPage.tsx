@@ -4,7 +4,11 @@ import { useTranslation } from 'react-i18next';
 import { Shield, FileText, ChevronLeft } from '../components/Icons';
 import LegalContent from '../components/LegalContent';
 
-const LegalPage = ({ forcedTab }) => {
+interface LegalPageProps {
+    forcedTab?: string;
+}
+
+const LegalPage = ({ forcedTab }: LegalPageProps) => {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = React.useState(forcedTab || 'privacy');
 

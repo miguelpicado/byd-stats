@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react';
 
+export interface LayoutModeInfo {
+    layoutMode: 'vertical' | 'horizontal';
+    isCompact: boolean;
+    isFullscreenBYD: boolean;
+}
+
 /**
  * Custom hook for detecting layout mode (vertical/horizontal)
- * @returns {{ layoutMode: string, isCompact: boolean, isFullscreenBYD: boolean }}
  */
-export function useLayoutMode() {
-    const [layoutMode, setLayoutMode] = useState('vertical');
+export function useLayoutMode(): LayoutModeInfo {
+    const [layoutMode, setLayoutMode] = useState<'vertical' | 'horizontal'>('vertical');
     const [isCompact, setIsCompact] = useState(false);
     const [isFullscreenBYD, setIsFullscreenBYD] = useState(false);
 
@@ -73,5 +78,3 @@ export function useLayoutMode() {
 }
 
 export default useLayoutMode;
-
-

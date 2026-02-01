@@ -3,6 +3,8 @@ import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
+import { Charge, ChargerType } from '@/types';
+import { ChargeCsvRowSchema, parseChargeCsvLine } from '@/utils/validation';
 
 export const useChargeImporter = () => {
     const { t } = useTranslation();
@@ -13,7 +15,7 @@ export const useChargeImporter = () => {
      * Load charges from a CSV file with REGISTRO_CARGAS.csv format
      * Auto-creates missing charger types with default values
      */
-    const loadChargeRegistry = useCallback(async (file) => {
+    const loadChargeRegistry = useCallback(async (file: File) => {
         try {
             const text = await file.text();
             const lines = text.split('\n').filter(line => line.trim());
@@ -23,8 +25,8 @@ export const useChargeImporter = () => {
                 return;
             }
 
-            const charges = [];
-            const newChargerTypes = [];
+            const charges: Partial<Charge>[] = [];
+            const newChargerTypes: ChargerType[] = [];
             const existingChargerNames = new Set(
                 (settings.chargerTypes || []).map(ct => ct.name.toLowerCase())
             );
@@ -32,28 +34,26 @@ export const useChargeImporter = () => {
             // Parse each line (skip header)
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
-                // Parse CSV respecting quoted fields
                 const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
 
-                if (!values || values.length < 8) continue;
+                if (!values) continue;
 
-                const [fechaHora, kmTotales, kwhFacturados, precioTotal, , tipoCargador, precioKw, porcentajeFinal] = values;
+                // 1. Pre-parse raw values
+                const rawData = parseChargeCsvLine(values);
+                if (!rawData) continue;
 
-                // Validate date format - stop if we hit non-charge data
-                if (!fechaHora || !fechaHora.match(/^\d{4}-\d{2}-\d{2}/)) {
-                    break;
+                // 2. Validate with Zod
+                const validation = ChargeCsvRowSchema.safeParse(rawData);
+                if (!validation.success) {
+                    console.warn(`Skipping invalid row ${i}:`, validation.error.format());
+                    continue;
                 }
 
-                // Parse date and time
-                const dateMatch = fechaHora.match(/(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
-                if (!dateMatch) continue;
-
-                const date = dateMatch[1];
-                const time = dateMatch[2];
+                const data = validation.data;
 
                 // Find or create charger type
-                let chargerTypeId = null;
-                const chargerName = tipoCargador?.trim();
+                let chargerTypeId: string | null = null;
+                const chargerName = data.chargerType;
 
                 if (chargerName) {
                     const existing = (settings.chargerTypes || []).find(
@@ -77,20 +77,23 @@ export const useChargeImporter = () => {
                         // Already queued for creation
                         chargerTypeId = newChargerTypes.find(
                             ct => ct.name.toLowerCase() === chargerName.toLowerCase()
-                        )?.id;
+                        )?.id || null;
                     }
                 }
 
-                charges.push({
-                    date,
-                    time,
-                    odometer: parseFloat(kmTotales) || 0,
-                    kwhCharged: parseFloat(kwhFacturados) || 0,
-                    totalCost: parseFloat(precioTotal) || 0,
-                    chargerTypeId,
-                    pricePerKwh: parseFloat(precioKw) || 0,
-                    finalPercentage: parseFloat(porcentajeFinal) || 0
-                });
+                if (chargerTypeId) {
+                    charges.push({
+                        date: data.date,
+                        time: data.time,
+                        odometer: data.odometer,
+                        kwhCharged: data.kwhCharged,
+                        totalCost: data.totalCost,
+                        chargerTypeId,
+                        pricePerKwh: data.pricePerKwh,
+                        initialPercentage: data.initialPercentage,
+                        finalPercentage: data.finalPercentage
+                    });
+                }
             }
 
             // Add new charger types to settings
@@ -99,9 +102,39 @@ export const useChargeImporter = () => {
                 updateSettings({ ...settings, chargerTypes: updatedChargerTypes });
             }
 
-            // Import charges
-            if (charges.length > 0) {
-                const count = addMultipleCharges(charges);
+            // Get battery capacity for estimation
+            const batterySize = parseFloat(String(settings.batterySize)) || 60.48;
+
+            // Import charges with estimation logic
+            const processedCharges = charges.map(c => {
+                let initial = c.initialPercentage;
+                let final = c.finalPercentage;
+                let isEstimated = false;
+
+                // Round final percentage
+                if (final !== undefined && final !== null) {
+                    final = Math.round(final);
+                }
+
+                // Estimate Initial SoC if missing (0 or null/undefined)
+                // Logic: Start = End - (kWh / Capacity * 100)
+                if ((initial === undefined || initial === 0) && final && c.kwhCharged) {
+                    const percentAdded = (c.kwhCharged / batterySize) * 100;
+                    // Round to nearest integer (unity)
+                    initial = Math.max(0, Math.round(final - percentAdded));
+                    isEstimated = true;
+                }
+
+                return {
+                    ...c,
+                    initialPercentage: initial,
+                    finalPercentage: final,
+                    isSOCEstimated: isEstimated
+                } as Charge;
+            });
+
+            if (processedCharges.length > 0) {
+                const count = addMultipleCharges(processedCharges);
 
                 // Show success message
                 let message = t('charges.chargesImported', { count });
@@ -113,7 +146,7 @@ export const useChargeImporter = () => {
                 toast.success(message);
 
                 // Auto-sync after import
-                if (googleSync.isAuthenticated) {
+                if (googleSync && googleSync.isAuthenticated) {
                     googleSync.syncNow();
                 }
             } else {
@@ -127,5 +160,3 @@ export const useChargeImporter = () => {
 
     return { loadChargeRegistry };
 };
-
-

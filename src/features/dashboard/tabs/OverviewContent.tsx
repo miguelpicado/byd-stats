@@ -4,11 +4,12 @@ import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
 import HybridStatsCard from '@components/cards/HybridStatsCard';
+import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
 import { MapPin, Zap, Clock, Battery, TrendingUp, Activity, Fuel, IconProps } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
-import { Summary, Trip, Settings, TripInsightType } from '@/types';
+import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
 
 const PIE_CHART_OPTIONS = {
     maintainAspectRatio: false,
@@ -47,6 +48,12 @@ interface OverviewContentProps {
     insightType: TripInsightType | null;
     onCloseInsightModal: () => void;
     isActive?: boolean;
+    onRangeClick?: () => void;
+    isAiReady?: boolean;
+    aiSoH?: number | null;
+    aiSoHStats?: { points: any[]; trend: any[] } | null;
+    charges?: Charge[];
+    stats?: ProcessedData;
 }
 
 const OverviewContent: FC<OverviewContentProps> = ({
@@ -67,7 +74,13 @@ const OverviewContent: FC<OverviewContentProps> = ({
     onCloseOdometerModal,
     insightType,
     onCloseInsightModal,
-    isActive = true
+    isActive = true,
+    onRangeClick,
+    isAiReady = false,
+    aiSoH,
+    aiSoHStats,
+    charges,
+    stats
 }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -96,13 +109,14 @@ const OverviewContent: FC<OverviewContentProps> = ({
 
     interface StatConfigItem {
         key: string;
-        icon: FC<IconProps>;
-        label: string;
-        value: string | number;
-        unit: string;
-        color: string;
+        icon?: FC<IconProps>;
+        label?: string;
+        value?: string | number;
+        unit?: string;
+        color?: string;
         sub?: string;
-        onClick: () => void;
+        onClick?: () => void;
+        isCustom?: boolean; // Flag for custom components
     }
 
     const getStatsConfig = (): StatConfigItem[] => [
@@ -123,25 +137,23 @@ const OverviewContent: FC<OverviewContentProps> = ({
             value: summary.totalKwh,
             unit: t('units.kWh'),
             color: "bg-cyan-500/20 text-cyan-400",
+            // Add stationary consumption as sub-label
+            sub: `${t('stats.stationary')}: ${summary.stationaryConsumption} kWh`,
             onClick: () => onInsightClick('energy')
         },
         {
             key: 'range',
-            icon: Battery,
-            label: t('stats.estimatedRange'),
+            icon: isAiReady ? () => <span className="text-lg">🧠</span> : Battery,
+            label: isAiReady ? t('stats.aiRange', 'AI Range') : t('stats.estimatedRange'),
             value: summary.estimatedRange,
             unit: t('units.km'),
-            color: "bg-amber-500/20 text-amber-400",
-            onClick: () => onInsightClick('range')
+            color: isAiReady ? "bg-indigo-500/20 text-indigo-400" : "bg-amber-500/20 text-amber-400",
+            onClick: onRangeClick || (() => onInsightClick('range'))
         },
+        // Replaces Stationary for Hybrid, and Time for EV
         summary.isHybrid ? {
-            key: 'stationary',
-            icon: Activity,
-            label: t('stats.stationary'),
-            value: summary.stationaryConsumption,
-            unit: t('units.kWh'),
-            color: "bg-yellow-500/20 text-yellow-500",
-            onClick: () => onInsightClick('stationary')
+            key: 'estimated_charge',
+            isCustom: true // Custom renderer
         } : {
             key: 'time',
             icon: Clock,
@@ -160,6 +172,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
             color: "bg-green-500/20 text-green-400",
             onClick: () => onInsightClick('efficiency')
         },
+        // Replaces fuel for Hybrid, and Stationary_EV for EV
         summary.isHybrid ? {
             key: 'fuel',
             icon: Fuel,
@@ -169,19 +182,14 @@ const OverviewContent: FC<OverviewContentProps> = ({
             color: "bg-amber-500/20 text-amber-500",
             onClick: () => onInsightClick('fuel')
         } : {
-            key: 'stationary_ev',
-            icon: Activity,
-            label: t('stats.stationary'),
-            value: summary.stationaryConsumption,
-            unit: t('units.kWh'),
-            color: "bg-yellow-500/20 text-yellow-500",
-            onClick: () => onInsightClick('stationary')
+            key: 'estimated_charge',
+            isCustom: true // Custom renderer
         },
         {
             key: 'soh',
             icon: Battery,
             label: t('settings.soh'),
-            value: summary.soh,
+            value: aiSoH ? aiSoH.toFixed(1) : summary.soh,
             unit: "%",
             color: "bg-emerald-500/20 text-emerald-400",
             onClick: () => onInsightClick('soh')
@@ -203,25 +211,59 @@ const OverviewContent: FC<OverviewContentProps> = ({
         <div className={`${overviewSpacing}`}>
             {/* Stats Grid */}
             <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                {statItems.slice(0, 4).map(({ key, ...item }) => (
-                    <StatCard
-                        key={key}
-                        isVerticalMode={isVertical}
-                        isLarger={isLargerCard}
-                        isCompact={isCompact}
-                        {...item}
-                    />
+                {statItems.slice(0, 4).map((item) => (
+                    item.isCustom ? (
+                        <EstimatedChargeCard
+                            key={item.key}
+                            summary={summary}
+                            settings={settings}
+                            stats={stats || null}
+                            charges={charges}
+                            trips={trips}
+                        />
+                    ) : (
+                        <StatCard
+                            key={item.key}
+                            isVerticalMode={isVertical}
+                            isLarger={isLargerCard}
+                            isCompact={isCompact}
+                            icon={item.icon!}
+                            label={item.label!}
+                            value={item.value!}
+                            unit={item.unit!}
+                            color={item.color!}
+                            sub={item.sub}
+                            onClick={item.onClick}
+                        />
+                    )
                 ))}
             </div>
             <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
-                {statItems.slice(4, 8).map(({ key, ...item }) => (
-                    <StatCard
-                        key={key}
-                        isVerticalMode={isVertical}
-                        isLarger={isLargerCard}
-                        isCompact={isCompact}
-                        {...item}
-                    />
+                {statItems.slice(4, 8).map((item) => (
+                    item.isCustom ? (
+                        <EstimatedChargeCard
+                            key={item.key}
+                            summary={summary}
+                            settings={settings}
+                            stats={stats || null}
+                            charges={charges}
+                            trips={trips}
+                        />
+                    ) : (
+                        <StatCard
+                            key={item.key}
+                            isVerticalMode={isVertical}
+                            isLarger={isLargerCard}
+                            isCompact={isCompact}
+                            icon={item.icon!}
+                            label={item.label!}
+                            value={item.value!}
+                            unit={item.unit!}
+                            color={item.color!}
+                            sub={item.sub}
+                            onClick={item.onClick}
+                        />
+                    )
                 ))}
             </div>
 
@@ -269,6 +311,8 @@ const OverviewContent: FC<OverviewContentProps> = ({
                 summary={summary}
                 onMfgDateClick={onMfgDateClick}
                 onThermalStressClick={onThermalStressClick}
+                aiSoH={aiSoH}
+                aiSoHStats={aiSoHStats}
             />
             <OdometerAdjustmentModal
                 isOpen={showOdometerModal}

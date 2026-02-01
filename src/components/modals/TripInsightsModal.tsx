@@ -1,13 +1,15 @@
 // BYD Stats - Trip Insights Modal Component
 // Displays advanced statistics for trips when clicking on stat cards in Overview tab
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Zap, TrendingUp, Calendar, Battery, MapPin, Clock, Car, Fuel, LucideIcon } from '../Icons';
+import { X, Zap, TrendingUp, Calendar, Battery, MapPin, Clock, Car, Fuel, LucideIcon, Info } from '../Icons'; // Added Info
+import { Line } from 'react-chartjs-2';
 import StatItem from '../ui/StatItem';
 import ModalPortal from '../common/ModalPortal';
-import { isStationaryTrip } from '../../core/dataProcessing'; // Assuming this import path is correct and function exists
-import { Trip, SettingsType } from '../../types/dataTypes';
+import SoHExplanationModal, { SoHMetricType } from './SoHExplanationModal';
+import { isStationaryTrip } from '../../core/dataProcessing';
+import { Trip, Settings as SettingsType } from '../../types'; // Correct import path
 
 interface TripInsightsModalProps {
     isOpen: boolean;
@@ -18,12 +20,14 @@ interface TripInsightsModalProps {
     summary?: any;
     onMfgDateClick?: () => void;
     onThermalStressClick?: () => void;
+    aiSoH?: number | null;
+    aiSoHStats?: { points: any[]; trend: any[] } | null;
 }
 
 /**
  * Calculate advanced trip statistics
  */
-const useTripInsights = (trips: Trip[], electricityPrice = 0.15, settings: SettingsType = {}) => {
+const useTripInsights = (trips: Trip[], electricityPrice = 0.15, settings: SettingsType = {} as SettingsType) => {
     return useMemo(() => {
         if (!trips || trips.length === 0) return null;
 
@@ -206,8 +210,8 @@ const useTripInsights = (trips: Trip[], electricityPrice = 0.15, settings: Setti
                 percentage: 0
             },
             range: {
-                highway: (settings?.batterySize && settings.batterySize > 0 && globalEfficiency > 0) ? (settings.batterySize * ((settings.soh || 100) / 100) / (globalEfficiency * 1.2) * 100) : 0,
-                city: (settings?.batterySize && settings.batterySize > 0 && globalEfficiency > 0) ? (settings.batterySize * ((settings.soh || 100) / 100) / (globalEfficiency * 0.8) * 100) : 0
+                highway: (Number(settings?.batterySize) > 0 && globalEfficiency > 0) ? (Number(settings.batterySize) * ((Number(settings.soh) || 100) / 100) / (globalEfficiency * 1.2) * 100) : 0,
+                city: (Number(settings?.batterySize) > 0 && globalEfficiency > 0) ? (Number(settings.batterySize) * ((Number(settings.soh) || 100) / 100) / (globalEfficiency * 0.8) * 100) : 0
             },
             // Pass stationary data specifically if needed
             stationaryCount: stationaryTrips.length,
@@ -221,14 +225,19 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
     onClose,
     type, // 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays'
     trips,
-    settings = {},
+    settings = {} as SettingsType,
     summary,
     onMfgDateClick,
-    onThermalStressClick
+    onThermalStressClick,
+    aiSoH,
+    aiSoHStats
 }) => {
     const { t } = useTranslation();
-    const electricityPrice = settings?.electricityPrice || 0.15;
+    const electricityPrice = Number(settings?.electricPrice) || 0.15;
     const insights = useTripInsights(trips, electricityPrice, settings);
+
+    // State for sub-modal
+    const [explanationType, setExplanationType] = useState<SoHMetricType | null>(null);
 
     if (!isOpen) return null;
 
@@ -432,63 +441,139 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
             case 'soh':
                 const sohData = summary?.sohData;
                 return (
-                    <div className="flex flex-col gap-4">
-                        <div className="text-center bg-slate-50 dark:bg-slate-900/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700/50">
-                            <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-                                {t('tripInsights.sohFormula', 'Fórmula aplicada')}
-                            </p>
-                            <p className="text-[11px] text-slate-600 dark:text-slate-400 font-mono">
-                                {t('tripInsights.sohFormulaText')}
-                            </p>
-                        </div>
+                    <div className="flex flex-col gap-3">
+                        {aiSoH && (
+                            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-800/30 p-3">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <TrendingUp className="w-4 h-4 text-emerald-500" />
+                                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
+                                        {t('modals.batteryHealth.aiAnalysisTitle', 'Análisis de SoH con IA')}
+                                    </h4>
+                                </div>
 
-                        <div className="grid grid-cols-1 gap-3">
-                            <StatItem
-                                label={t('tripInsights.sohSei')}
-                                value={`${sohData?.degradation?.sei.toFixed(2) || 0}`}
-                                unit="%"
-                                sub={t('tripInsights.sohSeiDesc')}
-                                color="text-amber-500"
-                            />
-                            <StatItem
-                                label={t('tripInsights.sohCycle')}
-                                value={`${sohData?.degradation?.cycle.toFixed(2) || 0}`}
-                                unit="%"
-                                sub={`${t('tripInsights.sohRealCycles')}: ${sohData?.real_cycles_count || 0}`}
-                                color="text-orange-500"
-                            />
-                            <StatItem
-                                label={t('tripInsights.sohCalendar')}
-                                value={`${sohData?.degradation?.calendar.toFixed(2) || 0}`}
-                                unit="%"
-                                sub={t('tripInsights.sohCalendarDesc')}
-                                color="text-red-500"
-                            />
-                        </div>
+                                <div className="grid grid-cols-2 gap-3 mb-3">
+                                    <button
+                                        onClick={() => setExplanationType('ai_soh')}
+                                        className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-emerald-100 dark:border-emerald-900/50 flex flex-col items-center justify-center text-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
+                                    >
+                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase flex items-center gap-1">
+                                            {t('modals.batteryHealth.realSoH', 'SoH Real')}
+                                            <Info className="w-2.5 h-2.5 opacity-50" />
+                                        </span>
+                                        <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
+                                            {aiSoH.toFixed(1)}%
+                                        </span>
+                                    </button>
+                                    <button
+                                        onClick={() => setExplanationType('samples')}
+                                        className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                                    >
+                                        <span className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
+                                            {t('modals.batteryHealth.samples', 'Muestras')}
+                                            <Info className="w-2.5 h-2.5 opacity-50" />
+                                        </span>
+                                        <span className="text-xl font-black text-slate-700 dark:text-slate-300">
+                                            {aiSoHStats?.points.length || 0}
+                                        </span>
+                                    </button>
+                                </div>
 
-                        <div className="mt-2 grid grid-cols-2 gap-3">
+                                <div className="h-40 w-full bg-white dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800 p-2">
+                                    {aiSoHStats && (
+                                        <Line
+                                            options={{
+                                                responsive: true,
+                                                maintainAspectRatio: false,
+                                                plugins: { legend: { display: false } },
+                                                scales: {
+                                                    x: {
+                                                        display: true,
+                                                        grid: { display: false },
+                                                        ticks: { display: false } // Hide x labels for cleanliness, or keep simple
+                                                    },
+                                                    y: {
+                                                        min: 80,
+                                                        max: 110,
+                                                        display: true,
+                                                        grid: { color: 'rgba(0,0,0,0.05)' }
+                                                    }
+                                                },
+                                                elements: {
+                                                    point: { radius: 2, hoverRadius: 4 },
+                                                }
+                                            }}
+                                            data={{
+                                                datasets: [
+                                                    {
+                                                        type: 'scatter' as const,
+                                                        label: 'Points',
+                                                        data: aiSoHStats.points.map(p => ({ x: p.x, y: p.y })),
+                                                        backgroundColor: 'rgba(16, 185, 129, 0.4)'
+                                                    },
+                                                    {
+                                                        type: 'line' as const,
+                                                        label: 'Trend',
+                                                        data: aiSoHStats.trend.map(p => ({ x: p.x, y: p.y })),
+                                                        borderColor: '#10b981',
+                                                        borderWidth: 2,
+                                                        pointRadius: 0,
+                                                        tension: 0.4
+                                                    }
+                                                ]
+                                            } as any}
+                                        />
+                                    )}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex flex-col items-center justify-center py-2">
                             <button
-                                onClick={onMfgDateClick}
-                                className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-slate-700/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-600 hover:border-slate-400 transition-colors"
+                                onClick={() => setExplanationType('formula')}
+                                className="group w-full bg-slate-50 dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 rounded-xl p-4 flex flex-col items-center transition-all hover:bg-slate-100 dark:hover:bg-slate-800 hover:scale-[1.02] active:scale-95 shadow-sm"
                             >
-                                <span className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{t('settings.mfgDate')}</span>
-                                <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-                                    {settings.mfgDateDisplay || t('common.notSet', 'No definida')}
-                                </span>
-                            </button>
-
-                            <button
-                                onClick={onThermalStressClick}
-                                className="flex flex-col items-center justify-center p-3 bg-slate-100 dark:bg-slate-700/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-600 hover:border-slate-400 transition-colors"
-                            >
-                                <span className="text-[10px] text-slate-500 uppercase tracking-wider mb-1">{t('tripInsights.sohStressFactor')}</span>
-                                <span className={`text-xs font-bold ${summary?.sohData?.thermal_stress > 1.0 ? 'text-orange-500' : 'text-slate-700 dark:text-slate-300'}`}>
-                                    {summary?.sohData?.thermal_stress ? `${summary.sohData.thermal_stress}x` : '1.0x'}
-                                </span>
+                                <div className="text-4xl font-black text-slate-800 dark:text-white tracking-tight flex items-baseline group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {(100 - ((sohData?.degradation?.sei ?? 0) + (sohData?.degradation?.cycle ?? 0) + (sohData?.degradation?.calendar ?? 0))).toFixed(2)}
+                                    <span className="text-xl ml-1 text-slate-400 group-hover:text-blue-400/70">%</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-400 uppercase tracking-widest mt-1 group-hover:text-blue-500 transition-colors">
+                                    SoH Calculado
+                                    <Info className="w-3 h-3" />
+                                </div>
                             </button>
                         </div>
 
-                        <div className="p-3 bg-slate-100 dark:bg-slate-700/30 rounded-lg">
+                        <div className="grid grid-cols-1 gap-2 mt-2">
+                            {/* Header removed as per request */}
+                            <div className="grid grid-cols-3 gap-2">
+                                <StatItem
+                                    label="SEI"
+                                    value={`${(sohData?.degradation?.sei ?? 0).toFixed(2)}%`}
+                                    color="text-amber-500"
+                                    onClick={() => setExplanationType('sei')}
+                                    center
+                                />
+                                <StatItem
+                                    label="Ciclos"
+                                    value={`${(sohData?.degradation?.cycle ?? 0).toFixed(2)}%`}
+                                    color="text-orange-500"
+                                    onClick={() => setExplanationType('cycle')}
+                                    center
+                                />
+                                <StatItem
+                                    label="Tiempo"
+                                    value={`${(sohData?.degradation?.calendar ?? 0).toFixed(2)}%`}
+                                    color="text-red-500"
+                                    onClick={() => setExplanationType('calendar')}
+                                    center
+                                />
+                            </div>
+                        </div>
+
+                        <div
+                            className="p-3 bg-slate-100 dark:bg-slate-700/30 rounded-lg cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700/50 transition-colors"
+                            onClick={() => setExplanationType('calibration')}
+                        >
                             <div className="flex justify-between items-center text-xs">
                                 <span className="text-slate-500">{t('tripInsights.sohCalibration')}</span>
                                 <span className={`font-bold ${sohData?.calibration_warning ? 'text-amber-500' : 'text-emerald-500'}`}>
@@ -497,9 +582,33 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
                             </div>
                         </div>
 
-                        <p className="text-[10px] text-center text-slate-400 italic">
-                            {t('tripInsights.sohDesc')}
-                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                            <button
+                                onClick={onMfgDateClick}
+                                className="flex flex-col items-center justify-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
+                            >
+                                <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">{t('settings.mfgDate')}</span>
+                                <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
+                                    {settings.mfgDateDisplay || '-'}
+                                </span>
+                            </button>
+
+                            <button
+                                onClick={onThermalStressClick}
+                                className="flex flex-col items-center justify-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
+                            >
+                                <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">{t('tripInsights.stressFactor', 'Factor Estrés')}</span>
+                                <span className={`text-xs font-bold ${summary?.sohData?.thermal_stress > 1.0 ? 'text-orange-500' : 'text-slate-600 dark:text-slate-300'}`}>
+                                    {summary?.sohData?.thermal_stress ? `${summary.sohData.thermal_stress}x` : '1.0x'}
+                                </span>
+                            </button>
+                        </div>
+
+                        <SoHExplanationModal
+                            isOpen={!!explanationType}
+                            onClose={() => setExplanationType(null)}
+                            type={explanationType}
+                        />
                     </div>
                 );
             case 'stationary':

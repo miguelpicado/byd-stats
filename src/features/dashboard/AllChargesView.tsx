@@ -3,6 +3,30 @@ import { useTranslation } from 'react-i18next';
 import ModalContainer from '../../components/common/ModalContainer';
 import VirtualizedChargeList from '../../components/lists/VirtualizedChargeList';
 
+import { Charge, ChargerType } from '@/types';
+
+interface AllChargesViewProps {
+    charges: Charge[];
+    chargerTypes: ChargerType[];
+    filterType: string;
+    month: string;
+    dateFrom: string;
+    dateTo: string;
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+    setFilterType: (val: string) => void;
+    setMonth: (val: string) => void;
+    setDateFrom: (val: string) => void;
+    setDateTo: (val: string) => void;
+    setSortBy: (val: string) => void;
+    setSortOrder: React.Dispatch<React.SetStateAction<'asc' | 'desc'>>;
+    openModal: (modal: string) => void;
+    closeModal: (modal: string) => void;
+    setSelectedCharge: (charge: Charge | null) => void;
+    scrollRef: React.MutableRefObject<any>;
+    isNative: boolean;
+}
+
 const AllChargesView = ({
     charges,
     chargerTypes,
@@ -18,31 +42,12 @@ const AllChargesView = ({
     setDateTo,
     setSortBy,
     setSortOrder,
-    modals,
     openModal,
     closeModal,
     setSelectedCharge,
     scrollRef,
-    // Props for ModalContainer
-    setLegalInitialSection,
-    legalInitialSection,
-    settings,
-    updateSettings,
-    googleSync,
-    rawTrips,
-    selectedTrip,
-    setSelectedTrip,
-    selectedCharge,
-
-    data,
-    sqlReady,
-    processDB,
-    exportDatabase,
-    clearData,
-    loadChargeRegistry,
     isNative,
-    onFile
-}) => {
+}: AllChargesViewProps) => {
     const { t } = useTranslation();
 
     const finalCharges = useMemo(() => {
@@ -62,9 +67,9 @@ const AllChargesView = ({
             if (sortBy === 'date') {
                 comparison = b.date.localeCompare(a.date) || b.time.localeCompare(a.time);
             } else if (sortBy === 'kwh') {
-                comparison = b.kwhCharged - a.kwhCharged;
+                comparison = (b.kwhCharged || 0) - (a.kwhCharged || 0);
             } else if (sortBy === 'cost') {
-                comparison = b.totalCost - a.totalCost;
+                comparison = (b.totalCost || 0) - (a.totalCost || 0);
             }
             return sortOrder === 'asc' ? -comparison : comparison;
         });
@@ -73,26 +78,26 @@ const AllChargesView = ({
     }, [charges, filterType, month, dateFrom, dateTo, sortBy, sortOrder]);
 
 
-    const handleChargeClick = (charge) => {
+    const handleChargeClick = (charge: Charge) => {
         setSelectedCharge(charge);
         openModal('chargeDetail');
     };
 
-    const getChargerTypeName = (chargerTypeId) => {
-        const chargerType = (settings.chargerTypes || []).find(ct => ct.id === chargerTypeId);
+    const getChargerTypeName = (chargerTypeId: string) => {
+        const chargerType = (chargerTypes || []).find(ct => ct.id === chargerTypeId);
         return chargerType?.name || chargerTypeId || '-';
     };
 
-    const formatDate = (dateStr) => {
+    const formatDate = (dateStr: string) => {
         if (!dateStr) return '';
         const [year, month, day] = dateStr.split('-');
         return `${day}/${month}/${year}`;
     };
 
     // State for scroller element to ensure virtualizer updates on mount
-    const [scroller, setScroller] = React.useState(null);
+    const [scroller, setScroller] = React.useState<HTMLDivElement | null>(null);
 
-    const scrollRefCallback = React.useCallback((node) => {
+    const scrollRefCallback = React.useCallback((node: HTMLDivElement | null) => {
         if (node) {
             scrollRef.current = node;
             setScroller(node);
@@ -104,30 +109,7 @@ const AllChargesView = ({
             ref={scrollRefCallback}
             className="fixed inset-0 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white"
         >
-            <ModalContainer
-                modals={modals}
-                closeModal={closeModal}
-                openModal={openModal}
-                setLegalInitialSection={setLegalInitialSection}
-                legalInitialSection={legalInitialSection}
-                settings={settings}
-                updateSettings={updateSettings}
-                googleSync={googleSync}
-                rawTrips={rawTrips}
-                selectedTrip={selectedTrip}
-                setSelectedTrip={setSelectedTrip}
-                data={data}
-                sqlReady={sqlReady}
-                processDB={processDB}
-                exportDatabase={exportDatabase}
-                clearData={clearData}
-                onLoadChargeRegistry={loadChargeRegistry}
-                isNative={isNative}
-                onFile={onFile}
-                charges={charges}
-                selectedCharge={selectedCharge}
-                setSelectedCharge={setSelectedCharge}
-            />
+            <ModalContainer />
 
             <div className={`max-w-7xl mx-auto px-4 py-6 ${isNative ? 'pt-12' : ''}`}>
                 <div className="flex flex-col gap-4 mb-6">
@@ -244,7 +226,6 @@ const AllChargesView = ({
                 <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
                     <VirtualizedChargeList
                         charges={finalCharges}
-                        chargerTypes={chargerTypes}
                         onChargeClick={handleChargeClick}
                         scrollElement={scroller}
                         formatDate={formatDate}

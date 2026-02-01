@@ -17,6 +17,7 @@ export interface ModalsState {
     registryRestore: boolean;
     registryCars: any[]; // Define specific type if possible
     legal: boolean; // Added dynamically in original code but better defined here
+    faq: boolean;
 }
 
 /**
@@ -39,7 +40,8 @@ const useModalState = () => {
         backups: false,
         registryRestore: false,
         registryCars: [],
-        legal: false
+        legal: false,
+        faq: false
     });
 
     // Track additional modal-related state
@@ -132,7 +134,8 @@ const useModalState = () => {
             backups: false,
             registryRestore: false,
             registryCars: [],
-            legal: false
+            legal: false,
+            faq: false
         });
         setSelectedTrip(null);
         setSelectedCharge(null);

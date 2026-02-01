@@ -3,7 +3,9 @@ import { BYD_RED } from '@components/Icons';
 import OverviewContent from './OverviewContent';
 import MfgDateModal from '@components/modals/MfgDateModal';
 import ThermalStressModal from '@components/modals/ThermalStressModal';
+import RangeInsightsModal from '@components/modals/RangeInsightsModal';
 import { useApp } from '@/context/AppContext';
+import { useData } from '@/providers/DataProvider';
 import { Summary, MonthlyData, Settings, Trip, TripInsightType } from '@/types';
 
 // Static chart options that don't change
@@ -23,6 +25,7 @@ interface OverviewTabProps {
   trips?: Trip[];
   settings: Settings;
   isActive?: boolean;
+  onAddCharge?: () => void;
 }
 
 /**
@@ -39,10 +42,15 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
   isActive = true
 }) => {
   const { updateSettings } = useApp();
+  const { aiScenarios, aiLoss, aiSoH, aiSoHStats, charges, stats } = useData();
+
+
+
   const [insightType, setInsightType] = useState<TripInsightType | null>(null);
   const [showOdometerModal, setShowOdometerModal] = useState(false);
   const [showMfgModal, setShowMfgModal] = useState(false);
   const [showThermalModal, setShowThermalModal] = useState(false);
+  const [showRangeModal, setShowRangeModal] = useState(false);
 
   const handleCardClick = (type: TripInsightType) => {
     if (type === 'distance') {
@@ -126,6 +134,12 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         onMfgDateClick={() => setShowMfgModal(true)}
         onThermalStressClick={() => setShowThermalModal(true)}
         isActive={isActive}
+        onRangeClick={() => setShowRangeModal(true)}
+        isAiReady={aiLoss !== null && aiLoss < 0.5} // Simple heuristic for availability
+        aiSoH={aiSoH}
+        aiSoHStats={aiSoHStats}
+        charges={charges}
+        stats={stats || undefined}
       />
       <MfgDateModal
         isOpen={showMfgModal}
@@ -138,6 +152,12 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         onClose={() => setShowThermalModal(false)}
         onSave={handleThermalStressSave}
         initialValue={settings.thermalStressFactor || 1.0}
+      />
+      <RangeInsightsModal
+        isOpen={showRangeModal}
+        onClose={() => setShowRangeModal(false)}
+        aiScenarios={aiScenarios}
+        aiLoss={aiLoss}
       />
     </>
   );

@@ -1,57 +1,98 @@
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
-import { googleDriveService } from '@/services/googleDrive';
+import { googleDriveService, GoogleDriveFile, SyncData, RegistryData } from '@/services/googleDrive';
 import { Capacitor } from '@capacitor/core';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { logger } from '@core/logger';
+import { Trip, Charge, Settings, Car } from '@/types';
 
-// ... imports
+// Types for Conflict Resolution
+interface ConflictDifference {
+    label: string;
+    local: string | number;
+    cloud: string | number;
+}
+
+interface PendingConflict {
+    localData: SyncData;
+    remoteData: SyncData;
+    differences: ConflictDifference[];
+    fileId: string;
+}
+
+interface UserProfile {
+    id: string;
+    email: string;
+    verified_email: boolean;
+    name: string;
+    given_name: string;
+    family_name: string;
+    picture: string;
+    locale: string;
+}
+
+interface UseGoogleSyncProps {
+    localTrips: Trip[];
+    setLocalTrips: (trips: Trip[]) => void;
+    settings: Settings;
+    setSettings: (settings: Settings) => void;
+    localCharges: Charge[];
+    setLocalCharges: (charges: Charge[]) => void;
+    activeCarId: string;
+    totalCars?: number;
+    openRegistryModal: (cars: any[]) => void;
+    isRegistryModalOpen?: boolean;
+    updateCar?: (id: string, updates: Partial<Car>) => void;
+    carName?: string;
+}
+
+interface UseGoogleSyncReturn {
+    isAuthenticated: boolean;
+    isSyncing: boolean;
+    lastSyncTime: Date | null;
+    error: string | null;
+    userProfile: UserProfile | null;
+    pendingConflict: PendingConflict | null;
+    resolveConflict: (resolution: 'local' | 'cloud' | 'merge') => Promise<void>;
+    dismissConflict: () => void;
+    login: () => Promise<void>;
+    logout: () => Promise<void>;
+    syncNow: (newTripsData?: Trip[] | null, options?: { forcePull?: boolean; forcePush?: boolean }) => Promise<void>;
+    checkCloudBackups: () => Promise<GoogleDriveFile[]>;
+    importFromCloud: (fileId: string) => Promise<boolean>;
+    deleteBackup: (fileId: string) => Promise<boolean>;
+    restoreFromRegistry: (car: any) => Promise<boolean>;
+    skipRegistryRestore: () => Promise<boolean>;
+    updateCloudRegistry: () => Promise<void>;
+}
 
 /**
  * Custom hook for Google Drive synchronization
- * @param {import('@core/types').Trip[]} localTrips
- * @param {Function} setLocalTrips
- * @param {import('@core/types').AppSettings} settings
- * @param {Function} setSettings
- * @param {import('@core/types').Charge[]} localCharges
- * @param {Function} setLocalCharges
- * @param {string} activeCarId
- * @param {number} totalCars
- * @param {Function} openRegistryModal
- * @param {boolean} isRegistryModalOpen
- * @param {Function} [updateCar]
- * @param {string} [carName]
- * @returns {{
- *   isAuthenticated: boolean,
- *   isSyncing: boolean,
- *   lastSyncTime: Date|null,
- *   error: string|null,
- *   userProfile: Object|null,
- *   pendingConflict: Object|null,
- *   resolveConflict: function(string): Promise<void>,
- *   dismissConflict: function(): void,
- *   login: function(): Promise<void>,
- *   logout: function(): Promise<void>,
- *   syncNow: function(import('@core/types').Trip[]|null, Object=): Promise<void>,
- *   checkCloudBackups: function(): Promise<import('@services/googleDrive').DriveFile[]>,
- *   importFromCloud: function(string): Promise<boolean>,
- *   deleteBackup: function(string): Promise<boolean>,
- *   restoreFromRegistry: function(Object): Promise<boolean>,
- *   skipRegistryRestore: function(): Promise<boolean>,
- *   updateCloudRegistry: function(): Promise<void>
- * }}
  */
-export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, localCharges, setLocalCharges, activeCarId, totalCars = 1, openRegistryModal, isRegistryModalOpen = false, updateCar = null, carName = null) {
-    const [isAuthenticated, setIsAuthenticated] = useState(() => {
+export function useGoogleSync({
+    localTrips,
+    setLocalTrips,
+    settings,
+    setSettings,
+    localCharges,
+    setLocalCharges,
+    activeCarId,
+    totalCars = 1,
+    openRegistryModal,
+    isRegistryModalOpen = false,
+    updateCar
+}: UseGoogleSyncProps): UseGoogleSyncReturn {
+
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
         const token = localStorage.getItem('google_access_token');
         const expiry = localStorage.getItem('google_token_expiry');
         return !!(token && expiry && Date.now() < parseInt(expiry));
     });
     const [isSyncing, setIsSyncing] = useState(false);
-    const [error, setError] = useState(null);
-    const [userProfile, setUserProfile] = useState(null);
-    const [lastSyncTime, setLastSyncTime] = useState(null);
-    const [pendingConflict, setPendingConflict] = useState(null);
+    const [error, setError] = useState<string | null>(null);
+    const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+    const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
+    const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(null);
 
     // Derive filename from activeCarId
     const getTargetFilename = useCallback(() => {
@@ -60,7 +101,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, [activeCarId]);
 
     // Fetch User Profile
-    const fetchUserProfile = useCallback(async (token) => {
+    const fetchUserProfile = useCallback(async (token: string) => {
         try {
             const response = await fetch('https://www.googleapis.com/oauth2/v1/userinfo?alt=json', {
                 headers: { Authorization: `Bearer ${token}` }
@@ -75,7 +116,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, []);
 
     // Helper: Check Registry (Reusable)
-    const checkAndPromptRegistry = useCallback(async () => {
+    const checkAndPromptRegistry = useCallback(async (): Promise<boolean> => {
         if (!googleDriveService.isInited) return false;
 
         try {
@@ -91,7 +132,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                     // files typically have name, id, modifiedTime
                     // We look for "byd_stats_data_UUID.json" or legacy "byd_stats_data.json"
 
-                    const recoveredCars = [];
+                    const recoveredCars: any[] = []; // Using any for car entry here as it's partial/recovered
 
                     for (const file of allFiles) {
                         if (file.name.startsWith('byd_stats_data')) {
@@ -125,7 +166,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
 
                     if (recoveredCars.length > 0) {
                         logger.info(`[Sync] Fallback successful. Found ${recoveredCars.length} recovered cars.`);
-                        registry = { cars: recoveredCars, lastUpdated: new Date().toISOString() };
+                        registry = { cars: recoveredCars as Car[], lastUpdated: new Date().toISOString() };
 
                         // PERSIST: Save the reconstructed registry so we don't scan again
                         try {
@@ -146,8 +187,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             }
 
             // Check if CURRENT activeCarId is known
-            const isKnown = registry.cars.some(c => c.id === activeCarId);
-            logger.info(`[Sync] Registry Check: ActiveID=${activeCarId}, Known=${isKnown}, CloudCars=${registry.cars.length}`);
+            const isKnown = registry!.cars.some(c => c.id === activeCarId);
+            logger.info(`[Sync] Registry Check: ActiveID=${activeCarId}, Known=${isKnown}, CloudCars=${registry!.cars.length}`);
 
             if (isKnown) {
                 logger.info(`[Sync] Car ${activeCarId} is known. Proceeding.`);
@@ -155,12 +196,12 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             }
 
             // Unknown Car ID but Registry has data -> Potential Duplicate or Re-install
-            logger.info(`[Sync] Unknown Car ID ${activeCarId} but found ${registry.cars.length} cars in cloud. Prompting user.`);
+            logger.info(`[Sync] Unknown Car ID ${activeCarId} but found ${registry!.cars.length} cars in cloud. Prompting user.`);
 
             // Sort by lastSync (newest first)
-            const sortedCars = [...registry.cars].sort((a, b) => {
-                const dateA = a.lastSync ? new Date(a.lastSync) : new Date(0);
-                const dateB = b.lastSync ? new Date(b.lastSync) : new Date(0);
+            const sortedCars = [...registry!.cars].sort((a, b) => {
+                const dateA = a.lastSync ? new Date(a.lastSync).getTime() : 0;
+                const dateB = b.lastSync ? new Date(b.lastSync).getTime() : 0;
                 return dateB - dateA;
             });
 
@@ -180,13 +221,11 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, [activeCarId, openRegistryModal]);
 
 
-
-
     // Conflict Detection
-    const detectConflict = useCallback((localData, remoteData) => {
+    const detectConflict = useCallback((localData: SyncData, remoteData: SyncData): PendingConflict | null => {
         const localSettings = localData.settings || {};
         const remoteSettings = remoteData.settings || {};
-        const differences = [];
+        const differences: ConflictDifference[] = [];
 
         // Check Car Model
         if (localSettings.carModel && remoteSettings.carModel && localSettings.carModel !== remoteSettings.carModel) {
@@ -223,7 +262,8 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             return {
                 localData,
                 remoteData,
-                differences
+                differences,
+                fileId: 'pending' // Placeholder, will be set in performSync
             };
         }
 
@@ -231,17 +271,17 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
     }, []);
 
     // Resolve Conflict
-    const resolveConflict = useCallback(async (resolution) => {
+    const resolveConflict = useCallback(async (resolution: 'local' | 'cloud' | 'merge') => {
         if (!pendingConflict) return;
 
         const { localData, remoteData, fileId } = pendingConflict;
-        let finalData;
+        let finalData: SyncData;
 
         if (resolution === 'local') {
             finalData = localData;
         } else if (resolution === 'cloud') {
             finalData = remoteData;
-        } else if (resolution === 'merge') {
+        } else {
             finalData = googleDriveService.mergeData(localData, remoteData);
         }
 
@@ -256,7 +296,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             setPendingConflict(null);
             setLastSyncTime(new Date());
             logger.info(`[Sync] Conflict resolved using: ${resolution}`);
-        } catch (e) {
+        } catch (e: any) {
             setError("Error resolviendo conflicto: " + e.message);
             logger.error('[Sync] Resolution failed', e);
         }
@@ -283,10 +323,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, []);
 
-    // Debug log for render
-    // logger.debug(`useGoogleSync Render: localTrips=${localTrips?.length}`);
-
-    const performSync = useCallback(async (newTripsData = null, options = {}) => {
+    const performSync = useCallback(async (newTripsData: Trip[] | null = null, options: { forcePull?: boolean; forcePush?: boolean } = {}) => {
         logger.info(`[Sync] Initiated. Local trips: ${localTrips?.length}, New data: ${newTripsData?.length}, Online: ${navigator.onLine}`);
 
         if (!navigator.onLine) {
@@ -295,7 +332,6 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             return;
         }
 
-        // We rely on service state primarily, as isAuthenticated state might lag during login flow
         if (!googleDriveService.isInited) {
             logger.warn('[Sync] Aborted: service not inited');
             return;
@@ -312,19 +348,17 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             const files = await googleDriveService.listFiles(targetFilename);
             logger.info(`[Sync] Files found: ${files?.length || 0}`);
 
-            let fileId = null;
+            let fileId: string | null = null;
             let legacyImport = false;
 
             if (files && files.length > 0) {
                 // Sort by size (heaviest first)
-                // Note: size is string in API response
                 files.sort((a, b) => {
                     const sizeA = parseInt(a.size || '0', 10);
                     const sizeB = parseInt(b.size || '0', 10);
                     return sizeB - sizeA;
                 });
 
-                // Pick the heaviest
                 const heaviestFile = files[0];
                 fileId = heaviestFile.id;
 
@@ -334,13 +368,9 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 if (files.length > 1) {
                     const duplicates = files.slice(1);
                     logger.warn(`[Sync] Found ${duplicates.length} smaller duplicates. Cleaning up...`);
-
-                    // Process deletions in background to not block sync too much
-                    // or await if we want strict safety. Let's await to ensure clean state.
                     for (const dup of duplicates) {
                         try {
                             await googleDriveService.deleteFile(dup.id);
-                            logger.info(`[Sync] Deleted duplicate: ${dup.id} (${dup.size} bytes)`);
                         } catch (delErr) {
                             logger.error(`[Sync] Failed to delete duplicate ${dup.id}`, delErr);
                         }
@@ -357,7 +387,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             }
 
             // 2. Download Remote Data
-            let remoteData = { trips: [], settings: {}, charges: [] };
+            let remoteData: SyncData = { trips: [], settings: {} as Settings, charges: [] };
             if (fileId) {
                 remoteData = await googleDriveService.downloadFile(fileId);
                 logger.info(`[Sync] Remote data downloaded: ${remoteData.trips?.length} trips`);
@@ -366,14 +396,14 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             // 3. Conflict Check
             const currentTrips = newTripsData || localTrips;
             const currentCharges = Array.isArray(localCharges) ? localCharges : [];
-            const localDataToMerge = { trips: currentTrips, settings: settings, charges: currentCharges };
+            const localDataToMerge: SyncData = { trips: currentTrips, settings: settings, charges: currentCharges };
 
             // Only detect conflict if not a fresh install and not forced
             if (currentTrips.length > 0 && remoteData.trips.length > 0 && !options.forcePull && !options.forcePush) {
                 const conflict = detectConflict(localDataToMerge, remoteData);
                 if (conflict) {
                     logger.warn('[Sync] Conflict detected. Pausing for user action.');
-                    setPendingConflict({ ...conflict, fileId });
+                    setPendingConflict({ ...conflict, fileId: fileId! });
                     setIsSyncing(false);
                     return;
                 }
@@ -382,7 +412,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             // 4. Determine Merge Strategy
             const isFreshLogin = currentTrips.length === 0 && remoteData.trips.length > 0;
 
-            let merged;
+            let merged: SyncData;
             if (isFreshLogin || options.forcePull) {
                 logger.warn(`[Sync] Pulling data from Cloud. Remote: ${remoteData.trips.length} trips.`);
                 merged = remoteData;
@@ -390,10 +420,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 logger.warn(`[Sync] Pushing local data to Cloud. Local: ${currentTrips.length} trips.`);
                 merged = localDataToMerge;
             } else {
-                // Standard Merge
                 merged = googleDriveService.mergeData(localDataToMerge, remoteData);
-
-                // Safety check: Don't allow clearing all trips if we had some before
                 if (merged.trips.length === 0 && currentTrips.length > 0) {
                     logger.error('[Sync] CRITICAL: Merge resulted in 0 trips but local had data. Aborting sync.');
                     throw new Error("Error crítico: La sincronización resultó en datos vacíos. Operación cancelada para proteger tus datos.");
@@ -407,13 +434,11 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             setLocalCharges(merged.charges);
 
             // 6. Upload Merged State
-            // If legacyImport, create NEW file (targetFileId = null)
             const uploadId = legacyImport ? null : fileId;
             const uploadResult = await googleDriveService.uploadFile(merged, uploadId, targetFilename);
             const finalFileId = uploadResult.id;
 
             // 6b. Update Local Car Name if found in settings
-            // This ensures "BYD Recuperado..." is replaced by real name "My Seal" after sync
             if (updateCar && merged.settings?.carModel && activeCarId) {
                 logger.info(`[Sync] Updating car name to: ${merged.settings.carModel}`);
                 updateCar(activeCarId, { name: merged.settings.carModel });
@@ -425,16 +450,17 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             // 7. Update Cloud Registry (background)
             try {
                 const now = new Date().toISOString();
-                const currentReg = await googleDriveService.getRegistry() || { cars: [] };
+                const currentReg: RegistryData = await googleDriveService.getRegistry() || { cars: [], lastUpdated: now };
                 const existingIndex = currentReg.cars.findIndex(c => c.id === activeCarId);
 
-                const carEntry = {
+                const carEntry: Car = {
                     id: activeCarId,
-                    name: settings.carModel || 'Mi BYD',
+                    name: settings.carModel || 'Mi BYD', // This might be loose typing if Settings doesn't have carModel strictly
                     model: 'BYD',
                     lastSync: now,
                     fileId: finalFileId
-                };
+                    // type, isHybrid ?
+                } as Car;
 
                 if (existingIndex >= 0) {
                     currentReg.cars[existingIndex] = { ...currentReg.cars[existingIndex], ...carEntry };
@@ -448,8 +474,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 logger.warn('[Sync] Registry update failed (non-critical)', regErr);
             }
 
-        } catch (e) {
-            // Handle Auth Errors (Redirect to Landing if token dead)
+        } catch (e: any) {
             const isAuthError = e.status === 401 || e.status === 403 ||
                 (e.result?.error?.code === 401 || e.result?.error?.code === 403) ||
                 e.message?.includes('401') || e.message?.includes('403');
@@ -465,22 +490,18 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         } finally {
             setIsSyncing(false);
         }
-    }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout, getTargetFilename, isAuthenticated, activeCarId, totalCars]);
+    }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout, getTargetFilename, isAuthenticated, activeCarId, totalCars, updateCar]);
 
-    // Common login success handler
-    const handleLoginSuccess = useCallback(async (accessToken) => {
+    const handleLoginSuccess = useCallback(async (accessToken: string) => {
         googleDriveService.setAccessToken(accessToken);
         localStorage.setItem('google_access_token', accessToken);
 
-        // Google access tokens typically expire in 1 hour (3600 seconds)
-        // Store expiry time as timestamp
-        const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour from now
+        const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour
         localStorage.setItem('google_token_expiry', expiryTime.toString());
 
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);
 
-        // Registry Check with Conflict Prevention
         const modalOpened = await checkAndPromptRegistry();
 
         if (!modalOpened) {
@@ -490,16 +511,13 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, [fetchUserProfile, performSync, checkAndPromptRegistry]);
 
-    // Ref to hold the latest handleLoginSuccess to avoid stale closures in useGoogleLogin
     const handleLoginSuccessRef = useRef(handleLoginSuccess);
     useEffect(() => {
         handleLoginSuccessRef.current = handleLoginSuccess;
     }, [handleLoginSuccess]);
 
-    // Web login hook (only used on web)
     const webLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
-            // Use ref to ensure we call the latest version with fresh state (localTrips)
             if (handleLoginSuccessRef.current) {
                 await handleLoginSuccessRef.current(tokenResponse.access_token);
             }
@@ -511,15 +529,11 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         scope: "https://www.googleapis.com/auth/drive.appdata"
     });
 
-    // Platform-aware login function
     const login = useCallback(async () => {
         const isNative = Capacitor.isNativePlatform();
 
         if (isNative) {
-            // Native Android/iOS - use Capacitor SocialLogin
             try {
-                // SocialLogin is already initialized in useEffect
-
                 const result = await SocialLogin.login({
                     provider: 'google',
                     options: {
@@ -527,30 +541,23 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                     }
                 });
 
-                // Get access token from authentication - try multiple paths
-                const accessToken = result.result?.accessToken?.token
-                    || result.result?.accessToken
-                    || result.accessToken?.token
-                    || result.accessToken;
-
-                // Get access token from authentication - try multiple paths
+                const resultAny = result as any;
+                const accessToken = resultAny.result?.accessToken?.token
+                    || resultAny.result?.accessToken
+                    || resultAny.accessToken?.token
+                    || resultAny.accessToken;
 
                 if (accessToken) {
                     await handleLoginSuccess(accessToken);
                 } else {
                     logger.error('No accessToken found. Result:', JSON.stringify(result));
-                    // setError("Error crítico: Google no devolvió Token de Acceso (solo ID). Reporta esto.");
-
-                    // Fallback attempt (sometimes plugins put it elsewhere) or try ID token as last resort if needed
-                    // But for now, error out to be safe.
                     setError("Error: No Access Token received.");
                 }
-            } catch (e) {
+            } catch (e: any) {
                 logger.error('Native Login Failed:', e);
                 setError(e.message || "Error al iniciar sesión con Google");
             }
         } else {
-            // Web - use @react-oauth/google
             webLogin();
         }
     }, [webLogin, handleLoginSuccess]);
@@ -567,13 +574,12 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, []);
 
-    const importFromCloud = useCallback(async (fileId) => {
+    const importFromCloud = useCallback(async (fileId: string) => {
         setIsSyncing(true);
         try {
             logger.info(`Importing data from cloud file: ${fileId}`);
             const remoteData = await googleDriveService.downloadFile(fileId);
 
-            // Merge with local data
             const currentTrips = localTrips || [];
             const currentCharges = localCharges || [];
 
@@ -582,19 +588,16 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
                 remoteData
             );
 
-            // Update local state
             setLocalTrips(merged.trips);
             setSettings(merged.settings);
             setLocalCharges(merged.charges);
 
-            // Sync result to CURRENT target file
             const targetFilename = getTargetFilename();
-            // Pass null as fileId to ensure we find/create the TARGET file, not update the source file
             await googleDriveService.uploadFile(merged, null, targetFilename);
 
             setLastSyncTime(new Date());
             return true;
-        } catch (e) {
+        } catch (e: any) {
             logger.error('Import failed', e);
             setError("Error importando: " + e.message);
             return false;
@@ -603,7 +606,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, getTargetFilename]);
 
-    const deleteBackup = useCallback(async (fileId) => {
+    const deleteBackup = useCallback(async (fileId: string) => {
         try {
             await googleDriveService.deleteFile(fileId);
             return true;
@@ -613,53 +616,27 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         }
     }, []);
 
-    const restoreFromRegistry = useCallback(async (car) => {
+    const restoreFromRegistry = useCallback(async (car: any) => {
         setIsSyncing(true);
         try {
             logger.info("Restoring from registry car:", car.id);
-            // 1. Set activeCarId in local storage (CarContext handles state update ideally, but we might need to force reload or callback)
-            // Wait, we can't change activeCarId directly here, it's a prop. 
-            // We need a callback prop to update it?
-            // "useGoogleSync" receives "activeCarId". It doesn't receive "setActiveCarId" or similar.
-            // Oh, we need to pass a method to update the car ID.
-
-            // Actually, we can update localStorage and reload? Or expect the parent to handle it?
-            // Let's modify the signature of useGoogleSync to accept "restoreCar" callback?
-            // Or simpler: We return the car ID, and the component (GoogleSyncSettings) handles it?
-            // But the modal is inside ModalContainer which doesn't have access to CarContext setter easily?
-            // Wait, ModalContainer is inside AppProviders -> CarProvider. So useData uses CarContext.
-            // We can just call a method from useData/CarContext?
-            // But useGoogleSync is a hook used inside DataProvider/useData. Circular?
-
-            // Solution: We'll implement the logic to download data here, but the ID update must happen externally if possible.
-            // OR we assume we can write to localStorage directly for the "fresh install" case and reload.
-            // Let's try to update localStorage and trigger a callback if provided.
-
-            // Better: update file content logic (already handled by performSync if we change ID).
-            // But first we must switch ID.
-
-            // Let's assume we can dispatch an event or use a provided callback.
-            // For now, let's write to localStorage 'byd_active_car_id' and 'byd_cars'.
-
             const carsKey = 'byd_cars';
             const activeKey = 'byd_active_car_id';
 
-            // Construct car object
             const restoredCar = {
                 id: car.id,
                 name: car.name,
-                type: 'ev', // default
+                type: 'ev',
                 isHybrid: false
             };
 
             localStorage.setItem(carsKey, JSON.stringify([restoredCar]));
             localStorage.setItem(activeKey, car.id);
 
-            // Force reload to pick up new context
             window.location.reload();
             return true;
 
-        } catch (e) {
+        } catch (e: any) {
             logger.error('Restore failed', e);
             setError("Error restaurando: " + e.message);
             return false;
@@ -674,38 +651,27 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         return true;
     }, [performSync]);
 
-    // Helper to update registry
     const updateCloudRegistry = useCallback(async () => {
         if (!activeCarId || !googleDriveService.isInited) return;
         try {
-            // Get current file ID
-            // We don't know it easily unless we list?
-            // We can search.
             const targetFilename = `byd_stats_data_${activeCarId}.json`;
             const files = await googleDriveService.listFiles(targetFilename);
             if (!files || files.length === 0) return;
 
             const fileId = files[0].id;
+            const currentReg: RegistryData = await googleDriveService.getRegistry() || { cars: [], lastUpdated: new Date().toISOString() };
 
-            // Get current registry
-            const currentReg = await googleDriveService.getRegistry() || { cars: [] };
-
-            // Update/Add current car
             const now = new Date().toISOString();
-            const carName = settings.carModel || 'Mi BYD'; // Where do we get name? Settings or CarContext?
-            // settings doesn't have name usually? Car object does.
-            // But useGoogleSync doesn't have full car object? 
-            // We might need to pass it or read from settings if we added it there.
-            // Let's assume settings has it or use generic.
+            const carName = settings.carModel || 'Mi BYD';
 
             const existingIndex = currentReg.cars.findIndex(c => c.id === activeCarId);
-            const carEntry = {
+            const carEntry: Car = {
                 id: activeCarId,
                 name: carName,
-                model: 'BYD', // detailed model info?
+                model: 'BYD',
                 lastSync: now,
                 fileId: fileId
-            };
+            } as Car;
 
             if (existingIndex >= 0) {
                 currentReg.cars[existingIndex] = { ...currentReg.cars[existingIndex], ...carEntry };
@@ -714,29 +680,25 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             }
 
             currentReg.lastUpdated = now;
-
             await googleDriveService.updateRegistry(currentReg);
         } catch (e) {
             logger.error('Registry update failed', e);
         }
     }, [activeCarId, settings, googleDriveService]);
 
-    // Hook into performSync to update registry on success?
-    // Or do it separately?
+    const dismissConflict = useCallback(() => {
+        setPendingConflict(null);
+    }, []);
 
-    // --- EFFECTS (Keep after function definitions to avoid TDZ) ---
-
-    // check previous session
     useEffect(() => {
         const checkAuth = async () => {
-            // Init SocialLogin for native
             if (Capacitor.isNativePlatform()) {
                 await SocialLogin.initialize({
                     google: {
                         webClientId: "721727786401-l61n23pt50lq34789851610211116124.apps.googleusercontent.com"
                     }
-                }).catch(err => {
-                    // logger.debug('SocialLogin init error', err);
+                }).catch(() => {
+                    // console.log
                 });
             }
 
@@ -746,28 +708,17 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
             if (token && expiry && Date.now() < parseInt(expiry)) {
                 googleDriveService.setAccessToken(token);
                 setIsAuthenticated(true);
-                // fetch profile
                 fetchUserProfile(token);
 
-                // Registry Check on Session Restore
                 checkAndPromptRegistry().then(opened => {
                     if (opened) {
                         logger.info("[Auth] Registry modal opened, waiting for user action.");
-                    } else {
-                        // Optional: Trigger sync if not opened?
-                        // Standard behavior for session restore is usually passive or auto-refresh on visibility.
-                        // But if token is valid, we might want to sync?
-                        // The original code didn't force sync on session restore immediately unless fresh install.
-                        // Let's keep it passive unless fresh install?
-                        // Actually, if we just logged in (restored session), we should probably sync eventually.
-                        // But let's stick to the prompt logic first.
                     }
                 });
             } else if (token || expiry) {
-                // Token expired - attempt silent refresh if native
                 if (Capacitor.isNativePlatform()) {
                     logger.info("[Auth] Token expired, attempting silent refresh...");
-                    login(); // This will trigger the native SocialLogin which often handles silent refresh
+                    login();
                 } else {
                     localStorage.removeItem('google_access_token');
                     localStorage.removeItem('google_token_expiry');
@@ -777,16 +728,13 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         checkAuth();
     }, [fetchUserProfile, localTrips.length, totalCars, openRegistryModal, login]);
 
-    // Visibility Listener for Auto-Refresh
     useEffect(() => {
         const handleVisibilityChange = () => {
-            // Block auto-sync if registry modal is waiting for user input
             if (isRegistryModalOpen) return;
 
             if (document.visibilityState === 'visible' && isAuthenticated && !isSyncing) {
                 const now = Date.now();
                 const lastSync = lastSyncTime ? lastSyncTime.getTime() : 0;
-                // Min 2 minutes between auto-refreshes on visibility
                 if (now - lastSync > 2 * 60 * 1000) {
                     logger.info("[Sync] App became visible, triggering auto-pull...");
                     performSync();
@@ -798,7 +746,7 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [isAuthenticated, isSyncing, lastSyncTime, performSync, isRegistryModalOpen]);
 
-    return useMemo(() => ({
+    return {
         isAuthenticated,
         isSyncing,
         lastSyncTime,
@@ -806,19 +754,15 @@ export function useGoogleSync(localTrips, setLocalTrips, settings, setSettings, 
         userProfile,
         pendingConflict,
         resolveConflict,
-        dismissConflict: () => setPendingConflict(null),
+        dismissConflict,
         login,
         logout,
-        syncNow: (data, options) => performSync(data, options),
+        syncNow: performSync,
         checkCloudBackups,
         importFromCloud,
         deleteBackup,
         restoreFromRegistry,
         skipRegistryRestore,
         updateCloudRegistry
-    }), [
-        isAuthenticated, isSyncing, lastSyncTime, error, userProfile, pendingConflict,
-        resolveConflict, login, logout, performSync, checkCloudBackups, importFromCloud, deleteBackup,
-        restoreFromRegistry, skipRegistryRestore, updateCloudRegistry
-    ]);
+    };
 }
