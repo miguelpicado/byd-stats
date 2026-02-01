@@ -14,7 +14,12 @@ const api = {
 
     // AI SoH Methods
     trainSoH: (charges: any[], capacity: number) => predictiveService.trainSoH(charges, capacity),
-    getSoHStats: (charges: any[], capacity: number) => predictiveService.getSoHDataPoints(charges, capacity)
+
+    getSoHStats: (charges: any[], capacity: number) => predictiveService.getSoHDataPoints(charges, capacity),
+
+    // AI Parking Methods
+    trainParking: (trips: any[]) => predictiveService.trainParking(trips),
+    predictDeparture: (startTime: number) => predictiveService.predictDeparture(startTime)
 };
 
 // Expose the API to the main thread

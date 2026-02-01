@@ -1,4 +1,4 @@
-import { useRef, useEffect, FC } from 'react';
+import { useRef, useEffect, useState, useMemo, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import StatCard from '@components/ui/StatCard';
@@ -7,9 +7,11 @@ import HybridStatsCard from '@components/cards/HybridStatsCard';
 import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
-import { MapPin, Zap, Clock, Battery, TrendingUp, Activity, Fuel, IconProps } from '@components/Icons';
+import HealthReportModal from '@components/modals/HealthReportModal';
+import { MapPin, Zap, Clock, Battery, TrendingUp, Activity, Fuel, IconProps, AlertTriangle } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
 import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
+import { AnomalyService, Anomaly } from '@/services/AnomalyService';
 
 const PIE_CHART_OPTIONS = {
     maintainAspectRatio: false,
@@ -88,6 +90,18 @@ const OverviewContent: FC<OverviewContentProps> = ({
     // Refs to chart instances for manual animation control
     const lineChartRef = useRef<any>(null);
     const pieChartRef = useRef<any>(null);
+
+    const [showHealthModal, setShowHealthModal] = useState(false);
+
+    // Calculate Anomalies
+    const anomalies: Anomaly[] = useMemo(() => {
+        if (!stats || !settings) return [];
+        return AnomalyService.checkSystemHealth(stats, settings, charges || [], trips);
+    }, [stats, settings, charges, trips]);
+
+    const criticalAnomalies = anomalies.filter(a => a.severity === 'critical').length;
+    const warningAnomalies = anomalies.filter(a => a.severity === 'warning').length;
+    const hasAnomalies = anomalies.length > 0;
 
     // Effect to trigger animation when tab becomes active
     useEffect(() => {
@@ -195,13 +209,16 @@ const OverviewContent: FC<OverviewContentProps> = ({
             onClick: () => onInsightClick('soh')
         },
         {
-            key: 'speed',
-            icon: TrendingUp,
-            label: t('stats.speed'),
-            value: summary.avgSpeed,
-            unit: t('units.kmh'),
-            color: "bg-blue-500/20 text-blue-400",
-            onClick: () => onInsightClick('speed')
+            key: 'system_health',
+            icon: hasAnomalies ? AlertTriangle : Activity,
+            label: t('stats.systemStatus', 'Estado Sistema'),
+            value: hasAnomalies ? `${anomalies.length} Alerta${anomalies.length > 1 ? 's' : ''}` : t('stats.normal', 'Normal'),
+            unit: '',
+            color: criticalAnomalies > 0
+                ? "bg-red-500/20 text-red-500"
+                : (warningAnomalies > 0 ? "bg-amber-500/20 text-amber-500" : "bg-emerald-500/20 text-emerald-500"),
+            sub: hasAnomalies ? t('stats.checkDetails', 'Ver detalles') : t('stats.allSystemsOk', 'Todo correcto'),
+            onClick: () => setShowHealthModal(true)
         }
     ];
 
@@ -317,6 +334,11 @@ const OverviewContent: FC<OverviewContentProps> = ({
             <OdometerAdjustmentModal
                 isOpen={showOdometerModal}
                 onClose={onCloseOdometerModal}
+            />
+            <HealthReportModal
+                isOpen={showHealthModal}
+                onClose={() => setShowHealthModal(false)}
+                anomalies={anomalies}
             />
         </div>
     );

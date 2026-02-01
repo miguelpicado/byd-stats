@@ -5,6 +5,7 @@ import ModalPortal from '../common/ModalPortal';
 import { X, Zap, Calendar, TrendingUp, Info, ChevronLeft, ChevronRight } from '../Icons';
 import { ChargingLogic } from '../../core/chargingLogic';
 import { ProcessedData, Settings, Charge, Trip } from '../../types';
+import { useData } from '../../providers/DataProvider';
 
 interface ChargingInsightsModalProps {
     isOpen: boolean;
@@ -28,7 +29,9 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     trips = []
 }) => {
     const { t } = useTranslation();
+    const { predictDeparture } = useData();
     const [view, setView] = useState<InsightView>('main');
+    const [aiPredictions, setAiPredictions] = useState<Record<string, string>>({});
 
     // Reset view when opening/closing
     React.useEffect(() => {
@@ -82,6 +85,45 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
             dailyGoal: avgDailyKwh * (seasonalFactor.factor || 1)
         };
     }, [charges, stats, settings, summary, trips]);
+
+    // AI Prediction Effect
+    React.useEffect(() => {
+        if (isOpen && smartCharging && smartCharging.windows.length > 0 && predictDeparture) {
+            const loadPredictions = async () => {
+                const preds: Record<string, string> = {};
+                for (const w of smartCharging.windows) {
+                    // Create date object for 'Next occurrence of Day at StartTime'
+                    const now = new Date();
+                    const dayMap: Record<string, number> = { 'mingo': 0, 'lunes': 1, 'martes': 2, 'rcoles': 3, 'ueves': 4, 'iernes': 5, 'bado': 6 };
+                    // Fuzzy match day name
+                    const dName = w.day.toLowerCase();
+                    let targetDay = -1;
+                    Object.keys(dayMap).forEach(k => { if (dName.includes(k)) targetDay = dayMap[k]; });
+
+                    if (targetDay !== -1) {
+                        const currentDay = now.getDay();
+                        let diff = targetDay - currentDay;
+                        if (diff <= 0) diff += 7; // Next occurrence
+                        const targetDate = new Date(now);
+                        targetDate.setDate(now.getDate() + diff);
+
+                        const [hours, mins] = w.start.split(':').map(Number);
+                        targetDate.setHours(hours, mins, 0, 0);
+
+                        const prediction = await predictDeparture(targetDate.getTime());
+                        if (prediction) {
+                            const dep = new Date(prediction.departureTime);
+                            const h = dep.getHours().toString().padStart(2, '0');
+                            const m = dep.getMinutes().toString().padStart(2, '0');
+                            preds[w.day + w.start] = `${h}:${m}`;
+                        }
+                    }
+                }
+                setAiPredictions(preds);
+            };
+            loadPredictions();
+        }
+    }, [isOpen, smartCharging, predictDeparture]);
 
     if (!isOpen) return null;
 
@@ -145,7 +187,14 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                             {smartCharging.windows.map((w, i) => (
                                 <div key={i} className="bg-white/50 dark:bg-slate-800/50 px-3 py-2 rounded-lg border border-blue-100 dark:border-blue-800/30 flex items-center justify-between shadow-sm text-sm">
                                     <span className="font-black text-blue-800 dark:text-blue-200">{t(`daysShort.${w.day.toLowerCase().substring(0, 3)}`, w.day)}</span>
-                                    <span className="font-medium text-slate-700 dark:text-slate-300">{w.start} - {w.end}</span>
+                                    <span className="font-medium text-slate-700 dark:text-slate-300">
+                                        {w.start} - {w.end}
+                                        {aiPredictions[w.day + w.start] && (
+                                            <span className="ml-2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/40 px-1.5 py-0.5 rounded animate-pulse">
+                                                AI: ➜ {aiPredictions[w.day + w.start]}
+                                            </span>
+                                        )}
+                                    </span>
                                 </div>
                             ))}
                         </div>
