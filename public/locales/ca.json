@@ -10,10 +10,40 @@
         "no": "No",
         "or": "O",
         "showAll": "Mostrar tot",
-        "noData": "No hi ha dades per mostrar",
+        "noData": "Sense dades per mostrar",
         "allTrips": "Tots els viatges",
         "last10Trips": "Últims 10 viatges",
-        "errorLoadingTab": "Error en carregar la pestanya"
+        "errorLoadingTab": "Error carregant la pestanya"
+    },
+    "insights": {
+        "chargingTitle": "Anàlisi de càrrega amb IA",
+        "aiPowered": "Potenciat per IA",
+        "dailyGoal": "Meta Diària Recomanada",
+        "dailyDesc": "Basat en el teu consum dels últims 30 dies, carregar {{kwh}} kWh diaris mantindrà la teva bateria estable.",
+        "bestDay": "Dia òptim per càrrega",
+        "type": "Tipus Càrrega",
+        "slow": "Lenta",
+        "fast": "Ràpida",
+        "costSavings": "Estalvi Potencial",
+        "costDesc": "Movent les teves càrregues nocturnes al període vall ({{window}}) podries estalviar ~{{amount}}€ a l'any.",
+        "chargerStatus": "✅ Carregador {{amps}}A suficient",
+        "chargerWarning": "⚠️ Carregador {{amps}}A insuficient",
+        "comfortZone": "Zona de Confort",
+        "comfortDesc": "Rarament baixes del {{soc}}% de bateria. Tens marge per espaiar les càrregues cada {{days}} dies.",
+        "howItWorks": "Com funciona",
+        "aiCheck": "La IA analitza el teu historial de conducció (velocitat vs eficiència) i temperatura per predir l'autonomia amb més precisió.",
+        "notEnoughData": "No hi ha dades suficients. Usant estimació estàndard fins a tenir ~5 viatges vàlids.",
+        "predictedRange": "Autonomia Prevista per Escenari",
+        "rangeAxis": "Autonomia (km)",
+        "dailyExplanation": "La IA analitza el teu consum mitjà diari i aplica correccions estacionals per suggerir una càrrega que mantingui el SoC estable sense cicles profunds innecessaris.",
+        "optimalDayDesc": "Els teus patrons de conducció indiquen que aquest és el dia amb menor ús del vehicle o major disponibilitat per a càrrega lenta, ideal per equilibrar cel·les.",
+        "recommendation": "Recomanació",
+        "noData": "No hi ha dades suficients per generar una recomanació.",
+        "scenario": "Escenari",
+        "city": "Ciutat",
+        "mixed": "Mixt",
+        "highway": "Autopista",
+        "optimal_maintenance": "Mantenimen Óptim (Balanceig)"
     },
     "tabs": {
         "overview": "Resum",
@@ -319,6 +349,28 @@
             "formatHint": "Format: MM/YY (Ex. 03/24)",
             "save": "Confirmar Data",
             "invalid": "Format no vàlid (MM/YY)"
+        },
+        "batteryHealth": {
+            "title": "Salut de Bateria (SoH)",
+            "aiAnalysis": "Anàlisi AI Empíric",
+            "aiAnalysisTitle": "Anàlisi del SoH amb IA",
+            "realSoH": "SoH Real (AI)",
+            "samples": "Mostres",
+            "aiDesc": "La IA analitza les teves càrregues profundes (>20%) per calcular la degradació real, ignorant les fluctuacions diàries.",
+            "notEnoughData": "Necessitem més dades",
+            "requirements": "Registra almenys 3 càrregues amb més del 20% d'energia afegida per calibrar la IA."
+        },
+        "thermalStress": {
+            "configuration": "Configuració Tèrmica",
+            "title": "Factor d'Estrès Tèrmic",
+            "desc": "Ajusta el factor multiplicador segons la temperatura mitjana anual d'on vius. La calor accelera la degradació química de les cel·les LFP.",
+            "info": "Aquest valor afecta globalment al desgast per cicles i degradació SEI.",
+            "factor": "Factor Seleccionat",
+            "recommendations": "Recomanacions",
+            "recCold": "Clima fred / Temperat",
+            "recIdeal": "Clima ideal / Estàndard",
+            "recHot": "Clima càlid / Estius calorosos",
+            "recExtreme": "Clima extrem / Desèrtic"
         }
     },
     "errors": {
@@ -687,6 +739,32 @@
             "a1": "Si l'aplicació et resulta útil i vols donar suport al seu manteniment i desenvolupament continu, pots fer una petita donació voluntària a través de Ko-fi. Qualsevol aportació és immensament agraïda!",
             "q2": "Tens dubtes o suggeriments?",
             "a2": "Per a qualsevol consulta, idea, aportació o si trobes algun problema, no dubtis a escriure'm a"
+        },
+        "modals": {
+            "bms": {
+                "title": "BMS i Calibratge LFP",
+                "definition": "En bateries LFP, la corba de voltatge és molt plana, la qual cosa dificulta a la BMS saber l'energia exacta sense arribar als extrems. Per això, el desbalanceig és habitual i esperable en aquesta tecnologia.",
+                "calculation": "L'avís apareix si la BMS detecta diferències de voltatge entre cel·les o si ha passat molt temps sense arribar al 100%. Necessita aquest punt de referència (top balancing) per resincronitzar-se.",
+                "impact": "Es recomana carregar al 100% almenys un cop al mes i deixar-lo endollat unes hores extra per al balanceig. Les bateries LFP són robustes i toleren bé el 100%, especialment si s'usa el cotxe poc després d'acabar el balanceig."
+            },
+            "formula": {
+                "title": "Fórmula Teòrica SoH",
+                "definition": "Estimació matemàtica basada en la química de les cel·les LFP i l'historial d'ús del vehicle.\n\nConstants utilitzades:\n• SEI: Màxim 2% (primers 50 cicles)\n• Cicles: 0.005% per cicle (ajustat per estrès)\n• Temps: 0.75% per any",
+                "calculation": "SoH = 100% - SEI - (Cicles × 0.005% × Estrès) - (Anys × 0.75%)",
+                "impact": "Aquest valor és una aproximació teòrica. El SoH real pot variar i la BMS del cotxe és la que té l'última paraula sobre la capacitat usable actual."
+            },
+            "ai_soh": {
+                "title": "SoH Real (Anàlisi IA)",
+                "definition": "Càlcul empíric basat en les teves sessions de càrrega reals. La IA analitza quanta energia entra realment a la bateria vs. el percentatge reportat pel cotxe.",
+                "calculation": "Usa regressió lineal sobre les teves càrregues històriques per trobar la 'capacitat total efectiva' actual. Si carregar un 50% de bateria requereix 30kWh, la teva capacitat total és 60kWh.",
+                "impact": "Aquest valor és més precís que el teòric perquè reflecteix la salut real de les teves cel·les. Pot ser menor que el teòric (si hi ha cel·les desbalancejades) o major (si la bateria rendeix millor de l'esperat)."
+            },
+            "samples": {
+                "title": "Mostres de Qualitat",
+                "definition": "Nombre de sessions de càrrega que la IA ha considerat vàlides per al seu càlcul.",
+                "calculation": "La IA descarta automàticament càrregues petites (<15-20%), càrregues molt lentes o amb interrupcions, ja que introdueixen molt 'soroll' i error en les dades.",
+                "impact": "És normal tenir menys mostres que càrregues totals. Quantes més mostres de qualitat (càrregues profundes) tinguis, més precís serà el càlcul del SoH Real."
+            }
         }
     }
 }

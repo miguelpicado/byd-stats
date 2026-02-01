@@ -28,6 +28,7 @@
     "@capgo/capacitor-social-login": "^8.2.11",
     "@react-oauth/google": "^0.13.4",
     "@tanstack/react-virtual": "^3.13.18",
+    "@tensorflow/tfjs": "^4.22.0",
     "chart.js": "^4.5.1",
     "comlink": "^4.4.2",
     "date-fns": "^4.1.0",
@@ -41,7 +42,8 @@
     "react-hot-toast": "^2.6.0",
     "react-i18next": "^16.5.2",
     "react-router-dom": "^7.12.0",
-    "sql.js": "^1.13.0"
+    "sql.js": "^1.13.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",

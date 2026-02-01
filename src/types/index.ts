@@ -12,6 +12,10 @@ export interface Trip {
     calculatedCost?: number;
     electricCost?: number;
     fuelCost?: number;
+    totalCost?: number;
+    regeneration?: number;
+    id?: string;
+    startTime?: string;
 }
 
 export interface Charge {
@@ -31,19 +35,61 @@ export interface Charge {
     speedKw?: number;
     timestamp?: number;
     effectivePrice?: number;
+    pricePerLiter?: number;
+    isSOCEstimated?: boolean;
+    location?: string;
+}
+
+export interface Car {
+    id: string;
+    name: string;
+    type: 'ev' | 'phev' | 'hybrid'; // normalized types
+    isHybrid: boolean;
+    vin?: string;
+    plate?: string;
+    model?: string;
+    lastSync?: string;
+    fileId?: string;
 }
 
 export interface Settings {
+    // Car specific
+    carModel?: string;
+    licensePlate?: string;
+    insurancePolicy?: string;
+
+    // Battery & Calculations
     batterySize: string | number;
     soh: string | number;
     mfgDate?: string;
+    mfgDateDisplay?: string;
     sohMode?: 'manual' | 'calculated';
+    odometerOffset?: number | string;
+
+    // Prices & Strategies
     chargerTypes?: ChargerType[];
     thermalStressFactor?: number;
     electricStrategy?: 'custom' | 'average' | 'dynamic';
     fuelStrategy?: 'custom' | 'average' | 'dynamic';
     electricPrice?: string | number;
     fuelPrice?: string | number;
+    useCalculatedPrice?: boolean;
+    useCalculatedFuelPrice?: boolean;
+    priceStrategy?: string; // legacy support
+    fuelPriceStrategy?: string; // legacy support
+
+    // Home Charging Settings
+    homeChargerRating?: number; // Amps (default 8)
+    offPeakEnabled?: boolean;
+    offPeakStart?: string; // HH:MM
+    offPeakEnd?: string; // HH:MM
+    offPeakStartWeekend?: string; // HH:MM
+    offPeakEndWeekend?: string; // HH:MM
+    offPeakPrice?: number; // Price per kWh
+
+    // UI
+    theme?: 'auto' | 'dark' | 'light' | 'system';
+    hiddenTabs?: string[];
 }
 
 export interface ChargerType {
@@ -126,6 +172,8 @@ export interface SoHData {
         calendar: number;
     };
 }
+
+export type TripInsightType = 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays' | 'stationary' | 'soh' | 'fuel' | 'range';
 
 export interface ProcessedData {
     summary: Summary;

@@ -9,6 +9,13 @@ const mockUpdateSettings = vi.fn();
 const mockAddMultipleCharges = vi.fn();
 const mockSyncNow = vi.fn();
 
+vi.mock('react-hot-toast', () => ({
+    toast: {
+        success: vi.fn(),
+        error: vi.fn()
+    }
+}));
+
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: mockT })
 }));
