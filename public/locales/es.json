@@ -126,7 +126,8 @@
         "highway": "Autopista",
         "cityDesc": "Baja velocidad, alta eficiencia por regeneración. Ideal para eléctrico.",
         "highwayDesc": "Alta velocidad, mayor consumo por resistencia aerodinámica.",
-        "mixedDesc": "Combinación de ciudad y carretera. Consumo equilibrado.",
+        "mixedDesc": "Equilibrio entre conducción urbana y carretera.",
+        "analyzing": "La IA está analizando tus viajes... Esto puede tardar unos segundos.",
         "tips": {
             "city1": "Usa modo Eco para aceleración suave",
             "city2": "Maximiza regeneración (High)",
