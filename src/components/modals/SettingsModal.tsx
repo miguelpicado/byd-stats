@@ -4,7 +4,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
 import { BYD_RED, TAB_ORDER } from '@core/constants';
-import { Settings, Zap, Trash2, Eye, EyeOff, Calendar, Info } from '../Icons';
+import { Settings, Zap, Trash2, Eye, EyeOff, Calendar } from '../Icons';
 import ModalHeader from '../common/ModalHeader';
 import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag } from '../FlagIcons';
 // @ts-ignore
@@ -212,31 +212,7 @@ const SettingsModal: React.FC = () => {
                                     <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{sohData?.estimated_soh || 100}%</span>
                                 </div>
 
-                                <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200/50 dark:border-slate-600/50">
-                                    <div>
-                                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{t('settings.stressScore')}</p>
-                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{sohData?.stress_score || 1.0}</p>
-                                    </div>
-                                    <div>
-                                        <p className="text-[10px] text-slate-400 uppercase tracking-wider">{t('settings.cyclesCount')}</p>
-                                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">{sohData?.real_cycles_count || 0}</p>
-                                    </div>
-                                </div>
 
-                                {sohData?.calibration_warning && (
-                                    <div className="mt-2 px-3 py-2 bg-amber-50 dark:bg-amber-900/20 rounded-lg flex items-center gap-2 border border-amber-100 dark:border-amber-900/30">
-                                        <Info className="w-4 h-4 text-amber-600 dark:text-amber-500" />
-                                        <span className="text-[10px] font-medium text-amber-700 dark:text-amber-300">{t('settings.calibrationWarning')}</span>
-                                    </div>
-                                )}
-
-                                <button
-                                    onClick={() => setShowMfgModal(true)}
-                                    className="w-full mt-1 py-1.5 text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1"
-                                >
-                                    <Calendar className="w-3 h-3" />
-                                    {settings.mfgDateDisplay || t('settings.mfgDate')}
-                                </button>
                             </div>
                         )}
                     </div>
