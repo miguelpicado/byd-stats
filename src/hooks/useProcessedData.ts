@@ -75,71 +75,73 @@ export const useProcessedData = (
         let isMounted = true;
 
         const process = async () => {
-            // Processing logic remains same...
             if (!filteredTrips || filteredTrips.length === 0) {
                 if (isMounted) setData(null);
                 return;
             }
 
-            setIsProcessing(true);
-            try {
-                const processingSettings = {
-                    electricStrategy: settings?.electricStrategy || (settings?.electricStrategy === undefined && settings?.electricPrice ? 'custom' : 'average'),
-                    fuelStrategy: settings?.fuelStrategy || 'average',
-                    electricPrice: Number(settings?.electricPrice) || 0,
-                    fuelPrice: Number(settings?.fuelPrice) || 0,
-                    batterySize: Number(settings?.batterySize) || 0,
-                    soh: Number(settings?.soh) || 100,
-                    sohMode: settings?.sohMode || 'manual',
-                    mfgDate: settings?.mfgDate,
-                    chargerTypes: settings?.chargerTypes || [],
-                    thermalStressFactor: parseFloat(String(settings?.thermalStressFactor)) || 1.0,
-                    odometerOffset: 0
-                };
+            // Create settings object for processing
+            const processingSettings = {
+                electricStrategy: settings?.electricStrategy || (settings?.electricStrategy === undefined && settings?.electricPrice ? 'custom' : 'average'),
+                fuelStrategy: settings?.fuelStrategy || 'average',
+                electricPrice: Number(settings?.electricPrice) || 0,
+                fuelPrice: Number(settings?.fuelPrice) || 0,
+                batterySize: Number(settings?.batterySize) || 0,
+                soh: Number(settings?.soh) || 100,
+                sohMode: settings?.sohMode || 'manual',
+                mfgDate: settings?.mfgDate,
+                chargerTypes: settings?.chargerTypes || [],
+                thermalStressFactor: parseFloat(String(settings?.thermalStressFactor)) || 1.0,
+                odometerOffset: 0
+            };
 
-                const rawSettings: any = settings || {};
-                processingSettings.odometerOffset = parseFloat(rawSettings.odometerOffset) || 0;
+            const rawSettings: any = settings || {};
+            processingSettings.odometerOffset = parseFloat(rawSettings.odometerOffset) || 0;
 
-                if (rawSettings.priceStrategy) processingSettings.electricStrategy = rawSettings.priceStrategy;
-                if (rawSettings.useCalculatedPrice) processingSettings.electricStrategy = 'average';
+            if (rawSettings.priceStrategy) processingSettings.electricStrategy = rawSettings.priceStrategy;
+            if (rawSettings.useCalculatedPrice) processingSettings.electricStrategy = 'average';
 
-                // --- AI Caching Logic ---
-                // Hash: TripsSignature + SettingsSignature
-                const tripsHash = `${filteredTrips.length}_${filteredTrips[0]?.date || ''}`;
-                const settingsHash = `${processingSettings.batterySize}_${processingSettings.soh}`;
-                const currentHash = `${tripsHash}__${settingsHash}`;
+            // --- AI Caching Logic ---
+            // Hash: TripsSignature + SettingsSignature
+            const tripsHash = `${filteredTrips.length}_${filteredTrips[0]?.date || ''}`;
+            const settingsHash = `${processingSettings.batterySize}_${processingSettings.soh}`;
+            const currentHash = `${tripsHash}__${settingsHash}`;
 
-                const chargeHash = `${charges.length}_${charges[0]?.date || ''}`;
-                // Version 6: Validating weighted median with 10% filter
-                const sohHash = `${chargeHash}__${processingSettings.batterySize}__v8`;
+            const chargeHash = `${charges.length}_${charges[0]?.date || ''}`;
+            // Version 8: Validating weighted median with 10% filter
+            const sohHash = `${chargeHash}__${processingSettings.batterySize}__v8`;
 
-                // Check Cache
-                let cacheHit = false;
-                if (aiCache && aiCache.hash === currentHash && aiCache.scenarios.length > 0) {
-                    if (isMounted) {
-                        setAiScenarios(aiCache.scenarios);
-                        setAiLoss(aiCache.loss);
-                        cacheHit = true;
-                    }
+            // Check Cache
+            let cacheHit = false;
+            let sohCacheHit = false;
+
+            if (aiCache && aiCache.hash === currentHash && aiCache.scenarios.length > 0) {
+                if (isMounted) {
+                    setAiScenarios(aiCache.scenarios);
+                    setAiLoss(aiCache.loss);
+                    cacheHit = true;
                 }
+            }
 
-                // Check SoH Cache
-                let sohCacheHit = false;
-                if (sohCache && sohCache.hash === sohHash && sohCache.soh > 0) {
-                    if (isMounted) {
-                        setAiSoH(sohCache.soh);
-                        setAiSoHStats(sohCache.stats);
-                        sohCacheHit = true;
-                    }
+            if (sohCache && sohCache.hash === sohHash && sohCache.soh > 0) {
+                if (isMounted) {
+                    setAiSoH(sohCache.soh);
+                    setAiSoHStats(sohCache.stats);
+                    sohCacheHit = true;
                 }
+            }
 
-                if (workerRef.current) {
+            if (workerRef.current) {
+                setIsProcessing(true);
+                try {
                     const result = await workerRef.current.processData(
                         filteredTrips,
                         JSON.parse(JSON.stringify(processingSettings)),
                         JSON.parse(JSON.stringify(charges)),
                         i18n.language
                     );
+
+                    if (!isMounted) return;
 
                     if (result && processingSettings.odometerOffset) {
                         const baseKm = parseFloat(result.summary.totalKm);
@@ -148,9 +150,12 @@ export const useProcessedData = (
                         }
                     }
 
+                    if (isMounted) setData(result);
+
                     // Train AI Range Model
                     if (!cacheHit && filteredTrips.length > 5) {
-                        setIsAiTraining(true);
+                        if (isMounted) setIsAiTraining(true);
+
                         workerRef.current.trainModel(filteredTrips).then(({ loss }) => {
                             if (!isMounted) return;
                             setAiLoss(loss);
@@ -176,8 +181,6 @@ export const useProcessedData = (
 
                     // Train AI SoH Model
                     if (!sohCacheHit && charges.length > 0) {
-                        // We could also track SoH training with a separate flag if needed, 
-                        // but usually range training is the long one.
                         const capacity = processingSettings.batterySize;
                         workerRef.current.trainSoH(JSON.parse(JSON.stringify(charges)), capacity).then(({ predictedSoH }) => {
                             if (!isMounted) return;
@@ -195,12 +198,11 @@ export const useProcessedData = (
                         }).catch(err => logger.warn('AI SoH Training error:', err));
                     }
 
-                    if (isMounted) setData(result);
+                } catch (e) {
+                    logger.error('Worker processing error:', e);
+                } finally {
+                    if (isMounted) setIsProcessing(false);
                 }
-            } catch (e) {
-                logger.error('Worker processing error:', e);
-            } finally {
-                if (isMounted) setIsProcessing(false);
             }
         };
 
