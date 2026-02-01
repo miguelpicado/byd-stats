@@ -50,6 +50,7 @@ export interface DataState {
     isAiTraining: boolean;
     aiSoH: number | null;
     aiSoHStats: { points: any[]; trend: any[] } | null;
+    predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
 
     // ... other state
 }
@@ -154,6 +155,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const isAiTraining = appData.isAiTraining || false;
     const aiSoH = appData.aiSoH || null;
     const aiSoHStats = appData.aiSoHStats || null;
+    const predictDeparture = appData.predictDeparture;
 
     const {
         filterType, setFilterType,
@@ -355,12 +357,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ...modalState, // Spread remaining modal state
         fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining
+        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture
     }), [
         rawTrips, filtered, data, charges, tripHistory,
         settings, googleSync, database, modalState, fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining
+        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture
     ]);
 
     // Dispatch Value

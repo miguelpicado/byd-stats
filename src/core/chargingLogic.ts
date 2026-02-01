@@ -118,7 +118,7 @@ export const ChargingLogic = {
         }
 
         const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const dayShorts = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
 
         // Helper to format time "HH:MM"
         const formatTime = (date: Date) => {
@@ -335,7 +335,18 @@ export const ChargingLogic = {
             };
         });
 
-        // B. Sort by "Yield" (Longest charging windows first)
+        // B. Sort by "Yield" (Longest charging windows first), with preference for Weekends/Monday Morning
+        // We want to prioritize continuity: Sat -> Sun -> Mon Am
+        availableSlots.forEach(s => {
+            let multiplier = 1.0;
+            // Preference for Saturday (6) and Sunday (0)
+            if (s.day === 'Sábado' || s.day === 'Domingo') multiplier = 1.3;
+            // Preference for Monday (1) early morning (continuation of Sunday)
+            if (s.day === 'Lunes' && parseInt(s.start.split(':')[0]) < 10) multiplier = 1.2;
+
+            s.score = s.avgDuration * multiplier;
+        });
+
         availableSlots.sort((a, b) => b.score - a.score);
 
         // C. Fill the bucket
@@ -355,9 +366,21 @@ export const ChargingLogic = {
             accumulatedHours += slot.avgDuration;
         }
 
-        // D. Sort output chronologically
-        const dayOrder = (d: string) => days.indexOf(d);
-        recommendedWindows.sort((a, b) => dayOrder(a.day) - dayOrder(b.day));
+        // D. Sort output chronologically (Visual Flow: Sat -> Sun -> Mon -> ...)
+        // We want the user to see the "Weekend Block" first.
+        // Map: Sat(6)->0, Sun(0)->1, Mon(1)->2 ... Fri(5)->6
+        const getDaySortIndex = (d: string) => {
+            const idx = days.indexOf(d);
+            return (idx + 1) % 7;
+        };
+
+        recommendedWindows.sort((a, b) => {
+            const idxA = getDaySortIndex(a.day);
+            const idxB = getDaySortIndex(b.day);
+            if (idxA !== idxB) return idxA - idxB;
+            // Secondary sort by time
+            return a.start.localeCompare(b.start);
+        });
 
         return {
             windows: recommendedWindows,

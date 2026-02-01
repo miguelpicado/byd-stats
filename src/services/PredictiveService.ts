@@ -23,6 +23,9 @@ export class PredictiveService {
         variance: number;
     } | null = null;
 
+    private parkingModel: tf.Sequential | null = null;
+
+
     /**
      * Train the model with historical trip data
      */
@@ -457,4 +460,157 @@ export class PredictiveService {
             };
         });
     }
+
+    /**
+     * Train Parking Model to predict Departure Time / Duration
+     * Inputs: [DayOfWeek (sin/cos), StartHour (sin/cos)] -> Cyclic Time Features?
+     * Simplified Inputs: [DayIndex (0-6), StartHour (0-24)]
+     * Target: Duration (Hours)
+     */
+    async trainParking(trips: Trip[]): Promise<{ loss: number; samples: number }> {
+        this.parkingModel = null;
+
+
+        // 1. Extract Parking Events from Trips
+        // Sort trips by start time
+        const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+        const events: ParkingEvent[] = [];
+
+        for (let i = 0; i < sorted.length - 1; i++) {
+            const currentTrip = sorted[i];
+            const nextTrip = sorted[i + 1];
+
+            const endOfTrip = (currentTrip.end_timestamp || 0) * 1000;
+            const startOfNext = (nextTrip.start_timestamp || 0) * 1000;
+
+            if (endOfTrip > 0 && startOfNext > endOfTrip) {
+                const durationMs = startOfNext - endOfTrip;
+                const durationHours = durationMs / (1000 * 60 * 60);
+
+                // Filter valid parking: > 15 mins, < 14 days (vacation?)
+                if (durationHours > 0.25 && durationHours < 24 * 14) {
+                    const date = new Date(endOfTrip);
+                    events.push({
+                        start: endOfTrip,
+                        end: startOfNext,
+                        duration: durationHours,
+                        dayOfWeek: date.getDay(),
+                        startHour: date.getHours() + (date.getMinutes() / 60)
+                    });
+                }
+            }
+        }
+
+        if (events.length < 5) return { loss: 0, samples: 0 };
+
+        logger.debug(`[AI Parking] Training with ${events.length} events.`);
+
+        // 2. Prepare Tensors
+        // Features: [DayIndex, StartHour] => Normalize these!
+        // We could use Sin/Cos encoding for cyclic features, but for v1 let's try raw normalized.
+        // Actually, cyclic is safer for "Sunday vs Monday".
+        // Let's use: [sin(day), cos(day), sin(hour), cos(hour)]
+        // Day 0-6 => 2*PI * day / 7
+        // Hour 0-24 => 2*PI * hour / 24
+
+        const features = events.map(e => {
+            const dayRad = (2 * Math.PI * e.dayOfWeek) / 7;
+            const hourRad = (2 * Math.PI * e.startHour) / 24;
+            // Feature 5: Weekend Block (Sat/Sun or Mon < 08:00)
+            const isWeekendBlock = (e.dayOfWeek === 6 || e.dayOfWeek === 0 || (e.dayOfWeek === 1 && e.startHour < 8)) ? 1 : 0;
+
+            return [
+                Math.sin(dayRad), Math.cos(dayRad),
+                Math.sin(hourRad), Math.cos(hourRad),
+                isWeekendBlock
+            ];
+        });
+
+        const labels = events.map(e => [e.duration]);
+
+        const featureTensor = tf.tensor2d(features);
+        const labelTensor = tf.tensor2d(labels);
+
+        // 3. Define Model
+        // 4 Inputs -> Hidden(16, relu) -> Hidden(8, relu) -> Output(1, relu to force positive)
+        this.parkingModel = tf.sequential();
+        this.parkingModel.add(tf.layers.dense({
+            units: 16,
+            inputShape: [5], // Added weekend feature
+            activation: 'relu' // Learn patterns
+        }));
+        this.parkingModel.add(tf.layers.dense({
+            units: 8,
+            activation: 'relu'
+        }));
+        this.parkingModel.add(tf.layers.dense({
+            units: 1,
+            activation: 'linear' // Duration can be anything, but usually positive.
+        }));
+
+        this.parkingModel.compile({
+            optimizer: tf.train.adam(0.01), // Slightly higher LR for simple data
+            loss: 'meanSquaredError'
+        });
+
+        // 4. Train
+        const history = await this.parkingModel.fit(featureTensor, labelTensor, {
+            epochs: 200, // Quick train
+            batchSize: 32,
+            shuffle: true,
+            verbose: 0
+        });
+
+        const loss = history.history.loss[history.history.loss.length - 1] as number;
+        logger.debug(`[AI Parking] Final Loss (MSE): ${loss.toFixed(2)} hours^2`);
+
+        featureTensor.dispose();
+        labelTensor.dispose();
+
+        return { loss, samples: events.length };
+    }
+
+    /**
+     * Predict Departure Time given a parking start time
+     */
+    predictDeparture(startTime: number): { departureTime: number; duration: number } | null {
+        if (!this.parkingModel) return null;
+
+        const date = new Date(startTime);
+        const dayOfWeek = date.getDay();
+        const startHour = date.getHours() + (date.getMinutes() / 60);
+
+        return tf.tidy(() => {
+            // Encode Input
+            const dayRad = (2 * Math.PI * dayOfWeek) / 7;
+            const hourRad = (2 * Math.PI * startHour) / 24;
+            const isWeekendBlock = (dayOfWeek === 6 || dayOfWeek === 0 || (dayOfWeek === 1 && startHour < 8)) ? 1 : 0;
+
+            const input = [[
+                Math.sin(dayRad), Math.cos(dayRad),
+                Math.sin(hourRad), Math.cos(hourRad),
+                isWeekendBlock
+            ]];
+
+            const inputTensor = tf.tensor2d(input);
+            const output = this.parkingModel!.predict(inputTensor) as tf.Tensor;
+            const duration = Math.max(0.5, output.dataSync()[0]); // Min 30 mins
+
+            return {
+                duration: duration,
+                departureTime: startTime + (duration * 60 * 60 * 1000)
+            };
+        });
+    }
+}
+
+/**
+ * Interface for Parking Events used in AI Training
+ */
+export interface ParkingEvent {
+    start: number; // timestamp
+    end: number;   // timestamp
+    duration: number; // hours
+    dayOfWeek: number; // 0-6
+    startHour: number; // 0-23.99
 }
