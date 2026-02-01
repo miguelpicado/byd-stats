@@ -28,6 +28,7 @@ export interface UseProcessedDataReturn {
     aiLoss: number | null;
     aiSoH: number | null;
     aiSoHStats: { points: any[]; trend: any[] } | null;
+    isAiTraining: boolean;
 }
 
 export const useProcessedData = (
@@ -38,6 +39,7 @@ export const useProcessedData = (
     const { i18n } = useTranslation();
     const [data, setData] = useState<ProcessedData | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [isAiTraining, setIsAiTraining] = useState(false);
 
     // AI State
     const [aiScenarios, setAiScenarios] = useState<any[]>([]);
@@ -148,6 +150,7 @@ export const useProcessedData = (
 
                     // Train AI Range Model
                     if (!cacheHit && filteredTrips.length > 5) {
+                        setIsAiTraining(true);
                         workerRef.current.trainModel(filteredTrips).then(({ loss }) => {
                             if (!isMounted) return;
                             setAiLoss(loss);
@@ -164,11 +167,17 @@ export const useProcessedData = (
                                     loss
                                 });
                             });
-                        }).catch(err => logger.warn('AI Training error:', err));
+                        })
+                            .catch(err => logger.warn('AI Training error:', err))
+                            .finally(() => {
+                                if (isMounted) setIsAiTraining(false);
+                            });
                     }
 
                     // Train AI SoH Model
                     if (!sohCacheHit && charges.length > 0) {
+                        // We could also track SoH training with a separate flag if needed, 
+                        // but usually range training is the long one.
                         const capacity = processingSettings.batterySize;
                         workerRef.current.trainSoH(JSON.parse(JSON.stringify(charges)), capacity).then(({ predictedSoH }) => {
                             if (!isMounted) return;
@@ -200,5 +209,5 @@ export const useProcessedData = (
         return () => { isMounted = false; };
     }, [filteredTrips, i18n.language, settings, charges]);
 
-    return { data, isProcessing, aiScenarios, aiLoss, aiSoH, aiSoHStats };
+    return { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats };
 };

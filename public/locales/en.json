@@ -176,6 +176,7 @@
         "cityDesc": "Low speed, high efficiency due to regenerative braking. Ideal for EVs.",
         "highwayDesc": "High speed increases aerodynamic drag, significantly reducing range.",
         "mixedDesc": "A balance of city and highway driving.",
+        "analyzing": "AI is analyzing your trips... This is taking a moment.",
         "tips": {
             "city1": "Use Eco mode for smoother acceleration",
             "city2": "Maximize regen settings"
