@@ -42,23 +42,35 @@ const DEFAULT_SETTINGS: Settings = {
     insurancePolicy: '',
     batterySize: 60.48,
     soh: 100,
+    mfgDate: '',
+    mfgDateDisplay: '',
+    sohMode: 'manual',
+
+    // Prices & Strategy
     electricPrice: 0.15,
     fuelPrice: 1.50, // €/L - Default fuel price
     useCalculatedPrice: false,
     useCalculatedFuelPrice: false,
     priceStrategy: 'custom', // 'custom' | 'average' | 'dynamic'
     fuelPriceStrategy: 'custom',
+
+    // Home Charging / Tariff
+    homeChargerRating: 8,
+    offPeakEnabled: false,
+    offPeakStart: '00:00',
+    offPeakEnd: '08:00',
+    offPeakStartWeekend: undefined,
+    offPeakEndWeekend: undefined,
+    offPeakPrice: 0.05,
+
+    // Theme & UI
     theme: 'auto',
     chargerTypes: DEFAULT_CHARGER_TYPES,
     hiddenTabs: [],
+
+    // Technical
     odometerOffset: 0,
     thermalStressFactor: 1.0,
-    mfgDate: '',
-    mfgDateDisplay: '',
-    sohMode: 'manual',
-    offPeakEnabled: false,
-    offPeakStartWeekend: undefined,
-    offPeakEndWeekend: undefined
 };
 
 /**

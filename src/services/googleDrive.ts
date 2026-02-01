@@ -290,10 +290,16 @@ export const googleDriveService = {
 
         // Helper: Is a value a "default" or "empty" value?
         const isDefault = (key: string, val: any): boolean => {
-            if (val === undefined || val === null || val === '') return true;
+            if (val === undefined || val === null) return true;
+            // Empty string is only default for specific fields, otherwise it might be user intent
+            if (val === '' && (key === 'mfgDate' || key === 'mfgDateDisplay')) return true;
+
             if (key === 'odometerOffset' && val === 0) return true;
             if (key === 'soh' && val === 100) return true;
             if (key === 'batterySize' && val === 60.48) return true;
+            // offPeakEnabled: false is a valid value, NOT a default that should be overwritten by true
+            if (key === 'offPeakEnabled' && val === false) return false;
+
             return false;
         };
 
@@ -302,10 +308,10 @@ export const googleDriveService = {
 
         // Explicit merging logic
         const allKeys = new Set([...Object.keys(localSettings), ...Object.keys(remoteSettings)]);
-        
+
         allKeys.forEach(key => {
             if (key === 'chargerTypes' || key === 'hiddenTabs') return;
-            
+
             const localVal = (localSettings as any)[key];
             const remoteVal = (remoteSettings as any)[key]; // Corrected access
 
@@ -349,12 +355,12 @@ export const googleDriveService = {
         const remoteCharges = (remoteData && Array.isArray(remoteData.charges)) ? remoteData.charges : [];
 
         const chargeMap = new Map<string, Charge>();
-        
+
         localCharges.forEach(c => {
             const key = c.timestamp ? String(c.timestamp) : `${c.date}T${c.time}`;
             chargeMap.set(key, c);
         });
-        
+
         remoteCharges.forEach(c => {
             const key = c.timestamp ? String(c.timestamp) : `${c.date}T${c.time}`;
             if (!chargeMap.has(key)) {
