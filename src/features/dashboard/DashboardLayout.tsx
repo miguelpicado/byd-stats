@@ -8,7 +8,22 @@ import DesktopDashboardView from './DesktopDashboardView';
  * Renders the appropriate dashboard view based on the current layout mode.
  * This component is now a thin wrapper that delegates to specialized views.
  */
-const DashboardLayout = memo((props) => {
+// Define types for props
+interface DashboardLayoutProps {
+    layoutMode?: string;
+    isCompact?: boolean;
+    activeTab: string;
+    tabs: any[];
+    handleTabClick?: (id: string) => void;
+    isTransitioning: boolean;
+    fadingTab?: string;
+    backgroundLoad?: boolean;
+    onTripSelect?: (trip: any) => void;
+    onChargeSelect?: (charge: any) => void;
+    setSwipeContainer?: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
+}
+
+const DashboardLayout = memo((props: DashboardLayoutProps) => {
     const { layoutMode } = useLayout();
 
     if (layoutMode === 'vertical') {

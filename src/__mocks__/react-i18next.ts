@@ -1,5 +1,5 @@
 export const useTranslation = () => ({
-    t: (key) => key,
+    t: (key: string) => key,
     i18n: {
         changeLanguage: () => Promise.resolve(),
         language: 'en'
@@ -11,4 +11,4 @@ export const initReactI18next = {
     init: () => { }
 };
 
-export const I18nextProvider = ({ children }) => children;
+export const I18nextProvider = ({ children }: { children: React.ReactNode }) => children;

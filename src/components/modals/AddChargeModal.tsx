@@ -11,6 +11,7 @@ import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
 import { estimateInitialSoC } from '../../core/batteryCalculations';
+
 import { Charge } from '../../types';
 
 interface AddChargeModalProps {
@@ -196,7 +197,10 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
             chargeData.chargerTypeId = formData.chargerTypeId;
             chargeData.pricePerKwh = parseFloat(formData.pricePerKwh.toString()) || 0;
             chargeData.finalPercentage = parseFloat(formData.finalPercentage.toString()) || 0;
-            chargeData.initialPercentage = formData.initialPercentage ? parseFloat(formData.initialPercentage.toString()) : undefined;
+            // Allow 0 as valid percentage
+            const initialHigh = parseFloat(formData.initialPercentage.toString());
+            chargeData.initialPercentage = !isNaN(initialHigh) ? initialHigh : undefined;
+
             chargeData.isSOCEstimated = formData.isSOCEstimated;
         } else {
             chargeData.litersCharged = parseFloat(formData.litersCharged.toString()) || 0;
@@ -247,10 +251,10 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             <button
                                 type="button"
                                 onClick={() => handleChange('type', 'electric')}
-                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition-all border-2 ${formData.type === 'electric'
+                                className={`flex items - center justify - center gap - 2 py - 2.5 px - 4 rounded - xl font - medium text - sm transition - all border - 2 ${formData.type === 'electric'
                                     ? 'bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300'
                                     : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                    }`}
+                                    } `}
                             >
                                 <Battery className="w-4 h-4" />
                                 {t('charges.typeElectric')}
@@ -258,10 +262,10 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             <button
                                 type="button"
                                 onClick={() => handleChange('type', 'fuel')}
-                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition-all border-2 ${formData.type === 'fuel'
+                                className={`flex items - center justify - center gap - 2 py - 2.5 px - 4 rounded - xl font - medium text - sm transition - all border - 2 ${formData.type === 'fuel'
                                     ? 'bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300'
                                     : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                                    }`}
+                                    } `}
                             >
                                 <Fuel className="w-4 h-4" />
                                 {t('charges.typeFuel')}
@@ -391,7 +395,7 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                                         value={formData.initialPercentage}
                                         onChange={(e) => handleChange('initialPercentage', e.target.value)}
                                         placeholder={t('charges.optional')}
-                                        className={`${inputClass} ${formData.isSOCEstimated ? 'text-orange-500 font-bold border-orange-200 bg-orange-50 dark:bg-orange-900/10' : ''}`}
+                                        className={`${inputClass} ${formData.isSOCEstimated ? 'text-orange-500 font-bold border-orange-200 bg-orange-50 dark:bg-orange-900/10' : ''} `}
                                     />
                                 </div>
                             </div>

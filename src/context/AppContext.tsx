@@ -42,7 +42,7 @@ const DEFAULT_SETTINGS: Settings = {
     insurancePolicy: '',
     batterySize: 60.48,
     soh: 100,
-    electricityPrice: 0.15,
+    electricPrice: 0.15,
     fuelPrice: 1.50, // €/L - Default fuel price
     useCalculatedPrice: false,
     useCalculatedFuelPrice: false,
@@ -55,7 +55,10 @@ const DEFAULT_SETTINGS: Settings = {
     thermalStressFactor: 1.0,
     mfgDate: '',
     mfgDateDisplay: '',
-    sohMode: 'manual'
+    sohMode: 'manual',
+    offPeakEnabled: false,
+    offPeakStartWeekend: undefined,
+    offPeakEndWeekend: undefined
 };
 
 /**
@@ -112,7 +115,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 insurancePolicy: updated.insurancePolicy ?? prev.insurancePolicy ?? '',
                 batterySize: updated.batterySize ?? prev.batterySize ?? 60.48,
                 soh: updated.soh ?? prev.soh ?? 100,
-                electricityPrice: updated.electricityPrice ?? prev.electricityPrice ?? 0.15,
+                electricPrice: updated.electricPrice ?? prev.electricPrice ?? 0.15,
                 fuelPrice: updated.fuelPrice ?? prev.fuelPrice ?? 1.50,
                 useCalculatedPrice: updated.useCalculatedPrice ?? prev.useCalculatedPrice ?? false,
                 useCalculatedFuelPrice: updated.useCalculatedFuelPrice ?? prev.useCalculatedFuelPrice ?? false,
@@ -125,7 +128,15 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 thermalStressFactor: updated.thermalStressFactor ?? prev.thermalStressFactor ?? 1.0,
                 mfgDate: updated.mfgDate ?? prev.mfgDate ?? '',
                 mfgDateDisplay: updated.mfgDateDisplay ?? prev.mfgDateDisplay ?? '',
-                sohMode: updated.sohMode ?? prev.sohMode ?? 'manual'
+                sohMode: updated.sohMode ?? prev.sohMode ?? 'manual',
+                // Home Charging / Off-Peak
+                homeChargerRating: updated.homeChargerRating ?? prev.homeChargerRating ?? 8,
+                offPeakEnabled: updated.offPeakEnabled ?? prev.offPeakEnabled ?? false,
+                offPeakStart: updated.offPeakStart ?? prev.offPeakStart ?? '00:00',
+                offPeakEnd: updated.offPeakEnd ?? prev.offPeakEnd ?? '08:00',
+                offPeakStartWeekend: updated.offPeakStartWeekend ?? prev.offPeakStartWeekend,
+                offPeakEndWeekend: updated.offPeakEndWeekend ?? prev.offPeakEndWeekend,
+                offPeakPrice: updated.offPeakPrice ?? prev.offPeakPrice ?? 0.08
             };
 
             if (settingsKey) {

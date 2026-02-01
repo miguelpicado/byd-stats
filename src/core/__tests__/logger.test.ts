@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { logger } from '../logger';
 
 describe('logger', () => {
-    let consoleSpy;
+    let consoleSpy: any;
 
     beforeEach(() => {
         // Spy on console methods
@@ -122,7 +122,7 @@ describe('logger', () => {
         });
 
         it('should handle circular references safely', () => {
-            const circular = {};
+            const circular: any = {};
             circular.self = circular;
             expect(() => logger.debug('Circular:', circular)).not.toThrow();
         });
@@ -133,4 +133,3 @@ describe('logger', () => {
         });
     });
 });
-

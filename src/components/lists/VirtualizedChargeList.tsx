@@ -35,7 +35,7 @@ const VirtualizedChargeList: FC<VirtualizedChargeListProps> = memo(({
     const virtualizer = useVirtualizer({
         count: enhancedCharges.length,
         getScrollElement: () => scrollElement,
-        estimateSize: () => ITEM_SIZE,
+        estimateSize: () => ITEM_SIZE, // Fallback estimate
         overscan: 5,
     });
 
@@ -45,13 +45,14 @@ const VirtualizedChargeList: FC<VirtualizedChargeListProps> = memo(({
                 const charge = enhancedCharges[virtualItem.index];
                 return (
                     <div
-                        key={charge.id || virtualItem.index}
+                        key={charge.id || virtualItem.key} // Prefer ID if available
+                        data-index={virtualItem.index}
+                        ref={virtualizer.measureElement}
                         style={{
                             position: 'absolute',
                             top: 0,
                             left: 0,
                             width: '100%',
-                            height: `${virtualItem.size}px`,
                             transform: `translateY(${virtualItem.start}px)`,
                         }}
                     >

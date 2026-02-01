@@ -3,7 +3,11 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Shield, FileText, HelpCircle, GitHub } from '@components/Icons';
 
-const LandingFooter = memo(({ appVersion }) => {
+interface LandingFooterProps {
+    appVersion: string;
+}
+
+const LandingFooter = memo(({ appVersion }: LandingFooterProps) => {
     const { t } = useTranslation();
 
     return (

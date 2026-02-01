@@ -1,6 +1,8 @@
 import React, { useMemo, useCallback, useState, FC } from 'react';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'react-hot-toast';
 import { useLayout } from '@/context/LayoutContext';
+import { useData } from '@/providers/DataProvider';
 import { BYD_RED } from '@core/constants';
 import { Zap, Euro, Battery, Calendar, TrendingUp, Fuel, IconProps } from '@components/Icons';
 import FloatingActionButton from '@components/common/FloatingActionButton';
@@ -14,6 +16,7 @@ interface ChargesTabProps {
     onAddClick: () => void;
     setShowAllChargesModal: (show: boolean) => void;
     batterySize?: number;
+    isActive?: boolean;
 }
 
 // Electric blue color for the "New charge" button
@@ -41,9 +44,62 @@ const ChargesTab: FC<ChargesTabProps> = React.memo(({
 }) => {
     const { t } = useTranslation();
     const { isCompact, isVertical, isFullscreenBYD } = useLayout();
+    const { replaceCharges } = useData();
 
     // State for insights modal
     const [insightType, setInsightType] = useState<'kwh' | 'cost' | 'price' | 'count' | 'fuel' | null>(null);
+    const [eggCount, setEggCount] = useState(0);
+
+    // Easter Egg: Recalculate Initial SoC
+    const handleEggClick = useCallback(() => {
+        const newCount = eggCount + 1;
+        setEggCount(newCount);
+
+        if (newCount === 10) {
+            toast.loading(t('common.recalculating', 'Recalculating...'), { duration: 2000 });
+
+            // Ensure batterySize is valid number
+            const validBatterySize = parseFloat(String(batterySize)) || 60.48;
+            let updatedCount = 0;
+
+            // Logic to recalc missing initial SoC
+            const updatedArgs = charges.map(c => {
+                let initial = c.initialPercentage;
+                let final = c.finalPercentage;
+                let isEstimated = c.isSOCEstimated || false;
+
+                // Round final percentage if it exists
+                if (final !== undefined && final !== null) {
+                    final = Math.round(final);
+                }
+
+                // Condition: 
+                // 1. Initial is missing/0
+                // 2. OR it is ALREADY estimated
+                // 3. OR Final Percentage has decimals (needs rounding)
+                const finalHasDecimals = c.finalPercentage !== final;
+
+                if ((initial === undefined || initial === 0 || initial === null || isEstimated || finalHasDecimals) && final && c.kwhCharged) {
+                    // Estimate: Start = End - (kWh / Capacity * 100)
+                    const percentAdded = (c.kwhCharged / validBatterySize) * 100;
+                    // Round to nearest integer (unity)
+                    initial = Math.max(0, Math.round(final - percentAdded));
+                    isEstimated = true;
+                    updatedCount++;
+                }
+
+                return { ...c, initialPercentage: initial, finalPercentage: final, isSOCEstimated: isEstimated };
+            });
+
+            if (updatedCount > 0) {
+                replaceCharges(updatedArgs);
+                toast.success(t('common.chargesUpdated', `Updated ${updatedCount} charges!`));
+            } else {
+                toast(t('common.noUpdatesNeeded', 'No charges needed updating.'));
+            }
+            setEggCount(0);
+        }
+    }, [eggCount, charges, batterySize, replaceCharges, t]);
 
     // Get last 10 charges split into columns (assuming charges are already sorted descending by useChargesData)
     const { firstColumn, secondColumn, last10 } = useMemo(() => {
@@ -162,8 +218,8 @@ const ChargesTab: FC<ChargesTabProps> = React.memo(({
                         </p>
                         {!isFuel && charge.finalPercentage && (
                             <p className="text-xs text-slate-500 dark:text-slate-400">
-                                {charge.initialPercentage ? `${charge.initialPercentage}% → ` : ''}
-                                {charge.finalPercentage}%
+                                {(charge.initialPercentage !== undefined && charge.initialPercentage !== null) ? `${Math.round(charge.initialPercentage)}% → ` : ''}
+                                {Math.round(charge.finalPercentage)}%
                             </p>
                         )}
                         {isFuel && (
@@ -218,7 +274,10 @@ const ChargesTab: FC<ChargesTabProps> = React.memo(({
             <div className="space-y-4">
                 {/* Header with title */}
                 <div className="flex items-center justify-between">
-                    <h2 className="font-bold text-slate-900 dark:text-white text-xl">
+                    <h2
+                        className="font-bold text-slate-900 dark:text-white text-xl cursor-pointer select-none active:scale-95 transition-transform"
+                        onClick={handleEggClick}
+                    >
                         {t('charges.last10Charges')}
                     </h2>
                 </div>
@@ -293,7 +352,10 @@ const ChargesTab: FC<ChargesTabProps> = React.memo(({
     return (
         <div className={verticalSpace}>
             {/* Title */}
-            <h2 className={`font-bold text-slate-900 dark:text-white ${headerText} ${headerMargin}`}>
+            <h2
+                className={`font-bold text-slate-900 dark:text-white ${headerText} ${headerMargin} cursor-pointer select-none active:scale-95 transition-transform`}
+                onClick={handleEggClick}
+            >
                 {t('charges.last10Charges')}
             </h2>
 

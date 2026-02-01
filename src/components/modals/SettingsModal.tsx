@@ -476,6 +476,116 @@ const SettingsModal: React.FC = () => {
                         </button>
                     </div>
 
+                    {/* Home Charging Configuration */}
+                    <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                            <span style={{ color: BYD_RED }}>⚡</span>
+                            {t('settings.homeCharging', 'Carga Doméstica')}
+                        </h3>
+
+                        <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3 space-y-3">
+                            <div>
+                                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">{t('settings.chargerRating', 'Potencia del Cargador (Amperios)')}</label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="number"
+                                        value={settings.homeChargerRating || 8}
+                                        onChange={(e) => onSettingsChange({ ...settings, homeChargerRating: parseInt(e.target.value) || 0 })}
+                                        className="w-20 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                    />
+                                    <span className="text-xs text-slate-400">
+                                        ≈ {((settings.homeChargerRating || 8) * 230 / 1000).toFixed(1)} kW
+                                    </span>
+                                </div>
+                                <p className="text-[10px] text-slate-400 mt-1">
+                                    8A (1.8kW), 10A (2.3kW), 16A (3.7kW), 32A (7.4kW)
+                                </p>
+                            </div>
+
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm text-slate-700 dark:text-slate-300">{t('settings.offPeakEnabled', 'Tarifa Valle (Horario Reducido)')}</label>
+                                <button
+                                    onClick={() => {
+                                        onSettingsChange({ ...settings, offPeakEnabled: !settings.offPeakEnabled });
+                                    }}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.offPeakEnabled ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                                        }`}
+                                >
+                                    <span
+                                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.offPeakEnabled ? 'translate-x-6' : 'translate-x-1'
+                                            }`}
+                                    />
+                                </button>
+                            </div>
+
+                            {settings.offPeakEnabled && (
+                                <div className="space-y-3 pl-2 border-l-2 border-slate-200 dark:border-slate-600">
+                                    {/* Weekday Schedule */}
+                                    <div className="space-y-1">
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('settings.offPeakWeekday', 'Horario L-V')}</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t('settings.startTime', 'Inicio')}</label>
+                                                <input
+                                                    type="time"
+                                                    value={settings.offPeakStart || "00:00"}
+                                                    onChange={(e) => onSettingsChange({ ...settings, offPeakStart: e.target.value })}
+                                                    className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t('settings.endTime', 'Fin')}</label>
+                                                <input
+                                                    type="time"
+                                                    value={settings.offPeakEnd || "08:00"}
+                                                    onChange={(e) => onSettingsChange({ ...settings, offPeakEnd: e.target.value })}
+                                                    className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Weekend Schedule */}
+                                    <div className="space-y-1">
+                                        <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('settings.offPeakWeekend', 'Horario Fin de Semana')}</label>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t('settings.startTime', 'Inicio')}</label>
+                                                <input
+                                                    type="time"
+                                                    value={settings.offPeakStartWeekend || settings.offPeakStart || "00:00"}
+                                                    onChange={(e) => onSettingsChange({ ...settings, offPeakStartWeekend: e.target.value })}
+                                                    className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t('settings.endTime', 'Fin')}</label>
+                                                <input
+                                                    type="time"
+                                                    value={settings.offPeakEndWeekend || settings.offPeakEnd || "08:00"}
+                                                    onChange={(e) => onSettingsChange({ ...settings, offPeakEndWeekend: e.target.value })}
+                                                    className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">{t('settings.offPeakPrice', 'Precio Valle (€/kWh)')}</label>
+                                        <input
+                                            type="number"
+                                            step="0.001"
+                                            value={settings.offPeakPrice || 0.05}
+                                            onChange={(e) => onSettingsChange({ ...settings, offPeakPrice: parseFloat(e.target.value) || 0 })}
+                                            className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
+                                            placeholder="0.05"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
                     <div>
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.language')}</label>
                         <div className="flex flex-wrap gap-2">

@@ -1,17 +1,24 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, Dispatch, SetStateAction } from 'react';
+
+interface Tab {
+    id: string;
+    label: string;
+    icon?: any;
+}
+
+interface UseSwipeGestureParams {
+    activeTab: string;
+    handleTabClick: (tabId: string) => void;
+    isTransitioning: boolean;
+    tabs: Tab[];
+    layoutMode: 'vertical' | 'horizontal';
+    minSwipeDistance?: number;
+    isModalOpen?: boolean;
+}
 
 /**
  * Hook to handle swipe gestures for tab navigation
  * Supports both vertical and horizontal layouts with scroll prevention logic
- * 
- * @param {Object} params
- * @param {string} params.activeTab - Current active tab ID
- * @param {Function} params.handleTabClick - Function to change tab
- * @param {boolean} params.isTransitioning - Whether a transition is in progress
- * @param {Array} params.tabs - Array of tab objects
- * @param {string} params.layoutMode - 'vertical' or 'horizontal'
- * @param {number} [params.minSwipeDistance=30] - Minimum distance to trigger swipe
- * @returns {Function} setSwipeContainer - Ref setter for the container element
  */
 export const useSwipeGesture = ({
     activeTab,
@@ -21,10 +28,10 @@ export const useSwipeGesture = ({
     layoutMode,
     minSwipeDistance = 30,
     isModalOpen = false
-}) => {
-    const [swipeContainer, setSwipeContainer] = useState(null);
-    const touchStartRef = useRef(null);
-    const touchStartYRef = useRef(null);
+}: UseSwipeGestureParams): Dispatch<SetStateAction<HTMLElement | null>> => {
+    const [swipeContainer, setSwipeContainer] = useState<HTMLElement | null>(null);
+    const touchStartRef = useRef<number | null>(null);
+    const touchStartYRef = useRef<number | null>(null);
 
     // Refs to hold latest values (avoid re-registering listeners)
     const activeTabRef = useRef(activeTab);
@@ -47,10 +54,10 @@ export const useSwipeGesture = ({
         if (!swipeContainer) return;
 
         const container = swipeContainer;
-        let swipeDirection = null;
+        let swipeDirection: 'horizontal' | 'vertical' | null = null;
         let initialScrollTop = 0;
 
-        const handleTouchStart = (e) => {
+        const handleTouchStart = (e: TouchEvent) => {
             // Disable swipe when modal is open
             if (isModalOpenRef.current) return;
             if (isTransitioningRef.current) return;
@@ -62,8 +69,8 @@ export const useSwipeGesture = ({
             initialScrollTop = container.scrollTop;
         };
 
-        const handleTouchMove = (e) => {
-            if (!touchStartRef.current || isTransitioningRef.current) return;
+        const handleTouchMove = (e: TouchEvent) => {
+            if (touchStartRef.current === null || touchStartYRef.current === null || isTransitioningRef.current) return;
 
             const touch = e.touches[0];
             const diffX = Math.abs(touch.clientX - touchStartRef.current);
@@ -99,8 +106,8 @@ export const useSwipeGesture = ({
             }
         };
 
-        const handleTouchEnd = (e) => {
-            if (!touchStartRef.current) return;
+        const handleTouchEnd = (e: TouchEvent) => {
+            if (touchStartRef.current === null || touchStartYRef.current === null) return;
 
             const touch = e.changedTouches[0];
             const diffX = touch.clientX - touchStartRef.current;
@@ -173,4 +180,4 @@ export const useSwipeGesture = ({
     return setSwipeContainer;
 };
 
-
+export default useSwipeGesture;

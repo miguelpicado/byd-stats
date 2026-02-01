@@ -1,6 +1,12 @@
 import React, { memo } from 'react';
 
-const DesktopSidebar = memo(({ tabs, activeTab, handleTabClick }) => {
+interface DesktopSidebarProps {
+    tabs: any[];
+    activeTab: string;
+    handleTabClick: (id: string) => void;
+}
+
+const DesktopSidebar = memo(({ tabs, activeTab, handleTabClick }: DesktopSidebarProps) => {
     return (
         <div className="w-64 flex-shrink-0 bg-slate-100 dark:bg-slate-900/90 border-r border-slate-200 dark:border-slate-700/50 overflow-y-auto">
             <div role="tablist" aria-label="Main navigation" className="p-4 space-y-2">

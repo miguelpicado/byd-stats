@@ -22,6 +22,7 @@ interface CalendarTabProps {
     charges?: Charge[];
     onTripSelect: (trip: Trip) => void;
     onChargeSelect?: (charge: Charge) => void;
+    isActive?: boolean;
 }
 
 const CalendarTab: FC<CalendarTabProps> = ({

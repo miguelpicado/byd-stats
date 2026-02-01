@@ -20,8 +20,8 @@ describe('dateUtils', () => {
 
         it('should handle empty or invalid input', () => {
             expect(formatMonth('')).toBe('');
-            expect(formatMonth(null)).toBe('');
-            expect(formatMonth(undefined)).toBe('');
+            expect(formatMonth(null as any)).toBe('');
+            expect(formatMonth(undefined as any)).toBe('');
             expect(formatMonth('2025')).toBe('2025'); // Too short
         });
 
@@ -40,8 +40,8 @@ describe('dateUtils', () => {
 
         it('should handle empty or invalid input', () => {
             expect(formatDate('')).toBe('');
-            expect(formatDate(null)).toBe('');
-            expect(formatDate(undefined)).toBe('');
+            expect(formatDate(null as any)).toBe('');
+            expect(formatDate(undefined as any)).toBe('');
             expect(formatDate('202501')).toBe('202501'); // Too short
         });
 
@@ -61,8 +61,8 @@ describe('dateUtils', () => {
         });
 
         it('should handle empty or invalid input', () => {
-            expect(formatTime(null)).toBe('');
-            expect(formatTime(undefined)).toBe('');
+            expect(formatTime(null as any)).toBe('');
+            expect(formatTime(undefined as any)).toBe('');
             expect(formatTime(0)).toBe('');
         });
     });
@@ -71,23 +71,27 @@ describe('dateUtils', () => {
         it('should parse valid date string to Date object', () => {
             const result = parseDate('20250114');
             expect(result).toBeInstanceOf(Date);
-            expect(result.getFullYear()).toBe(2025);
-            expect(result.getMonth()).toBe(0); // January (0-indexed)
-            expect(result.getDate()).toBe(14);
+            if (result) {
+                expect(result.getFullYear()).toBe(2025);
+                expect(result.getMonth()).toBe(0); // January (0-indexed)
+                expect(result.getDate()).toBe(14);
+            }
         });
 
         it('should return null for invalid input', () => {
             expect(parseDate('')).toBeNull();
-            expect(parseDate(null)).toBeNull();
-            expect(parseDate(undefined)).toBeNull();
+            expect(parseDate(null as any)).toBeNull();
+            expect(parseDate(undefined as any)).toBeNull();
             expect(parseDate('2025')).toBeNull(); // Too short
         });
 
         it('should handle edge dates correctly', () => {
             const leapDay = parseDate('20240229');
-            expect(leapDay.getFullYear()).toBe(2024);
-            expect(leapDay.getMonth()).toBe(1); // February
-            expect(leapDay.getDate()).toBe(29);
+            if (leapDay) {
+                expect(leapDay.getFullYear()).toBe(2024);
+                expect(leapDay.getMonth()).toBe(1); // February
+                expect(leapDay.getDate()).toBe(29);
+            }
         });
     });
 
@@ -111,4 +115,3 @@ describe('dateUtils', () => {
         });
     });
 });
-

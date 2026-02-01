@@ -3,6 +3,28 @@ import { useTranslation } from 'react-i18next';
 import ModalContainer from '../../components/common/ModalContainer';
 import VirtualizedTripList from '../../components/lists/VirtualizedTripList';
 
+import { Trip } from '@/types';
+
+interface AllTripsViewProps {
+    rawTrips: Trip[];
+    filterType: string;
+    month: string;
+    dateFrom: string;
+    dateTo: string;
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+    setFilterType: (val: string) => void;
+    setMonth: (val: string) => void;
+    setDateFrom: (val: string) => void;
+    setDateTo: (val: string) => void;
+    setSortBy: (val: string) => void;
+    setSortOrder: React.Dispatch<React.SetStateAction<'asc' | 'desc'>>;
+    closeModal: (modal: string) => void;
+    openTripDetail: (trip: Trip) => void;
+    scrollRef: React.MutableRefObject<any>;
+    isNative: boolean;
+}
+
 const AllTripsView = ({
     rawTrips,
     filterType,
@@ -17,29 +39,11 @@ const AllTripsView = ({
     setDateTo,
     setSortBy,
     setSortOrder,
-    modals,
-    openModal,
     closeModal,
     openTripDetail,
     scrollRef,
-    // Props for ModalContainer
-    setLegalInitialSection,
-    legalInitialSection,
-    settings,
-    updateSettings,
-    googleSync,
-    selectedTrip,
-    setSelectedTrip,
-    data,
-    sqlReady,
-    processDB,
-    exportDatabase,
-    clearData,
-    loadChargeRegistry,
     isNative,
-    onFile,
-    charges
-}) => {
+}: AllTripsViewProps) => {
     const { t } = useTranslation();
 
     // Filter and sort logic moved here or kept in memo
@@ -93,9 +97,9 @@ const AllTripsView = ({
 
 
     // State for scroller element to ensure virtualizer updates on mount
-    const [scroller, setScroller] = React.useState(null);
+    const [scroller, setScroller] = React.useState<HTMLDivElement | null>(null);
 
-    const scrollRefCallback = React.useCallback((node) => {
+    const scrollRefCallback = React.useCallback((node: HTMLDivElement | null) => {
         if (node) {
             scrollRef.current = node;
             setScroller(node);
@@ -107,28 +111,7 @@ const AllTripsView = ({
             ref={scrollRefCallback}
             className="fixed inset-0 overflow-y-auto bg-gradient-to-br from-slate-50 via-white to-slate-100 dark:from-slate-950 dark:via-slate-900 dark:to-slate-800 text-slate-900 dark:text-white"
         >
-            <ModalContainer
-                modals={modals}
-                closeModal={closeModal}
-                openModal={openModal}
-                setLegalInitialSection={setLegalInitialSection}
-                legalInitialSection={legalInitialSection}
-                settings={settings}
-                updateSettings={updateSettings}
-                googleSync={googleSync}
-                rawTrips={rawTrips}
-                selectedTrip={selectedTrip}
-                setSelectedTrip={setSelectedTrip}
-                data={data}
-                sqlReady={sqlReady}
-                processDB={processDB}
-                exportDatabase={exportDatabase}
-                clearData={clearData}
-                onLoadChargeRegistry={loadChargeRegistry}
-                isNative={isNative}
-                onFile={onFile}
-                charges={charges}
-            />
+            <ModalContainer />
 
             <div className={`max-w-7xl mx-auto px-4 py-6 ${isNative ? 'pt-12' : ''}`}>
                 <div className="flex flex-col gap-4 mb-6">

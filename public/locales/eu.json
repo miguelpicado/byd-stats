@@ -310,6 +310,28 @@
             "formatHint": "Formatua: MM/YY (Adib. 03/24)",
             "save": "Data Baieztatu",
             "invalid": "Formatu ez-balioduna (MM/YY)"
+        },
+        "batteryHealth": {
+            "title": "Bateriaren Osasuna (SoH)",
+            "aiAnalysis": "IA Analisi Enpirikoa",
+            "aiAnalysisTitle": "SoH Analisia IArekin",
+            "realSoH": "SoH Reala (IA)",
+            "samples": "Laginak",
+            "aiDesc": "IAk zure karga sakonak (>20%) aztertzen ditu degradazio erreala kalkulatzeko, eguneroko gorabeherak alde batera utzita.",
+            "notEnoughData": "Datu gehiago behar dira",
+            "requirements": "Erregistratu gutxienez %20 baino gehiagoko energia gehitu duten 3 karga IA kalibratzeko."
+        },
+        "thermalStress": {
+            "configuration": "Konfigurazio Termikoa",
+            "title": "Estres Termikoaren Faktorea",
+            "desc": "Doitu biderkatze-faktorea bizi zaren urteko batez besteko tenperaturaren arabera. Beroak LFP zelulen degradazio kimikoa azkartzen du.",
+            "info": "Balio honek zikloagatiko higaduran eta SEI degradazioan eragiten du globalki.",
+            "factor": "Hautatutako Faktorea",
+            "recommendations": "Gomendioak",
+            "recCold": "Klima hotza / Epela",
+            "recIdeal": "Klima ideala / Estandarra",
+            "recHot": "Klima beroa / Uda beroak",
+            "recExtreme": "Muturreko klima / Basamortukoa"
         }
     },
     "errors": {
@@ -435,6 +457,36 @@
         "syncNow": "Orain sinkronizatu",
         "syncing": "Sinkronizatzen...",
         "signInToSync": "Hasi saioa sinkronizatzeko"
+    },
+    "insights": {
+        "chargingTitle": "IA bidezko Karga Analisia",
+        "aiPowered": "IAk bultzatuta",
+        "dailyGoal": "Gomendatutako Eguneroko Helburua",
+        "dailyDesc": "Azken 30 egunetako zure kontsumoan oinarrituta, egunero {{kwh}} kWh kargatzeak bateria egonkor mantenduko du.",
+        "bestDay": "Kargatzeko Egun Optimoa",
+        "type": "Karga Mota",
+        "slow": "Motela",
+        "fast": "Azkarra",
+        "costSavings": "Aurreikusitako Aurrezkia",
+        "costDesc": "Zure gaueko kargak ordu merkeagoetara ({{window}}) mugituz, ~{{amount}}€/urte aurreztu zenitzake.",
+        "chargerStatus": "✅ {{amps}}A-ko Kargagailua nahikoa",
+        "chargerWarning": "⚠️ {{amps}}A-ko Kargagailua eskasa",
+        "comfortZone": "Erosotasun Eremua",
+        "comfortDesc": "Gutxitan jaisten zara %{{soc}}-tik behera. Kargak {{days}} egunez behin egiteko tartea duzu.",
+        "howItWorks": "Nola funtzionatzen du",
+        "aiCheck": "IAk zure gidatze-historia (abiadura vs eraginkortasuna) eta tenperatura aztertzen ditu autonomia zehatzago aurreikusteko.",
+        "notEnoughData": "Ez dago nahikoa daturik. Estimazio estandarra erabiltzen ~5 bidaia izan arte.",
+        "predictedRange": "Eszenatokiaren arabera aurreikustako autonomia",
+        "rangeAxis": "Autonomia (km)",
+        "dailyExplanation": "IAk zure eguneroko batez besteko kontsumoa aztertzen du eta urtarokako zuzenketak aplikatzen ditu, SoC egonkorra mantenduko duen karga bat proposatzeko, ziklo sakonak saihestuz.",
+        "optimalDayDesc": "Zure gidatze-ereduek adierazten dute hau dela ibilgailua gutxien erabiltzen duzun eguna edo karga motelerako aukera gehien duena, zelulak orekatzeko aproposa.",
+        "recommendation": "Gomendioa",
+        "noData": "Ez dago nahikoa daturik gomendio bat sortzeko.",
+        "scenario": "Eszenatokia",
+        "city": "Hiria",
+        "mixed": "Mistoa",
+        "highway": "Autopidea",
+        "optimal_maintenance": "Mantentze Optimoa (Orekatzea)"
     },
     "pwa": {
         "install": "Instalatu",
@@ -678,6 +730,32 @@
             "a1": "Aplikazioa erabilgarria bazaizu, borondatezko dohaintza txiki bat egin dezakezu Ko-fi bidez.",
             "q2": "Zalantzak dituzu?",
             "a2": "Edozein zalantza izanez gero, idatzi lasai."
+        },
+        "modals": {
+            "bms": {
+                "title": "BMS eta LFP Kalibrazioa",
+                "definition": "LFP baterietan, tentsio-kurba oso laua da, eta horrek BMSari energia zehatza jakitea zailtzen dio muturretara iritsi gabe. Horregatik, desoreka ohikoa eta espero izatekoa da teknologia honetan.",
+                "calculation": "Abisua agertzen da BMSak zelulen arteko tentsio-ezberdintasunak detektatzen baditu edo denbora asko bada %100era iritsi gabe. Erreferentzia-puntu hori behar du (top balancing) berriz sinkronizatzeko.",
+                "impact": "Gomendagarria da hilean gutxienez behin %100era kargatzea eta ordu estra batzuk entxufatuta uztea orekatzeko. LFP bateriak sendoak dira eta ondo jasaten dute %100a, batez ere orekatzea amaitu eta gutxira autoa erabiltzen bada."
+            },
+            "formula": {
+                "title": "SoH Formula Teorikoa",
+                "definition": "LFP zelulen kimikan eta ibilgailuaren erabilera-historian oinarritutako estimazio matematikoa.\n\nErabilitako konstanteak:\n• SEI: Gehienez %2 (lehen 50 zikloak)\n• Zikloak: %0.005 zikloko (estresagatik doitua)\n• Denbora: %0.75 urteko",
+                "calculation": "SoH = %100 - SEI - (Zikloak × %0.005 × Estresa) - (Urteak × %0.75)",
+                "impact": "Balio hau hurbilketa teoriko bat da. Benetako SoH alda daiteke, eta autoaren BMSak du azken hitza unean uneko edukiera erabilgarriari buruz."
+            },
+            "ai_soh": {
+                "title": "SoH Reala (IA Analisia)",
+                "definition": "Zure benetako karga-saioetan oinarritutako kalkulu enpirikoa. IAk aztertzen du zenbat energia sartzen den benetan baterian vs. autoak jakinarazitako ehunekoa.",
+                "calculation": "Erregresio lineala erabiltzen du zure karga historikoetan uneko 'edukiera total eraginkorra' aurkitzeko. %50eko bateria kargatzeak 30kWh behar baditu, zure edukiera osoa 60kWh da.",
+                "impact": "Balio hau teorikoa baino zehatzagoa da, zure zelulen benetako osasuna islatzen duelako. Teorikoa baino baxuagoa izan daiteke (zelula desorekatuak badaude) edo altuagoa (bateriak espero baino hobeto errenditzen badu)."
+            },
+            "samples": {
+                "title": "Kalitatezko Laginak",
+                "definition": "IAk bere kalkulurako baliozkotzat jo dituen karga-saio kopurua.",
+                "calculation": "IAk automatikoki baztertzen ditu karga txikiak (<%15-20), oso motelak edo etenak dituztenak, datuekin 'zarata' eta errorea sartzen dutelako.",
+                "impact": "Normala da karga totalak baino lagin gutxiago izatea. Zenbat eta kalitatezko lagin (karga sakon) gehiago izan, orduan eta zehatzagoa izango da SoH Realaren kalkulua."
+            }
         }
     }
 }

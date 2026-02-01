@@ -19,7 +19,7 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({ trips, minEff,
     const virtualizer = useVirtualizer({
         count: trips.length,
         getScrollElement: () => scrollElement,
-        estimateSize: () => ITEM_SIZE,
+        estimateSize: () => ITEM_SIZE, // Fallback estimate
         overscan: 5,
     });
 
@@ -27,13 +27,14 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({ trips, minEff,
         <div ref={listRef} style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
             {virtualizer.getVirtualItems().map((virtualItem) => (
                 <div
-                    key={virtualItem.index}
+                    key={virtualItem.key}
+                    data-index={virtualItem.index}
+                    ref={virtualizer.measureElement}
                     style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         width: '100%',
-                        height: `${virtualItem.size}px`,
                         transform: `translateY(${virtualItem.start}px)`,
                     }}
                 >

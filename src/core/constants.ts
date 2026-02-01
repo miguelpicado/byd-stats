@@ -44,7 +44,15 @@ export const DEFAULT_SETTINGS = {
     useCalculatedPrice: false,
     theme: 'auto',
     chargerTypes: [],
-    hiddenTabs: []
+    hiddenTabs: [],
+    // Home Charging Defaults
+    homeChargerRating: 16, // 3.7W default
+    offPeakEnabled: false,
+    offPeakStart: "00:00",
+    offPeakEnd: "08:00",
+    offPeakStartWeekend: undefined,
+    offPeakEndWeekend: undefined,
+    offPeakPrice: 0.11
 };
 
 // Trip distribution colors

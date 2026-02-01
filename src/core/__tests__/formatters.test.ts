@@ -31,8 +31,8 @@ describe('formatters', () => {
         });
 
         it('should handle null/undefined efficiency', () => {
-            expect(calculateScore(null, 12, 20)).toBe(5);
-            expect(calculateScore(undefined, 12, 20)).toBe(5);
+            expect(calculateScore(null as any, 12, 20)).toBe(5);
+            expect(calculateScore(undefined as any, 12, 20)).toBe(5);
             expect(calculateScore(0, 12, 20)).toBe(5);
         });
 
@@ -81,8 +81,8 @@ describe('formatters', () => {
 
         it('should handle zero/null values', () => {
             expect(formatDuration(0)).toBe('0 min');
-            expect(formatDuration(null)).toBe('0 min');
-            expect(formatDuration(undefined)).toBe('0 min');
+            expect(formatDuration(null as any)).toBe('0 min');
+            expect(formatDuration(undefined as any)).toBe('0 min');
         });
 
         it('should handle very large durations', () => {
@@ -140,8 +140,8 @@ describe('formatters', () => {
         });
 
         it('should handle null/undefined/NaN', () => {
-            expect(formatNumber(null)).toBe('0');
-            expect(formatNumber(undefined)).toBe('0');
+            expect(formatNumber(null as any)).toBe('0');
+            expect(formatNumber(undefined as any)).toBe('0');
             expect(formatNumber(NaN)).toBe('0');
         });
 
@@ -156,4 +156,3 @@ describe('formatters', () => {
         });
     });
 });
-

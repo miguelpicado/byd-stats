@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { AlertCircle } from '@components/Icons';
 import { TAB_PADDING, COMPACT_TAB_PADDING } from '@utils/constants';
 import ErrorBoundary from '@components/common/ErrorBoundary';
+import { Trip, Charge } from '@/types';
 
 // Contexts & Hooks
 import { useData } from '@/providers/DataProvider';
@@ -27,6 +28,18 @@ const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
 /**
  * Mobile Dashboard View - Optimized for touch gestures and vertical slider navigation
  */
+interface MobileDashboardViewProps {
+    activeTab: string;
+    tabs: any[];
+    isTransitioning: boolean;
+    transitionDuration?: number;
+    fadingTab?: string;
+    backgroundLoad?: boolean;
+    onTripSelect?: (trip: Trip) => void;
+    onChargeSelect?: (charge: Charge) => void;
+    setSwipeContainer?: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
+}
+
 const MobileDashboardView = memo(({
     activeTab,
     tabs,
@@ -37,7 +50,7 @@ const MobileDashboardView = memo(({
     onTripSelect,
     onChargeSelect,
     setSwipeContainer
-}) => {
+}: MobileDashboardViewProps) => {
     const { t } = useTranslation();
 
     const { stats, trips: rawTrips, filtered, charges } = useData();
@@ -50,7 +63,7 @@ const MobileDashboardView = memo(({
     const { smallChartHeight, patternsChartHeight, largeChartHeight, overviewSpacingVertical, patternsSpacing, recordsItemPadding, recordsItemPaddingHorizontal, recordsListHeightHorizontal } = useChartDimensions({ isVertical: true, isFullscreenBYD: false, isCompact });
 
     // Helper for class names
-    const getTabClassName = (tabId, isActive, isFading, baseClass = 'tab-content-container') => {
+    const getTabClassName = (tabId: string, isActive: boolean, isFading: boolean, baseClass = 'tab-content-container') => {
         const classes = [baseClass];
         if (isActive && isFading) {
             classes.push('tab-fade-in');
@@ -123,9 +136,9 @@ const MobileDashboardView = memo(({
                                             {tab.id === 'overview' && (
                                                 <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                                     <OverviewTab
-                                                        summary={summary}
-                                                        monthly={monthly}
-                                                        tripDist={tripDist}
+                                                        summary={summary || null}
+                                                        monthly={monthly || []}
+                                                        tripDist={tripDist || []}
                                                         smallChartHeight={smallChartHeight}
                                                         overviewSpacing={overviewSpacingVertical}
                                                         onAddCharge={handleAddCharge}
@@ -153,9 +166,9 @@ const MobileDashboardView = memo(({
                                                     <Suspense fallback={<TabFallback />}>
                                                         <TrendsTab
                                                             filtered={filtered}
-                                                            summary={summary}
-                                                            monthly={monthly}
-                                                            daily={daily}
+                                                            summary={summary || null}
+                                                            monthly={monthly || []}
+                                                            daily={daily || []}
                                                             settings={settings}
                                                             largeChartHeight={largeChartHeight}
                                                             isActive={isActive}
@@ -167,9 +180,9 @@ const MobileDashboardView = memo(({
                                                 <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                                     <Suspense fallback={<TabFallback />}>
                                                         <PatternsTab
-                                                            weekday={weekday}
-                                                            hourly={hourly}
-                                                            summary={summary}
+                                                            weekday={weekday || []}
+                                                            hourly={hourly || []}
+                                                            summary={summary || null}
                                                             patternsSpacing={patternsSpacing}
                                                             patternsChartHeight={patternsChartHeight}
                                                             isActive={isActive}
@@ -181,9 +194,9 @@ const MobileDashboardView = memo(({
                                                 <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                                     <Suspense fallback={<TabFallback />}>
                                                         <EfficiencyTab
-                                                            summary={summary}
-                                                            monthly={monthly}
-                                                            effScatter={effScatter}
+                                                            summary={summary || null}
+                                                            monthly={monthly || []}
+                                                            effScatter={effScatter || []}
                                                             largeChartHeight={largeChartHeight}
                                                             isActive={isActive}
                                                         />
@@ -194,8 +207,8 @@ const MobileDashboardView = memo(({
                                                 <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                                     <Suspense fallback={<TabFallback />}>
                                                         <RecordsTab
-                                                            summary={summary}
-                                                            top={top}
+                                                            summary={summary || null}
+                                                            top={top || { km: [], kwh: [], dur: [], fuel: [] }}
                                                             recordsItemPadding={recordsItemPadding}
                                                             recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
                                                             recordsListHeightHorizontal={recordsListHeightHorizontal}
@@ -209,7 +222,7 @@ const MobileDashboardView = memo(({
                                                     <Suspense fallback={<TabFallback />}>
                                                         <HistoryTab
                                                             filtered={filtered}
-                                                            openTripDetail={onTripSelect}
+                                                            openTripDetail={onTripSelect || (() => { })}
                                                             setShowAllTripsModal={handleShowAllTrips}
                                                             isActive={isActive}
                                                         />
@@ -222,10 +235,10 @@ const MobileDashboardView = memo(({
                                                         <ChargesTab
                                                             charges={charges}
                                                             chargerTypes={settings.chargerTypes || []}
-                                                            onChargeClick={onChargeSelect}
+                                                            onChargeClick={onChargeSelect || (() => { })}
                                                             onAddClick={handleAddCharge}
                                                             setShowAllChargesModal={handleShowAllCharges}
-                                                            batterySize={settings.batterySize}
+                                                            batterySize={typeof settings.batterySize === 'string' ? parseFloat(settings.batterySize) : settings.batterySize}
                                                             isActive={isActive}
                                                         />
                                                     </Suspense>

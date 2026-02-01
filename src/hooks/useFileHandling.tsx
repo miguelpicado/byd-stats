@@ -1,22 +1,50 @@
 // BYD Stats - Unified File Handling Hook (Android Native + PWA)
 
 import { useEffect, useState, useMemo } from 'react';
-import { App } from '@capacitor/app';
+import { App as CapacitorApp } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import { registerPlugin } from '@capacitor/core';
 import { logger } from '@core/logger';
 
+// Type definitions for our custom plugin
+interface FileOpenerPlugin {
+    getSharedFile(): Promise<{ uri: string } | null>;
+    readFileFromUri(options: { uri: string }): Promise<{ data: string; mimeType: string; fileName?: string } | null>;
+}
+
 // Register the custom FileOpener plugin for Android native
-const FileOpener = registerPlugin('FileOpener');
+const FileOpener = registerPlugin<FileOpenerPlugin>('FileOpener');
+
+interface PendingFile {
+    uri?: string;
+    file?: File;
+    source: 'android' | 'pwa-launch' | 'pwa-share';
+}
+
+interface UseFileHandlingReturn {
+    pendingFile: PendingFile | null;
+    error: string | null;
+    clearPendingFile: () => void;
+    readFile: (pendingFile: PendingFile) => Promise<File>;
+    isNative: boolean;
+}
+
+// Extend Window interface for LaunchQueue API
+declare global {
+    interface Window {
+        launchQueue?: {
+            setConsumer: (callback: (launchParams: any) => void) => void;
+        };
+    }
+}
 
 /**
  * Unified hook for handling file operations in both Android native and PWA
  * Automatically detects platform and uses appropriate method
- * @returns {Object} File handling state and utilities
  */
-export function useFileHandling() {
-    const [pendingFile, setPendingFile] = useState(null);
-    const [error, setError] = useState(null);
+export function useFileHandling(): UseFileHandlingReturn {
+    const [pendingFile, setPendingFile] = useState<PendingFile | null>(null);
+    const [error, setError] = useState<string | null>(null);
     const isNative = Capacitor.isNativePlatform();
 
     useEffect(() => {
@@ -41,7 +69,7 @@ export function useFileHandling() {
             };
 
             // Handle app URL open events (when a file is opened or shared)
-            const handleAppUrlOpen = async (event) => {
+            const handleAppUrlOpen = async (event: any) => {
                 if (!isSubscribed) return;
 
                 try {
@@ -52,20 +80,20 @@ export function useFileHandling() {
                             setPendingFile({ uri: fileUri, source: 'android' });
                         }
                     }
-                } catch (err) {
+                } catch (err: any) {
                     logger.error('[Android] Error handling app URL open:', err);
-                    setError(err.message);
+                    setError(err.message || 'Error handling URL');
                 }
             };
 
             // Subscribe to app URL open events
-            const urlListener = App.addListener('appUrlOpen', handleAppUrlOpen);
+            const urlListener = CapacitorApp.addListener('appUrlOpen', handleAppUrlOpen);
 
             // Check for any pending file on app startup
             checkNativeSharedFile();
 
             // Also check launch URL
-            App.getLaunchUrl().then((result) => {
+            CapacitorApp.getLaunchUrl().then((result) => {
                 if (result && result.url) {
                     handleAppUrlOpen({ url: result.url });
                 }
@@ -85,8 +113,8 @@ export function useFileHandling() {
         // ========================================
         else {
             // 1. Handle File Handling API (when user opens .db file from system)
-            if ('launchQueue' in window) {
-                window.launchQueue.setConsumer(async (launchParams) => {
+            if ('launchQueue' in window && window.launchQueue) {
+                window.launchQueue.setConsumer(async (launchParams: any) => {
                     if (!isSubscribed) return;
 
                     try {
@@ -100,8 +128,6 @@ export function useFileHandling() {
                         setError('Error al abrir el archivo');
                     }
                 });
-            } else {
-                // Not supported
             }
 
             // 2. Handle Web Share Target API (when file is shared to PWA)
@@ -163,22 +189,22 @@ export function useFileHandling() {
 
     /**
      * Read file content - works for both Android and PWA
-     * @param {Object} pendingFile - Pending file object
-     * @returns {Promise<File>} File object
      */
-    const readFile = async (pendingFile) => {
+    const readFile = async (pendingFile: PendingFile): Promise<File> => {
         if (!pendingFile) {
             throw new Error('No pending file');
         }
 
         // PWA: file is already a File object
         if (pendingFile.source === 'pwa-launch' || pendingFile.source === 'pwa-share') {
+            if (!pendingFile.file) throw new Error('No file object in pendingFile');
             return pendingFile.file;
         }
 
         // Android: need to read from URI using native plugin
         if (pendingFile.source === 'android') {
             try {
+                if (!pendingFile.uri) throw new Error('No URI in pendingFile');
                 const result = await FileOpener.readFileFromUri({ uri: pendingFile.uri });
 
                 if (!result || !result.data) {
@@ -218,15 +244,14 @@ export function useFileHandling() {
 
 /**
  * Open IndexedDB database (for PWA)
- * @returns {Promise<IDBDatabase>}
  */
-function openDB() {
+function openDB(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
         const request = indexedDB.open('byd-stats-sw', 1);
         request.onerror = () => reject(request.error);
         request.onsuccess = () => resolve(request.result);
         request.onupgradeneeded = (e) => {
-            const db = e.target.result;
+            const db = (e.target as IDBOpenDBRequest).result;
             if (!db.objectStoreNames.contains('shared-files')) {
                 db.createObjectStore('shared-files', { keyPath: 'id' });
             }
@@ -235,5 +260,3 @@ function openDB() {
 }
 
 export default useFileHandling;
-
-

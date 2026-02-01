@@ -48,21 +48,21 @@ export default function BYDStatsAnalyzer() {
     allChargesScrollRef,
 
     // Pass-through props for views
+    // Pass-through props for views
     rawTrips,
     charges,
     settings,
-    updateSettings,
     googleSync,
-    modals,
+    // modals,
     openModal,
     closeModal,
-    selectedTrip,
-    setSelectedTrip,
+    // selectedTrip,
+    // setSelectedTrip,
     selectedCharge,
     setSelectedCharge,
-    setLegalInitialSection,
-    legalInitialSection,
-    data,
+    // setLegalInitialSection,
+    // legalInitialSection,
+    // data,
 
     // Main Layout Props
     layoutMode,
@@ -127,37 +127,17 @@ export default function BYDStatsAnalyzer() {
           dateFrom={allTripsState.dateFrom}
           dateTo={allTripsState.dateTo}
           sortBy={allTripsState.sortBy}
-          sortOrder={allTripsState.sortOrder}
+          sortOrder={allTripsState.sortOrder as 'asc' | 'desc'}
           setFilterType={allTripsState.setFilterType}
           setMonth={allTripsState.setMonth}
           setDateFrom={allTripsState.setDateFrom}
           setDateTo={allTripsState.setDateTo}
           setSortBy={allTripsState.setSortBy}
-          setSortOrder={allTripsState.setSortOrder}
-          modals={modals}
-          openModal={openModal}
-          closeModal={closeModal}
+          setSortOrder={allTripsState.setSortOrder as React.Dispatch<React.SetStateAction<'asc' | 'desc'>>}
+          closeModal={closeModal as (modal: string) => void}
           openTripDetail={openTripDetail}
           scrollRef={allTripsScrollRef}
-          setLegalInitialSection={setLegalInitialSection}
-          legalInitialSection={legalInitialSection}
-          settings={settings}
-          updateSettings={updateSettings}
-          googleSync={googleSync}
-          selectedTrip={selectedTrip}
-          setSelectedTrip={setSelectedTrip}
-          data={data}
-          sqlReady={sqlReady}
-          processDB={processDB}
-          exportDatabase={exportDatabase}
-          clearData={clearData}
-          loadChargeRegistry={loadChargeRegistry}
           isNative={isNative}
-          onFile={(e: React.ChangeEvent<HTMLInputElement>) => {
-            const f = e.target.files[0];
-            if (f) processDB(f, false);
-          }}
-          charges={charges}
         />
       </Suspense>
     );
@@ -179,38 +159,18 @@ export default function BYDStatsAnalyzer() {
           dateFrom={allChargesState.dateFrom}
           dateTo={allChargesState.dateTo}
           sortBy={allChargesState.sortBy}
-          sortOrder={allChargesState.sortOrder}
+          sortOrder={allChargesState.sortOrder as 'asc' | 'desc'}
           setFilterType={allChargesState.setFilterType}
           setMonth={allChargesState.setMonth}
           setDateFrom={allChargesState.setDateFrom}
           setDateTo={allChargesState.setDateTo}
           setSortBy={allChargesState.setSortBy}
-          setSortOrder={allChargesState.setSortOrder}
-          modals={modals}
-          openModal={openModal}
-          closeModal={closeModal}
+          setSortOrder={allChargesState.setSortOrder as React.Dispatch<React.SetStateAction<'asc' | 'desc'>>}
+          openModal={openModal as any}
+          closeModal={closeModal as any}
           setSelectedCharge={setSelectedCharge}
-          selectedCharge={selectedCharge}
           scrollRef={allChargesScrollRef}
-          setLegalInitialSection={setLegalInitialSection}
-          legalInitialSection={legalInitialSection}
-          settings={settings}
-          updateSettings={updateSettings}
-          googleSync={googleSync}
-          rawTrips={rawTrips}
-          selectedTrip={selectedTrip}
-          setSelectedTrip={setSelectedTrip}
-          data={data}
-          sqlReady={sqlReady}
-          processDB={processDB}
-          exportDatabase={exportDatabase}
-          clearData={clearData}
-          loadChargeRegistry={loadChargeRegistry}
           isNative={isNative}
-          onFile={(e: React.ChangeEvent<HTMLInputElement>) => {
-            const f = e.target.files[0];
-            if (f) processDB(f, false);
-          }}
         />
       </Suspense>
     );
@@ -221,7 +181,7 @@ export default function BYDStatsAnalyzer() {
     <>
       <GlobalListeners activeTab={activeTab} />
       <MainLayout
-        layoutMode={layoutMode}
+        layoutMode={layoutMode || undefined}
         isCompact={isCompact}
         activeTab={activeTab}
         tabs={tabs}

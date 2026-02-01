@@ -2,15 +2,18 @@ import { vi } from 'vitest';
 import '@testing-library/jest-dom';
 
 // Mock Web Worker
-global.Worker = class {
-    constructor(url) {
+class MockWorker {
+    url: string;
+    constructor(url: string) {
         this.url = url;
     }
     terminate() { }
     postMessage() { }
     addEventListener() { }
     removeEventListener() { }
-};
+}
+
+global.Worker = MockWorker as any;
 
 // Global mocks for Worker/Crypto only
 
@@ -32,7 +35,7 @@ Object.defineProperty(window, 'matchMedia', {
 
 // Mock Crypto (for UUIDs)
 if (!global.crypto.randomUUID) {
-    global.crypto.randomUUID = () => 'test-uuid-' + Math.random().toString(36).substring(2);
+    global.crypto.randomUUID = (() => 'test-uuid-' + Math.random().toString(36).substring(2)) as any;
 }
 
 // Mock window.URL.createObjectURL (common in frontend tests)

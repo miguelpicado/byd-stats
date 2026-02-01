@@ -191,5 +191,76 @@ describe('dataProcessing', () => {
             expect(result!.isHybrid).toBe(true);
             expect(result!.summary.totalFuel).toBe('5.00');
         });
+
+        it('should accumulate hourly and weekday statistics', () => {
+            // 2024-01-01 was a Monday
+            const trip = {
+                trip: 10,
+                electricity: 1.0,
+                start_timestamp: 1704106800, // 2024-01-01 11:00 AM UTC (Depends on local time env? Tests usually run in UTC or consistent timezone)
+                // Let's assume input assumes local time or UTC handled consistently
+                // We'll check if *bucket 11* or nearby is populated
+            } as Trip;
+
+            const result = processData([trip]);
+            // Check that *some* hourly bucket has data
+            const hourBin = result!.hourly.find(h => h.trips > 0);
+            expect(hourBin).toBeDefined();
+
+            // Check weekday: Mon (0) or similar
+            const dayBin = result!.weekday.find(d => d.trips > 0);
+            expect(dayBin).toBeDefined();
+        });
+
+        it('should handle Dynamic Price when trip is before any charge', () => {
+            // Trip: 10:00
+            const trip = { trip: 100, electricity: 10, start_timestamp: 1000, date: '20250101' } as Trip;
+            // Charge: 12:00
+            const charges = [
+                { kwhCharged: 10, totalCost: 5, timestamp: 2000, date: '2025-01-01', time: '12:00', type: 'electric' }
+            ] as Charge[];
+
+            const settings: Settings = {
+                batterySize: 60, soh: 100,
+                electricStrategy: 'dynamic',
+                electricPrice: 0.50 // Fallback custom price
+            };
+
+            const result = processData([trip], settings, charges);
+            // Should fallback to custom price (0.50) => Cost 5.0
+            expect(result!.top.km[0].calculatedCost).toBe(5.0);
+        });
+
+        it('should correctly sort unsorted charges for Dynamic Pricing', () => {
+            // Use real timestamps to match the date parsing logic in dataProcessing
+            const dateStr = '2025-01-01';
+            const tripTs = new Date(`${dateStr}T15:00:00`).getTime() / 1000;
+            const trip = { trip: 10, electricity: 1, start_timestamp: tripTs, date: '20250101' } as Trip;
+
+            const charges = [
+                { kwhCharged: 10, totalCost: 10, date: dateStr, time: '20:00' }, // Late: Price 1.0
+                { kwhCharged: 10, totalCost: 2, date: dateStr, time: '10:00' },  // Early: Price 0.2
+            ] as Charge[];
+
+            const settings: Settings = { batterySize: 60, soh: 100, electricStrategy: 'dynamic' };
+
+            const result = processData([trip], settings, charges);
+            // Should pick the 10:00 charge (0.2)
+            expect(result!.top.km[0].calculatedCost).toBe(0.2);
+        });
+
+        it('should calculate cost for stationary trips', () => {
+            const trip = { trip: 0, electricity: 5, date: '20250101' } as Trip;
+            const settings: Settings = {
+                batterySize: 60, soh: 100,
+                electricStrategy: 'custom',
+                electricPrice: 1.0
+            };
+
+            const result = processData([trip], settings);
+            expect(result!.summary.stationaryConsumption).toBe('5.0');
+            // Max cost should track stationary trips too
+            expect(result!.summary.maxCost).toBe('5.00');
+        });
     });
 });

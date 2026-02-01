@@ -1,6 +1,28 @@
 import { useMemo } from 'react';
 
-export const useChartDimensions = ({ isVertical, isFullscreenBYD, isCompact }) => {
+interface ChartDimensionsProps {
+    isVertical?: boolean;
+    isFullscreenBYD?: boolean;
+    isCompact?: boolean;
+}
+
+interface ChartDimensions {
+    smallChartHeight: number;
+    patternsChartHeight: number;
+    largeChartHeight: number;
+    overviewSpacingVertical: string;
+    overviewSpacingHorizontal: string;
+    patternsSpacing: string;
+    recordsItemPadding: string;
+    recordsItemPaddingHorizontal: string;
+    recordsListHeightHorizontal: string;
+}
+
+export const useChartDimensions = ({
+    isVertical = false,
+    isFullscreenBYD = false,
+    isCompact = false
+}: ChartDimensionsProps): ChartDimensions => {
 
     // Calculate chart heights based on mode - memoized to prevent recalculation
     const smallChartHeight = useMemo(() => {
@@ -69,5 +91,3 @@ export const useChartDimensions = ({ isVertical, isFullscreenBYD, isCompact }) =
         recordsListHeightHorizontal
     };
 };
-
-

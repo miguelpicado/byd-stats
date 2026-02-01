@@ -95,9 +95,9 @@ const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
                             </h3>
 
                             <div className="space-y-2">
-                                {trips.map((trip) => (
+                                {trips.map((trip, index) => (
                                     <div
-                                        key={trip.id}
+                                        key={trip.id || index}
                                         onClick={() => {
                                             onClose();
                                             onTripSelect(trip);
@@ -152,9 +152,9 @@ const DayDetailsModal: React.FC<DayDetailsModalProps> = ({
                             </h3>
 
                             <div className="space-y-2">
-                                {charges.map((charge) => (
+                                {charges.map((charge, index) => (
                                     <div
-                                        key={charge.id}
+                                        key={charge.id || index}
                                         onClick={() => {
                                             onClose();
                                             onChargeSelect?.(charge);

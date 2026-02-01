@@ -48,6 +48,8 @@ export interface Car {
     vin?: string;
     plate?: string;
     model?: string;
+    lastSync?: string;
+    fileId?: string;
 }
 
 export interface Settings {
@@ -75,6 +77,15 @@ export interface Settings {
     useCalculatedFuelPrice?: boolean;
     priceStrategy?: string; // legacy support
     fuelPriceStrategy?: string; // legacy support
+
+    // Home Charging Settings
+    homeChargerRating?: number; // Amps (default 8)
+    offPeakEnabled?: boolean;
+    offPeakStart?: string; // HH:MM
+    offPeakEnd?: string; // HH:MM
+    offPeakStartWeekend?: string; // HH:MM
+    offPeakEndWeekend?: string; // HH:MM
+    offPeakPrice?: number; // Price per kWh
 
     // UI
     theme?: 'auto' | 'dark' | 'light' | 'system';
