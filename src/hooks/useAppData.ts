@@ -28,6 +28,7 @@ export interface UseAppDataReturn {
     loadFromHistory: () => { success: boolean; count?: number; reason?: string };
     clearHistory: () => boolean;
     isProcessing: boolean;
+    isAiTraining: boolean;
     aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
     aiLoss: number | null;
     aiSoH: number | null;
@@ -92,7 +93,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
     }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
 
     // 5. Worker Processing (Async Stats)
-    const { data, isProcessing, aiScenarios, aiLoss, aiSoH, aiSoHStats } = useProcessedData(filtered, settings, charges);
+    const { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats } = useProcessedData(filtered, settings, charges);
 
     return useMemo(() => ({
         // Trip Data
@@ -122,6 +123,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         loadFromHistory,
         clearHistory,
         isProcessing,
+        isAiTraining,
 
         // AI Data
         aiScenarios,
@@ -133,7 +135,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         filterType, selMonth, dateFrom, dateTo,
         months, filtered, data,
         clearData, saveToHistory, loadFromHistory, clearHistory,
-        isProcessing, aiScenarios, aiLoss, aiSoH, aiSoHStats
+        isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats
     ]);
 };
 

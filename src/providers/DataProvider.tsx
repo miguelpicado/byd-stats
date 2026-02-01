@@ -47,6 +47,7 @@ export interface DataState {
     // AI Data
     aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
     aiLoss: number | null;
+    isAiTraining: boolean;
     aiSoH: number | null;
     aiSoHStats: { points: any[]; trend: any[] } | null;
 
@@ -150,6 +151,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     // AI Data from useProcessedData (via appData)
     const aiScenarios = appData.aiScenarios || [];
     const aiLoss = appData.aiLoss || null;
+    const isAiTraining = appData.isAiTraining || false;
     const aiSoH = appData.aiSoH || null;
     const aiSoHStats = appData.aiSoHStats || null;
 
@@ -353,12 +355,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ...modalState, // Spread remaining modal state
         fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats
+        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining
     }), [
         rawTrips, filtered, data, charges, tripHistory,
         settings, googleSync, database, modalState, fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats
+        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining
     ]);
 
     // Dispatch Value

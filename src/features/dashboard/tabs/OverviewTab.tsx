@@ -42,7 +42,7 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
   isActive = true
 }) => {
   const { updateSettings } = useApp();
-  const { aiScenarios, aiLoss, aiSoH, aiSoHStats, charges, stats } = useData();
+  const { aiScenarios, aiLoss, aiSoH, aiSoHStats, charges, stats, isAiTraining } = useData();
 
 
 
@@ -158,6 +158,7 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         onClose={() => setShowRangeModal(false)}
         aiScenarios={aiScenarios}
         aiLoss={aiLoss}
+        isTraining={isAiTraining}
       />
     </>
   );

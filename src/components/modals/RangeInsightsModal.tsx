@@ -13,9 +13,10 @@ interface RangeInsightsModalProps {
     onClose: () => void;
     aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
     aiLoss: number | null;
+    isTraining?: boolean;
 }
 
-const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose, aiScenarios, aiLoss }) => {
+const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose, aiScenarios, aiLoss, isTraining = false }) => {
     const { t } = useTranslation();
     const [selectedScenario, setSelectedScenario] = React.useState<string | null>(null);
 
@@ -179,8 +180,18 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                                         </p>
                                     </div>
                                     {!isTrained && (
-                                        <div className="mt-3 text-xs text-amber-600 bg-amber-50 dark:bg-amber-900/20 px-3 py-2 rounded-lg">
-                                            ⚠️ {t('insights.notEnoughData', 'Not enough data yet. Using standard estimates until ~5 trips are recorded.')}
+                                        <div className={`mt-3 text-xs px-3 py-2 rounded-lg ${isTraining
+                                            ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 animate-pulse'
+                                            : 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
+                                            }`}>
+                                            {isTraining ? (
+                                                <div className="flex items-center gap-2">
+                                                    <span className="animate-spin text-xl">🧠</span>
+                                                    <span>{t('insights.analyzing', 'AI is analyzing your trips... This may take a moment.')}</span>
+                                                </div>
+                                            ) : (
+                                                <span>⚠️ {t('insights.notEnoughData', 'Not enough data yet. Using standard estimates until ~5 trips are recorded.')}</span>
+                                            )}
                                         </div>
                                     )}
                                 </div>
