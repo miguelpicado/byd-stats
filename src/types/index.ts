@@ -16,6 +16,7 @@ export interface Trip {
     regeneration?: number;
     id?: string;
     startTime?: string;
+    source?: 'local' | 'smartcar' | 'db';
 }
 
 export interface Charge {
