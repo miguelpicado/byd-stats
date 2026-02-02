@@ -12,6 +12,7 @@ import { MapPin, Zap, Clock, Battery, TrendingUp, Activity, Fuel, IconProps, Ale
 import { useLayout } from '@/context/LayoutContext';
 import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
 import { AnomalyService, Anomaly } from '@/services/AnomalyService';
+import { useData } from '@/providers/DataProvider';
 
 const PIE_CHART_OPTIONS = {
     maintainAspectRatio: false,
@@ -91,17 +92,34 @@ const OverviewContent: FC<OverviewContentProps> = ({
     const lineChartRef = useRef<any>(null);
     const pieChartRef = useRef<any>(null);
 
+    const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies } = useData();
     const [showHealthModal, setShowHealthModal] = useState(false);
 
     // Calculate Anomalies
-    const anomalies: Anomaly[] = useMemo(() => {
+    const allAnomalies: Anomaly[] = useMemo(() => {
         if (!stats || !settings) return [];
         return AnomalyService.checkSystemHealth(stats, settings, charges || [], trips);
     }, [stats, settings, charges, trips]);
 
-    const criticalAnomalies = anomalies.filter(a => a.severity === 'critical').length;
-    const warningAnomalies = anomalies.filter(a => a.severity === 'warning').length;
-    const hasAnomalies = anomalies.length > 0;
+    const activeAnomalies = useMemo(() =>
+        allAnomalies.filter(a => !acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id)),
+        [allAnomalies, acknowledgedAnomalies, deletedAnomalies]);
+
+    const historyAnomalies = useMemo(() =>
+        allAnomalies.filter(a => acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id)),
+        [allAnomalies, acknowledgedAnomalies, deletedAnomalies]);
+
+    const criticalAnomalies = activeAnomalies.filter(a => a.severity === 'critical').length;
+    const warningAnomalies = activeAnomalies.filter(a => a.severity === 'warning').length;
+    const hasAnomalies = activeAnomalies.length > 0;
+
+    const handleAcknowledge = (id: string) => {
+        setAcknowledgedAnomalies([...acknowledgedAnomalies, id]);
+    };
+
+    const handleDelete = (id: string) => {
+        setDeletedAnomalies([...deletedAnomalies, id]);
+    };
 
     // Effect to trigger animation when tab becomes active
     useEffect(() => {
@@ -212,7 +230,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
             key: 'system_health',
             icon: hasAnomalies ? AlertTriangle : Activity,
             label: t('stats.systemStatus', 'Estado Sistema'),
-            value: hasAnomalies ? `${anomalies.length} Alerta${anomalies.length > 1 ? 's' : ''}` : t('stats.normal', 'Normal'),
+            value: hasAnomalies ? `${activeAnomalies.length} Alerta${activeAnomalies.length > 1 ? 's' : ''}` : t('stats.normal', 'Normal'),
             unit: '',
             color: criticalAnomalies > 0
                 ? "bg-red-500/20 text-red-500"
@@ -338,7 +356,10 @@ const OverviewContent: FC<OverviewContentProps> = ({
             <HealthReportModal
                 isOpen={showHealthModal}
                 onClose={() => setShowHealthModal(false)}
-                anomalies={anomalies}
+                anomalies={activeAnomalies}
+                historyAnomalies={historyAnomalies}
+                onAcknowledge={handleAcknowledge}
+                onDelete={handleDelete}
             />
         </div>
     );

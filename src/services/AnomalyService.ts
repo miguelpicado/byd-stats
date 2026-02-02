@@ -124,8 +124,8 @@ export const AnomalyService = {
                         severity: efficiency < (threshold - 0.1) ? 'warning' : 'info',
                         title: (isSlowPower || isValley) ? 'Eficiencia (Carga Lenta/Valle)' : 'Baja Eficiencia de Carga',
                         description: `Carga del ${charge.date}: Eficiencia ${Math.round(efficiency * 100)}%. ${(isSlowPower || isValley)
-                                ? `Al cargar a baja potencia (${inferredPower ? '~' + inferredPower.toFixed(1) + 'kW' : 'Lenta'}) es normal tener una eficiencia menor.`
-                                : `Podría indicar pérdidas resistivas o climáticas en carga rápida.`
+                            ? `Al cargar a baja potencia (${inferredPower ? '~' + inferredPower.toFixed(1) + 'kW' : 'Lenta'}) es normal tener una eficiencia menor.`
+                            : `Podría indicar pérdidas resistivas o climáticas en carga rápida.`
                             }`,
                         value: `${(efficiency * 100).toFixed(0)}%`,
                         timestamp: chargeTime || new Date().getTime()
@@ -231,6 +231,7 @@ const checkBatteryHealth = (data: ProcessedData, settings: Settings): Anomaly[] 
             description: 'La salud de tu batería (SoH) ha caído por debajo del 75%.',
             value: `${currentSoH.toFixed(1)}%`
         });
+        // 2. Degradation Warning
     } else if (currentSoH < 85) {
         anomalies.push({
             id: 'soh_warning',
@@ -239,6 +240,18 @@ const checkBatteryHealth = (data: ProcessedData, settings: Settings): Anomaly[] 
             title: 'Degradación de Batería',
             description: 'El SoH está por debajo del 85%. Vigila el estado de salud.',
             value: `${currentSoH.toFixed(1)}%`
+        });
+    }
+
+    // 3. BMS Calibration
+    if (data.summary.sohData && data.summary.sohData.calibration_warning) {
+        anomalies.push({
+            id: 'bms_calibration',
+            type: 'battery',
+            severity: 'info', // Info severity is appropriate for maintenance tasks
+            title: 'Requiere Calibración BMS',
+            description: 'Se recomienda realizar una carga completa al 100% para calibrar las celdas LFP y mejorar la precisión.',
+            value: 'Calibrar'
         });
     }
 

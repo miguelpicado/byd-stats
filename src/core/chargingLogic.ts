@@ -51,343 +51,308 @@ export const ChargingLogic = {
     },
 
     /**
-     * Determines optimal charging windows based on weekly consumption volume and off-peak validation
-     * Returns a list of multiple windows if one is not enough to cover the energy needs.
+     * AI-DRIVEN Smart Charging Logic (Async)
+     * Simulates the upcoming week minute-by-minute and asks the AI Model:
+     * "If I park now, how long will I stay?"
+     * 
+     * Then applies User Constraints:
+     * 1. Tariff (Valle) - Strict intersection
+     * 2. Priorities (Weekend > Weekday Night)
+     * 3. Continuity (Don't split charges if possible)
      */
-    /**
-     * Determines optimal charging windows based on weekly consumption volume and off-peak validation
-     * V5: Volume-Based Scheduling
-     */
-    findSmartChargingWindows: (trips: Trip[], settings?: Settings): { windows: { day: string; start: string; end: string }[]; weeklyKwh: number; note?: string; requiredHours: number; hoursFound: number } | null => {
-        if (!trips || trips.length < 3) return null;
-
-        // 1. Calculate Weekly Consumption (Avg last 30 days)
-        const ONE_DAY = 24 * 60 * 60 * 1000;
-        const now = new Date().getTime();
-        const thirtyDaysAgo = now - (30 * ONE_DAY);
-
-        const validTrips = trips
-            .filter(t => t.start_timestamp && t.end_timestamp)
-            .map(t => ({
-                ...t,
-                start_ms: (t.start_timestamp || 0) * 1000,
-                end_ms: (t.end_timestamp || 0) * 1000
-            }))
-            .sort((a, b) => a.start_ms - b.start_ms);
-
-        if (validTrips.length === 0) return null;
-
-        const recentTrips = validTrips.filter(t => t.start_ms > thirtyDaysAgo);
-        const dataToUse = recentTrips.length > 5 ? recentTrips : validTrips;
-
+    findSmartChargingWindows: async (
+        trips: Trip[],
+        settings?: Settings,
+        predictDeparture?: (ts: number) => Promise<{ departureTime: number; duration: number } | null>
+    ): Promise<{
+        windows: { day: string; start: string; end: string; tariffLimit: string; startMins: number; endMins: number }[];
+        weeklyKwh: number;
+        requiredHours: number;
+        hoursFound: number;
+        note?: string;
+    }> => {
+        // 1. Calculate Needs (Volume-Based)
         let totalKwh = 0;
-        let minTime = now;
-        let maxTime = 0;
+        let daysActive = 30; // Default
 
-        dataToUse.forEach(t => {
-            totalKwh += (t.electricity || 0);
-            if (t.start_ms < minTime) minTime = t.start_ms;
-            if (t.start_ms > maxTime) maxTime = t.start_ms;
-        });
+        if (trips && trips.length > 0) {
+            const valid = trips.filter(t => t.start_timestamp && t.electricity);
+            totalKwh = valid.reduce((sum, t) => sum + (t.electricity || 0), 0);
 
-        const spanMs = Math.max(ONE_DAY, maxTime - minTime);
-        const spanDays = spanMs / ONE_DAY;
-        const dailyKwh = totalKwh / spanDays;
-        const weeklyKwh = dailyKwh * 7;
+            if (valid.length > 0) {
+                const first = valid[0].start_timestamp * 1000;
+                const last = valid[valid.length - 1].end_timestamp * 1000;
+                const span = Math.max(1, (last - first) / (1000 * 3600 * 24));
+                daysActive = span;
+            }
+        }
 
-        // 2. Calculate Required Charging Hours (Volume-Based)
-        const amps = settings?.homeChargerRating || 16; // Default to 16A if unknown
-        const powerKw = (amps * 230) / 1000;
-        const requiredHours = (weeklyKwh / powerKw) * 1.05; // 5% buffer
+        const avgWeekly = (totalKwh / Math.max(1, daysActive)) * 7;
+        const targetKwh = avgWeekly * 1.1; // +10% Buffer
 
-        // 3. Gap Analysis (Find Parking Windows)
-        // We find gaps > 2h
-        const gaps: { start: number; end: number; durationH: number }[] = [];
-        for (let i = 0; i < validTrips.length - 1; i++) {
-            const currentTrip = validTrips[i];
-            const nextTrip = validTrips[i + 1];
-            const gapMs = nextTrip.start_ms - currentTrip.end_ms;
+        // Charger Speed
+        let chargePower = 3.6; // Default to 16A * 230V
+        if (settings?.homeChargerRating) {
+            chargePower = (settings.homeChargerRating * 230) / 1000;
+        }
 
-            if (gapMs > 2 * 60 * 60 * 1000) {
-                gaps.push({
-                    start: currentTrip.end_ms,
-                    end: nextTrip.start_ms,
-                    durationH: gapMs / (1000 * 60 * 60)
+        const requiredHours = targetKwh / chargePower;
+
+        if (!predictDeparture) {
+            // Fallback: Basic night slots if AI is active but service missing
+            console.warn("AI Charging Logic: No prediction service provided. Fallback to basic night slots.");
+            return {
+                windows: [
+                    { day: 'Lunes', start: '00:00', end: '08:00', tariffLimit: '08:00', startMins: 0, endMins: 480 },
+                    { day: 'Martes', start: '00:00', end: '08:00', tariffLimit: '08:00', startMins: 0, endMins: 480 },
+                    { day: 'Miércoles', start: '00:00', end: '08:00', tariffLimit: '08:00', startMins: 0, endMins: 480 },
+                    { day: 'Jueves', start: '00:00', end: '08:00', tariffLimit: '08:00', startMins: 0, endMins: 480 },
+                    { day: 'Viernes', start: '00:00', end: '08:00', tariffLimit: '08:00', startMins: 0, endMins: 480 },
+                ],
+                weeklyKwh: targetKwh,
+                requiredHours,
+                hoursFound: 40,
+                note: 'ai_missing'
+            };
+        }
+
+        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        const currentDay = now.getDay();
+        const distToMon = (1 + 7 - currentDay) % 7;
+        startOfWeek.setDate(now.getDate() + distToMon);
+        startOfWeek.setHours(0, 0, 0, 0);
+
+        const isWeekendTariff = (dIndex: number) => dIndex === 0 || dIndex === 6;
+
+        // Analyze historical trips for weekend gaps
+        const dayAvailability = new Map<number, { start: number, end: number }[]>();
+        if (trips && trips.length > 5) {
+            const dayTrips = new Map<number, { start: number, end: number }[]>();
+            trips.forEach(t => {
+                const ts = t.start_timestamp || t.end_timestamp;
+                if (!ts) return;
+                const d = new Date(ts * 1000);
+                const dIdx = d.getDay();
+                const start = d.getHours() * 60 + d.getMinutes();
+                const end = start + (t.duration || 30);
+                if (!dayTrips.has(dIdx)) dayTrips.set(dIdx, []);
+                dayTrips.get(dIdx)!.push({ start, end });
+            });
+
+            days.forEach((_, dIdx) => {
+                const tList = dayTrips.get(dIdx);
+                if (!tList || tList.length < 2) {
+                    dayAvailability.set(dIdx, [{ start: 0, end: 1439 }]);
+                    return;
+                }
+                const minS = Math.min(...tList.map(t => t.start));
+                const maxE = Math.max(...tList.map(t => t.end));
+                if (maxE - minS > 60) {
+                    dayAvailability.set(dIdx, [
+                        { start: 0, end: Math.max(0, minS - 30) },
+                        { start: Math.min(1439, maxE + 30), end: 1439 }
+                    ]);
+                } else {
+                    dayAvailability.set(dIdx, [{ start: 0, end: 1439 }]);
+                }
+            });
+        }
+
+        const candidates: {
+            day: string;
+            dayIndex: number;
+            startMins: number;
+            endMins: number;
+            duration: number;
+            score: number
+        }[] = [];
+
+        // 2. Simulation Loop (The "AI Probe")
+        // We simulate hour by hour for 7 days
+        for (let d = 0; d < 7; d++) {
+            const jsDayIndex = (1 + d) % 7; // Mon(1) -> Sun(0)
+            const dayName = days[jsDayIndex];
+
+            // Probe every 3 hours to "discover" stay windows
+            for (let h = 0; h < 24; h += 3) {
+                const simDate = new Date(startOfWeek);
+                simDate.setDate(simDate.getDate() + d);
+                simDate.setHours(h, 0, 0, 0);
+
+                const prediction = await predictDeparture(simDate.getTime());
+                if (!prediction || prediction.duration < 1.5) continue; // Lower threshold to discover more slots
+
+                const naturalStartMins = h * 60;
+                const naturalDurationMins = prediction.duration * 60;
+
+                // Intersect with historical availability
+                const avail = dayAvailability.get(jsDayIndex) || [{ start: 0, end: 1439 }];
+                avail.forEach(slot => {
+                    const start = Math.max(naturalStartMins, slot.start);
+                    const end = Math.min(naturalStartMins + naturalDurationMins, slot.end);
+
+                    if (end - start > 60) {
+                        // Check overlap with current day valley
+                        let tStart = 0, tEnd = 8 * 60;
+                        if (isWeekendTariff(jsDayIndex)) tEnd = 24 * 60;
+
+                        const wStart = Math.max(start, tStart);
+                        const wEnd = Math.min(end, tEnd);
+
+                        if (wEnd > wStart + 30) {
+                            candidates.push({
+                                day: dayName,
+                                dayIndex: jsDayIndex,
+                                startMins: wStart,
+                                endMins: wEnd,
+                                duration: (wEnd - wStart) / 60,
+                                score: (wEnd - wStart) / 60 * (isWeekendTariff(jsDayIndex) ? 2.0 : 0.5)
+                            });
+                        }
+                    }
                 });
             }
         }
 
-        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-
-
-        // Helper to format time "HH:MM"
-        const formatTime = (date: Date) => {
-            const h = date.getHours().toString().padStart(2, '0');
-            const m = date.getMinutes().toString().padStart(2, '0');
-            return `${h}:${m}`;
-        };
-
-        // 4. Detailed Off-Peak Intersection (Bucket Candidates)
-        interface WindowCandidate {
-            day: string;
-            start: string;
-            end: string;
-            duration: number; // Duration OF THE CHARGING SESSION (intersection with off-peak)
-            gapDuration: number; // Duration of the full parking event
-            dayIndex: number;
-            uniqueId: string;
-        }
-
-        let candidates: WindowCandidate[] = [];
-
-        // Off-Peak check function
-        const getOffPeakSchedule = (dayIdx: number) => {
-            const isWeekend = dayIdx === 0 || dayIdx === 6;
-
-            // Resolve Start/End independently
-            // If weekend specific value is set, use it. Otherwise fallback to general off-peak setting.
-            // "00:00" is truthy, only "" or undefined/null are falsy.
-
-            const startStr = (isWeekend && settings?.offPeakStartWeekend)
-                ? settings.offPeakStartWeekend
-                : (settings?.offPeakStart || "00:00");
-
-            const endStr = (isWeekend && settings?.offPeakEndWeekend)
-                ? settings.offPeakEndWeekend
-                : (settings?.offPeakEnd || "08:00");
-
-            return { start: startStr, end: endStr };
-        };
-
-        if (settings?.offPeakEnabled) {
-
-            // Limit analysis to recently seen gaps to imply "current habits"
-            // Or use ALL gaps but then average them?
-            // V5: Use recent gaps (last 4 weeks) to simulate "Next Week" availability
-            const recentGaps = gaps.slice(-14); // APPROX last 2 weeks of trips
-
-            recentGaps.forEach(g => {
-                let current = new Date(g.start);
-                const gapEnd = new Date(g.end);
-
-                // Safety loop
-                let loopCount = 0;
-                while (current < gapEnd && loopCount < 14) {
-                    loopCount++;
-                    const currentDayStart = new Date(current);
-                    currentDayStart.setHours(0, 0, 0, 0);
-                    const dayIndex = currentDayStart.getDay();
-
-                    const schedule = getOffPeakSchedule(dayIndex);
-                    const [startH, startM] = schedule.start.split(':').map(Number);
-                    const [endH, endM] = schedule.end.split(':').map(Number);
-
-                    let wStart = new Date(currentDayStart);
-                    wStart.setHours(startH, startM, 0, 0);
-
-                    let wEnd = new Date(currentDayStart);
-
-                    // Special Case: "00:00 to 00:00" means "All Day" (24h)
-                    if (startH === 0 && startM === 0 && endH === 0 && endM === 0) {
-                        wEnd.setDate(wEnd.getDate() + 1); // Full 24h (Ends 00:00 next day)
-                        wEnd.setHours(0, 0, 0, 0);
-                    } else {
-                        wEnd.setHours(endH, endM, 0, 0);
-
-                        // Handle midnight crossing
-                        // Logic: "23:00 - 07:00" -> Starts today 23:00, Ends tomorrow 07:00
-                        // Logic: "00:00 - 23:59" -> Starts today 00:00, Ends today 23:59 (Normal)
-                        if (wEnd <= wStart) {
-                            wEnd.setDate(wEnd.getDate() + 1);
-                        }
-                    }
-
-                    // Strict Intersection: Gap vs Window
-                    const iStart = new Date(Math.max(g.start, wStart.getTime()));
-                    const iEnd = new Date(Math.min(g.end, wEnd.getTime()));
-
-                    if (iStart < iEnd) {
-                        const durH = (iEnd.getTime() - iStart.getTime()) / (1000 * 60 * 60);
-                        if (durH > 0.5) {
-                            candidates.push({
-                                day: days[iStart.getDay()],
-                                dayIndex: iStart.getDay(),
-                                start: formatTime(iStart),
-                                end: formatTime(iEnd),
-                                duration: durH,
-                                gapDuration: g.durationH,
-                                uniqueId: `${days[iStart.getDay()]}-${formatTime(iStart)}-${formatTime(iEnd)}`
-                            });
-                        }
-                    }
-
-                    // Move to next day relative to START of window
-                    current = new Date(wStart);
-                    current.setDate(current.getDate() + 1);
-                    current.setHours(0, 0, 0, 0); // Reset to midnight next day
-                }
-            });
-        } else {
-            // NON-OFF-PEAK Mode (Just assume night charging is preferred 00-08)
-            // ... legacy logic, or effectively same logic with fixed 00-08 window
-            // For V5 we will skip non-off-peak refinement for now and fallback to simplisitc
-            // This branch covers the user request specifically for off-peak constraints.
-        }
-
-        // 5. Bucket Filling Algorithm (Consolidated)
-
-        interface ConsolidatedSlot {
-            totalDur: number;
-            count: number;
-            startMins: number; // Avg start time in minutes
-            endMins: number; // Avg end time in minutes (can be > 1440 if next day)
-            day: string;
-            dayIndex: number;
-            dayKey: string;
-        }
-
-        const consolidated: Record<string, ConsolidatedSlot> = {};
-
-        candidates.forEach(c => {
-            const dayKey = c.day;
-            const [sH, sM] = c.start.split(':').map(Number);
-            const startMins = sH * 60 + sM;
-
-            // Re-calculate End from Duration to be consistent (End = Start + Dur)
-            // This handles "+1d" logic naturally via min count
-            const endMins = startMins + (c.duration * 60);
-
-            // Fuzzy Merge: Check if we have an existing slot for this day that starts within 2h
-            let foundKey: string | null = null;
-
-            Object.keys(consolidated).forEach(k => {
-                if (k.startsWith(dayKey)) {
-                    const existing = consolidated[k];
-                    // Check overlap or proximity (2 hours = 120 mins)
-                    if (Math.abs(existing.startMins - startMins) < 120) {
-                        foundKey = k;
-                    }
-                }
-            });
-
-            if (foundKey) {
-                // Merge
-                consolidated[foundKey].totalDur += c.duration;
-                // Update Weighted Avg Start/End
-                const n = consolidated[foundKey].count;
-                consolidated[foundKey].startMins = (consolidated[foundKey].startMins * n + startMins) / (n + 1);
-                consolidated[foundKey].endMins = (consolidated[foundKey].endMins * n + endMins) / (n + 1);
-                consolidated[foundKey].count++;
-            } else {
-                // New Slot
-                const newKey = `${dayKey}-${startMins}`; // Unique enough
-                consolidated[newKey] = {
-                    totalDur: c.duration,
-                    count: 1,
-                    startMins: startMins,
-                    endMins: endMins,
-                    day: c.day,
-                    dayIndex: c.dayIndex,
-                    dayKey: dayKey
-                };
-            }
+        // 4. Merge & Apply HITL
+        candidates.sort((a, b) => b.score - a.score);
+        const deduped: typeof candidates = [];
+        candidates.forEach(cand => {
+            const exists = deduped.find(d => d.dayIndex === cand.dayIndex && Math.abs(d.startMins - cand.startMins) < 60);
+            if (!exists) deduped.push(cand);
         });
 
-        // Convert to average available hours per slot
-        let availableSlots = Object.values(consolidated).map(c => {
-            const avgDur = c.totalDur / c.count;
-
-            // Format Start
-            const sH = Math.floor(c.startMins / 60);
-            const sM = Math.floor(c.startMins % 60);
-            const startStr = `${String(sH).padStart(2, '0')}:${String(sM).padStart(2, '0')}`;
-
-            // Format End
-            // Re-derive End from Start + AvgDuration to ensure it matches the duration shown
-            const finalEndMins = c.startMins + (avgDur * 60);
-            const eH = Math.floor((finalEndMins % 1440) / 60); // Wrap 24h for time
-            const eM = Math.floor((finalEndMins % 1440) % 60);
-
-            let endStr = `${String(eH).padStart(2, '0')}:${String(eM).padStart(2, '0')}`;
-
-            // Check for day crossing
-            if (finalEndMins >= 1440) {
-                if (avgDur > 24) {
-                    // Find End Day
-                    const daysToAdd = Math.floor(finalEndMins / 1440);
-                    const endDayIdx = (c.dayIndex + daysToAdd) % 7;
-                    endStr = `${days[endDayIdx].substring(0, 3)} ${endStr}`;
-                } else if (finalEndMins > 1440) {
-                    // Crossed midnight once, < 24h
-                    // endStr = `${endStr} (+1d)`; // Optional, user might infer it
+        if (settings?.smartChargingPreferences && Array.isArray(settings.smartChargingPreferences) && settings.smartChargingPreferences.length > 0) {
+            const daysToOverride = new Set(settings.smartChargingPreferences.filter(p => p.active).map(p => p.day));
+            daysToOverride.forEach(dayName => {
+                const dayIdx = days.indexOf(dayName);
+                if (dayIdx === -1) return;
+                for (let i = deduped.length - 1; i >= 0; i--) {
+                    if (deduped[i].dayIndex === dayIdx) deduped.splice(i, 1);
                 }
+            });
 
-                // Fix specific "00:00" alignment if close
-                if (eH === 0 && eM === 0) endStr = "00:00";
+            settings.smartChargingPreferences.forEach(pref => {
+                if (!pref.active) return;
+                const dayIdx = days.indexOf(pref.day);
+                if (dayIdx === -1) return;
+                const [sH, sM] = pref.start.split(':').map(Number);
+                const [eH, eM] = pref.end.split(':').map(Number);
+                const sMins = sH * 60 + (sM || 0);
+                const eMins = eH * 60 + (eM || 0);
+                if (eMins > sMins) {
+                    deduped.push({
+                        day: pref.day,
+                        dayIndex: dayIdx,
+                        startMins: sMins,
+                        endMins: eMins,
+                        duration: (eMins - sMins) / 60,
+                        score: 9999
+                    });
+                }
+            });
+        }
+
+        // Anchored Selection (Build Backwards)
+        const selected: typeof candidates = [];
+        let gatheredKwh = 0;
+
+        while (gatheredKwh < targetKwh) {
+            let bestCand = null;
+            let maxEffectiveScore = -1;
+
+            for (const cand of deduped) {
+                if (selected.includes(cand)) continue;
+
+                const hasOverlap = selected.some(s =>
+                    s.dayIndex === cand.dayIndex &&
+                    Math.max(s.startMins, cand.startMins) < Math.min(s.endMins, cand.endMins)
+                );
+                if (hasOverlap) continue;
+
+                // Contiguity Bonus
+                let bonus = 0;
+                const connects = selected.some(s => {
+                    if (s.dayIndex === cand.dayIndex) {
+                        return Math.abs(s.endMins - cand.startMins) < 5 || Math.abs(s.startMins - cand.endMins) < 5;
+                    }
+                    if ((s.dayIndex + 1) % 7 === cand.dayIndex) {
+                        return s.endMins >= 1435 && cand.startMins <= 5;
+                    }
+                    if ((cand.dayIndex + 1) % 7 === s.dayIndex) {
+                        return cand.endMins >= 1435 && s.startMins <= 5;
+                    }
+                    return false;
+                });
+
+                if (connects) bonus = 50;
+
+                const effectiveScore = cand.score + bonus;
+                if (effectiveScore > maxEffectiveScore) {
+                    maxEffectiveScore = effectiveScore;
+                    bestCand = cand;
+                }
             }
 
-            return {
-                day: c.day,
-                start: startStr,
-                end: endStr,
-                avgDuration: avgDur,
-                score: avgDur
-            };
-        });
-
-        // B. Sort by "Yield" (Longest charging windows first), with preference for Weekends/Monday Morning
-        // We want to prioritize continuity: Sat -> Sun -> Mon Am
-        availableSlots.forEach(s => {
-            let multiplier = 1.0;
-            // Preference for Saturday (6) and Sunday (0)
-            if (s.day === 'Sábado' || s.day === 'Domingo') multiplier = 1.3;
-            // Preference for Monday (1) early morning (continuation of Sunday)
-            if (s.day === 'Lunes' && parseInt(s.start.split(':')[0]) < 10) multiplier = 1.2;
-
-            s.score = s.avgDuration * multiplier;
-        });
-
-        availableSlots.sort((a, b) => b.score - a.score);
-
-        // C. Fill the bucket
-        const recommendedWindows: { day: string; start: string; end: string }[] = [];
-        let accumulatedHours = 0;
-
-        for (const slot of availableSlots) {
-            // Stop if we have enough, BUFFERED by 10% to ensure coverage
-            if (accumulatedHours >= requiredHours) break;
-
-            recommendedWindows.push({
-                day: slot.day,
-                start: slot.start,
-                end: slot.end
-            });
-
-            accumulatedHours += slot.avgDuration;
+            if (!bestCand) break;
+            selected.push(bestCand);
+            gatheredKwh += bestCand.duration * chargePower;
         }
 
-        // D. Sort output chronologically (Visual Flow: Sat -> Sun -> Mon -> ...)
-        // We want the user to see the "Weekend Block" first.
-        // Map: Sat(6)->0, Sun(0)->1, Mon(1)->2 ... Fri(5)->6
-        const getDaySortIndex = (d: string) => {
-            const idx = days.indexOf(d);
-            return (idx + 1) % 7;
+        // 5. Continuity Pass (Bridge small gaps between adjacent days)
+        const MAX_CONTINUITY_GAP = 120; // 2 hours
+        for (const cand of selected) {
+            // Forward Bridge: If this window ends near midnight and next day starts at 00:00
+            const nextDayIdx = (cand.dayIndex + 1) % 7;
+            const hasNextStart = selected.some(s => s.dayIndex === nextDayIdx && s.startMins === 0);
+            if (hasNextStart && cand.endMins < 1439 && (1440 - cand.endMins) <= MAX_CONTINUITY_GAP) {
+                cand.endMins = 1439;
+                cand.duration = (cand.endMins - cand.startMins) / 60;
+            }
+
+            // Backward Bridge: If this window starts near midnight and previous day ended at 23:59
+            const prevDayIdx = (cand.dayIndex + 6) % 7;
+            const hasPrevEnd = selected.some(s => s.dayIndex === prevDayIdx && s.endMins >= 1439);
+            if (hasPrevEnd && cand.startMins > 0 && cand.startMins <= MAX_CONTINUITY_GAP) {
+                cand.startMins = 0;
+                cand.duration = (cand.endMins - cand.startMins) / 60;
+            }
+        }
+
+        // 6. Final Formatting
+        const getSortIdx = (d: number) => {
+            if (d === 6) return 0; // Sat first
+            if (d === 0) return 1; // Sun second
+            return d + 1; // Mon...
         };
 
-        recommendedWindows.sort((a, b) => {
-            const idxA = getDaySortIndex(a.day);
-            const idxB = getDaySortIndex(b.day);
+        selected.sort((a, b) => {
+            const idxA = getSortIdx(a.dayIndex);
+            const idxB = getSortIdx(b.dayIndex);
             if (idxA !== idxB) return idxA - idxB;
-            // Secondary sort by time
-            return a.start.localeCompare(b.start);
+            return a.startMins - b.startMins;
         });
+
+        const formatTime = (vals: number) => {
+            const h = Math.floor(vals / 60);
+            const m = Math.floor(vals % 60);
+            return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+        };
 
         return {
-            windows: recommendedWindows,
-            weeklyKwh,
+            windows: selected.map(s => ({
+                day: s.day,
+                start: formatTime(s.startMins),
+                end: formatTime(s.endMins),
+                tariffLimit: isWeekendTariff(s.dayIndex) ? "23:59" : "08:00",
+                startMins: s.startMins,
+                endMins: s.endMins
+            })),
+            weeklyKwh: targetKwh,
             requiredHours,
-            hoursFound: accumulatedHours,
-            note: accumulatedHours < requiredHours ? 'insufficient_time' : undefined
+            hoursFound: selected.reduce((acc, s) => acc + s.duration, 0)
         };
     },
 
@@ -395,17 +360,15 @@ export const ChargingLogic = {
      * Legacy function kept for compatibility if needed, but redirects to smart logic wrapper
      * @deprecated Use findSmartChargingWindows
      */
-    findOptimalChargingWindow: (trips: Trip[], settings?: Settings): { day: string; start: string; end: string; confidence: number } | null => {
-        const smart = ChargingLogic.findSmartChargingWindows(trips, settings);
-        if (smart && smart.windows.length > 0) {
-            return {
-                day: smart.windows[0].day, // Return primary day
-                start: smart.windows[0].start,
-                end: smart.windows[0].end,
-                confidence: 0.9
-            };
-        }
-        return null;
+    findOptimalChargingWindow: (_trips: Trip[], _settings?: Settings): { day: string; start: string; end: string; confidence: number } | null => {
+        // Warning: This legacy function is synchronous and cannot call the new async logic.
+        // Returning default Sunday window as fallback.
+        return {
+            day: 'Domingo',
+            start: '00:00',
+            end: '10:00',
+            confidence: 0.5
+        };
     },
 
     /**

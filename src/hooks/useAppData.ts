@@ -6,6 +6,7 @@ import { Trip, Charge, Settings, ProcessedData } from '@/types';
 import { useFilters } from './useFilters';
 import { useTrips } from './useTrips';
 import { useProcessedData } from './useProcessedData';
+import { useLocalStorage } from './useLocalStorage';
 
 export interface UseAppDataReturn {
     rawTrips: Trip[];
@@ -34,6 +35,11 @@ export interface UseAppDataReturn {
     aiSoH: number | null;
     aiSoHStats: { points: any[]; trend: any[] } | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
+    acknowledgedAnomalies: string[];
+    setAcknowledgedAnomalies: (ids: string[]) => void;
+    deletedAnomalies: string[];
+    setDeletedAnomalies: (ids: string[]) => void;
+    forceRecalculate: () => void;
 }
 
 const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: string | null = null): UseAppDataReturn => {
@@ -94,7 +100,11 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
     }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
 
     // 5. Worker Processing (Async Stats)
-    const { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture } = useProcessedData(filtered, settings, charges);
+    const { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate } = useProcessedData(filtered, settings, charges);
+
+    // 6. Anomalies State
+    const [acknowledgedAnomalies, setAcknowledgedAnomalies] = useLocalStorage<string[]>('acknowledged_anomalies', []);
+    const [deletedAnomalies, setDeletedAnomalies] = useLocalStorage<string[]>('deleted_anomalies', []);
 
     return useMemo(() => ({
         // Trip Data
@@ -130,13 +140,23 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         aiScenarios,
         aiLoss,
         aiSoH,
-        aiSoHStats
+        aiSoHStats,
+        predictDeparture, // Added explicitly
+
+        // Anomalies
+        acknowledgedAnomalies,
+        setAcknowledgedAnomalies,
+        deletedAnomalies,
+        setDeletedAnomalies,
+        forceRecalculate
+
     }), [
         rawTrips, tripHistory,
         filterType, selMonth, dateFrom, dateTo,
         months, filtered, data,
         clearData, saveToHistory, loadFromHistory, clearHistory,
-        isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture
+        isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate,
+        acknowledgedAnomalies, deletedAnomalies
     ]);
 };
 
