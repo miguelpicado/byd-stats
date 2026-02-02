@@ -33,6 +33,7 @@ export interface UseProcessedDataReturn {
     aiSoHStats: { points: any[]; trend: any[] } | null;
     isAiTraining: boolean;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
+    forceRecalculate: () => void;
 }
 
 export const useProcessedData = (
@@ -65,6 +66,15 @@ export const useProcessedData = (
         soh: number;
         stats: { points: any[]; trend: any[] };
     } | null>('ai_soh_predictions', null);
+
+    // Recalculation Trigger
+    const [recalcTrigger, setRecalcTrigger] = useState(0);
+
+    const triggerRecalculation = () => {
+        setAiCache(null);
+        setSohCache(null);
+        setRecalcTrigger(prev => prev + 1);
+    };
 
     const workerRef = useRef<Comlink.Remote<DataWorkerApi> | null>(null);
 
@@ -218,12 +228,12 @@ export const useProcessedData = (
 
         process();
 
-    }, [filteredTrips, i18n.language, settings, charges]);
+    }, [filteredTrips, i18n.language, settings, charges, recalcTrigger]);
 
     const predictDeparture = async (startTime: number) => {
         if (!workerRef.current) return null;
         return await workerRef.current.predictDeparture(startTime);
     };
 
-    return { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture };
+    return { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate: triggerRecalculation };
 };

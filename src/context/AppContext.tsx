@@ -63,6 +63,9 @@ const DEFAULT_SETTINGS: Settings = {
     offPeakEndWeekend: undefined,
     offPeakPrice: 0.05,
 
+    // AI / Smart Charging Preferences
+    smartChargingPreferences: [],
+
     // Theme & UI
     theme: 'auto',
     chargerTypes: DEFAULT_CHARGER_TYPES,
@@ -96,6 +99,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         try {
             const saved = localStorage.getItem(settingsKey);
             const loaded = saved ? JSON.parse(saved) : {};
+
+            // Migration: Ensure smartChargingPreferences is an array (was object in previous version)
+            if (loaded.smartChargingPreferences && !Array.isArray(loaded.smartChargingPreferences)) {
+                loaded.smartChargingPreferences = [];
+            }
+
             // Merge with defaults
             setSettings({ ...DEFAULT_SETTINGS, ...loaded });
         } catch (e) {
@@ -148,7 +157,12 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 offPeakEnd: updated.offPeakEnd ?? prev.offPeakEnd ?? '08:00',
                 offPeakStartWeekend: updated.offPeakStartWeekend ?? prev.offPeakStartWeekend,
                 offPeakEndWeekend: updated.offPeakEndWeekend ?? prev.offPeakEndWeekend,
-                offPeakPrice: updated.offPeakPrice ?? prev.offPeakPrice ?? 0.08
+                offPeakPrice: updated.offPeakPrice ?? prev.offPeakPrice ?? 0.08,
+
+                // HITL Preferences
+                smartChargingPreferences: Array.isArray(updated.smartChargingPreferences)
+                    ? updated.smartChargingPreferences
+                    : (Array.isArray(prev.smartChargingPreferences) ? prev.smartChargingPreferences : [])
             };
 
             if (settingsKey) {

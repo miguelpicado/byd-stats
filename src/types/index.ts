@@ -87,9 +87,20 @@ export interface Settings {
     offPeakEndWeekend?: string; // HH:MM
     offPeakPrice?: number; // Price per kWh
 
+    // AI / Smart Charging Preferences (HITL)
+    smartChargingPreferences?: ChargingPreference[];
+
     // UI
     theme?: 'auto' | 'dark' | 'light' | 'system';
     hiddenTabs?: string[];
+}
+
+export interface ChargingPreference {
+    id: string; // Unique ID
+    day: string; // 'Lunes', 'Martes', etc.
+    start: string; // HH:MM
+    end: string; // HH:MM
+    active: boolean; // Is this override enabled?
 }
 
 export interface ChargerType {

@@ -1,7 +1,8 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Info, Activity, Clock, Zap, Target, FileText, TrendingUp, Filter } from '../Icons'; // Added icons
+import { X, Info, Activity, Clock, Zap, Target, FileText, TrendingUp, Filter, RefreshCw } from '../Icons'; // Added icons
 import ModalPortal from '../common/ModalPortal';
+import { useData } from '@/providers/DataProvider';
 
 export type SoHMetricType = 'sei' | 'cycle' | 'calendar' | 'calibration' | 'formula' | 'ai_soh' | 'samples';
 
@@ -17,6 +18,13 @@ const SoHExplanationModal: React.FC<SoHExplanationModalProps> = ({
     type
 }) => {
     const { t } = useTranslation();
+    const { forceRecalculate, isAiTraining } = useData();
+
+    const handleRecalculate = () => {
+        if (forceRecalculate) {
+            forceRecalculate();
+        }
+    };
 
     if (!isOpen || !type) return null;
 
@@ -163,12 +171,25 @@ const SoHExplanationModal: React.FC<SoHExplanationModalProps> = ({
                         </div>
                     </div>
 
-                    <div className="p-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-700 text-center">
+                    <div className="p-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-700 flex justify-center gap-3">
+                        {type === 'ai_soh' && (
+                            <button
+                                onClick={handleRecalculate}
+                                disabled={isAiTraining}
+                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isAiTraining
+                                    ? 'bg-slate-100 text-slate-400 cursor-wait'
+                                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30'
+                                    }`}
+                            >
+                                <RefreshCw className={`w-4 h-4 ${isAiTraining ? 'animate-spin' : ''}`} />
+                                {isAiTraining ? t('common.calculating', 'Recalculando...') : t('common.recalculate', 'Recalcular')}
+                            </button>
+                        )}
                         <button
                             onClick={onClose}
-                            className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+                            className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 px-4 py-2"
                         >
-                            Entendido
+                            {t('common.close', 'Cerrar')}
                         </button>
                     </div>
                 </div>

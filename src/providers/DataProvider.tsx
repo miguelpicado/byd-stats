@@ -51,6 +51,13 @@ export interface DataState {
     aiSoH: number | null;
     aiSoHStats: { points: any[]; trend: any[] } | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
+    forceRecalculate: () => void;
+
+    // Anomalies
+    acknowledgedAnomalies: string[];
+    setAcknowledgedAnomalies: (ids: string[]) => void;
+    deletedAnomalies: string[];
+    setDeletedAnomalies: (ids: string[]) => void;
 
     // ... other state
 }
@@ -156,6 +163,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const aiSoH = appData.aiSoH || null;
     const aiSoHStats = appData.aiSoHStats || null;
     const predictDeparture = appData.predictDeparture;
+    const forceRecalculate = appData.forceRecalculate;
+    const acknowledgedAnomalies = appData.acknowledgedAnomalies;
+    const setAcknowledgedAnomalies = appData.setAcknowledgedAnomalies;
+    const deletedAnomalies = appData.deletedAnomalies;
+    const setDeletedAnomalies = appData.setDeletedAnomalies;
 
     const {
         filterType, setFilterType,
@@ -357,12 +369,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ...modalState, // Spread remaining modal state
         fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture
+        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture, forceRecalculate,
+        acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
     }), [
         rawTrips, filtered, data, charges, tripHistory,
         settings, googleSync, database, modalState, fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture
+        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture, forceRecalculate,
+        acknowledgedAnomalies, deletedAnomalies
     ]);
 
     // Dispatch Value

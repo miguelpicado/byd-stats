@@ -2,10 +2,11 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ModalPortal from '../common/ModalPortal';
-import { X, Zap, Calendar, TrendingUp, Info, ChevronLeft, ChevronRight } from '../Icons';
+import { X, Zap, Calendar, TrendingUp, Info, ChevronLeft, ChevronRight, Edit, Check, Trash2, Plus } from '../Icons';
 import { ChargingLogic } from '../../core/chargingLogic';
 import { ProcessedData, Settings, Charge, Trip } from '../../types';
 import { useData } from '../../providers/DataProvider';
+import { useApp } from '../../context/AppContext';
 
 interface ChargingInsightsModalProps {
     isOpen: boolean;
@@ -29,9 +30,63 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     trips = []
 }) => {
     const { t } = useTranslation();
+    const { updateSettings } = useApp();
     const { predictDeparture } = useData();
     const [view, setView] = useState<InsightView>('main');
-    const [aiPredictions, setAiPredictions] = useState<Record<string, string>>({});
+    const [smartCharging, setSmartCharging] = useState<any>(null); // Async state
+    const [isCalculating, setIsCalculating] = useState(false);
+
+    // HITL Editing State
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [isAdding, setIsAdding] = useState(false);
+    const [editDay, setEditDay] = useState('Lunes');
+    const [editStart, setEditStart] = useState('');
+    const [editEnd, setEditEnd] = useState('');
+
+    const startEditing = (w: any) => {
+        // If it's an AI window, it won't have an ID. We look for the preference.
+        const pref = (settings.smartChargingPreferences || []).find(p => p.day === w.day && p.start === w.start);
+
+        setEditingId(pref?.id || 'new'); // 'new' means we're converting an AI window to preference
+        setEditDay(w.day);
+        setEditStart(w.start);
+        setEditEnd(w.end);
+    };
+
+    const handleSavePreference = (id: string | null) => {
+        let prefs = [...(settings.smartChargingPreferences || [])];
+
+        if (id === 'new' || !id) {
+            // Add new
+            prefs.push({
+                id: crypto.randomUUID(),
+                day: editDay,
+                start: editStart,
+                end: editEnd,
+                active: true
+            });
+        } else {
+            // Edit existing
+            prefs = prefs.map(p => p.id === id ? { ...p, day: editDay, start: editStart, end: editEnd } : p);
+        }
+
+        updateSettings({ smartChargingPreferences: prefs });
+        setEditingId(null);
+        setIsAdding(false);
+    };
+
+    const handleDeletePreference = (id: string) => {
+        const prefs = (settings.smartChargingPreferences || []).filter(p => p.id !== id);
+        updateSettings({ smartChargingPreferences: prefs });
+    };
+
+    const startAdding = () => {
+        setIsAdding(true);
+        setEditingId(null);
+        setEditDay('Lunes');
+        setEditStart('00:00');
+        setEditEnd('08:00');
+    };
 
     // Reset view when opening/closing
     React.useEffect(() => {
@@ -39,7 +94,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     }, [isOpen]);
 
     // --- Insights Calculations ---
-    const { recommendation, optimalDay, smartCharging, comfortZone, costAnalysis, seasonalFactor, dailyGoal } = useMemo(() => {
+    const { recommendation, optimalDay, comfortZone, costAnalysis, seasonalFactor, dailyGoal } = useMemo(() => {
         if (!charges || charges.length === 0) return {};
 
         const validSummary = summary || stats?.summary;
@@ -50,8 +105,8 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
         // Calculate Cost Savings first
         const costAnalysis = ChargingLogic.calculateCostSavings(charges, settings, avgDailyKwh);
 
-        // Smart Charging Windows
-        const smartCharging = ChargingLogic.findSmartChargingWindows(trips, settings);
+        // Smart Charging Windows (Now Async - removed from sync calculation)
+        // const smartCharging = ChargingLogic.findSmartChargingWindows(trips, settings);
 
         // Fallback to simple day
         const dayStats = stats?.weekday || [];
@@ -78,52 +133,29 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
         return {
             recommendation,
             optimalDay: simpleOptimalDay,
-            smartCharging,
+            smartCharging, // Pass state
             comfortZone,
             costAnalysis,
             seasonalFactor,
             dailyGoal: avgDailyKwh * (seasonalFactor.factor || 1)
         };
-    }, [charges, stats, settings, summary, trips]);
+    }, [charges, stats, settings, summary, trips, smartCharging]); // Added smartCharging dependency
 
-    // AI Prediction Effect
+    // Load Smart Charging Logic (Async with AI)
     React.useEffect(() => {
-        if (isOpen && smartCharging && smartCharging.windows.length > 0 && predictDeparture) {
-            const loadPredictions = async () => {
-                const preds: Record<string, string> = {};
-                for (const w of smartCharging.windows) {
-                    // Create date object for 'Next occurrence of Day at StartTime'
-                    const now = new Date();
-                    const dayMap: Record<string, number> = { 'mingo': 0, 'lunes': 1, 'martes': 2, 'rcoles': 3, 'ueves': 4, 'iernes': 5, 'bado': 6 };
-                    // Fuzzy match day name
-                    const dName = w.day.toLowerCase();
-                    let targetDay = -1;
-                    Object.keys(dayMap).forEach(k => { if (dName.includes(k)) targetDay = dayMap[k]; });
-
-                    if (targetDay !== -1) {
-                        const currentDay = now.getDay();
-                        let diff = targetDay - currentDay;
-                        if (diff <= 0) diff += 7; // Next occurrence
-                        const targetDate = new Date(now);
-                        targetDate.setDate(now.getDate() + diff);
-
-                        const [hours, mins] = w.start.split(':').map(Number);
-                        targetDate.setHours(hours, mins, 0, 0);
-
-                        const prediction = await predictDeparture(targetDate.getTime());
-                        if (prediction) {
-                            const dep = new Date(prediction.departureTime);
-                            const h = dep.getHours().toString().padStart(2, '0');
-                            const m = dep.getMinutes().toString().padStart(2, '0');
-                            preds[w.day + w.start] = `${h}:${m}`;
-                        }
-                    }
-                }
-                setAiPredictions(preds);
-            };
-            loadPredictions();
+        if (isOpen && trips.length > 0) {
+            setIsCalculating(true);
+            ChargingLogic.findSmartChargingWindows(trips, settings, predictDeparture)
+                .then(result => {
+                    setSmartCharging(result);
+                    setIsCalculating(false);
+                })
+                .catch(err => {
+                    console.error("Smart Charging Error:", err);
+                    setIsCalculating(false);
+                });
         }
-    }, [isOpen, smartCharging, predictDeparture]);
+    }, [isOpen, trips, settings, predictDeparture]);
 
     if (!isOpen) return null;
 
@@ -181,22 +213,149 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                     </div>
                 )}
 
-                <div className="text-lg font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide w-full">
+                {isCalculating && (
+                    <div className="absolute top-24 left-0 right-0 z-50 flex flex-col items-center justify-center p-8 animate-fadeIn">
+                        <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+                        <p className="text-blue-500 font-bold animate-pulse uppercase tracking-widest text-xs">
+                            {t('insights.calculating', 'Calculando plan óptimo...')}
+                        </p>
+                    </div>
+                )}
+
+                <div className={`text-lg font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide w-full transition-opacity duration-300 ${isCalculating ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
                     {smartCharging && smartCharging.windows.length > 0 ? (
                         <div className="flex flex-col gap-2 w-full">
-                            {smartCharging.windows.map((w, i) => (
-                                <div key={i} className="bg-white/50 dark:bg-slate-800/50 px-3 py-2 rounded-lg border border-blue-100 dark:border-blue-800/30 flex items-center justify-between shadow-sm text-sm">
-                                    <span className="font-black text-blue-800 dark:text-blue-200">{t(`daysShort.${w.day.toLowerCase().substring(0, 3)}`, w.day)}</span>
-                                    <span className="font-medium text-slate-700 dark:text-slate-300">
-                                        {w.start} - {w.end}
-                                        {aiPredictions[w.day + w.start] && (
-                                            <span className="ml-2 text-xs font-bold text-purple-600 dark:text-purple-400 bg-purple-100 dark:bg-purple-900/40 px-1.5 py-0.5 rounded animate-pulse">
-                                                AI: ➜ {aiPredictions[w.day + w.start]}
+                            {smartCharging.windows.map((w: any, i: number) => {
+                                // Find if this window matches a manual preference
+                                const manualPref = (settings.smartChargingPreferences || []).find(p => p.active && p.day === w.day && p.start === w.start);
+                                const isEditing = editingId !== null && editingId === (manualPref?.id || (editingId === 'new' && editDay === w.day && editStart === w.start ? 'new' : null));
+                                const isManual = !!manualPref;
+
+                                return (
+                                    <div key={i} className={`bg-white/50 dark:bg-slate-800/50 px-3 py-2 rounded-lg border flex flex-col shadow-sm ${isManual ? 'border-amber-400/50 bg-amber-50/10' : 'border-blue-100 dark:border-blue-800/30'}`}>
+                                        <div className="flex items-center justify-between w-full">
+                                            <span className="font-black text-blue-800 dark:text-blue-200">
+                                                {t(`daysShort.${w.day.toLowerCase().substring(0, 3)}`, w.day) as string}
+                                                {isManual && <span className="ml-2 text-[10px] font-bold text-amber-600 dark:text-amber-400 tracking-tighter">FIXED</span>}
                                             </span>
+
+                                            {isEditing ? (
+                                                <div className="flex gap-1">
+                                                    <button
+                                                        onClick={() => handleSavePreference(manualPref?.id || 'new')}
+                                                        className="p-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
+                                                    >
+                                                        <Check className="w-4 h-4" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => setEditingId(null)}
+                                                        className="p-1 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500"
+                                                    >
+                                                        <X className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => startEditing(w)}
+                                                        className="p-1 text-slate-400 hover:text-blue-500 transition-colors"
+                                                    >
+                                                        <Edit className="w-4 h-4" />
+                                                    </button>
+                                                    {isManual && (
+                                                        <button
+                                                            onClick={() => handleDeletePreference(manualPref.id)}
+                                                            className="p-1 text-red-300 hover:text-red-500 transition-colors"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {isEditing ? (
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <input
+                                                    type="time"
+                                                    value={editStart}
+                                                    onChange={(e) => setEditStart(e.target.value)}
+                                                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-xs font-bold"
+                                                />
+                                                <span className="text-slate-400">-</span>
+                                                <input
+                                                    type="time"
+                                                    value={editEnd}
+                                                    onChange={(e) => setEditEnd(e.target.value)}
+                                                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-xs font-bold"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className="text-left text-sm font-medium text-slate-700 dark:text-slate-300">
+                                                {w.start} - {w.end}
+                                            </div>
                                         )}
-                                    </span>
+                                    </div>
+                                );
+                            })}
+
+                            {!isAdding ? (
+                                <button
+                                    onClick={startAdding}
+                                    className="w-full flex items-center justify-center gap-2 p-2 mt-2 rounded-lg border-2 border-dashed border-blue-100 dark:border-blue-900/30 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all text-xs font-bold uppercase tracking-wider"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    {t('insights.addWindow', 'Añadir Ventana')}
+                                </button>
+                            ) : (
+                                <div className="bg-white/50 dark:bg-slate-800/50 px-3 py-3 mt-2 rounded-lg border-2 border-emerald-400/50 flex flex-col shadow-sm animate-fadeIn">
+                                    <div className="flex items-center justify-between mb-3">
+                                        <select
+                                            value={editDay}
+                                            onChange={(e) => setEditDay(e.target.value)}
+                                            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-black text-blue-800 dark:text-blue-200 uppercase"
+                                        >
+                                            {['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'].map(d => (
+                                                <option key={d} value={d}>{d}</option>
+                                            ))}
+                                        </select>
+                                        <div className="flex gap-1">
+                                            <button
+                                                onClick={() => handleSavePreference(null)}
+                                                className="p-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600"
+                                            >
+                                                <Check className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() => setIsAdding(false)}
+                                                className="p-1.5 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-500"
+                                            >
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <div className="flex-1">
+                                            <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1">{t('common.start', 'Inicio')}</label>
+                                            <input
+                                                type="time"
+                                                value={editStart}
+                                                onChange={(e) => setEditStart(e.target.value)}
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-sm font-bold"
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1">{t('common.end', 'Fin')}</label>
+                                            <input
+                                                type="time"
+                                                value={editEnd}
+                                                onChange={(e) => setEditEnd(e.target.value)}
+                                                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-sm font-bold"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
-                            ))}
+                            )}
                         </div>
                     ) : (
                         optimalDay ? t(`days.${optimalDay.toLowerCase()}`) : '--'

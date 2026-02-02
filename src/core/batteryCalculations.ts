@@ -34,6 +34,7 @@ export const calculateAdvancedSoH = (
     let n_dc_42kw = 0;
     let n_hpc_150kw = 0;
     let n_charges_to_100 = 0;
+    let last_calibration_time = 0;
     let total_real_kwh = 0;
 
     const validCharges = charges.filter(charge => charge && (charge.type || 'electric') === 'electric');
@@ -63,7 +64,16 @@ export const calculateAdvancedSoH = (
         else n_hpc_150kw++;
 
         // Calibration check
-        if ((charge.finalPercentage || 0) >= 99) n_charges_to_100++;
+        if ((charge.finalPercentage || 0) >= 99) {
+            n_charges_to_100++;
+            // Parse date
+            if (charge.date) {
+                const ts = new Date(charge.date).getTime();
+                if (!isNaN(ts) && ts > last_calibration_time) {
+                    last_calibration_time = ts;
+                }
+            }
+        }
     });
 
     const total_sessions = validCharges.length;
@@ -109,7 +119,23 @@ export const calculateAdvancedSoH = (
     const estimated_soh = Math.max(0, 100 - sei_drop - cycle_degradation - calendar_degradation);
 
     // 6. Calibration Warning
-    const calibration_warning = total_sessions > 0 ? (n_charges_to_100 / total_sessions < 0.1) : false;
+    // Logic: Warning if ratio < 10% UNLESS a calibration occurred recently (e.g. last 15 days)
+    // Also requires at least a few sessions to evaluate
+    const now = new Date().getTime();
+    const days_since_cal = (now - last_calibration_time) / (1000 * 3600 * 24);
+
+    // If calibrated recently (< 10 days), NO WARNING regardless of ratio.
+    // Otherwise, use ratio or strict "not calibrated in 45 days"
+    let calibration_warning = false;
+    if (total_sessions > 5) {
+        if (last_calibration_time > 0 && days_since_cal <= 10) {
+            calibration_warning = false;
+        } else {
+            // If not recently calibrated, check ratio OR long time
+            if (n_charges_to_100 / total_sessions < 0.1) calibration_warning = true;
+            // Optional: Force warning if > 60 days? Maybe too strict for now.
+        }
+    }
 
     return {
         estimated_soh: parseFloat(estimated_soh.toFixed(2)),
