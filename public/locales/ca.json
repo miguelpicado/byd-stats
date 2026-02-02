@@ -122,8 +122,8 @@
     },
     "daysShort": {
         "mon": "dl",
-        "tue": "dm",
-        "wed": "dt",
+        "tue": "dt",
+        "wed": "dc",
         "thu": "dj",
         "fri": "dv",
         "sat": "ds",
@@ -258,7 +258,7 @@
         "saveCurrent": "Desa els viatges actuals a l'historial",
         "viewLoad": "Mostra o carrega l'historial",
         "export": "Exporta",
-        "clearHistory": "Esborra l¡historial",
+        "clearHistory": "Esborra l'historial",
         "filesSection": "Fitxers / Base de dades de BYD",
         "loadNew": "Reemplaça els viatges existents",
         "loadMerge": "Carrega només els viatges nous",
@@ -330,7 +330,7 @@
     },
     "confirmations": {
         "deleteAllData": "Voleu esborrar totes les dades?",
-        "loadHistory": "Voleu carrega {count} viatges de l'històric?",
+        "loadHistory": "Voleu carregar {count} viatges de l'històric?",
         "clearHistory": "Voleu esborrar l'històric de viatges permanentment?",
         "historySaved": "Registre desat: {total} viatges en total ({new} nous)",
         "historyCleared": "S'ha esborrat l'històric",
@@ -443,7 +443,7 @@
         "title": "Historial de viatges",
         "description": "L'historial manté un registre permanent de tots els viatges que heu carregat.",
         "savedCount": "{{count}} viatges desats",
-        "saveCurrent": "Des elsr viatges actuals a l'historial",
+        "saveCurrent": "Desa els viatges actuals a l'historial",
         "loadFull": "Carrega l'historial complet",
         "clear": "Esborra l'historial"
     },
@@ -505,8 +505,8 @@
         "newVersion": "Hi ha disponible una nova versió",
         "updateHint": "Premeu «Actualitza» per a obtenir les últimes millores",
         "update": "Actualitza",
-        "exitConfirmTitle": "Voleu anca BYD Stats?",
-        "exitConfirmText": "Podeu torna a obrir l'aplicació des de la icona a la pantalla d'inici."
+        "exitConfirmTitle": "Voleu tancar BYD Stats?",
+        "exitConfirmText": "Podeu tornar a obrir l'aplicació des de la icona a la pantalla d'inici."
     },
     "patterns": {
         "tripsPerWeekday": "Viatges per dia de la setmana",
@@ -725,8 +725,8 @@
             "title": "Instal·lació (PWA)",
             "q1": "Com instal·lo l'aplicació al meu mòbil (Android/iOS)?",
             "a1_intro": "Normalment veureu un bàner automàtic en entrar al web convidant-vos a instal·lar l'aplicació.",
-            "a1_ios": "Premeu el botó «Comparteix» i selecciona «Afegeix a la pantalla d'inici».",
-            "a1_android": "Premeu el menú (tres punts) i seleccioneu «Instal·laa aplicació» o «Afegeix a la pantalla d'inici».",
+            "a1_ios": "Premeu el botó «Comparteix» i seleccioneu «Afegeix a la pantalla d'inici».",
+            "a1_android": "Premeu el menú (tres punts) i seleccioneu «Instal·la l'aplicació» o «Afegeix a la pantalla d'inici».",
             "q2": "Puc instal·lar-la a la pantalla del cotxe?",
             "a2_intro": "Sí, si el vostre cotxe té un navegador web (com GBox o navegador natiu):",
             "a2_step1": "Obriu bydstats.com en el navegador del cotxe.",
