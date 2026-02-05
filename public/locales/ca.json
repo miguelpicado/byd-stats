@@ -36,7 +36,8 @@
         "predictedRange": "Autonomia Prevista per Escenari",
         "rangeAxis": "Autonomia (km)",
         "dailyExplanation": "La IA analitza el vostre consum mitjà diari i aplica correccions estacionals per a suggerir una recàrrega que mantingui el SoC estable sense cicles profunds innecessaris.",
-        "optimalDayDesc": "Els vostres patrons de conducció indiquen que aquest és el dia amb menor ús del vehicle o major disponibilitat per recàrrega lenta, ideal per a equilibrar les cel·les.",
+        "optimalDayDesc": "Els vostres patrons de conducció indiquen que aquest és el dia amb menor ús del vehicle o major disponibilitat per a la recàrrega lenta, ideal per a equilibrar les cel·les.",
+
         "recommendation": "Recomanació",
         "noData": "No hi ha dades suficients per generar una recomanació.",
         "scenario": "Escenari",
