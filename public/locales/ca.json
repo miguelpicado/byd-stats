@@ -51,8 +51,8 @@
         "or": "O",
         "showAll": "Mostra-ho tot",
         "noData": "Sense dades per mostrar",
-        "allTrips": "Tots els viatges",
-        "last10Trips": "Últims 10 viatges",
+        "allTrips": "Tots els trajectes",
+        "last10Trips": "Últims 10 trajectes",
         "errorLoadingTab": "S'ha produït un error en carregar la pestanya",
         "tapForInsights": "Toqueu per a veure les conclusions"
     },
@@ -69,24 +69,24 @@
     "stats": {
         "distance": "Distància",
         "energy": "Energia",
-        "trips": "Viatges",
+        "trips": "Trajectes",
         "time": "Temps",
         "efficiency": "Eficiència",
         "speed": "Velocitat",
-        "avgTrip": "Viatge mitjà",
+        "avgTrip": "Trajecte mitjà",
         "activeDays": "Dies actius",
         "medianEfficiency": "Eficiència mediana",
         "medianEff": "Efic. mediana",
         "dailyCharge": "Recàrrega diària",
         "monthlyCost": "Cost mensual",
-        "longTripEvery": "Viatge llarg cada",
+        "longTripEvery": "Trajecte llarg cada",
         "frequentDay": "Dia freqüent",
         "peakHour": "Hora punta",
         "totalKm": "Km totals",
         "avgDay": "Mitjana dia",
         "freqDay": "Dia freqüent",
         "dailyAvg": "Mitjana dia",
-        "consumptionPerTrip": "Consum/viatge",
+        "consumptionPerTrip": "Consum/trajecte",
         "avgDistance": "Distància mitjana",
         "avgSpeed": "Velocitat mitjana",
         "longest": "Més llarg",
@@ -138,7 +138,7 @@
         "cityDesc": "Baixa velocitat, alta eficiència per regeneració. Ideal per a un vehicle elèctric.",
         "highwayDesc": "Alta velocitat, major consum per resistència aerodinàmica.",
         "mixedDesc": "Equilibri entre conducció urbana i carretera.",
-        "analyzing": "La IA està analitzant els viatges... Això pot trigar uns segons.",
+        "analyzing": "La IA està analitzant els trajectes... Això pot trigar uns segons.",
         "tips": {
             "city1": "Useu el mode Eco per a una acceleració suau",
             "city2": "Maximitzeu la regeneració (High)",
@@ -148,14 +148,14 @@
             "mix2": "Manteniu la inèrcia en les baixades"
         },
         "predictedRange": "Autonomia prevista per escenari",
-        "stats": "Estadístiques del viatge",
+        "stats": "Estadístiques del trajecte",
         "efficiency": "Eficiència",
         "speedAvg": "Velocitat mitjana (aprox.)",
         "scenario": "Escenari",
         "improve": "Consells per a millorar",
         "chargerStatus": "✅ Carregador {{amps}}A suficient",
         "chargerWarning": "⚠️ Carregador {{amps}}A insuficient",
-        "notEnoughData": "No hi ha dades suficients. S'usarà l'estimació estàndard fins a tenir ~5 viatges vàlids.",
+        "notEnoughData": "No hi ha dades suficients. S'usarà l'estimació estàndard fins a tenir ~5 trajectes vàlids.",
         "noData": "No hi ha dades suficients per generar una recomanació."
     },
     "settings": {
@@ -255,13 +255,13 @@
         "fuelPriceHint": "Preu mitjà de gasolina per a calcular els costos (només híbrids)",
         "priceStrategy": "Mode de preu",
         "priceDynamics": "Dinàmic",
-        "priceDynamicsHint": "Usa el preu de la recàrrega més recent anterior al viatge",
+        "priceDynamicsHint": "Usa el preu de la recàrrega més recent anterior al trajecte",
         "dangerZone": "Zona de perill",
         "history": "Historial",
         "clearHistory": "Esborra l'historial",
         "supportDev": "Dona suport al desenvolupador",
         "buyMeCoffee": "Convida'm a un cafè",
-        "tripsInHistory": "viatges a l'històric",
+        "tripsInHistory": "Trajectes a l'històric",
         "about": "Quant a",
         "version": "Versió",
         "sourceCode": "Codi font",
@@ -272,16 +272,16 @@
     },
     "charts": {
         "monthlyEvolution": "Evolució mensual (distància)",
-        "tripDistribution": "Distribució de Viatges",
+        "tripDistribution": "Distribució dels trajectes",
         "monthlyKmKwh": "Km i kWh mensual",
         "last60Days": "Km recorreguts en els últims 60 dies",
         "efficiencyEvolution": "📈 Evolució de l'eficiència mensual",
         "efficiencyVsDistance": "📍 Eficiència vs. Distància",
         "byHour": "Per hora",
         "byDay": "Per dia",
-        "tripsPerWeekday": "Viatges per dia de la setmana",
+        "tripsPerWeekday": "Trajectes per dia de la setmana",
         "monthlyDist": "Evolució mensual (distància)",
-        "tripDist": "Distribució de viatges",
+        "tripDist": "Distribució dels trajectes",
         "monthlyEff": "Evolució Eficiència Mensual",
         "effVsDist": "Eficiència vs Distància",
         "topDist": "Top Distància",
@@ -294,10 +294,10 @@
         "topEfficiency": "💚 Top Eficiència",
         "topConsumption": "⚡ Top Consum",
         "topDuration": "⏱️ Top Durada",
-        "last10Trips": "Últims 10 viatges"
+        "last10Trips": "Últims 10 trajectes"
     },
     "tripDetail": {
-        "title": "Detall del viatge",
+        "title": "Detall del trajecte",
         "dateTime": "Data i hora",
         "start": "Inici",
         "end": "Fi",
@@ -309,13 +309,13 @@
         "avgSpeed": "Velocitat mitjana",
         "comparedToAvg": "Comparat amb la vostra mitjana",
         "betterThan": "Millor que el",
-        "ofYourTrips": "dels vostres viatges",
+        "ofYourTrips": "dels vostres trajectes",
         "batteryState": "Estat de càrrega",
         "initial": "Inicial",
         "final": "Final",
         "energyRecovered": "Energia recuperada",
         "percentile": "Percentil",
-        "consumptionPerTrip": "Consum/viatge",
+        "consumptionPerTrip": "Consum/trajecte",
         "avgDistance": "Distància mitjana"
     },
     "dashboard": {
@@ -332,17 +332,17 @@
         "mergeExisting": "Combina amb les dades existents",
         "replaceAll": "Substitueix-ho tot",
         "deleteAll": "Esborra-ho tot",
-        "historySection": "Historial ({{count}} viatges)",
-        "saveCurrent": "Desa els viatges actuals a l'historial",
+        "historySection": "Historial ({{count}} trajectes)",
+        "saveCurrent": "Desa els trajectes actuals a l'historial",
         "viewLoad": "Mostra o carrega l'historial",
         "export": "Exporta",
         "clearHistory": "Esborra l'historial",
         "filesSection": "Fitxers / Base de dades de BYD",
-        "loadNew": "Reemplaça els viatges existents",
-        "loadMerge": "Carrega només els viatges nous",
+        "loadNew": "Reemplaça els trajectes existents",
+        "loadMerge": "Carrega només els trajectes nous",
         "loadChargeRegistry": "Carrega el registre de recàrregues",
         "clearView": "Neteja la vista actual",
-        "exportTrips": "Exporta els viatges",
+        "exportTrips": "Exporta els trajectes",
         "exportCharges": "Exporta les recàrregues"
     },
     "filter": {
@@ -360,7 +360,7 @@
         "of": "de"
     },
     "allTrips": {
-        "title": "Tots els viatges",
+        "title": "Tots els trajectes",
         "sortBy": "Ordena per",
         "date": "Data",
         "efficiency": "Eficiència",
@@ -403,26 +403,26 @@
         "faq": "Ajuda / PMF"
     },
     "history": {
-        "title": "Històric de viatges",
-        "tripsSaved": "viatges desats",
-        "loadTrips": "Carrega els viatges",
+        "title": "Històric de trajectes",
+        "tripsSaved": "trajectes desats",
+        "loadTrips": "Carrega els trajectes",
         "clearAll": "Esborra-ho tot",
         "noHistory": "No hi ha històric desat",
-        "avgLast10": "Mitjana dels últims 10 viatges",
+        "avgLast10": "Mitjana dels últims 10 trajectes",
         "avgDistance": "Distància mitjana",
         "avgConsumption": "Consum mitjà",
         "avgEfficiency": "Eficiència mitjana",
         "avgDuration": "Durada mitjana",
         "avgSpeed": "Velocitat mitjana",
-        "last10Trips": "Últims 10 viatges"
+        "last10Trips": "Últims 10 trajectes"
     },
     "confirmations": {
         "deleteAllData": "Voleu esborrar totes les dades?",
-        "loadHistory": "Voleu carregar {count} viatges de l'històric?",
-        "clearHistory": "Voleu esborrar l'històric de viatges permanentment?",
-        "historySaved": "Registre desat: {total} viatges en total ({new} nous)",
+        "loadHistory": "Voleu carregar {count} trajectes de l'històric?",
+        "clearHistory": "Voleu esborrar l'històric de trajectes permanentment?",
+        "historySaved": "Registre desat: {total} trajectes en total ({new} nous)",
         "historyCleared": "S'ha esborrat l'històric",
-        "noTripsToSave": "No hi ha viatges per desar",
+        "noTripsToSave": "No hi ha trajectes per desar",
         "noHistory": "No hi ha històric desat",
         "dbExported": "La base de dades s'ha exportat correctament"
     },
@@ -474,22 +474,22 @@
         "exportError": "S'ha produït un error en exportar la base de dades"
     },
     "historyMod": {
-        "title": "Historial de viatges",
-        "description": "L'historial manté un registre permanent de tots els viatges que heu carregat.",
-        "savedCount": "{{count}} viatges desats",
-        "saveCurrent": "Desa els viatges actuals a l'historial",
+        "title": "Historial de trajectes",
+        "description": "L'historial manté un registre permanent de tots els trajectes que heu carregat.",
+        "savedCount": "{{count}} trajectes desats",
+        "saveCurrent": "Desa els trajectes actuals a l'historial",
         "loadFull": "Carrega l'historial complet",
         "clear": "Esborra l'historial"
     },
     "header": {
         "title": "Estadístiques BYD",
-        "trips": "{{count}} viatges"
+        "trips": "{{count}} trajectes"
     },
     "tooltips": {
         "help": "Ajuda i informes d'error",
         "fullscreen": "Pantalla completa",
         "exitFullscreen": "Surt de pantalla completa",
-        "history": "Historial de viatges",
+        "history": "Historial de trajectes",
         "settings": "Configuració",
         "filters": "Filtres"
     },
@@ -508,7 +508,7 @@
             "sections": {
                 "collection": {
                     "title": "1. Recopilació de dades",
-                    "text": "L'aplicació processa exclusivament les dades contingudes en el fitxer EC_Database.db generat pel vostre vehicle BYD. Aquestes dades inclouen registres de viatges, eficiència, consums i ubicacions (coordenades GPS d'inici/fi si les guardes)."
+                    "text": "L'aplicació processa exclusivament les dades contingudes en el fitxer EC_Database.db generat pel vostre vehicle BYD. Aquestes dades inclouen registres de trajectes, eficiència, consums i ubicacions (coordenades GPS d'inici/fi si les guardes)."
                 },
                 "usage": {
                     "title": "2. Ús de la informació",
@@ -588,8 +588,8 @@
         "exitConfirmText": "Podeu tornar a obrir l'aplicació des de la icona a la pantalla d'inici."
     },
     "patterns": {
-        "tripsPerWeekday": "Viatges per dia de la setmana",
-        "tripsWord": "viatges"
+        "tripsPerWeekday": "Trajectes per dia de la setmana",
+        "tripsWord": "trajectes"
     },
     "charges": {
         "title": "Registre de recàrregues",
@@ -668,20 +668,20 @@
     "tripInsights": {
         "distanceTitle": "Conclusions de distància",
         "energyTitle": "Conclusions d'energia",
-        "tripsTitle": "Conclusions de viatges",
+        "tripsTitle": "Conclusions de trajectes",
         "timeTitle": "Conclusions de temps",
         "efficiencyTitle": "Conclusions d'eficiència",
         "speedTitle": "Conclusions de velocitat",
-        "avgTripTitle": "Conclusions de viatge mitjà",
+        "avgTripTitle": "Conclusions de trajecte mitjà",
         "activeDaysTitle": "Conclusions d'activitat",
         "rangeTitle": "Detall d'autonomia",
-        "rangeDesc": "Aquest càlcul utilitza el vostre historial de viatges i la configuració actual de la bateria. És fonamental introduir la mida real de la bateria i l'estat de salut (SoH) en els ajustos perquè les dades siguin precises. L'autonomia real pot variar segons el clima, la càrrega i l'estil de conducció.",
+        "rangeDesc": "Aquest càlcul utilitza el vostre historial de trajectes i la configuració actual de la bateria. És fonamental introduir la mida real de la bateria i l'estat de salut (SoH) en els ajustos perquè les dades siguin precises. L'autonomia real pot variar segons el clima, la càrrega i l'estil de conducció.",
         "rangeHighway": "Autonomia a autopista",
         "rangeHighwayDesc": "Estimada amb un consum 20% superior a l'habitual.",
         "rangeCity": "Autonomia a ciutat",
         "rangeCityDesc": "Estimada amb un consum 20% inferior a l'habitual.",
         "stationaryTitle": "Consum en parat",
-        "stationaryDesc": "Aquí es comptabilitza tot el consum de tots els viatges registrats de menys de 0,5 km.",
+        "stationaryDesc": "Aquí es comptabilitza tot el consum de tots els trajectes registrats de menys de 0,5 km.",
         "sohTitle": "Salut de la bateria (SoH)",
         "sohDesc": "Estimació avançada basada en el desgast natural de les cel·les LFP i l'historial d'ús.",
         "sohMethodology": "Metodologia de càlcul",
@@ -699,13 +699,13 @@
         "sohCalendarDesc": "Envelliment natural pel pas del temps (0.75% anual).",
         "totalKm": "Total Km",
         "kmPerDay": "Km/dia actiu",
-        "avgPerTrip": "Mitjana/viatge",
-        "maxDistance": "Rècord viatge",
+        "avgPerTrip": "Mitjana/trajecte",
+        "maxDistance": "Rècord trajecte",
         "totalKwh": "Total kWh",
         "kwhPerDay": "kWh/dia actiu",
         "maxConsumption": "Max consum",
-        "totalTrips": "Total viatges",
-        "tripsPerDay": "Viatges/dia actiu",
+        "totalTrips": "Total trajectes",
+        "tripsPerDay": "Trajectes/dia actiu",
         "activeDay": "Dia més actiu",
         "streak": "Ratxa dies",
         "totalHours": "Total hores",
@@ -726,8 +726,8 @@
         "avgFuelEff": "Mitjana general",
         "totalFuel": "Total litres",
         "byDistance": "Per distància",
-        "shortTrips": "Viatges < 100 km",
-        "longTrips": "Viatges > 100 km",
+        "shortTrips": "Trajectes < 100 km",
+        "longTrips": "Trajectes > 100 km",
         "stressFactor": "Factor d'estrès"
     },
     "sync": {
@@ -751,8 +751,8 @@
         "electricPercentage": "% elèctric",
         "fuelPercentage": "% combustible",
         "evModeUsage": "Ús mode EV",
-        "evOnlyTrips": "Viatges només EV",
-        "hybridTrips": "Viatges amb comb.",
+        "evOnlyTrips": "Trajectes només EV",
+        "hybridTrips": "Trajectes amb comb.",
         "combinedEfficiency": "Eficiència combinada",
         "energySplit": "Repartiment energia",
         "fuelLabel": "Combustible",
@@ -762,11 +762,11 @@
         "topFuel": "Top Consum combustible",
         "fuelStats": "Estadístiques combustible",
         "electricStats": "Estadístiques elèctriques",
-        "fuelConsumptionPerTrip": "Consum comb./viatge"
+        "fuelConsumptionPerTrip": "Consum comb./trajecte"
     },
     "calendar": {
         "title": "Calendari d'activitat",
-        "trips": "Viatges",
+        "trips": "Trajectes",
         "charges": "Recàrregues",
         "dayDetails": "Detalls del dia",
         "noActivity": "No hi ha activitat registrada en aquest dia",
@@ -786,15 +786,15 @@
             "a2": "Les vostres dades són vostres. Per defecte, tota la informació s'emmagatzema localment al vostre dispositiu. No pugem res a servidors externs ni venem la vostra informació.",
             "q3": "Necessito un compte de Google per utilitzar-la?",
             "a3": "No, no és obligatori. Podeu utilitzar totes les funcions d'anàlisi sense registrar-vos. El compte de Google només es necessita si decidiu activar voluntàriament la «Sincronització al núvol» per a desar una còpia de seguretat al vostre Google Drive.",
-            "q_no_efficiency": "Per què no veig eficiència o puntuació en alguns viatges?",
-            "a_no_efficiency": "Els viatges de menys de 0,5 km no mostren eficiència ni puntuació i apareixen amb un guió. Això es deu al fet que distàncies tan curtes amb consums d'arrencada o climatització generarien eficiències artificialment altes. Aquests consums es consideren «Consum en parat» i se sumen a part.",
+            "q_no_efficiency": "Per què no veig eficiència o puntuació en alguns trajectes?",
+            "a_no_efficiency": "Els trajectes de menys de 0,5 km no mostren eficiència ni puntuació i apareixen amb un guió. Això es deu al fet que distàncies tan curtes amb consums d'arrencada o climatització generarien eficiències artificialment altes. Aquests consums es consideren «Consum en parat» i se sumen a part.",
             "q_score_works": "Com funciona la puntuació?",
-            "a_score_works": "La puntuació no és una escala fixa, és dinàmica i adaptada al vostre cotxe. Un 10 és la millor eficiència aconseguida en el VOSTRE cotxe per a un viatge (> 0,5 km) i un 0 la pitjor. Dos cotxes iguals podrien tenir puntuació diferent per al mateix viatge si els seus històrics d'ús varien.",
+            "a_score_works": "La puntuació no és una escala fixa, és dinàmica i adaptada al vostre cotxe. Un 10 és la millor eficiència aconseguida en el VOSTRE cotxe per a un trajecte (> 0,5 km) i un 0 la pitjor. Dos cotxes iguals podrien tenir puntuació diferent per al mateix trajecte si els seus històrics d'ús varien.",
             "q_cost_types": "Què signifiquen els 3 tipus de cost a Configuració?",
             "a_cost_types_intro": "Podeu triar entre:",
             "a_cost_fixed": "Un valor manual constant.",
             "a_cost_avg": "Mitjana històrica de totes les recàrregues registrades.",
-            "a_cost_dynamic": "Preu per kW pagat en l'última recàrrega anterior al viatge."
+            "a_cost_dynamic": "Preu per kW pagat en l'última recàrrega anterior al trajecte."
         },
         "database": {
             "title": "Base de Dades",
@@ -806,10 +806,10 @@
             "a1_step4": "Copieu el fitxer EC_Database.db i enganxeu-lo a la memòria USB.",
             "tip_label": "Truc",
             "tip_text": "Si teniu problemes per a seleccionar el fitxer en carregar-lo, podeu canviar-ne el nom a EC_Database.jpg. L'aplicació acceptarà el fitxer com una imatge vàlida i el processarà correctament.",
-            "q_csv_import": "Puc importar les meves pròpies recàrregues/viatges?",
+            "q_csv_import": "Puc importar les meves pròpies recàrregues/trajectes?",
             "a_csv_import": "Sí, podeu importar les vostres dades des de fitxers CSV. Baixeu les plantilles oficials des de GitHub per a assegurar-vos d'usar el format correcte:",
             "a_csv_charges": "- Plantilla per a importar recàrregues",
-            "a_csv_trips": "- Plantilla per a importar viatges"
+            "a_csv_trips": "- Plantilla per a importar trajectes"
         },
         "install": {
             "title": "Instal·lació (PWA)",
