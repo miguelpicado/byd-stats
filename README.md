@@ -73,7 +73,7 @@ Esta tabla refleja el estado actual de compatibilidad con los modelos BYD a la v
 | **BYD Atto 3** | ✅ Compatible | Garantizado |
 | **BYD Atto 2** | ✅ Compatible | Garantizado |
 | **BYD Dolphin Surf** | ✅ Compatible | Garantizado v2.0.0 y superiores |
-| **BYD Dolphin** (Comfort/Design) | ❓ Pendiente | Se requiere confirmación |
+| **BYD Dolphin** (Comfort/Design) | ✅ Compatible | Garantizado v2.0.0 y superiores |
 | **BYD Han** | ❓ Pendiente | Se requiere confirmación |
 | **BYD Tang** | ❓ Pendiente | Se requiere confirmación |
 | **BYD ETP3** | ❓ Pendiente | Se requiere confirmación |

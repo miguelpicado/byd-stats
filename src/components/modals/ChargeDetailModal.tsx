@@ -14,7 +14,8 @@ const ChargeDetailModal: React.FC = () => {
         closeModal,
         openModal,
         modals,
-        setSelectedCharge
+        setSelectedCharge,
+        charges
     } = useData();
 
     // Access styling or data via context
@@ -32,6 +33,37 @@ const ChargeDetailModal: React.FC = () => {
         const efficiency = chargerType?.efficiency || 1;
         return charge.kwhCharged * efficiency;
     }, [charge, chargerType]);
+
+    // Calculate efficiency between charges (kWh/100km)
+    const efficiencyBetweenCharges = useMemo(() => {
+        if (!charge || !charges || charges.length < 2 || !charge.odometer) return null;
+
+        // Sort charges by odometer to find the previous one
+        const sortedCharges = [...charges]
+            .filter(c => c.odometer && c.odometer > 0)
+            .sort((a, b) => (b.odometer || 0) - (a.odometer || 0));
+
+        // Find current charge index
+        const currentIndex = sortedCharges.findIndex(c => c.id === charge.id);
+        if (currentIndex === -1 || currentIndex >= sortedCharges.length - 1) return null;
+
+        // Get previous charge (next in sorted array since it's descending)
+        const previousCharge = sortedCharges[currentIndex + 1];
+        if (!previousCharge || !previousCharge.odometer) return null;
+
+        // Calculate distance traveled between charges
+        const distanceKm = charge.odometer - previousCharge.odometer;
+        if (distanceKm <= 0) return null;
+
+        // Calculate efficiency: realKwh / distance * 100 = kWh/100km
+        const efficiency = (realKwh / distanceKm) * 100;
+
+        return {
+            distanceKm,
+            efficiencyKwhPer100km: efficiency,
+            previousOdometer: previousCharge.odometer
+        };
+    }, [charge, charges, realKwh]);
 
     // Internal Handlers
     const onClose = () => {
@@ -141,6 +173,50 @@ const ChargeDetailModal: React.FC = () => {
                             {t('charges.realKwhExplanation')}
                         </p>
                     </div>
+
+                    {/* Efficiency between charges */}
+                    {efficiencyBetweenCharges && (
+                        <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/50 bg-blue-50/50 dark:bg-blue-900/20 space-y-3">
+                            <div className="flex items-center gap-2 mb-2">
+                                <svg className="w-4 h-4 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                                <h3 className="font-semibold text-slate-900 dark:text-white text-sm">
+                                    {t('charges.efficiencyBetweenCharges', 'Eficiencia entre cargas')}
+                                </h3>
+                            </div>
+
+                            <div className="flex justify-between items-center py-2 border-b border-blue-200/50 dark:border-blue-800/50">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                    {t('charges.distanceSincePrevious', 'Distancia recorrida')}
+                                </span>
+                                <span className="text-sm font-medium text-slate-900 dark:text-white">
+                                    {efficiencyBetweenCharges.distanceKm.toLocaleString()} km
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between items-center py-2 border-b border-blue-200/50 dark:border-blue-800/50">
+                                <span className="text-sm text-slate-600 dark:text-slate-400">
+                                    {t('charges.previousOdometer', 'Odómetro anterior')}
+                                </span>
+                                <span className="text-sm font-medium text-slate-900 dark:text-white">
+                                    {efficiencyBetweenCharges.previousOdometer.toLocaleString()} km
+                                </span>
+                            </div>
+
+                            <div className="flex justify-between items-center pt-2">
+                                <span className="text-sm font-medium text-slate-900 dark:text-white">
+                                    {t('charges.calculatedEfficiency', 'Eficiencia calculada')}
+                                </span>
+                                <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                                    {efficiencyBetweenCharges.efficiencyKwhPer100km.toFixed(2)} <span className="text-xs font-normal text-slate-500">kWh/100km</span>
+                                </span>
+                            </div>
+                            <p className="text-[10px] text-slate-400 text-center pt-1">
+                                {t('charges.efficiencyExplanation', 'kWh reales consumidos por cada 100km entre esta carga y la anterior')}
+                            </p>
+                        </div>
+                    )}
 
                     {/* Other Details */}
                     <div className="space-y-3">
