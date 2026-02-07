@@ -625,10 +625,10 @@
         "details": "Detalls addicionals",
         "chargesImported": "{{count}} recàrregues importades correctament",
         "chargerTypesCreated": "Nous tipus de carregador creats: {{types}}",
-        "avgLast10": "Mitjana de les últimes 10 càrregues",
+        "avgLast10": "Mitjana de les últimes 10 recàrregues",
         "avgKwh": "Mitjana kWh",
         "avgCost": "Cost mitjà",
-        "last10Charges": "Últimes 10 càrregues",
+        "last10Charges": "Últimes 10 recàrregues",
         "typeElectric": "Elèctrica",
         "typeFuel": "Repostatge",
         "litersCharged": "Litres repostats",
@@ -852,7 +852,7 @@
             "samples": {
                 "title": "Mostres de qualitat",
                 "definition": "Nombre de sessions de càrrega que la IA ha considerat vàlides per al seu càlcul.",
-                "calculation": "La IA descarta automàticament recàrregues petites (<15-20%), càrregues molt lentes o amb interrupcions, ja que introdueixen molt de «soroll» i error en les dades.",
+                "calculation": "La IA descarta automàticament recàrregues petites (<15-20%), recàrregues molt lentes o amb interrupcions, ja que introdueixen molt de «soroll» i error en les dades.",
                 "impact": "És normal tenir menys mostres que recàrregues totals. Com més mostres de qualitat (recàrregues profundes) tingueu, més precís serà el càlcul del SoH Real."
             }
         }
