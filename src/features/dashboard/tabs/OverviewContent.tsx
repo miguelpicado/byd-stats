@@ -5,10 +5,11 @@ import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
 import HybridStatsCard from '@components/cards/HybridStatsCard';
 import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
+import LiveVehicleStatus from '@components/cards/LiveVehicleStatus';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
 import HealthReportModal from '@components/modals/HealthReportModal';
-import { MapPin, Zap, Clock, Battery, TrendingUp, Activity, Fuel, IconProps, AlertTriangle } from '@components/Icons';
+import { MapPin, Zap, Battery, TrendingUp, Activity, Fuel, IconProps, AlertTriangle } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
 import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
 import { AnomalyService, Anomaly } from '@/services/AnomalyService';
@@ -92,7 +93,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
     const lineChartRef = useRef<any>(null);
     const pieChartRef = useRef<any>(null);
 
-    const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies } = useData();
+    const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies, openModal } = useData();
     const [showHealthModal, setShowHealthModal] = useState(false);
 
     // Calculate Anomalies
@@ -182,18 +183,13 @@ const OverviewContent: FC<OverviewContentProps> = ({
             color: isAiReady ? "bg-indigo-500/20 text-indigo-400" : "bg-amber-500/20 text-amber-400",
             onClick: onRangeClick || (() => onInsightClick('range'))
         },
-        // Replaces Stationary for Hybrid, and Time for EV
+        // Replaces Stationary for Hybrid, and LiveVehicleStatus for EV
         summary.isHybrid ? {
             key: 'estimated_charge',
             isCustom: true // Custom renderer
         } : {
-            key: 'time',
-            icon: Clock,
-            label: t('stats.time'),
-            value: summary.totalHours,
-            unit: "h",
-            color: "bg-purple-500/20 text-purple-400",
-            onClick: () => onInsightClick('time')
+            key: 'live_status',
+            isCustom: true // Custom renderer for LiveVehicleStatus
         },
         {
             key: 'efficiency',
@@ -248,14 +244,18 @@ const OverviewContent: FC<OverviewContentProps> = ({
             <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
                 {statItems.slice(0, 4).map((item) => (
                     item.isCustom ? (
-                        <EstimatedChargeCard
-                            key={item.key}
-                            summary={summary}
-                            settings={settings}
-                            stats={stats || null}
-                            charges={charges}
-                            trips={trips}
-                        />
+                        item.key === 'live_status' ? (
+                            <LiveVehicleStatus key={item.key} onClick={() => openModal('batteryStatus')} />
+                        ) : (
+                            <EstimatedChargeCard
+                                key={item.key}
+                                summary={summary}
+                                settings={settings}
+                                stats={stats || null}
+                                charges={charges}
+                                trips={trips}
+                            />
+                        )
                     ) : (
                         <StatCard
                             key={item.key}
@@ -276,14 +276,18 @@ const OverviewContent: FC<OverviewContentProps> = ({
             <div className={`grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 ${isCompact ? '!gap-3' : ''}`}>
                 {statItems.slice(4, 8).map((item) => (
                     item.isCustom ? (
-                        <EstimatedChargeCard
-                            key={item.key}
-                            summary={summary}
-                            settings={settings}
-                            stats={stats || null}
-                            charges={charges}
-                            trips={trips}
-                        />
+                        item.key === 'live_status' ? (
+                            <LiveVehicleStatus key={item.key} onClick={() => openModal('batteryStatus')} />
+                        ) : (
+                            <EstimatedChargeCard
+                                key={item.key}
+                                summary={summary}
+                                settings={settings}
+                                stats={stats || null}
+                                charges={charges}
+                                trips={trips}
+                            />
+                        )
                     ) : (
                         <StatCard
                             key={item.key}

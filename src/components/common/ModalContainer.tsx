@@ -15,6 +15,8 @@ const SyncConflictModalLazy = React.lazy(() => import('../modals/SyncConflictMod
 const ConfirmationModalLazy = React.lazy(() => import('../common/ConfirmationModal'));
 const CloudBackupsModalLazy = React.lazy(() => import('../modals/CloudBackupsModal'));
 const RegistryRestoreModalLazy = React.lazy(() => import('../modals/RegistryRestoreModal'));
+const ChargeNotificationModalLazy = React.lazy(() => import('../modals/ChargeNotificationModal'));
+const BatteryStatusModalLazy = React.lazy(() => import('../modals/BatteryStatusModal'));
 
 const ModalContainer: React.FC = () => {
     const { modals, googleSync, confirmModalState } = useData();
@@ -65,6 +67,12 @@ const ModalContainer: React.FC = () => {
                     onSkip={googleSync.skipRegistryRestore}
                 />
             )}
+
+            {/* Charge Notification Modal (auto-shows when charge sessions complete) */}
+            <ChargeNotificationModalLazy />
+
+            {/* Battery Status Modal */}
+            {modals.batteryStatus && <BatteryStatusModalLazy />}
         </Suspense>
     );
 };
