@@ -1,6 +1,6 @@
 // BYD Stats - SettingsModal Component
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { languages } from '../../i18n';
 import { BYD_RED, TAB_ORDER } from '@core/constants';
@@ -12,10 +12,26 @@ import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
+import SmartcarAuth from '@smartcar/auth';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getApp } from 'firebase/app';
+import toast from 'react-hot-toast';
 
 // @ts-ignore
 import MfgDateModal from './MfgDateModal';
 import { Charge } from '../../types';
+
+/**
+ * Interface for Smartcar test connection response
+ */
+interface SmartcarTestResponse {
+    permissions: {
+        [key: string]: {
+            status: string;
+        };
+    };
+    errors: string[];
+}
 
 /**
  * Settings modal for app configuration
@@ -27,6 +43,159 @@ const SettingsModal: React.FC = () => {
     // @ts-ignore
     const { googleSync, charges, modals, closeModal, stats } = useData();
     const [showMfgModal, setShowMfgModal] = useState(false);
+    const [isLinking, setIsLinking] = useState(false);
+    const [isDisconnecting, setIsDisconnecting] = useState(false);
+
+    // Track previous battery size to detect changes
+    const prevBatterySizeRef = useRef(settings?.batterySize);
+
+    // Sync batterySize to Smartcar vehicle when it changes
+    useEffect(() => {
+        const currentBatterySize = settings?.batterySize;
+        const smartcarVehicleId = activeCar?.smartcarVehicleId;
+
+        // Only sync if batterySize actually changed and we have a connected vehicle
+        if (smartcarVehicleId &&
+            currentBatterySize &&
+            currentBatterySize !== prevBatterySizeRef.current &&
+            prevBatterySizeRef.current !== undefined) {
+
+            const syncBatteryToVehicle = async () => {
+                try {
+                    const functions = getFunctions(getApp(), 'europe-west1');
+                    const updateVehicle = httpsCallable(functions, 'updateVehicleSettings');
+                    await updateVehicle({
+                        vehicleId: smartcarVehicleId,
+                        batteryCapacity: currentBatterySize
+                    });
+                    console.log(`Synced battery capacity ${currentBatterySize} kWh to vehicle ${smartcarVehicleId}`);
+                } catch (error) {
+                    console.error('Failed to sync battery capacity:', error);
+                }
+            };
+
+            syncBatteryToVehicle();
+        }
+
+        prevBatterySizeRef.current = currentBatterySize;
+    }, [settings?.batterySize, activeCar?.smartcarVehicleId]);
+
+    // Smartcar Auth Setup
+    const smartcar = useMemo(() => new SmartcarAuth({
+        clientId: import.meta.env.VITE_SMARTCAR_CLIENT_ID,
+        redirectUri: import.meta.env.VITE_SMARTCAR_REDIRECT_URI,
+        scope: ['read_odometer', 'read_vehicle_info', 'read_charge', 'read_security', 'read_location', 'read_battery', 'read_tires'],
+        mode: 'live',
+        onComplete: async (err, code) => {
+            if (err) {
+                console.error('Smartcar Auth Error:', err);
+                toast.error(t('settings.smartcarError', 'Error vinculando con Smartcar'));
+                return;
+            }
+            setIsLinking(true);
+            try {
+                const functions = getFunctions(getApp(), 'europe-west1');
+                const exchange = httpsCallable(functions, 'exchangeAuthCode');
+                // Pass batterySize so Cloud Functions know the battery capacity
+                const batteryCapacity = settings?.batterySize || 82.5;
+                const result = await exchange({ code, batteryCapacity });
+                // @ts-ignore
+                const { vehicleId, make, model } = result.data;
+
+                // Save the smartcarVehicleId to the user's active car
+                if (activeCarId && vehicleId) {
+                    updateCar(activeCarId, { smartcarVehicleId: vehicleId });
+                    console.log(`Linked Smartcar vehicle ${vehicleId} to car ${activeCarId}`);
+                }
+
+                toast.success(t('settings.smartcarSuccess', `¡Vinculado ${make} ${model}!`));
+            } catch (error) {
+                console.error('Exchange error:', error);
+                toast.error(t('settings.smartcarExchangeError', 'Error intercambiando tokens'));
+            } finally {
+                setIsLinking(false);
+            }
+        },
+    }), [t]);
+
+    const handleSmartcarLink = () => {
+        smartcar.openDialog({ forceApproval: true });
+    };
+
+    const handleSmartcarDisconnect = async () => {
+        if (!confirm(t('settings.smartcarDisconnectConfirm', '¿Seguro que quieres desconectar tu coche? Perderás la sincronización automática.'))) {
+            return;
+        }
+
+        setIsDisconnecting(true);
+        try {
+            const functions = getFunctions(getApp(), 'europe-west1');
+            const disconnect = httpsCallable(functions, 'disconnectSmartcar');
+            const smartcarVehicleId = activeCar?.smartcarVehicleId;
+
+            if (!smartcarVehicleId) {
+                toast.error('No hay ID de Smartcar vinculado');
+                return;
+            }
+
+            await disconnect({ vehicleId: smartcarVehicleId });
+
+            // Cleanup local state
+            if (activeCarId) {
+                updateCar(activeCarId, {
+                    smartcarVehicleId: undefined,
+                    lastOdometer: undefined,
+                    lastSoC: undefined
+                });
+            }
+
+            toast.success(t('settings.smartcarDisconnected', 'Coche desconectado correctamente'));
+            window.location.reload(); // Refresh to update UI
+        } catch (error) {
+            console.error('Disconnect error:', error);
+            toast.error(t('settings.smartcarDisconnectError', 'Error al desconectar el coche'));
+        } finally {
+            setIsDisconnecting(false);
+        }
+    };
+
+    const handleTestConnection = async () => {
+        if (!activeCar?.smartcarVehicleId) {
+            toast.error('No hay vehículo vinculado');
+            return;
+        }
+
+        console.log('Starting connection test for:', activeCar.smartcarVehicleId);
+        toast.loading('Probando conexión...', { id: 'test-connection' });
+
+        try {
+            const functions = getFunctions(getApp(), 'europe-west1');
+            const testConnection = httpsCallable(functions, 'testSmartcarConnection');
+            console.log('Calling testSmartcarConnection Cloud Function...');
+            const result = await testConnection({ vehicleId: activeCar.smartcarVehicleId });
+            console.log('Cloud Function returned result:', result);
+
+            const data = result.data as SmartcarTestResponse;
+            console.log('Parsed test data:', data);
+
+            const successCount = Object.values(data.permissions).filter((p: any) => p.status === 'SUCCESS').length;
+            const totalCount = Object.keys(data.permissions).length;
+
+            if (data.errors.length === 0) {
+                toast.success(`✅ Conexión OK (${successCount}/${totalCount})`, { id: 'test-connection' });
+            } else {
+                toast.error(`⚠️ Errores: ${data.errors.join(', ')}`, { id: 'test-connection', duration: 8000 });
+            }
+        } catch (error: any) {
+            console.error('Test error caught in frontend:', error);
+
+            // Log more details about the error
+            if (error.code) console.error('Error code:', error.code);
+            if (error.details) console.error('Error details:', error.details);
+
+            toast.error(`Error: ${error.message || 'Error desconocido'}`, { id: 'test-connection' });
+        }
+    };
 
     // Get SoH data from summary
     const sohData = stats?.summary?.sohData;
@@ -64,18 +233,18 @@ const SettingsModal: React.FC = () => {
 
     if (!isOpen) return null;
 
-    const handleLanguageChange = (langCode: string) => {
+    const handleLanguageChange = useCallback((langCode: string) => {
         i18n.changeLanguage(langCode);
-    };
+    }, [i18n]);
 
     // Charger types management
-    const handleChargerTypeChange = (index: number, field: string, value: any) => {
+    const handleChargerTypeChange = useCallback((index: number, field: string, value: any) => {
         const updatedTypes = [...(settings.chargerTypes || [])];
         updatedTypes[index] = { ...updatedTypes[index], [field]: value };
         onSettingsChange({ ...settings, chargerTypes: updatedTypes });
-    };
+    }, [settings, onSettingsChange]);
 
-    const handleAddChargerType = () => {
+    const handleAddChargerType = useCallback(() => {
         const newType = {
             id: `custom_${Date.now()}`,
             name: t('settings.newChargerType'),
@@ -84,12 +253,12 @@ const SettingsModal: React.FC = () => {
         };
         const updatedTypes = [...(settings.chargerTypes || []), newType];
         onSettingsChange({ ...settings, chargerTypes: updatedTypes });
-    };
+    }, [settings, onSettingsChange, t]);
 
-    const handleDeleteChargerType = (index: number) => {
+    const handleDeleteChargerType = useCallback((index: number) => {
         const updatedTypes = (settings.chargerTypes || []).filter((_: any, i: number) => i !== index);
         onSettingsChange({ ...settings, chargerTypes: updatedTypes });
-    };
+    }, [settings, onSettingsChange]);
 
     return (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-modal-backdrop" onClick={onClose}>
@@ -638,6 +807,55 @@ const SettingsModal: React.FC = () => {
                     <div>
                         {/* Google Sync Section - Extracted */}
                         <GoogleSyncSettings googleSync={googleSync} />
+
+                        {/* Smartcar Section */}
+                        <div className="space-y-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                <span>🚗</span>
+                                {t('settings.smartcarTitle', 'Conexión BYD (Smartcar)')}
+                            </h3>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                {t('settings.smartcarDesc', 'Vincula tu cuenta de BYD para sincronizar viajes y estado automáticamente.')}
+                            </p>
+                            <button
+                                onClick={handleSmartcarLink}
+                                disabled={isLinking || isDisconnecting}
+                                className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                            >
+                                {isLinking ? (
+                                    <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                ) : (
+                                    <span>🔗</span>
+                                )}
+                                {t('settings.smartcarButton', 'Vincular Coche')}
+                            </button>
+
+                            {activeCar?.smartcarVehicleId && (
+                                <>
+                                    <button
+                                        onClick={handleTestConnection}
+                                        disabled={isLinking || isDisconnecting}
+                                        className="w-full py-2.5 px-4 rounded-xl bg-green-600 hover:bg-green-700 active:bg-green-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        <span>🔍</span>
+                                        Probar Conexión
+                                    </button>
+
+                                    <button
+                                        onClick={handleSmartcarDisconnect}
+                                        disabled={isDisconnecting || isLinking}
+                                        className="w-full py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-sm transition-colors flex items-center justify-center gap-2"
+                                    >
+                                        {isDisconnecting ? (
+                                            <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        ) : (
+                                            <span>🔌</span>
+                                        )}
+                                        {t('settings.smartcarDisconnect', 'Desconectar Coche')}
+                                    </button>
+                                </>
+                            )}
+                        </div>
                     </div>
 
                 </div>

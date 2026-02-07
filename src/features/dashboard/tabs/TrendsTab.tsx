@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar as BarJS, Line as LineJS } from 'react-chartjs-2';
-import { Navigation, Zap, TrendingUp, BYD_RED, MapPin } from '@components/Icons';
+import { Navigation, Clock, TrendingUp, BYD_RED, MapPin } from '@components/Icons';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
 import { useLayout } from '@/context/LayoutContext';
@@ -86,9 +86,6 @@ const TrendsTab: FC<TrendsTabProps> = React.memo(({
     const totalDays = summary?.daysActive ? (typeof summary.daysActive === 'string' ? parseFloat(summary.daysActive) : summary.daysActive) : 1;
     const daysPerLongTrip = longTrips.length > 0 ? Math.round(totalDays / longTrips.length) : 0;
 
-    // Daily kWh average
-    const dailyKwh = (parseFloat(summary?.totalKwh as string || '0') / totalDays);
-
     // Monthly cost
     const electricPrice = settings?.electricPrice || 0.15;
     const monthlyData = monthly || [];
@@ -99,7 +96,6 @@ const TrendsTab: FC<TrendsTabProps> = React.memo(({
 
     return {
       daysPerLongTrip,
-      dailyKwh,
       monthlyCost
     };
   }, [filtered, summary, monthly, settings]);
@@ -159,10 +155,10 @@ const TrendsTab: FC<TrendsTabProps> = React.memo(({
             isVerticalMode={true}
             isLarger={isLargerCard}
             isCompact={isCompact}
-            icon={Zap}
-            label={t('stats.dailyCharge')}
-            value={insights.dailyKwh.toFixed(2)}
-            unit={t('units.kWhDay')}
+            icon={Clock}
+            label={t('stats.time')}
+            value={summary.totalHours}
+            unit="h"
             color="bg-cyan-500/20 text-cyan-400"
           />
           <StatCard
@@ -218,10 +214,10 @@ const TrendsTab: FC<TrendsTabProps> = React.memo(({
         <StatCard
           isLarger={isLargerCard}
           isCompact={isCompact}
-          icon={Zap}
-          label={t('stats.dailyCharge')}
-          value={insights.dailyKwh.toFixed(2)}
-          unit={t('units.kWhDay')}
+          icon={Clock}
+          label={t('stats.time')}
+          value={summary.totalHours}
+          unit="h"
           color="bg-cyan-500/20 text-cyan-400"
         />
         <StatCard
