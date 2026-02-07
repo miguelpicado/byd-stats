@@ -736,7 +736,7 @@
         "keepLocal": "Conserva els locals",
         "useCloud": "Usa els del núvol",
         "mergeBoth": "Combina'ls",
-         "syncing": "S'està sincronitzant...",
+        "syncing": "S'està sincronitzant...",
         "error": "Error de sincronització",
         "upToDate": "Sincronitzat"
     },
