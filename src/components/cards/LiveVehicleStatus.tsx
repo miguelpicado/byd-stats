@@ -74,7 +74,9 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
     };
 
     // Compute display values
-    const soc = vehicleData?.lastSoC != null ? Math.round(vehicleData.lastSoC * 100) : null;
+    // lastSoC can be stored as decimal (0-1) or percentage (0-100), handle both
+    const rawSoC = vehicleData?.lastSoC;
+    const soc = rawSoC != null ? Math.round(rawSoC > 1 ? rawSoC : rawSoC * 100) : null;
     const isCharging = vehicleData?.chargingActive === true;
     const isConnected = !!activeCar?.smartcarVehicleId;
     const hasData = vehicleData !== null;
