@@ -54,7 +54,9 @@ const BatteryStatusModal: React.FC = () => {
     const usableBattery = batterySize * (soh / 100);
     const isAiSoH = aiSoH !== null;
 
-    const currentSoC = vehicleData?.lastSoC != null ? vehicleData.lastSoC : null;
+    // lastSoC can be stored as decimal (0-1) or percentage (0-100), normalize to decimal
+    const rawSoC = vehicleData?.lastSoC;
+    const currentSoC = rawSoC != null ? (rawSoC > 1 ? rawSoC / 100 : rawSoC) : null;
     const currentSoCPercent = currentSoC !== null ? Math.round(currentSoC * 100) : null;
     const currentKwh = currentSoC !== null ? usableBattery * currentSoC : null;
 
