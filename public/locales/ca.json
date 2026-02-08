@@ -54,7 +54,8 @@
         "allTrips": "Tots els trajectes",
         "last10Trips": "Últims 10 trajectes",
         "errorLoadingTab": "S'ha produït un error en carregar la pestanya",
-        "tapForInsights": "Toqueu per a veure les conclusions"
+        "tapForInsights": "Toqueu per a veure les conclusions",
+        "create": "Crea"
     },
     "tabs": {
         "overview": "Resum",
@@ -98,7 +99,9 @@
         "stationaryConsumption": "Consum en parat",
         "stationary": "Consum en parat",
         "estimatedRange": "Autonomia estimada",
-        "cost": "Cost"
+        "cost": "Cost",
+        "systemStatus": "Estat del sistema",
+        "checkDetails": "Mostra els detalls"
     },
     "insights": {
         "dailyGoal": "Meta diària recomanada",
@@ -738,7 +741,8 @@
         "mergeBoth": "Combina'ls",
         "syncing": "S'està sincronitzant...",
         "error": "Error de sincronització",
-        "upToDate": "Sincronitzat"
+        "upToDate": "Sincronitzat",
+        "createNew": "Crea un cotxe NOU (comença des de zero)"
     },
     "hybrid": {
         "vehicleType": "Tipus de vehicle",
@@ -856,5 +860,30 @@
                 "impact": "És normal tenir menys mostres que recàrregues totals. Com més mostres de qualitat (recàrregues profundes) tingueu, més precís serà el càlcul del SoH Real."
             }
         }
+    },
+    "cars": {
+        "yourCars": "Els meus cotxes",
+        "addCar": "Afegeix un cotxe",
+        "deleteCar": "Esborra el cotxe",
+        "name": "Nom del cotxe",
+        "isHybrid": "És híbrid endollable",
+        "HybridDesc": "Habilita el registre dels repostatges de gasolina"
+    },
+    "health": {
+        "alertHistory": "Històric d'avisos",
+        "noHistory": "No hi ha avisos en l'històric",
+        "systemStatus": "Estat del sistema",
+        "allSystemsNormal": "Tots els sistemes funcionen correctament",
+        "anomaliesDetected": "S'han detectat irregularitats en el sistema",
+        "battery": "Bateria",
+        "batteryOk": "La salut de la bateria és entre paràmetres normals",
+        "drain": "Drenatge fantasma",
+        "drainOk": "Consum en repòs normal",
+        "charging": "Recàrrega",
+        "chargingOk": "L'eficiència de recàrrega és òptima",
+        "efficiency": "Eficiència i pneumàtics",
+        "efficiencyOk": "El consum és consistent amb l'historial",
+        "viewHistory": "Mostra l'històric d'avisos"
     }
+
 }
