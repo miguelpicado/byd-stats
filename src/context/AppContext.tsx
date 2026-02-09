@@ -2,7 +2,7 @@
 // BYD Stats - App Context
 // Manages application settings and theme (layout moved to LayoutContext)
 
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { logger } from '@core/logger';
 import { useCar } from './CarContext';
 import { SETTINGS_KEY as BASE_SETTINGS_KEY } from '@core/constants';
@@ -118,7 +118,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
      * Update settings with validation and persistence
      * @param {Object|Function} newSettings - New settings object or updater function
      */
-    const updateSettings = (newSettings: Partial<Settings> | ((prev: Settings) => Partial<Settings>)) => {
+    const updateSettings = useCallback((newSettings: Partial<Settings> | ((prev: Settings) => Partial<Settings>)) => {
         setSettings(prev => {
             // Handle both functional updates and direct values
             const updated = typeof newSettings === 'function' ? newSettings(prev) : newSettings;
@@ -162,7 +162,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 // HITL Preferences
                 smartChargingPreferences: Array.isArray(updated.smartChargingPreferences)
                     ? updated.smartChargingPreferences
-                    : (Array.isArray(prev.smartChargingPreferences) ? prev.smartChargingPreferences : [])
+                    : (Array.isArray(prev.smartChargingPreferences) ? prev.smartChargingPreferences : []),
+
+                // Smartcar Integration
+                targetChargeSoC: updated.targetChargeSoC ?? prev.targetChargeSoC ?? 80,
+                autoImportCharges: updated.autoImportCharges ?? prev.autoImportCharges ?? false
             };
 
             if (settingsKey) {
@@ -170,7 +174,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             }
             return validated;
         });
-    };
+    }, [settingsKey]);
 
     // --- Theme Management ---
     useEffect(() => {
@@ -200,7 +204,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const value = useMemo(() => ({
         settings,
         updateSettings
-    }), [settings]);
+    }), [settings, updateSettings]);
 
     return (
         <AppContext.Provider value={value}>

@@ -17,6 +17,10 @@ export interface Trip {
     id?: string;
     startTime?: string;
     source?: 'local' | 'smartcar' | 'db';
+    // GPS tracking fields
+    gpsDistanceKm?: number;
+    startLocation?: { latitude: number; longitude: number };
+    endLocation?: { latitude: number; longitude: number };
 }
 
 export interface Charge {
@@ -51,65 +55,21 @@ export interface Car {
     model?: string;
     lastSync?: string;
     fileId?: string;
+    smartcarVehicleId?: string; // Smartcar vehicle ID when connected
+    lastOdometer?: number;
+    lastSoC?: number;
+    isLocked?: boolean;
+    climateActive?: boolean;
+    tires?: {
+        frontLeft: number;
+        frontRight: number;
+        backLeft: number;
+        backRight: number;
+    };
 }
 
-export interface Settings {
-    // Car specific
-    carModel?: string;
-    licensePlate?: string;
-    insurancePolicy?: string;
+export * from './settings';
 
-    // Battery & Calculations
-    batterySize: string | number;
-    soh: string | number;
-    mfgDate?: string;
-    mfgDateDisplay?: string;
-    sohMode?: 'manual' | 'calculated';
-    odometerOffset?: number | string;
-
-    // Prices & Strategies
-    chargerTypes?: ChargerType[];
-    thermalStressFactor?: number;
-    electricStrategy?: 'custom' | 'average' | 'dynamic';
-    fuelStrategy?: 'custom' | 'average' | 'dynamic';
-    electricPrice?: string | number;
-    fuelPrice?: string | number;
-    useCalculatedPrice?: boolean;
-    useCalculatedFuelPrice?: boolean;
-    priceStrategy?: string; // legacy support
-    fuelPriceStrategy?: string; // legacy support
-
-    // Home Charging Settings
-    homeChargerRating?: number; // Amps (default 8)
-    offPeakEnabled?: boolean;
-    offPeakStart?: string; // HH:MM
-    offPeakEnd?: string; // HH:MM
-    offPeakStartWeekend?: string; // HH:MM
-    offPeakEndWeekend?: string; // HH:MM
-    offPeakPrice?: number; // Price per kWh
-
-    // AI / Smart Charging Preferences (HITL)
-    smartChargingPreferences?: ChargingPreference[];
-
-    // UI
-    theme?: 'auto' | 'dark' | 'light' | 'system';
-    hiddenTabs?: string[];
-}
-
-export interface ChargingPreference {
-    id: string; // Unique ID
-    day: string; // 'Lunes', 'Martes', etc.
-    start: string; // HH:MM
-    end: string; // HH:MM
-    active: boolean; // Is this override enabled?
-}
-
-export interface ChargerType {
-    id: string;
-    name: string;
-    speedKw: number;
-    efficiency: number;
-}
 
 export interface MonthlyData {
     month: string;

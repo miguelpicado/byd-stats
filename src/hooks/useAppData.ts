@@ -69,33 +69,72 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         setDateTo
     } = useFilters();
 
-    // 3.0 Firebase Integration (Hybrid Mode)
+    // 3.0 Firebase Integration (Hybrid Mode) with debouncing
+    // Note: batterySize NOT in dependencies - consumption calculated in merge step
     const [firebaseTrips, setFirebaseTrips] = useState<Trip[]>([]);
 
     useEffect(() => {
+        let debounceTimer: NodeJS.Timeout;
+
+        // Subscribe without batterySize - consumption calculated at merge time
         const unsubscribe = subscribeToTrips((trips) => {
-            setFirebaseTrips(trips);
-        });
-        return () => unsubscribe();
-    }, []);
+            // Debounce updates to prevent excessive re-renders
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                setFirebaseTrips(trips);
+            }, 300); // 300ms debounce
+        }, 500);
+
+        return () => {
+            clearTimeout(debounceTimer);
+            unsubscribe();
+        };
+    }, []); // No dependencies - subscribe once
 
     // 3.1 Computed: Merged Trips (Local + Remote)
+    // Also calculates consumption from SoC if not provided
+    const val = settings?.batterySize as unknown;
+    const batterySize = typeof val === 'string'
+        ? parseFloat(val)
+        : (typeof val === 'number' ? val : 82.56);
+
     const allTrips = useMemo(() => {
+        // Get deleted trip IDs from localStorage
+        const deletedTrips = JSON.parse(localStorage.getItem('byd_deleted_trips') || '[]');
+
+        // Helper: Calculate consumption if not provided
+        const withConsumption = (t: Trip): Trip => {
+            if (t.electricity > 0) return t; // Already has consumption
+
+            // Calculate from SoC delta
+            if (t.start_soc && t.end_soc) {
+                const socDelta = t.start_soc - t.end_soc;
+                if (socDelta > 0) {
+                    return { ...t, electricity: (socDelta / 100) * batterySize };
+                }
+            }
+            return t;
+        };
+
         // Create a map by timestamp to deduplicate
         // Priority: Firebase > Local
         const tripMap = new Map<string, Trip>();
 
-        // 1. Add Local Trips
+        // 1. Add Local Trips (excluding deleted)
         rawTrips.forEach(t => {
+            if (t.id && deletedTrips.includes(t.id)) return; // Skip deleted trips
+
             // Use start_timestamp or date as key base. Fallback to index if needed but timestamp should exist.
             const key = `${t.start_timestamp || t.date}-${t.trip}`;
-            tripMap.set(key, { ...t, source: 'local' });
+            tripMap.set(key, withConsumption({ ...t, source: 'local' }));
         });
 
-        // 2. Add/Overwrite with Firebase Trips
+        // 2. Add/Overwrite with Firebase Trips (excluding deleted)
         firebaseTrips.forEach(t => {
+            if (t.id && deletedTrips.includes(t.id)) return; // Skip deleted trips
+
             const key = `${t.start_timestamp || t.date}-${t.trip}`;
-            tripMap.set(key, t);
+            tripMap.set(key, withConsumption(t));
         });
 
         // Convert back to array and sort
@@ -103,7 +142,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         merged.sort((a, b) => (b.start_timestamp || 0) - (a.start_timestamp || 0));
 
         return merged;
-    }, [rawTrips, firebaseTrips]);
+    }, [rawTrips, firebaseTrips, batterySize]);
 
     // 3. Computed: Unique Months
     const months = useMemo(() => {
@@ -138,7 +177,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
     }, [allTrips, filterType, selMonth, dateFrom, dateTo]);
 
     // 5. Worker Processing (Async Stats)
-    const { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate } = useProcessedData(filtered, settings, charges);
+    const { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate } = useProcessedData(filtered, allTrips, settings, charges);
 
     // 6. Anomalies State
     const [acknowledgedAnomalies, setAcknowledgedAnomalies] = useLocalStorage<string[]>('acknowledged_anomalies', []);

@@ -5,8 +5,8 @@ import ModalPortal from '../common/ModalPortal';
 import { X, Zap, Calendar, TrendingUp, Info, ChevronLeft, ChevronRight, Edit, Check, Trash2, Plus } from '../Icons';
 import { ChargingLogic } from '../../core/chargingLogic';
 import { ProcessedData, Settings, Charge, Trip } from '../../types';
-import { useData } from '../../providers/DataProvider';
 import { useApp } from '../../context/AppContext';
+
 
 interface ChargingInsightsModalProps {
     isOpen: boolean;
@@ -16,6 +16,8 @@ interface ChargingInsightsModalProps {
     charges?: Charge[];
     summary?: any;
     trips?: Trip[];
+    smartCharging?: any; // Pre-calculated from parent
+    isCalculating?: boolean; // Calculation status from parent
 }
 
 type InsightView = 'main' | 'daily' | 'optimal' | 'type';
@@ -27,14 +29,17 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     settings,
     charges = [],
     summary,
-    trips = []
+    trips = [],
+    smartCharging: smartChargingProp = null,
+    isCalculating: isCalculatingProp = false
 }) => {
     const { t } = useTranslation();
     const { updateSettings } = useApp();
-    const { predictDeparture } = useData();
     const [view, setView] = useState<InsightView>('main');
-    const [smartCharging, setSmartCharging] = useState<any>(null); // Async state
-    const [isCalculating, setIsCalculating] = useState(false);
+
+    // Use props instead of local state for smart charging
+    const smartCharging = smartChargingProp;
+    const isCalculating = isCalculatingProp;
 
     // HITL Editing State
     const [editingId, setEditingId] = useState<string | null>(null);
@@ -105,10 +110,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
         // Calculate Cost Savings first
         const costAnalysis = ChargingLogic.calculateCostSavings(charges, settings, avgDailyKwh);
 
-        // Smart Charging Windows (Now Async - removed from sync calculation)
-        // const smartCharging = ChargingLogic.findSmartChargingWindows(trips, settings);
-
-        // Fallback to simple day
+        // Fallback to simple day (smartCharging now comes from props)
         const dayStats = stats?.weekday || [];
         const simpleOptimalDay = ChargingLogic.calculateOptimalChargeDay(dayStats, settings);
 
@@ -133,29 +135,12 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
         return {
             recommendation,
             optimalDay: simpleOptimalDay,
-            smartCharging, // Pass state
             comfortZone,
             costAnalysis,
             seasonalFactor,
             dailyGoal: avgDailyKwh * (seasonalFactor.factor || 1)
         };
-    }, [charges, stats, settings, summary, trips, smartCharging]); // Added smartCharging dependency
-
-    // Load Smart Charging Logic (Async with AI)
-    React.useEffect(() => {
-        if (isOpen && trips.length > 0) {
-            setIsCalculating(true);
-            ChargingLogic.findSmartChargingWindows(trips, settings, predictDeparture)
-                .then(result => {
-                    setSmartCharging(result);
-                    setIsCalculating(false);
-                })
-                .catch(err => {
-                    console.error("Smart Charging Error:", err);
-                    setIsCalculating(false);
-                });
-        }
-    }, [isOpen, trips, settings, predictDeparture]);
+    }, [charges, stats, settings, summary, smartCharging]); // smartCharging from props
 
     if (!isOpen) return null;
 

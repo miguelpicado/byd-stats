@@ -1,0 +1,157 @@
+import React, { createContext, useContext, useMemo, ReactNode } from 'react';
+import { useApp } from '@/context/AppContext';
+import { useCar } from '@/context/CarContext';
+import { useChargesContext } from './ChargesProvider';
+import { useFiltersContext } from './FilterProvider';
+import { useTrips } from '@hooks/useTrips';
+import { useMergedTrips } from '@hooks/useMergedTrips';
+import { useProcessedData } from '@hooks/useProcessedData';
+import { useLocalStorage } from '@hooks/useLocalStorage';
+import { Trip, ProcessedData, Settings } from '@/types';
+
+interface TripsContextValue {
+    // Data
+    rawTrips: Trip[]; // merged trips (backward compatibility)
+    setRawTrips: React.Dispatch<React.SetStateAction<Trip[]>>; // setter for local trips
+    tripHistory: Trip[];
+    setTripHistory: React.Dispatch<React.SetStateAction<Trip[]>>;
+
+    // Derived
+    allTrips: Trip[];
+    filteredTrips: Trip[];
+    months: string[];
+
+    // Stats & AI
+    stats: ProcessedData | null;
+    isProcessing: boolean;
+    isAiTraining: boolean;
+    aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
+    aiLoss: number | null;
+    aiSoH: number | null;
+    aiSoHStats: { points: any[]; trend: any[] } | null;
+    predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
+    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<any>;
+    forceRecalculate: () => void;
+
+    // Actions
+    clearData: () => boolean;
+    saveToHistory: () => { success: boolean; total?: number; added?: number; reason?: string };
+    loadFromHistory: () => { success: boolean; count?: number; reason?: string };
+    clearHistory: () => boolean;
+
+    // Anomalies
+    acknowledgedAnomalies: string[];
+    setAcknowledgedAnomalies: (ids: string[]) => void;
+    deletedAnomalies: string[];
+    setDeletedAnomalies: (ids: string[]) => void;
+}
+
+const TripsContext = createContext<TripsContextValue | undefined>(undefined);
+
+export const useTripsContext = () => {
+    const context = useContext(TripsContext);
+    if (!context) {
+        throw new Error('useTripsContext must be used within a TripsProvider');
+    }
+    return context;
+};
+
+export const TripsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    const { settings } = useApp();
+    const { activeCarId } = useCar();
+    const { charges } = useChargesContext();
+    const { filterType, selMonth, dateFrom, dateTo } = useFiltersContext();
+
+    // 1. Storage & Local Trips
+    const {
+        rawTrips: localTrips, // Rename to avoid confusion
+        setRawTrips,
+        tripHistory,
+        setTripHistory,
+        clearData,
+        saveToHistory,
+        loadFromHistory,
+        clearHistory
+    } = useTrips(activeCarId);
+
+    // 2. Merged Trips (Firebase + Local)
+    const { allTrips, months } = useMergedTrips(localTrips, settings);
+
+    // 3. Filtering
+    const filteredTrips = useMemo(() => {
+        if (!allTrips || allTrips.length === 0) return [];
+
+        if (filterType === 'month' && selMonth) {
+            return allTrips.filter(t => {
+                const m = t.month || (t.date ? t.date.substring(0, 6) : '');
+                return m === selMonth;
+            });
+        }
+
+        if (filterType === 'range') {
+            let r = [...allTrips];
+            if (dateFrom) {
+                const limit = dateFrom.replace(/-/g, '');
+                r = r.filter(t => (t.date || '') >= limit);
+            }
+            if (dateTo) {
+                const limit = dateTo.replace(/-/g, '');
+                r = r.filter(t => (t.date || '') <= limit);
+            }
+            return r;
+        }
+
+        return allTrips;
+    }, [allTrips, filterType, selMonth, dateFrom, dateTo]);
+
+    // 4. Stats & AI Processing
+    const processed = useProcessedData(filteredTrips, allTrips, settings, charges, 'es');
+
+    // 5. Anomalies
+    const [acknowledgedAnomalies, setAcknowledgedAnomalies] = useLocalStorage<string[]>('acknowledged_anomalies', []);
+    const [deletedAnomalies, setDeletedAnomalies] = useLocalStorage<string[]>('deleted_anomalies', []);
+
+    const value = useMemo(() => ({
+        rawTrips: allTrips, // Exposing merged trips as "rawTrips" to match legacy API
+        setRawTrips,
+        tripHistory,
+        setTripHistory,
+
+        allTrips,
+        filteredTrips,
+        months,
+
+        stats: processed.data,
+        isProcessing: processed.isProcessing,
+        isAiTraining: processed.isAiTraining,
+        aiScenarios: processed.aiScenarios,
+        aiLoss: processed.aiLoss,
+        aiSoH: processed.aiSoH,
+        aiSoHStats: processed.aiSoHStats,
+        predictDeparture: processed.predictDeparture,
+        findSmartChargingWindows: processed.findSmartChargingWindows,
+        forceRecalculate: processed.forceRecalculate,
+
+        clearData,
+        saveToHistory,
+        loadFromHistory,
+        clearHistory,
+
+        acknowledgedAnomalies,
+        setAcknowledgedAnomalies,
+        deletedAnomalies,
+        setDeletedAnomalies
+    }), [
+        allTrips, setRawTrips, tripHistory, setTripHistory,
+        filteredTrips, months,
+        processed,
+        clearData, saveToHistory, loadFromHistory, clearHistory,
+        acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
+    ]);
+
+    return (
+        <TripsContext.Provider value={value}>
+            {children}
+        </TripsContext.Provider>
+    );
+};

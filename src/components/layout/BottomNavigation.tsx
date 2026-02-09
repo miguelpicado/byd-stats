@@ -1,6 +1,12 @@
 import React, { memo } from 'react';
 
-const BottomNavigation = memo(({ tabs, activeTab, handleTabClick }) => {
+interface BottomNavigationProps {
+    tabs: any[];
+    activeTab: string;
+    handleTabClick: (id: string) => void;
+}
+
+const BottomNavigation = memo(({ tabs, activeTab, handleTabClick }: BottomNavigationProps) => {
     return (
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-slate-100 dark:bg-slate-900/95 backdrop-blur border-t border-slate-200 dark:border-slate-700/50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
             <div className="max-w-7xl mx-auto px-2 py-2">

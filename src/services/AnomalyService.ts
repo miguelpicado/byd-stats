@@ -18,7 +18,7 @@ export const AnomalyService = {
         const anomalies: Anomaly[] = [];
 
         // 1. Battery Health Check
-        const batteryAnomalies = checkBatteryHealth(data, settings);
+        const batteryAnomalies = checkBatteryHealth(data);
         anomalies.push(...batteryAnomalies);
 
         // 2. Phantom Drain Check
@@ -217,7 +217,7 @@ export const AnomalyService = {
     }
 };
 
-const checkBatteryHealth = (data: ProcessedData, settings: Settings): Anomaly[] => {
+const checkBatteryHealth = (data: ProcessedData): Anomaly[] => {
     const anomalies: Anomaly[] = [];
     const currentSoH = data.summary.soh;
 

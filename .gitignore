@@ -34,7 +34,14 @@ android/.idea/
 coverage/
 .gemini/
 
-# Env
+# Env - CRITICAL: Never commit actual .env files
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
 .envdev-dist
+functions/.env
+functions/.env.local
 
 EC_database_Hybrid.db

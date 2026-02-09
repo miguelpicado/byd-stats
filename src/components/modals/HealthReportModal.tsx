@@ -1,9 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Activity, Battery, Zap, AlertCircle, CheckCircle, Clock } from '../Icons';
+import { X, Activity, Battery, Zap, AlertCircle, CheckCircle, Clock, Thermometer, Lock, Unlock, Shield, Trunk, RefreshCw, Wheel } from '../Icons';
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFirestore, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { getApp } from 'firebase/app';
+import { useCar } from '../../context/CarContext';
+import toast from 'react-hot-toast';
 import { Anomaly } from '@/services/AnomalyService';
 import AlertHistoryModal from './AlertHistoryModal';
 import ModalPortal from '../common/ModalPortal';
+
+interface VehicleFirestoreData {
+    isLocked?: boolean;
+    climateActive?: boolean;
+    trunkOpen?: boolean;
+    tires?: {
+        frontLeft: number;
+        frontRight: number;
+        backLeft: number;
+        backRight: number;
+    };
+    lastUpdate?: Timestamp;
+}
 
 interface HealthReportModalProps {
     isOpen: boolean;
@@ -23,7 +41,128 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
     onDelete
 }) => {
     const { t } = useTranslation();
+    const { activeCar, activeCarId, updateCar } = useCar();
     const [showHistory, setShowHistory] = useState(false);
+    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    const [vehicleData, setVehicleData] = useState<VehicleFirestoreData | null>(null);
+
+    // Subscribe to vehicle document in Firestore for real-time data
+    useEffect(() => {
+        if (!activeCar?.smartcarVehicleId) {
+            setVehicleData(null);
+            return;
+        }
+
+        const db = getFirestore(getApp());
+        const vehicleRef = doc(db, 'vehicles', activeCar.smartcarVehicleId);
+
+        const unsubscribe = onSnapshot(vehicleRef, (docSnapshot) => {
+            if (docSnapshot.exists()) {
+                setVehicleData(docSnapshot.data() as VehicleFirestoreData);
+            } else {
+                setVehicleData(null);
+            }
+        }, (error) => {
+            console.error('[HealthReportModal] Error listening to vehicle:', error);
+        });
+
+        return () => unsubscribe();
+    }, [activeCar?.smartcarVehicleId]);
+
+    // Auto-refresh vehicle data when modal opens
+    useEffect(() => {
+        if (isOpen && activeCar?.smartcarVehicleId) {
+            const refreshData = async () => {
+                setActionLoading('refreshVehicleData');
+                try {
+                    const functions = getFunctions(getApp(), 'europe-west1');
+                    const refresh = httpsCallable(functions, 'refreshVehicleData');
+                    const result = await refresh({ vehicleId: activeCar.smartcarVehicleId });
+                    console.log('[HealthReportModal] Auto-refresh result:', result.data);
+                } catch (error: any) {
+                    console.error('[HealthReportModal] Auto-refresh failed:', error.message || error);
+                } finally {
+                    setActionLoading(null);
+                }
+            };
+            refreshData();
+        }
+    }, [isOpen, activeCar?.smartcarVehicleId]);
+
+    // Use Firestore data for live status, fallback to activeCar
+    const isLocked = vehicleData?.isLocked ?? activeCar?.isLocked;
+    const climateActive = vehicleData?.climateActive ?? activeCar?.climateActive;
+    const trunkOpen = vehicleData?.trunkOpen ?? false;
+    const tires = vehicleData?.tires ?? activeCar?.tires;
+
+    // Tire Pressure View
+    const TiresView = ({ tires }: { tires: any }) => {
+        if (!tires) return null;
+
+        const Tire = ({ label, value }: any) => {
+            // Smartcar often returns kPa. 250 kPa = 2.5 bar.
+            // If value > 10, it's likely kPa, so we divide by 100
+            const displayValue = value > 10 ? (value / 100).toFixed(1) : value.toFixed(1);
+
+            return (
+                <div className={`flex flex-col items-center bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-800 shadow-sm`}>
+                    <span className="text-[10px] text-slate-400 uppercase font-bold">{label}</span>
+                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{displayValue} bar</span>
+                </div>
+            );
+        };
+
+        return (
+            <div className="mt-4 mb-6">
+                <div className="grid grid-cols-2 gap-4 relative">
+                    {/* Wheel background icon */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+                        <Wheel className="w-24 h-24" />
+                    </div>
+
+                    <Tire label="DI" value={tires.frontLeft} />
+                    <Tire label="DD" value={tires.frontRight} />
+                    <Tire label="TI" value={tires.backLeft} />
+                    <Tire label="TD" value={tires.backRight} />
+                </div>
+            </div>
+        );
+    };
+
+    const handleAction = async (action: string) => {
+        if (!activeCarId) return;
+
+        setActionLoading(action);
+        const toastId = toast.loading(`${t('common.processing', 'Procesando...')} ${action}`);
+
+        try {
+            const functions = getFunctions(getApp(), 'europe-west1');
+            const callAction = httpsCallable(functions, action);
+            const result = await callAction({ vehicleId: activeCar?.smartcarVehicleId || activeCarId });
+
+            // Log diagnostic results to console
+            if (action === 'fullSmartcarDiagnostic') {
+                console.log('=== SMARTCAR DIAGNOSTIC RESULTS ===');
+                console.log(JSON.stringify(result.data, null, 2));
+                const data = result.data as any;
+                toast.success(`Diagnóstico completo. Disponibles: ${data.summary?.available?.length || 0}, No disponibles: ${data.summary?.unavailable?.length || 0}. Ver consola (F12)`, { id: toastId, duration: 8000 });
+                return;
+            }
+
+            // Update local state if needed
+            if (action === 'lockVehicle') updateCar(activeCarId, { isLocked: true });
+            if (action === 'unlockVehicle') updateCar(activeCarId, { isLocked: false });
+            if (action === 'startClimate') updateCar(activeCarId, { climateActive: true });
+            if (action === 'stopClimate') updateCar(activeCarId, { climateActive: false });
+
+            toast.success(`${t('common.success', '¡Éxito!')}`, { id: toastId });
+        } catch (error: any) {
+            console.error(`Action ${action} failed:`, error);
+            toast.error(`${t('common.error', 'Error')}: ${error.message}`, { id: toastId });
+        } finally {
+            setActionLoading(null);
+        }
+    };
 
     if (!isOpen) return null;
 
@@ -180,6 +319,88 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 icon={<AlertCircle className="w-5 h-5" />}
                                 emptyText={t('health.efficiencyOk', 'Consumo consistente con el historial.')}
                             />
+
+                            {/* Tire Pressure Section */}
+                            <div className="mt-8">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                                        <Activity className="w-5 h-5" />
+                                        {t('health.tires', 'Presión de Neumáticos')}
+                                    </h3>
+                                    <button
+                                        onClick={() => handleAction('refreshVehicleData')}
+                                        disabled={!!actionLoading}
+                                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
+                                        title={t('health.refreshData', 'Actualizar datos del vehículo')}
+                                    >
+                                        <RefreshCw className={`w-3.5 h-3.5 ${actionLoading === 'refreshVehicleData' ? 'animate-spin' : ''}`} />
+                                        {t('health.refresh', 'Actualizar')}
+                                    </button>
+                                </div>
+                                {tires ? (
+                                    <TiresView tires={tires} />
+                                ) : (
+                                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-slate-500 dark:text-slate-400 mb-6">
+                                        <Activity className="w-5 h-5 opacity-30" />
+                                        <span className="text-sm">{t('health.noTireData', 'No hay datos de presión recientes.')}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Remote Controls Section */}
+                            <div className="mt-4 pt-6 border-t border-slate-100 dark:border-slate-800">
+                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
+                                    <Shield className="w-5 h-5 text-emerald-500" />
+                                    {t('health.remoteControls', 'Controles Remotos')}
+                                </h3>
+
+                                <div className="grid grid-cols-3 gap-3">
+                                    {/* Security Controls */}
+                                    <button
+                                        onClick={() => handleAction(isLocked ? 'unlockVehicle' : 'lockVehicle')}
+                                        disabled={!!actionLoading}
+                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${isLocked
+                                            ? 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-400'
+                                            : 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-900/50 dark:text-emerald-400'
+                                            } hover:scale-[1.02] active:scale-95 disabled:opacity-50`}
+                                    >
+                                        {isLocked ? <Unlock className="w-5 h-5 mb-1" /> : <Lock className="w-5 h-5 mb-1" />}
+                                        <span className="text-[10px] font-bold uppercase tracking-tight">
+                                            {isLocked ? t('health.unlock', 'Desbloquear') : t('health.lock', 'Bloquear')}
+                                        </span>
+                                    </button>
+
+                                    {/* Climate Controls */}
+                                    <button
+                                        onClick={() => handleAction(climateActive ? 'stopClimate' : 'startClimate')}
+                                        disabled={!!actionLoading}
+                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${climateActive
+                                            ? 'bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-900/50 dark:text-blue-400'
+                                            : 'bg-slate-50 border-slate-100 text-slate-700 dark:bg-slate-900/20 dark:border-slate-800 dark:text-slate-400'
+                                            } hover:scale-[1.02] active:scale-95 disabled:opacity-50`}
+                                    >
+                                        <Thermometer className={`w-5 h-5 mb-1 ${climateActive ? 'animate-pulse text-blue-500' : ''}`} />
+                                        <span className="text-[10px] font-bold uppercase tracking-tight">
+                                            {climateActive ? t('health.stopClimate', 'Parar Clima') : t('health.startClimate', 'Iniciar Clima')}
+                                        </span>
+                                    </button>
+
+                                    {/* Trunk Controls */}
+                                    <button
+                                        onClick={() => handleAction(trunkOpen ? 'closeTrunk' : 'openTrunk')}
+                                        disabled={!!actionLoading}
+                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${trunkOpen
+                                            ? 'bg-purple-50 border-purple-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-900/50 dark:text-purple-400'
+                                            : 'bg-slate-50 border-slate-100 text-slate-700 dark:bg-slate-900/20 dark:border-slate-800 dark:text-slate-400'
+                                            } hover:scale-[1.02] active:scale-95 disabled:opacity-50`}
+                                    >
+                                        <Trunk className={`w-5 h-5 mb-1 ${trunkOpen ? 'text-purple-500' : ''}`} />
+                                        <span className="text-[10px] font-bold uppercase tracking-tight">
+                                            {trunkOpen ? t('health.closeTrunk', 'Cerrar') : t('health.openTrunk', 'Maletero')}
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Footer - History Button */}
@@ -189,7 +410,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors text-sm font-medium"
                             >
                                 <Clock className="w-4 h-4" />
-                                {t('health.viewHistory', 'Ver Histórico de Avisos')}
+                                {t('health.viewHistory', 'Ver Histórico')}
                             </button>
                         </div>
                     </div>

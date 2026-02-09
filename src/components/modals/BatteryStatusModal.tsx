@@ -1,24 +1,19 @@
 // BYD Stats - Battery Status Modal
 // Shows live battery status and Smartcar charging settings
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Battery, Zap, X } from '../Icons';
 import { BYD_RED } from '@core/constants';
+import { logger } from '@core/logger';
 import { useApp } from '../../context/AppContext';
 import { useCar } from '../../context/CarContext';
 import { useData } from '../../providers/DataProvider';
-import { getFirestore, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { useVehicleStatus } from '../../hooks/useVehicleStatus';
+import { normalizeSoCToDecimal, normalizeSoCToPercent, getNumericBatterySize } from '../../utils/normalize';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getApp } from 'firebase/app';
 import toast from 'react-hot-toast';
-
-interface VehicleData {
-    lastSoC?: number;
-    chargingActive?: boolean;
-    lastUpdate?: Timestamp;
-    activeTripId?: string;
-}
 
 const BatteryStatusModal: React.FC = () => {
     const { modals, closeModal, aiSoH } = useData();
@@ -27,37 +22,22 @@ const BatteryStatusModal: React.FC = () => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCar } = useCar();
-    const [vehicleData, setVehicleData] = useState<VehicleData | null>(null);
     const [isStoppingCharge, setIsStoppingCharge] = useState(false);
     const [isEditingTarget, setIsEditingTarget] = useState(false);
     const [editTargetValue, setEditTargetValue] = useState('');
 
-    // Subscribe to vehicle document
-    useEffect(() => {
-        if (!isOpen || !activeCar?.smartcarVehicleId) return;
-
-        const db = getFirestore(getApp());
-        const vehicleRef = doc(db, 'vehicles', activeCar.smartcarVehicleId);
-
-        const unsubscribe = onSnapshot(vehicleRef, (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                setVehicleData(docSnapshot.data() as VehicleData);
-            }
-        });
-
-        return () => unsubscribe();
-    }, [isOpen, activeCar?.smartcarVehicleId]);
+    // Use shared hook for vehicle status - only subscribe when modal is open
+    const vehicleData = useVehicleStatus(activeCar?.smartcarVehicleId, { enabled: isOpen });
 
     // Calculate battery values - prioritize AI SoH over manual settings
-    const batterySize = Number(settings?.batterySize) || 82.5;
+    const batterySize = getNumericBatterySize(settings?.batterySize) || 82.5;
     const soh = aiSoH ?? (Number(settings?.soh) || 100);
     const usableBattery = batterySize * (soh / 100);
     const isAiSoH = aiSoH !== null;
 
-    // lastSoC can be stored as decimal (0-1) or percentage (0-100), normalize to decimal
-    const rawSoC = vehicleData?.lastSoC;
-    const currentSoC = rawSoC != null ? (rawSoC > 1 ? rawSoC / 100 : rawSoC) : null;
-    const currentSoCPercent = currentSoC !== null ? Math.round(currentSoC * 100) : null;
+    // Use normalize utilities for SoC conversion
+    const currentSoC = normalizeSoCToDecimal(vehicleData?.lastSoC);
+    const currentSoCPercent = normalizeSoCToPercent(vehicleData?.lastSoC);
     const currentKwh = currentSoC !== null ? usableBattery * currentSoC : null;
 
     const isCharging = vehicleData?.chargingActive === true;
@@ -78,7 +58,7 @@ const BatteryStatusModal: React.FC = () => {
             await stopCharge({ vehicleId: activeCar.smartcarVehicleId });
             toast.success(t('charges.chargeStopped', 'Carga detenida'));
         } catch (error: any) {
-            console.error('Error stopping charge:', error);
+            logger.error('[BatteryStatusModal] Error stopping charge:', error);
             toast.error(t('charges.stopError', 'Error al detener la carga'));
         } finally {
             setIsStoppingCharge(false);
@@ -86,7 +66,7 @@ const BatteryStatusModal: React.FC = () => {
     };
 
     const handleTargetSoCChange = async (newTarget: number) => {
-        updateSettings({ ...settings, targetChargeSoC: newTarget });
+        updateSettings({ targetChargeSoC: newTarget });
 
         if (activeCar?.smartcarVehicleId) {
             try {
@@ -97,7 +77,7 @@ const BatteryStatusModal: React.FC = () => {
                     targetChargeSoC: newTarget / 100
                 });
             } catch (err) {
-                console.error('Failed to sync targetSoC:', err);
+                logger.error('[BatteryStatusModal] Failed to sync targetSoC:', err);
             }
         }
     };

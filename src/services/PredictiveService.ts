@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import { Trip } from '../types';
+import { Trip, Charge } from '../types';
 import { logger } from '@core/logger';
 
 /**
@@ -162,8 +162,10 @@ export class PredictiveService {
     /**
      * Train Battery SoH Model based on Charging Sessions
      * Uses Implied Capacity = kWh_Added / (End% - Start%)
+     * @param charges - List of Charge sessions
+     * @param nominalCapacity - Factory capacity (e.g. 60.48)
      */
-    async trainSoH(charges: any[], nominalCapacity: number): Promise<{ loss: number, samples: number, predictedSoH: number }> {
+    async trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ loss: number, samples: number, predictedSoH: number }> {
         this.sohModel = null;
         this.sohNormalizationData = null;
 
@@ -174,14 +176,16 @@ export class PredictiveService {
         }
 
         const validCharges = charges.filter(c => {
-            const kwh = c.kwhCharged || c.kwh;
+            const kwh = c.kwhCharged ?? c.kwh;
             const start = c.initialPercentage;
             const end = c.finalPercentage;
             const date = c.date;
 
+            if (kwh === undefined || start === undefined || end === undefined || !date) return false;
+
             // Only analyze "Deep" charges to minimize error
             // Relaxed to 5% to capture more samples for the user
-            const isValid = kwh > 0 && start >= 0 && end > start && (end - start) >= 5 && date;
+            const isValid = kwh > 0 && start >= 0 && end > start && (end - start) >= 5;
             return isValid;
         });
 
@@ -198,7 +202,7 @@ export class PredictiveService {
         const firstDate = new Date(validCharges[0].date).getTime();
 
         validCharges.forEach(c => {
-            const kwh = c.kwhCharged || c.kwh;
+            const kwh = c.kwhCharged ?? c.kwh;
             // FIXED: Use decimal (0-1) for capacity calculation if kwh is full battery kwh?
             // Wait, Implied Capacity = kWh_Added / %_Added
             // Example: Added 30kWh for 50% gain (0.5). Capacity = 30 / 0.5 = 60kWh.
@@ -232,14 +236,15 @@ export class PredictiveService {
 
             // FIX: I will use (end-start)/100. 
             // And I will log the values for debugging if I could (can't see logs easily).
-            // The only way to get 36% is if the predicted capacity is ~22kWh.
-            // This could happen if the trendline dives down steep?
-            // Or if the `days` calculation is huge?
+
+            if (c.finalPercentage === undefined || c.initialPercentage === undefined) return;
 
             const percentAddedDecimal = (c.finalPercentage - c.initialPercentage) / 100;
 
             // Protect against div by zero 
             if (percentAddedDecimal < 0.01) return;
+
+            if (kwh === undefined) return;
 
             const impliedCapacity = kwh / percentAddedDecimal;
 
@@ -349,16 +354,21 @@ export class PredictiveService {
 
     /**
      * Get chart data for SoH visualization
+     * @param charges - List of Charge sessions
+     * @param nominalCapacity - Factory capacity
      */
-    getSoHDataPoints(charges: any[], nominalCapacity: number) {
+    getSoHDataPoints(charges: Charge[], nominalCapacity: number) {
         if (!this.sohModel) return { points: [], trend: [] };
 
         const validCharges = charges.filter(c => {
-            const kwh = c.kwhCharged || c.kwh;
+            const kwh = c.kwhCharged ?? c.kwh;
             const start = c.initialPercentage;
             const end = c.finalPercentage;
+
+            if (kwh === undefined || start === undefined || end === undefined || !c.date) return false;
+
             // Relaxed strict filter to >10% to match training
-            return kwh > 0 && start >= 0 && end > start && (end - start) >= 10 && c.date;
+            return kwh > 0 && start >= 0 && end > start && (end - start) >= 10;
         }).sort((a, b) => a.date.localeCompare(b.date));
 
         if (validCharges.length === 0) return { points: [], trend: [] };
@@ -366,6 +376,10 @@ export class PredictiveService {
         const firstDate = new Date(validCharges[0].date).getTime();
         const points = validCharges.map(c => {
             const kwh = c.kwhCharged || c.kwh;
+
+            if (c.finalPercentage === undefined || c.initialPercentage === undefined) return null;
+            if (kwh === undefined) return null;
+
             const percentAddedDecimal = (c.finalPercentage - c.initialPercentage) / 100;
             if (percentAddedDecimal < 0.01) return null;
             const cap = kwh / percentAddedDecimal;
