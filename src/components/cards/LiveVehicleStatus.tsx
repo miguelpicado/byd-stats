@@ -1,25 +1,19 @@
 // BYD Stats - Live Vehicle Status Component (StatCard format)
 // Shows real-time vehicle status from Smartcar (charging state, SoC, etc.)
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Battery, Zap, Car } from '../Icons';
 import { BYD_RED } from '@core/constants';
+import { logger } from '@core/logger';
 import { useCar } from '../../context/CarContext';
 import { useLayout } from '../../context/LayoutContext';
-import { getFirestore, doc, onSnapshot, Timestamp } from 'firebase/firestore';
+import { useVehicleStatus } from '../../hooks/useVehicleStatus';
+import { normalizeSoCToPercent } from '../../utils/normalize';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getApp } from 'firebase/app';
 import toast from 'react-hot-toast';
-
-interface VehicleData {
-    lastSoC?: number;
-    chargingActive?: boolean;
-    lastUpdate?: Timestamp;
-    pollingActive?: boolean;
-    activeTripId?: string;
-    activeChargeSessionId?: string;
-}
+import { Skeleton } from '../ui/Skeleton';
 
 interface LiveVehicleStatusProps {
     onClick?: () => void;
@@ -29,31 +23,10 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
     const { t } = useTranslation();
     const { activeCar } = useCar();
     const { isCompact, isLargerCard, isVertical } = useLayout();
-    const [vehicleData, setVehicleData] = useState<VehicleData | null>(null);
     const [isStoppingCharge, setIsStoppingCharge] = useState(false);
 
-    // Subscribe to vehicle document in Firestore
-    useEffect(() => {
-        if (!activeCar?.smartcarVehicleId) {
-            setVehicleData(null);
-            return;
-        }
-
-        const db = getFirestore(getApp());
-        const vehicleRef = doc(db, 'vehicles', activeCar.smartcarVehicleId);
-
-        const unsubscribe = onSnapshot(vehicleRef, (docSnapshot) => {
-            if (docSnapshot.exists()) {
-                setVehicleData(docSnapshot.data() as VehicleData);
-            } else {
-                setVehicleData(null);
-            }
-        }, (error) => {
-            console.error('Error listening to vehicle status:', error);
-        });
-
-        return () => unsubscribe();
-    }, [activeCar?.smartcarVehicleId]);
+    // Use shared hook for vehicle status subscription
+    const vehicleData = useVehicleStatus(activeCar?.smartcarVehicleId);
 
     const handleStopCharge = async (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -66,21 +39,36 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
             await stopCharge({ vehicleId: activeCar.smartcarVehicleId });
             toast.success(t('charges.chargeStopped', 'Carga detenida'));
         } catch (error: any) {
-            console.error('Error stopping charge:', error);
+            logger.error('[LiveVehicleStatus] Error stopping charge:', error);
             toast.error(t('charges.stopError', 'Error al detener la carga'));
         } finally {
             setIsStoppingCharge(false);
         }
     };
 
-    // Compute display values
-    // lastSoC can be stored as decimal (0-1) or percentage (0-100), handle both
-    const rawSoC = vehicleData?.lastSoC;
-    const soc = rawSoC != null ? Math.round(rawSoC > 1 ? rawSoC : rawSoC * 100) : null;
+    // Compute display values using normalize utility
+    const soc = normalizeSoCToPercent(vehicleData?.lastSoC);
     const isCharging = vehicleData?.chargingActive === true;
     const isConnected = !!activeCar?.smartcarVehicleId;
     const hasData = vehicleData !== null;
     const isTripping = vehicleData?.activeTripId != null;
+
+    // Loading State (Skeleton)
+    if (isConnected && !hasData) {
+        return (
+            <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 flex items-stretch overflow-hidden ${isCompact ? (isLargerCard ? 'h-20' : 'h-16') : (isVertical ? 'h-20' : 'min-h-[80px] sm:min-h-[100px]')}`}>
+                {/* Icon Skeleton */}
+                <div className={`flex items-center justify-center shrink-0 ${isCompact ? (isLargerCard ? 'w-14' : 'w-10') : (isVertical ? 'w-14' : 'w-14 sm:w-16')} bg-slate-100 dark:bg-slate-800`}>
+                    <Skeleton circle width={24} height={24} />
+                </div>
+                {/* Content Skeleton */}
+                <div className="flex-1 flex flex-col items-center justify-center px-2 py-1 gap-2">
+                    <Skeleton width="60%" height={10} />
+                    <Skeleton width="40%" height={24} />
+                </div>
+            </div>
+        );
+    }
 
     // Determine what to show
     let Icon = Car;
@@ -94,9 +82,6 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
         label = t('status.notConnected', 'Sin conectar');
         subText = t('status.linkSmartcar', 'Vincular en Ajustes');
         colorClass = 'bg-slate-500/20 text-slate-400';
-    } else if (!hasData) {
-        label = t('status.connecting', 'Conectando...');
-        colorClass = 'bg-blue-500/20 text-blue-400';
     } else if (isCharging) {
         Icon = Zap;
         label = t('status.charging', 'Cargando');
@@ -115,8 +100,8 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
         value = soc;
         unit = '%';
         colorClass = soc > 50 ? 'bg-emerald-500/20 text-emerald-400' :
-                     soc > 20 ? 'bg-amber-500/20 text-amber-400' :
-                     'bg-red-500/20 text-red-400';
+            soc > 20 ? 'bg-amber-500/20 text-amber-400' :
+                'bg-red-500/20 text-red-400';
     }
 
     // Match StatCard exactly

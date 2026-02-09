@@ -88,6 +88,7 @@ const MainLayout = ({
                     position="bottom-center"
                     containerStyle={{
                         bottom: 100, // Move it up to clear the bottom navigation bar
+                        zIndex: 99999, // Ensure toasts appear above modals
                     }}
                     toastOptions={{
                         duration: 4000,

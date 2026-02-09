@@ -25,6 +25,15 @@ const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
 /**
  * Desktop Dashboard View - Optimized for tab navigation and larger screens
  */
+interface DesktopDashboardViewProps {
+    activeTab: string;
+    tabs: any[];
+    fadingTab: string;
+    backgroundLoad: boolean;
+    onTripSelect: (trip: any) => void;
+    onChargeSelect: (charge: any) => void;
+}
+
 const DesktopDashboardView = memo(({
     activeTab,
     tabs,
@@ -32,11 +41,20 @@ const DesktopDashboardView = memo(({
     backgroundLoad,
     onTripSelect,
     onChargeSelect
-}) => {
+}: DesktopDashboardViewProps) => {
     const { t } = useTranslation();
 
     const { stats, trips: rawTrips, filtered, charges } = useData();
-    const { summary, monthly, daily, hourly, weekday, tripDist, effScatter, top } = stats || {};
+    const { summary, monthly, daily, hourly, weekday, tripDist, effScatter, top } = stats || {
+        summary: null,
+        monthly: [],
+        daily: [],
+        hourly: [],
+        weekday: [],
+        tripDist: [],
+        effScatter: [],
+        top: { km: [], kwh: [], dur: [], fuel: [] }
+    };
 
     const { settings } = useApp();
     const { isCompact, isFullscreenBYD } = useLayout();
@@ -111,7 +129,7 @@ const DesktopDashboardView = memo(({
                                         hourly={hourly}
                                         summary={summary}
                                         patternsSpacing={patternsSpacing}
-                                        patternsChartHeight={patternsChartHeight}
+                                        patternsChartHeight={patternsChartHeight as any}
                                         isActive={isActive}
                                     />
                                 </ErrorBoundary>
@@ -122,7 +140,7 @@ const DesktopDashboardView = memo(({
                                         summary={summary}
                                         monthly={monthly}
                                         effScatter={effScatter}
-                                        largeChartHeight={largeChartHeight}
+                                        largeChartHeight={largeChartHeight as any}
                                         isActive={isActive}
                                     />
                                 </ErrorBoundary>

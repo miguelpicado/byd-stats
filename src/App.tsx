@@ -37,9 +37,6 @@ export default function BYDStatsAnalyzer() {
 
     // Actions
     processDB,
-    exportDatabase,
-    clearData,
-    loadChargeRegistry,
     openTripDetail,
     handleChargeSelect,
 
@@ -48,17 +45,12 @@ export default function BYDStatsAnalyzer() {
     allChargesScrollRef,
 
     // Pass-through props for views
-    // Pass-through props for views
     rawTrips,
     charges,
     settings,
     googleSync,
-    // modals,
     openModal,
     closeModal,
-    // selectedTrip,
-    // setSelectedTrip,
-    selectedCharge,
     setSelectedCharge,
     // setLegalInitialSection,
     // legalInitialSection,
@@ -187,7 +179,7 @@ export default function BYDStatsAnalyzer() {
         tabs={tabs}
         handleTabClick={handleTabClick}
         isTransitioning={isTransitioning}
-        fadingTab={fadingTab}
+        fadingTab={fadingTab || undefined}
         backgroundLoad={backgroundLoad}
         onTripSelect={openTripDetail}
         onChargeSelect={handleChargeSelect}

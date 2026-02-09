@@ -73,7 +73,38 @@ function decryptToken(encryptedToken: string): string {
 // HELPERS - TOKEN MANAGEMENT
 // =============================================================================
 
+// =============================================================================
+// HELPERS - TOKEN MANAGEMENT
+// =============================================================================
+
+// In-memory cache for access tokens to reduce Firestore reads
+// Map<vehicleId, { token: string, expiry: number }>
+const tokenCache = new Map<string, { token: string; expiry: number }>();
+
+/**
+ * Normalize SoC to percentage (0-100)
+ * @param value SoC value (0-1 or 0-100)
+ * @returns SoC as percentage (0-100)
+ */
+function normalizeSoC(value: number | null | undefined): number | null {
+    if (value === null || value === undefined) return null;
+    // If <= 1, assume it's a decimal (e.g. 0.55) and convert to 55
+    // If > 1, assume it's already percentage (e.g. 55)
+    return value <= 1 ? Math.round(value * 100) : Math.round(value);
+}
+
 async function getValidAccessToken(vehicleId: string): Promise<string> {
+    const now = Date.now();
+
+    // 1. Check in-memory cache first
+    const cached = tokenCache.get(vehicleId);
+    if (cached && cached.expiry > now + 60000) { // Buffer 1 min
+        console.log(`[TokenCache] Hit for ${vehicleId}`);
+        return cached.token;
+    }
+
+    console.log(`[TokenCache] Miss for ${vehicleId}, fetching from Firestore...`);
+
     const vehicleRef = db.collection('vehicles').doc(vehicleId);
     const tokensDoc = await vehicleRef.collection('private').doc('tokens').get();
     const tokensData = tokensDoc.data();
@@ -85,41 +116,79 @@ async function getValidAccessToken(vehicleId: string): Promise<string> {
     const accessToken = decryptToken(tokensData.accessToken);
     const refreshToken = decryptToken(tokensData.refreshToken);
 
-    // Try using the current access token first
-    try {
-        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
-        await vehicle.attributes(); // Quick test
+    // Check if token is likely expired (stored expiry time or >90 min since update)
+    // Smartcar access tokens last 2 hours (7200 seconds)
+    const expiresAt = tokensData.expiresAt?.toMillis?.() || 0;
+    const updatedAt = tokensData.updatedAt?.toMillis?.() || 0;
+    // const now = Date.now(); // Already defined at top of function
+    const TOKEN_LIFETIME_MS = 90 * 60 * 1000; // Refresh 30 min before expiry (90 min)
+
+    const tokenExpired = expiresAt > 0
+        ? now >= expiresAt
+        : (updatedAt > 0 && now - updatedAt >= TOKEN_LIFETIME_MS);
+
+    if (!tokenExpired) {
+        // Token should still be valid, return it without API call
+
+        // Update cache since we just read from Firestore
+        const expiry = expiresAt > 0 ? expiresAt : (Date.now() + 3600000); // Fallback 1h
+        tokenCache.set(vehicleId, {
+            token: accessToken,
+            expiry: expiry
+        });
+
         return accessToken;
+    }
+
+    // Token likely expired, refresh it
+    console.log(`[TokenRefresh] Token likely expired for ${vehicleId}, refreshing...`);
+
+    if (!SMARTCAR_CLIENT_ID || !SMARTCAR_CLIENT_SECRET || !SMARTCAR_REDIRECT_URI) {
+        throw new Error('Smartcar credentials not configured');
+    }
+
+    try {
+        const client = new smartcar.AuthClient({
+            clientId: SMARTCAR_CLIENT_ID,
+            clientSecret: SMARTCAR_CLIENT_SECRET,
+            redirectUri: SMARTCAR_REDIRECT_URI,
+        });
+
+        const newAccess = await client.exchangeRefreshToken(refreshToken);
+        const newAccessToken = newAccess.accessToken;
+        const newRefreshToken = newAccess.refreshToken;
+
+        // Calculate expiry time (2 hours from now)
+        const expiresAtMs = Date.now() + (2 * 60 * 60 * 1000);
+
+        // Store the new tokens with expiry
+        await vehicleRef.collection('private').doc('tokens').update({
+            accessToken: encryptToken(newAccessToken),
+            refreshToken: encryptToken(newRefreshToken),
+            expiresAt: admin.firestore.Timestamp.fromMillis(expiresAtMs),
+            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+
+        console.log(`[TokenRefresh] Tokens refreshed successfully for ${vehicleId}`);
+
+        // Update cache
+        tokenCache.set(vehicleId, {
+            token: newAccessToken,
+            expiry: expiresAtMs
+        });
+
+        return newAccessToken;
     } catch (error: any) {
-        // Token might be expired, try to refresh
-        if (error.type === 'AUTHENTICATION' || error.statusCode === 401) {
-            console.log(`[TokenRefresh] Access token expired for ${vehicleId}, refreshing...`);
+        // If refresh fails, return current token - it might still work
+        console.warn(`[TokenRefresh] Refresh failed for ${vehicleId}: ${error.message}, using existing token`);
 
-            if (!SMARTCAR_CLIENT_ID || !SMARTCAR_CLIENT_SECRET || !SMARTCAR_REDIRECT_URI) {
-                throw new Error('Smartcar credentials not configured');
-            }
+        // Cache existing token for a short time (5 min) to avoid hammering Firestore on retry
+        tokenCache.set(vehicleId, {
+            token: accessToken,
+            expiry: Date.now() + 5 * 60 * 1000
+        });
 
-            const client = new smartcar.AuthClient({
-                clientId: SMARTCAR_CLIENT_ID,
-                clientSecret: SMARTCAR_CLIENT_SECRET,
-                redirectUri: SMARTCAR_REDIRECT_URI,
-            });
-
-            const newAccess = await client.exchangeRefreshToken(refreshToken);
-            const newAccessToken = newAccess.accessToken;
-            const newRefreshToken = newAccess.refreshToken;
-
-            // Store the new tokens
-            await vehicleRef.collection('private').doc('tokens').update({
-                accessToken: encryptToken(newAccessToken),
-                refreshToken: encryptToken(newRefreshToken),
-                updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-
-            console.log(`[TokenRefresh] Tokens refreshed successfully for ${vehicleId}`);
-            return newAccessToken;
-        }
-        throw error;
+        return accessToken;
     }
 }
 
@@ -263,7 +332,7 @@ function parseSmartcarWebhook(body: any): ParsedWebhookData | null {
                 break;
             case 'stateofcharge':
             case 'soc':
-                result.soc = typeof value === 'number' ? value : null;
+                result.soc = normalizeSoC(typeof value === 'number' ? value : null);
                 break;
             case 'islocked':
                 result.isLocked = typeof value === 'boolean' ? value : null;
@@ -284,15 +353,6 @@ function parseSmartcarWebhook(body: any): ParsedWebhookData | null {
                     result.location = { lat: signal.body.latitude, lon: signal.body.longitude };
                 }
                 break;
-        }
-    }
-
-    // Also check for location in the signal body directly (alternative format)
-    for (const signal of signals) {
-        if (signal.name?.toLowerCase() === 'location' && signal.status?.value === 'SUCCESS') {
-            if (signal.body?.latitude && signal.body?.longitude) {
-                result.location = { lat: signal.body.latitude, lon: signal.body.longitude };
-            }
         }
     }
 
@@ -576,199 +636,115 @@ export const smartcarWebhook = regionalFunctions.https.onRequest(async (req, res
         }
 
         // =====================================================================
-        // STEP 3: Trip logic
-        // If polling is ACTIVE: let polling manage the trip, just add GPS points
-        // If polling is NOT active: retroactive detection from odometer jumps
+        // STEP 3: TRIP LOGIC (Simplified)
+        // - Movement detected + no trip → START trip
+        // - isLocked=true + trip active → CLOSE trip
+        // - Trip active → UPDATE with latest data
         // =====================================================================
 
-        const isPollingActive = vehicle.pollingActive === true;
+        // CASE 1: CLOSE TRIP if car is locked and there's an active trip
+        if (data.isLocked === true && activeTripId) {
+            console.log(`${logPrefix} CAR LOCKED - Closing trip ${activeTripId}`);
 
-        if (isPollingActive && activeTripId) {
-            // POLLING IS MANAGING THIS TRIP - just add GPS point if available
-            console.log(`${logPrefix} Polling active, adding data to trip: ${activeTripId}`);
-
-            const tripRef = db.collection('trips').doc(activeTripId);
-
-            // Add GPS point if we have location
-            if (data.location) {
-                await tripRef.collection('points').add({
-                    lat: data.location.lat,
-                    lon: data.location.lon,
-                    timestamp: data.timestamp,
-                    odometer: currentOdometer,
-                    soc: currentSoC,
-                    source: 'webhook',
-                    type: 'waypoint'
-                });
-                console.log(`${logPrefix} Added GPS waypoint to trip ${activeTripId}`);
-            }
-
-            // Update trip with latest data
-            const tripUpdate: any = {
-                lastUpdate: now,
-            };
-            if (currentOdometer !== null) tripUpdate.endOdometer = currentOdometer;
-            if (currentSoC !== null) tripUpdate.endSoC = currentSoC;
-            await tripRef.update(tripUpdate);
-
-        } else if (isPollingActive && !activeTripId && hasMovement) {
-            // Polling is active but no trip yet - polling will create it
-            console.log(`${logPrefix} Movement detected, polling will create trip`);
-
-        } else if (!isPollingActive && activeTripId) {
-            // POLLING IS NOT ACTIVE but there's a stale trip - close it
             const tripRef = db.collection('trips').doc(activeTripId);
             const tripDoc = await tripRef.get();
 
             if (tripDoc.exists) {
                 const tripData = tripDoc.data()!;
-                console.log(`${logPrefix} Closing stale in_progress trip: ${activeTripId}`);
-
-                // Use the data we have now to close it
-                const startOdo = tripData.startOdometer ?? currentOdometer ?? 0;
+                const startOdo = tripData.startOdometer ?? 0;
                 const endOdo = currentOdometer ?? startOdo;
                 const tripDistance = Math.max(0, endOdo - startOdo);
-                const endSoCVal = currentSoC ?? tripData.startSoC ?? 0;
-
                 const startMs = tripData.startDate?.toMillis() || Date.now();
                 const durationMinutes = Math.round((Date.now() - startMs) / 60000);
 
-                let tripType = 'idle';
-                if (tripDistance >= CONFIG.MIN_TRIP_DISTANCE) tripType = 'trip';
-                else if (tripDistance >= CONFIG.MIN_MOVEMENT_DELTA) tripType = 'short_movement';
+                // Add final GPS point
+                if (data.location) {
+                    await tripRef.collection('points').add({
+                        lat: data.location.lat, lon: data.location.lon,
+                        timestamp: now, source: 'webhook', type: 'end'
+                    });
+                }
 
-                // Calculate GPS distance from collected points
+                // Calculate GPS distance
                 let gpsDistanceKm: number | null = null;
                 try {
                     const pointsSnap = await tripRef.collection('points').orderBy('timestamp').get();
                     if (pointsSnap.size >= 2) {
-                        const gpsPoints = pointsSnap.docs.map(doc => {
-                            const d = doc.data();
-                            return { lat: d.lat, lon: d.lon };
-                        }).filter(p => p.lat && p.lon);
-
-                        if (gpsPoints.length >= 2) {
-                            gpsDistanceKm = await snapToRoadsDistance(gpsPoints);
-                            console.log(`${logPrefix} GPS distance: ${gpsDistanceKm?.toFixed(2)} km`);
-                        }
+                        const gpsPoints = pointsSnap.docs.map(d => ({ lat: d.data().lat, lon: d.data().lon })).filter(p => p.lat && p.lon);
+                        if (gpsPoints.length >= 2) gpsDistanceKm = await snapToRoadsDistance(gpsPoints);
                     }
-                } catch (e) { /* ignore GPS calc errors */ }
+                } catch (e) { /* ignore */ }
 
                 const tripUpdate: any = {
                     status: 'completed',
-                    type: tripType,
+                    type: tripDistance >= CONFIG.MIN_TRIP_DISTANCE ? 'trip' : 'idle',
                     endDate: now,
                     endOdometer: endOdo,
-                    endSoC: endSoCVal,
+                    endSoC: currentSoC ?? tripData.endSoC ?? 0,
                     distanceKm: Math.round(tripDistance * 100) / 100,
                     durationMinutes,
                     lastUpdate: now,
-                    closedReason: 'stale_cleanup',
+                    closedReason: 'locked_webhook',
                 };
-
-                if (gpsDistanceKm !== null && gpsDistanceKm > 0) {
-                    tripUpdate.gpsDistanceKm = gpsDistanceKm;
-                }
+                if (gpsDistanceKm) tripUpdate.gpsDistanceKm = gpsDistanceKm;
 
                 await tripRef.update(tripUpdate);
-                console.log(`${logPrefix} Closed stale trip ${activeTripId}: odo:${tripDistance.toFixed(2)}km, gps:${gpsDistanceKm?.toFixed(2) || 'N/A'}km`);
+                console.log(`${logPrefix} CLOSED trip: ${activeTripId}, ${tripDistance.toFixed(2)}km`);
             }
-
             vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
 
-        } else if (!isPollingActive && !activeTripId && hasPreviousData && hasMovement && odoDelta >= CONFIG.MIN_TRIP_DISTANCE) {
-            // RETROACTIVE DETECTION: Polling was not active but we see odometer jump
-            // Check if we should EXTEND a recent trip or CREATE a new one
+            // CASE 2: START TRIP if movement detected and no active trip
+        } else if (hasMovement && !activeTripId && !currentIsCharging) {
+            console.log(`${logPrefix} MOVEMENT DETECTED - Starting new trip`);
 
-            // Look for a recent completed trip (within last 15 minutes) to extend
-            const recentTripQuery = await db.collection('trips')
-                .where('vehicleId', '==', vehicleId)
-                .where('status', '==', 'completed')
-                .orderBy('endDate', 'desc')
-                .limit(1)
-                .get();
+            const newTripRef = db.collection('trips').doc();
+            await newTripRef.set({
+                vehicleId,
+                startDate: now,
+                startOdometer: prevOdometer!,
+                startSoC: prevSoC ?? 0,
+                endOdometer: currentOdometer!,
+                endSoC: currentSoC ?? 0,
+                distanceKm: Math.round(odoDelta * 100) / 100,
+                status: 'in_progress',
+                type: 'unknown',
+                source: 'webhook',
+                lastUpdate: now,
+            });
 
-            const recentTrip = recentTripQuery.docs[0];
-            const recentTripData = recentTrip?.data();
-            const recentTripEndTime = recentTripData?.endDate?.toMillis() || 0;
-            const timeSinceLastTrip = Date.now() - recentTripEndTime;
-            const MERGE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
-
-            if (recentTrip && timeSinceLastTrip < MERGE_WINDOW_MS) {
-                // EXTEND existing trip
-                const newDistance = (recentTripData.distanceKm || 0) + odoDelta;
-                const newDuration = Math.round((data.timestamp.toMillis() - recentTripData.startDate.toMillis()) / 60000);
-
-                await recentTrip.ref.update({
-                    endDate: data.timestamp,
-                    endOdometer: currentOdometer!,
-                    endSoC: currentSoC ?? recentTripData.endSoC,
-                    distanceKm: Math.round(newDistance * 100) / 100,
-                    durationMinutes: Math.max(1, newDuration),
-                    lastUpdate: now,
+            // Add start GPS point
+            if (data.location) {
+                await newTripRef.collection('points').add({
+                    lat: data.location.lat, lon: data.location.lon,
+                    timestamp: now, source: 'webhook', type: 'start'
                 });
-
-                if (data.location) {
-                    await recentTrip.ref.collection('points').add({
-                        lat: data.location.lat,
-                        lon: data.location.lon,
-                        timestamp: data.timestamp,
-                        source: 'webhook',
-                        type: 'waypoint'
-                    });
-                }
-
-                console.log(`${logPrefix} EXTENDED trip: ${recentTrip.id}, +${odoDelta.toFixed(2)} km = ${newDistance.toFixed(2)} km total`);
-
-            } else {
-                // CREATE new retroactive trip
-                console.log(`${logPrefix} RETROACTIVE: Detected completed trip: ${odoDelta.toFixed(2)} km`);
-
-                const newTripRef = db.collection('trips').doc();
-
-                // Estimate trip times
-                const prevUpdateTime = vehicle.lastUpdate?.toDate() || new Date(Date.now() - 3600000);
-                const startDate = admin.firestore.Timestamp.fromDate(prevUpdateTime);
-                const endDate = data.timestamp;
-                const durationMinutes = Math.round((endDate.toMillis() - startDate.toMillis()) / 60000);
-
-                // NOTE: consumptionKwh is NOT stored - app calculates it from SoC delta * batterySize
-                const newTrip = {
-                    vehicleId,
-                    startDate,
-                    startOdometer: prevOdometer!,
-                    startSoC: prevSoC ?? 0,  // Decimal format (0.82 = 82%)
-                    endDate,
-                    endOdometer: currentOdometer!,
-                    endSoC: currentSoC ?? 0,  // Decimal format (0.65 = 65%)
-                    distanceKm: Math.round(odoDelta * 100) / 100,
-                    durationMinutes: Math.max(1, durationMinutes),
-                    status: 'completed',
-                    type: 'trip',
-                    source: 'smartcar_webhook',
-                    detectionMethod: 'retroactive',
-                    lastUpdate: now,
-                };
-
-                await newTripRef.set(newTrip);
-
-                if (data.location) {
-                    await newTripRef.collection('points').add({
-                        lat: data.location.lat,
-                        lon: data.location.lon,
-                        timestamp: data.timestamp,
-                        source: 'webhook',
-                        type: 'end'
-                    });
-                }
-
-                console.log(`${logPrefix} Created retroactive trip: ${newTripRef.id}, ${odoDelta.toFixed(2)} km, ${durationMinutes} min`);
             }
 
-        } else if (hasMovement) {
-            console.log(`${logPrefix} Small movement: ${odoDelta.toFixed(3)} km (below threshold or polling will handle)`);
+            vehicleUpdate.activeTripId = newTripRef.id;
+            console.log(`${logPrefix} STARTED trip: ${newTripRef.id}, initial ${odoDelta.toFixed(2)}km`);
+
+            // CASE 3: UPDATE TRIP if active and has new data
+        } else if (activeTripId) {
+            const tripRef = db.collection('trips').doc(activeTripId);
+            const tripUpdate: any = { lastUpdate: now };
+
+            if (currentOdometer !== null) tripUpdate.endOdometer = currentOdometer;
+            if (currentSoC !== null) tripUpdate.endSoC = currentSoC;
+            if (odoDelta > 0) tripUpdate.distanceKm = admin.firestore.FieldValue.increment(odoDelta);
+
+            await tripRef.update(tripUpdate);
+
+            // Add GPS waypoint
+            if (data.location) {
+                await tripRef.collection('points').add({
+                    lat: data.location.lat, lon: data.location.lon,
+                    timestamp: now, odometer: currentOdometer, source: 'webhook', type: 'waypoint'
+                });
+            }
+            console.log(`${logPrefix} UPDATED trip: ${activeTripId}, +${odoDelta.toFixed(2)}km`);
+
         } else {
-            console.log(`${logPrefix} No movement detected`);
+            console.log(`${logPrefix} No trip action needed (locked=${data.isLocked}, movement=${hasMovement}, charging=${currentIsCharging})`);
         }
 
         // =====================================================================
@@ -1059,6 +1035,314 @@ export const startCharge = regionalFunctions.https.onCall(async (data, context) 
     }
 });
 
+export const lockVehicle = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[lockVehicle] Start');
+    const { vehicleId } = data;
+    if (!vehicleId) throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+        await vehicle.lock();
+        console.log(`[lockVehicle] Sent LOCK command to ${vehicleId}`);
+
+        await db.collection('vehicles').doc(vehicleId).update({
+            isLocked: true,
+            lastSecurityCommand: 'LOCK',
+            lastSecurityCommandTime: admin.firestore.Timestamp.now(),
+        });
+
+        return { success: true, command: 'LOCK' };
+    } catch (error: any) {
+        console.error('[lockVehicle] FAILED:', error.message, error.code);
+        const errorCode = error.code || error.statusCode || '';
+        const errorMsg = error.message || 'Unknown error';
+
+        if (errorMsg.includes('RATE_LIMIT') || errorCode === 'RATE_LIMIT') {
+            throw new functions.https.HttpsError('resource-exhausted',
+                'El vehículo está limitando las peticiones. Cierra la app de BYD y espera unos minutos.');
+        }
+        if (errorMsg.includes('VEHICLE_STATE') || errorCode === 'VEHICLE_STATE') {
+            throw new functions.https.HttpsError('failed-precondition',
+                'El vehículo no está disponible. Puede estar en movimiento o sin conexión.');
+        }
+        throw new functions.https.HttpsError('internal', errorMsg);
+    }
+});
+
+export const unlockVehicle = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[unlockVehicle] Start');
+    const { vehicleId } = data;
+    if (!vehicleId) throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+        await vehicle.unlock();
+        console.log(`[unlockVehicle] Sent UNLOCK command to ${vehicleId}`);
+
+        await db.collection('vehicles').doc(vehicleId).update({
+            isLocked: false,
+            lastSecurityCommand: 'UNLOCK',
+            lastSecurityCommandTime: admin.firestore.Timestamp.now(),
+        });
+
+        return { success: true, command: 'UNLOCK' };
+    } catch (error: any) {
+        console.error('[unlockVehicle] FAILED:', error.message, error.code);
+        const errorCode = error.code || error.statusCode || '';
+        const errorMsg = error.message || 'Unknown error';
+
+        if (errorMsg.includes('RATE_LIMIT') || errorCode === 'RATE_LIMIT') {
+            throw new functions.https.HttpsError('resource-exhausted',
+                'El vehículo está limitando las peticiones. Cierra la app de BYD y espera unos minutos.');
+        }
+        if (errorMsg.includes('VEHICLE_STATE') || errorCode === 'VEHICLE_STATE') {
+            throw new functions.https.HttpsError('failed-precondition',
+                'El vehículo no está disponible. Puede estar en movimiento o sin conexión.');
+        }
+        throw new functions.https.HttpsError('internal', errorMsg);
+    }
+});
+
+export const startClimate = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[startClimate] Start');
+    const { vehicleId } = data;
+    if (!vehicleId) throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+        // Use make-specific endpoint: /vehicles/{id}/byd/climate/cabin
+        await (vehicle as any).service.request('post', 'byd/climate/cabin', { action: 'START' });
+        console.log(`[startClimate] Sent START command to ${vehicleId}`);
+
+        await db.collection('vehicles').doc(vehicleId).update({
+            climateActive: true,
+            lastClimateCommand: 'START',
+            lastClimateCommandTime: admin.firestore.Timestamp.now(),
+        });
+
+        return { success: true, command: 'START' };
+    } catch (error: any) {
+        console.error('[startClimate] FAILED:', error.message, error.code);
+        const errorCode = error.code || error.statusCode || '';
+        const errorMsg = error.message || 'Unknown error';
+
+        // Handle specific error types
+        if (errorMsg.includes('RATE_LIMIT') || errorCode === 'RATE_LIMIT') {
+            throw new functions.https.HttpsError('resource-exhausted',
+                'El vehículo está limitando las peticiones. Cierra la app de BYD y espera unos minutos.');
+        }
+        if (errorMsg.includes('PERMISSION') || errorCode === 'PERMISSION') {
+            throw new functions.https.HttpsError('permission-denied',
+                'Permiso control_climate no concedido. Re-vincula el vehículo en Ajustes.');
+        }
+        throw new functions.https.HttpsError('internal', errorMsg);
+    }
+});
+
+export const stopClimate = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[stopClimate] Start');
+    const { vehicleId } = data;
+    if (!vehicleId) throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+        // Use make-specific endpoint: /vehicles/{id}/byd/climate/cabin
+        await (vehicle as any).service.request('post', 'byd/climate/cabin', { action: 'STOP' });
+        console.log(`[stopClimate] Sent STOP command to ${vehicleId}`);
+
+        await db.collection('vehicles').doc(vehicleId).update({
+            climateActive: false,
+            lastClimateCommand: 'STOP',
+            lastClimateCommandTime: admin.firestore.Timestamp.now(),
+        });
+
+        return { success: true, command: 'STOP' };
+    } catch (error: any) {
+        console.error('[stopClimate] FAILED:', error.message, error.code);
+        const errorCode = error.code || error.statusCode || '';
+        const errorMsg = error.message || 'Unknown error';
+
+        // Handle specific error types
+        if (errorMsg.includes('RATE_LIMIT') || errorCode === 'RATE_LIMIT') {
+            throw new functions.https.HttpsError('resource-exhausted',
+                'El vehículo está limitando las peticiones. Cierra la app de BYD y espera unos minutos.');
+        }
+        if (errorMsg.includes('PERMISSION') || errorCode === 'PERMISSION') {
+            throw new functions.https.HttpsError('permission-denied',
+                'Permiso control_climate no concedido. Re-vincula el vehículo en Ajustes.');
+        }
+        throw new functions.https.HttpsError('internal', errorMsg);
+    }
+});
+
+export const openTrunk = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[openTrunk] Start');
+    const { vehicleId } = data;
+    if (!vehicleId) throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+        // Use make-specific endpoint: /vehicles/{id}/byd/security/trunk
+        await (vehicle as any).service.request('post', 'byd/security/trunk', { action: 'OPEN' });
+        console.log(`[openTrunk] Sent OPEN command to ${vehicleId}`);
+
+        await db.collection('vehicles').doc(vehicleId).update({
+            trunkOpen: true,
+            lastTrunkCommand: 'OPEN',
+            lastTrunkCommandTime: admin.firestore.Timestamp.now(),
+        });
+
+        return { success: true, command: 'OPEN' };
+    } catch (error: any) {
+        console.error('[openTrunk] FAILED:', error.message, error.code);
+        const errorCode = error.code || error.statusCode || '';
+        const errorMsg = error.message || 'Unknown error';
+
+        if (errorMsg.includes('RATE_LIMIT') || errorCode === 'RATE_LIMIT') {
+            throw new functions.https.HttpsError('resource-exhausted',
+                'El vehículo está limitando las peticiones. Cierra la app de BYD y espera unos minutos.');
+        }
+        if (errorMsg.includes('PERMISSION') || errorCode === 'PERMISSION') {
+            throw new functions.https.HttpsError('permission-denied',
+                'Permiso control_trunk no concedido. Re-vincula el vehículo en Ajustes.');
+        }
+        throw new functions.https.HttpsError('internal', errorMsg);
+    }
+});
+
+export const closeTrunk = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[closeTrunk] Start');
+    const { vehicleId } = data;
+    if (!vehicleId) throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+        // Use make-specific endpoint: /vehicles/{id}/byd/security/trunk
+        await (vehicle as any).service.request('post', 'byd/security/trunk', { action: 'CLOSE' });
+        console.log(`[closeTrunk] Sent CLOSE command to ${vehicleId}`);
+
+        await db.collection('vehicles').doc(vehicleId).update({
+            trunkOpen: false,
+            lastTrunkCommand: 'CLOSE',
+            lastTrunkCommandTime: admin.firestore.Timestamp.now(),
+        });
+
+        return { success: true, command: 'CLOSE' };
+    } catch (error: any) {
+        console.error('[closeTrunk] FAILED:', error.message, error.code);
+        const errorCode = error.code || error.statusCode || '';
+        const errorMsg = error.message || 'Unknown error';
+
+        if (errorMsg.includes('RATE_LIMIT') || errorCode === 'RATE_LIMIT') {
+            throw new functions.https.HttpsError('resource-exhausted',
+                'El vehículo está limitando las peticiones. Cierra la app de BYD y espera unos minutos.');
+        }
+        if (errorMsg.includes('PERMISSION') || errorCode === 'PERMISSION') {
+            throw new functions.https.HttpsError('permission-denied',
+                'Permiso control_trunk no concedido. Re-vincula el vehículo en Ajustes.');
+        }
+        throw new functions.https.HttpsError('internal', errorMsg);
+    }
+});
+
+// Callable function to refresh vehicle data (only lockStatus and tires - battery/location/odometer come from webhooks)
+export const refreshVehicleData = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[refreshVehicleData] Start - Using batch for lockStatus + tires + batteryCapacity tracking');
+    const { vehicleId } = data;
+    if (!vehicleId) throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+
+        // Single batch request for lockStatus, tires, and batteryCapacity (for tracking)
+        const batchResponse = await vehicle.batch(['/tires/pressure', '/security', '/battery/capacity']);
+        console.log('[refreshVehicleData] Batch response received');
+
+        // Extract tires data
+        let tires: any = null;
+        try {
+            const tiresData = batchResponse.tirePressure();
+            tires = tiresData;
+            console.log('[refreshVehicleData] Tires OK:', JSON.stringify(tiresData));
+        } catch (e: any) {
+            console.error('[refreshVehicleData] Tires FAILED:', e.message);
+        }
+
+        // Extract lock status
+        let isLocked: boolean | null = null;
+        try {
+            const lockData = batchResponse.lockStatus();
+            isLocked = lockData.isLocked;
+            console.log('[refreshVehicleData] Lock OK:', JSON.stringify(lockData));
+        } catch (e: any) {
+            console.error('[refreshVehicleData] Lock FAILED:', e.message);
+        }
+
+        // Extract batteryCapacity for tracking (hidden from user, logs only)
+        let batteryCapacity: number | null = null;
+        try {
+            const capacityData = batchResponse.batteryCapacity();
+            batteryCapacity = capacityData.capacity;
+            console.log(`[refreshVehicleData] [CAPACITY_TRACKING] batteryCapacity: ${batteryCapacity} kWh - Full response:`, JSON.stringify(capacityData));
+        } catch (e: any) {
+            console.error('[refreshVehicleData] batteryCapacity FAILED:', e.message);
+        }
+
+        console.log(`[refreshVehicleData] Tires: ${tires ? 'OK' : 'FAIL'}, Locked: ${isLocked}, Capacity: ${batteryCapacity} kWh`);
+
+        // Update Firestore
+        const vehicleUpdate: any = {
+            lastUpdate: admin.firestore.Timestamp.now(),
+        };
+        if (tires !== null) vehicleUpdate.tires = tires;
+        if (isLocked !== null) vehicleUpdate.isLocked = isLocked;
+
+        // Track batteryCapacity over time (store with timestamp for analysis)
+        if (batteryCapacity !== null) {
+            vehicleUpdate.lastBatteryCapacity = batteryCapacity;
+            vehicleUpdate.lastBatteryCapacityDate = admin.firestore.Timestamp.now();
+            // Also append to history array for trend analysis
+            await db.collection('vehicles').doc(vehicleId).collection('capacityHistory').add({
+                capacity: batteryCapacity,
+                timestamp: admin.firestore.Timestamp.now(),
+            });
+            console.log(`[refreshVehicleData] [CAPACITY_TRACKING] Saved capacity ${batteryCapacity} kWh to history`);
+        }
+
+        await db.collection('vehicles').doc(vehicleId).update(vehicleUpdate);
+
+        return {
+            success: true,
+            data: {
+                tires: tires ? {
+                    frontLeft: Math.round(tires.frontLeft),
+                    frontRight: Math.round(tires.frontRight),
+                    backLeft: Math.round(tires.backLeft),
+                    backRight: Math.round(tires.backRight),
+                } : null,
+                isLocked,
+            }
+        };
+    } catch (error: any) {
+        console.error('[refreshVehicleData] FAILED:', error.message, error.code);
+        const errorCode = error.code || error.statusCode || '';
+        const errorMsg = error.message || 'Unknown error';
+
+        if (errorMsg.includes('RATE_LIMIT') || errorCode === 'RATE_LIMIT') {
+            throw new functions.https.HttpsError('resource-exhausted',
+                'El vehículo está limitando las peticiones. Cierra la app de BYD y espera unos minutos.');
+        }
+        throw new functions.https.HttpsError('internal', errorMsg);
+    }
+});
+
 export const setTargetChargeSoC = regionalFunctions.https.onCall(async (data, context) => {
     console.log('[setTargetChargeSoC] Start');
 
@@ -1174,7 +1458,6 @@ export const testSmartcarConnection = regionalFunctions.https.onCall(async (data
     }
 
     try {
-        // Get valid access token (with auto-refresh)
         const accessToken = await getValidAccessToken(vehicleId);
         const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
 
@@ -1182,8 +1465,28 @@ export const testSmartcarConnection = regionalFunctions.https.onCall(async (data
             vehicleId,
             timestamp: new Date().toISOString(),
             permissions: {},
-            errors: []
+            errors: [],
+            planLevel: 'unknown'
         };
+
+        // Check permissions explicitly
+        try {
+            const permissionsObject = await vehicle.permissions();
+            results.permissionsList = permissionsObject;
+
+            // Check if advanced scopes are present
+            const advancedScopes = ['control_security', 'control_climate', 'control_trunk', 'read_tires'];
+            const grantedScopes = permissionsObject.permissions || [];
+            results.grantedAdvanced = advancedScopes.filter((p: string) => grantedScopes.includes(p));
+            results.missingAdvanced = advancedScopes.filter((p: string) => !grantedScopes.includes(p));
+
+            console.log(`[testConnection] Granted advanced: ${results.grantedAdvanced.join(', ')}`);
+            if (results.missingAdvanced.length > 0) {
+                console.warn(`[testConnection] MISSING advanced scopes: ${results.missingAdvanced.join(', ')}`);
+            }
+        } catch (e: any) {
+            results.errors.push(`permissions_fetch_error: ${e.message}`);
+        }
 
         // Test each endpoint
         const tests = [
@@ -1191,6 +1494,7 @@ export const testSmartcarConnection = regionalFunctions.https.onCall(async (data
             { name: 'location', fn: () => vehicle.location() },
             { name: 'battery', fn: () => vehicle.battery() },
             { name: 'attributes', fn: () => vehicle.attributes() },
+            { name: 'tires', fn: () => vehicle.tirePressure() },
         ];
 
         for (const test of tests) {
@@ -1198,17 +1502,140 @@ export const testSmartcarConnection = regionalFunctions.https.onCall(async (data
                 const result = await test.fn();
                 results.permissions[test.name] = { status: 'SUCCESS', data: result };
             } catch (error: any) {
-                results.permissions[test.name] = { status: 'ERROR', error: error.message };
-                results.errors.push(`${test.name}: ${error.message}`);
+                const message = error.message || 'Unknown error';
+                const code = error.code || error.type || 'UNKNOWN';
+
+                results.permissions[test.name] = {
+                    status: 'ERROR',
+                    error: message,
+                    code: code
+                };
+
+                results.errors.push(`${test.name}: [${code}] ${message}`);
+
+                // If we get PERMISSION error on tires, it's a strong sign of "Build" plan limitation
+                if (test.name === 'tires' && (code === 'PERMISSION' || message.includes('permission'))) {
+                    results.planLevel = 'BUILD (Free) - Upgrade to Build Advanced required';
+                }
             }
         }
 
-        console.log(`[testConnection] Done, errors: ${results.errors.length}`);
+        console.log(`[testConnection] Done for ${vehicleId}, errors: ${results.errors.length}`);
         return results;
 
     } catch (error: any) {
-        console.error('[testConnection] FAILED:', error.message);
+        console.error('[testConnection] FATAL FAILED:', error.message);
         if (error instanceof functions.https.HttpsError) throw error;
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+// =============================================================================
+// FULL SMARTCAR DIAGNOSTIC - Tests ALL available endpoints
+// =============================================================================
+
+export const fullSmartcarDiagnostic = regionalFunctions.https.onCall(async (data, context) => {
+    console.log('[fullDiagnostic] Start - Testing ALL Smartcar endpoints');
+
+    const { vehicleId } = data;
+    if (!vehicleId) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing vehicleId');
+    }
+
+    try {
+        const accessToken = await getValidAccessToken(vehicleId);
+        const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
+
+        const results: any = {
+            vehicleId,
+            timestamp: new Date().toISOString(),
+            endpoints: {},
+            summary: {
+                available: [] as string[],
+                unavailable: [] as string[],
+                rateLimited: [] as string[],
+            }
+        };
+
+        // All possible Smartcar endpoints to test
+        const endpoints = [
+            // Basic info
+            { name: 'attributes', fn: () => vehicle.attributes(), scope: 'read_vehicle_info' },
+            { name: 'vin', fn: () => vehicle.vin(), scope: 'read_vin' },
+
+            // Location & movement
+            { name: 'location', fn: () => vehicle.location(), scope: 'read_location' },
+            { name: 'odometer', fn: () => vehicle.odometer(), scope: 'read_odometer' },
+
+            // Battery & charging
+            { name: 'battery', fn: () => vehicle.battery(), scope: 'read_battery' },
+            { name: 'charge', fn: () => vehicle.charge(), scope: 'read_charge' },
+            { name: 'batteryCapacity', fn: () => vehicle.batteryCapacity(), scope: 'read_battery' },
+
+            // Security
+            { name: 'lockStatus', fn: () => vehicle.lockStatus(), scope: 'read_security' },
+
+            // Tires
+            { name: 'tirePressure', fn: () => vehicle.tirePressure(), scope: 'read_tires' },
+
+            // Climate/Temperature
+            { name: 'interiorTemperature', fn: () => (vehicle as any).service.request('get', 'thermometer/interior'), scope: 'read_thermometer' },
+            { name: 'exteriorTemperature', fn: () => (vehicle as any).service.request('get', 'thermometer/exterior'), scope: 'read_thermometer' },
+
+            // Diagnostics
+            { name: 'diagnostics', fn: () => (vehicle as any).service.request('get', 'diagnostics/system_status'), scope: 'read_diagnostics' },
+
+            // Charge records (OEM charging history)
+            { name: 'chargeRecords', fn: () => (vehicle as any).service.request('get', 'charge/records'), scope: 'read_charge_records' },
+
+            // Permissions (always available)
+            { name: 'permissions', fn: () => vehicle.permissions(), scope: 'n/a' },
+        ];
+
+        // Test each endpoint
+        for (const endpoint of endpoints) {
+            try {
+                console.log(`[fullDiagnostic] Testing ${endpoint.name}...`);
+                const result = await endpoint.fn();
+                results.endpoints[endpoint.name] = {
+                    status: 'AVAILABLE',
+                    scope: endpoint.scope,
+                    data: result,
+                };
+                results.summary.available.push(endpoint.name);
+                console.log(`[fullDiagnostic] ${endpoint.name}: SUCCESS`);
+            } catch (error: any) {
+                const message = error.message || 'Unknown error';
+                const code = error.code || error.type || 'UNKNOWN';
+
+                let status = 'UNAVAILABLE';
+                if (message.includes('RATE_LIMIT') || code === 'RATE_LIMIT') {
+                    status = 'RATE_LIMITED';
+                    results.summary.rateLimited.push(endpoint.name);
+                } else {
+                    results.summary.unavailable.push(endpoint.name);
+                }
+
+                results.endpoints[endpoint.name] = {
+                    status,
+                    scope: endpoint.scope,
+                    error: message,
+                    code,
+                };
+                console.log(`[fullDiagnostic] ${endpoint.name}: ${status} - ${code}: ${message}`);
+            }
+        }
+
+        // Summary
+        console.log(`[fullDiagnostic] Complete!`);
+        console.log(`[fullDiagnostic] Available: ${results.summary.available.join(', ')}`);
+        console.log(`[fullDiagnostic] Unavailable: ${results.summary.unavailable.join(', ')}`);
+        console.log(`[fullDiagnostic] Rate Limited: ${results.summary.rateLimited.join(', ')}`);
+
+        return results;
+
+    } catch (error: any) {
+        console.error('[fullDiagnostic] FATAL:', error.message);
         throw new functions.https.HttpsError('internal', error.message);
     }
 });
@@ -1515,19 +1942,21 @@ export const pollVehicle = regionalFunctions.https.onRequest(async (req, res) =>
         const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
 
         // Fetch current data
-        const [odoResult, batteryResult, locationResult] = await Promise.allSettled([
+        const [odoResult, batteryResult, locationResult, tiresResult] = await Promise.allSettled([
             vehicle.odometer(),
             vehicle.battery(),
-            vehicle.location()
+            vehicle.location(),
+            vehicle.tirePressure()
         ]);
 
         const odometer = odoResult.status === 'fulfilled' ? odoResult.value.distance : null;
-        const soc = batteryResult.status === 'fulfilled' ? batteryResult.value.percentRemaining : null;
+        const soc = normalizeSoC(batteryResult.status === 'fulfilled' ? batteryResult.value.percentRemaining : null);
         const location = locationResult.status === 'fulfilled'
             ? { lat: locationResult.value.latitude, lon: locationResult.value.longitude }
             : null;
+        const tires = tiresResult.status === 'fulfilled' ? tiresResult.value : null;
 
-        console.log(`[pollVehicle] Odo: ${odometer}, SoC: ${soc}, Location: ${location?.lat}, ${location?.lon}`);
+        console.log(`[pollVehicle] Odo: ${odometer}, SoC: ${soc}, Location: ${location?.lat}, ${location?.lon}, Tires: ${tires ? 'OK' : 'FAIL'}`);
 
         // Get previous state
         const now = admin.firestore.Timestamp.now();
@@ -1553,6 +1982,7 @@ export const pollVehicle = regionalFunctions.https.onRequest(async (req, res) =>
         };
         if (odometer !== null) vehicleUpdate.lastOdometer = odometer;
         if (soc !== null) vehicleUpdate.lastSoC = soc;
+        if (tires !== null) vehicleUpdate.tires = tires;
         if (hasMovement) vehicleUpdate.lastMoveTime = now;
 
         let action = 'NO_CHANGE';
@@ -1733,7 +2163,7 @@ export const scheduledPoll = regionalFunctions.pubsub
 
                     // Only fetch battery level during charging
                     const batteryResult = await vehicle.battery().catch(() => null);
-                    const currentSoC = batteryResult?.percentRemaining ?? null;
+                    const currentSoC = normalizeSoC(batteryResult?.percentRemaining);
 
                     if (currentSoC !== null) {
                         // Update vehicle state
@@ -1817,14 +2247,11 @@ export const scheduledPoll = regionalFunctions.pubsub
                     location = { lat: locationResult.latitude, lon: locationResult.longitude };
                 }
 
-                // Check if location changed significantly (>50 meters)
-                let locationChanged = false;
-                if (location && prevLocation) {
-                    const distMoved = haversine(prevLocation.lat, prevLocation.lon, location.lat, location.lon);
-                    locationChanged = distMoved > 0.05; // 50 meters
-                }
+                // Always save GPS points - SmartCar already handles rate limiting
+                // No need to filter by distance, we want all points for accurate route tracking
+                const isFirstLocation = !prevLocation;
 
-                console.log(`[scheduledPoll] Location: ${location ? `${location.lat.toFixed(4)},${location.lon.toFixed(4)}` : 'N/A'}, changed: ${locationChanged}, locked: ${isLocked}`);
+                console.log(`[scheduledPoll] Location: ${location ? `${location.lat.toFixed(4)},${location.lon.toFixed(4)}` : 'N/A'}, firstLoc: ${isFirstLocation}, locked: ${isLocked}`);
 
                 // Update vehicle location if we got it
                 const vehicleUpdate: any = {
@@ -1914,17 +2341,17 @@ export const scheduledPoll = regionalFunctions.pubsub
                     continue;
                 }
 
-                // Add GPS waypoint to trip if location changed
-                if (location && locationChanged) {
+                // Add GPS waypoint to trip - always save when we have a valid location
+                if (location) {
                     const tripRef = db.collection('trips').doc(activeTripId);
                     await tripRef.collection('points').add({
                         lat: location.lat,
                         lon: location.lon,
                         timestamp: now,
                         source: 'poll',
-                        type: 'waypoint'
+                        type: isFirstLocation ? 'start' : 'waypoint'
                     });
-                    console.log(`[scheduledPoll] Added GPS waypoint to trip ${activeTripId}`);
+                    console.log(`[scheduledPoll] Added GPS ${isFirstLocation ? 'start' : 'waypoint'} to trip ${activeTripId}`);
                 }
 
                 await vehicleRef.set(vehicleUpdate, { merge: true });
@@ -2044,8 +2471,8 @@ export const cleanupDuplicateTrips = regionalFunctions.https.onCall(async (data,
                 // Keep the one with more GPS points or more data
                 const tripPoints = trip.gpsPointCount || 0;
                 const otherPoints = other.gpsPointCount || 0;
-                const tripHasGps = trip.gpsDistance > 0;
-                const otherHasGps = other.gpsDistance > 0;
+                const tripHasGps = trip.gpsDistanceKm > 0;
+                const otherHasGps = other.gpsDistanceKm > 0;
 
                 // Prefer: has GPS distance > more points > scheduled_poll source > longer duration
                 // Determine which trip to delete (the "worse" one)

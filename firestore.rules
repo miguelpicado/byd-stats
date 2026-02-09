@@ -2,9 +2,9 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    // DEVELOPMENT MODE: Allow all reads and writes
+    // WARNING: Revert this before going to production
     match /{document=**} {
-      // TODO: Restrict these rules before production!
-      // Current: Allow read/write for testing/dev
       allow read, write: if true;
     }
   }

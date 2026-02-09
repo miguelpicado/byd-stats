@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(git rm:*)",
+      "Bash(firebase functions:log:*)",
+      "Bash(firebase functions:config:get:*)",
+      "Bash(npm run build:*)",
+      "Bash(firebase deploy:*)",
+      "Bash(curl:*)",
+      "Bash(python3:*)",
+      "Bash(npm run deploy:*)",
+      "Bash(npx tsc:*)",
+      "Bash(firebase projects:list:*)",
+      "Bash(firebase firestore:databases:list:*)",
+      "Bash(firebase firestore:databases:get:*)",
+      "Bash(firebase functions:list:*)",
+      "Bash(node:*)",
+      "WebFetch(domain:smartcar.com)",
+      "Bash(firebase login:list:*)",
+      "Bash(firebase use:*)",
+      "Bash(npx firebase firestore:delete:*)",
+      "Bash(git stash push:*)",
+      "Bash(git checkout:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add efficiency calculation between charges in ChargeDetailModal\n\n- Calculate distance traveled since previous charge \\(odometer delta\\)\n- Show efficiency in kWh/100km using real kWh \\(with charger efficiency\\)\n- Display in a dedicated blue-themed section\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git reset:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git pull:*)",
+      "Bash(git push:*)",
+      "Bash(git stash pop:*)",
+      "Bash(gcloud auth application-default print-access-token:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(start \"https://console.cloud.google.com/apis/library/roads.googleapis.com\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfeat: add BatteryStatusModal with AI SoH and editable target SoC\n\n- Create LiveVehicleStatus card showing real-time battery % from Smartcar\n- Create BatteryStatusModal with:\n  - Current SoC and estimated kWh \\(using AI SoH when available\\)\n  - Battery capacity info \\(nominal, SoH with AI indicator, usable\\)\n  - Editable target SoC \\(click value to enter custom 50-100%\\)\n  - Quick select buttons for 80/85/90/95/100%\n  - Auto-import charges toggle\n  - Stop charge button when charging\n- Move Time stat from Overview to Trends tab\n- Replace Time with LiveVehicleStatus in Overview\n- Remove Target SoC and Auto-import from SettingsModal \\(now in BatteryStatusModal\\)\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nfix: handle SoC stored as percentage or decimal in LiveVehicleStatus and BatteryStatusModal\n\n- Detect if lastSoC is stored as decimal \\(0-1\\) or percentage \\(0-100\\)\n- Normalize to correct format before displaying\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(npx firebase:*)",
+      "Bash(grep:*)",
+      "Bash(npm run typecheck:*)"
+    ]
+  }
+}

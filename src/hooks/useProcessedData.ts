@@ -22,6 +22,8 @@ interface DataWorkerApi {
 
     trainParking(trips: Trip[]): Promise<{ loss: number; samples: number }>;
     predictDeparture(startTime: number): Promise<{ departureTime: number; duration: number } | null>;
+
+    findSmartChargingWindows(trips: Trip[], settings: Settings): Promise<any>;
 }
 
 export interface UseProcessedDataReturn {
@@ -33,15 +35,19 @@ export interface UseProcessedDataReturn {
     aiSoHStats: { points: any[]; trend: any[] } | null;
     isAiTraining: boolean;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
+    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<any>;
     forceRecalculate: () => void;
 }
 
+
 export const useProcessedData = (
     filteredTrips: Trip[],
+    allTrips: Trip[],
     settings: Settings,
-    charges: Charge[]
+    charges: Charge[],
+    language: string = 'es'
 ): UseProcessedDataReturn => {
-    const { i18n } = useTranslation();
+    const { } = useTranslation();
     const [data, setData] = useState<ProcessedData | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isAiTraining, setIsAiTraining] = useState(false);
@@ -77,12 +83,23 @@ export const useProcessedData = (
     };
 
     const workerRef = useRef<Comlink.Remote<DataWorkerApi> | null>(null);
+    const rawWorkerRef = useRef<Worker | null>(null);
 
     useEffect(() => {
         if (!workerRef.current) {
             const worker = new Worker(new URL('../workers/dataWorker.js', import.meta.url), { type: 'module' });
+            rawWorkerRef.current = worker;
             workerRef.current = Comlink.wrap<DataWorkerApi>(worker);
         }
+
+        // Cleanup: terminate worker on unmount
+        return () => {
+            if (rawWorkerRef.current) {
+                rawWorkerRef.current.terminate();
+                rawWorkerRef.current = null;
+                workerRef.current = null;
+            }
+        };
     }, []);
 
     useEffect(() => {
@@ -116,19 +133,22 @@ export const useProcessedData = (
             if (rawSettings.useCalculatedPrice) processingSettings.electricStrategy = 'average';
 
             // --- AI Caching Logic ---
-            // Hash: TripsSignature + SettingsSignature
-            const tripsHash = `${filteredTrips.length}_${filteredTrips[0]?.date || ''}`;
-            const settingsHash = `${processingSettings.batterySize}_${processingSettings.soh}`;
-            const currentHash = `${tripsHash}__${settingsHash}`;
+            // Hash for Training (ALL trips)
+            const currentHash = (() => {
+                if (!allTrips || allTrips.length === 0) return '';
+                const len = allTrips.length;
+                const lastTs = allTrips[len - 1].start_timestamp;
+                const firstTs = allTrips[0].start_timestamp;
+                return `count:${len}|first:${firstTs}|last:${lastTs}|v:2`;
+            })();
 
+            // Hash for SoH: ChargesSignature + BatteryCapacity + Version
             const chargeHash = `${charges.length}_${charges[0]?.date || ''}`;
             // Version 8: Validating weighted median with 10% filter
             const sohHash = `${chargeHash}__${processingSettings.batterySize}__v8`;
 
-            // Check Cache
+            // Check Cache (Efficiency)
             let cacheHit = false;
-            let sohCacheHit = false;
-
             if (aiCache && aiCache.hash === currentHash && aiCache.scenarios.length > 0) {
                 if (isMounted) {
                     setAiScenarios(aiCache.scenarios);
@@ -137,6 +157,8 @@ export const useProcessedData = (
                 }
             }
 
+            // Check SoH Cache
+            let sohCacheHit = false;
             if (sohCache && sohCache.hash === sohHash && sohCache.soh > 0) {
                 if (isMounted) {
                     setAiSoH(sohCache.soh);
@@ -150,9 +172,9 @@ export const useProcessedData = (
                 try {
                     const result = await workerRef.current.processData(
                         filteredTrips,
-                        JSON.parse(JSON.stringify(processingSettings)),
-                        JSON.parse(JSON.stringify(charges)),
-                        i18n.language
+                        structuredClone(processingSettings),
+                        structuredClone(charges),
+                        language
                     );
 
                     if (!isMounted) return;
@@ -167,10 +189,11 @@ export const useProcessedData = (
                     if (isMounted) setData(result);
 
                     // Train AI Range Model
-                    if (!cacheHit && filteredTrips.length > 5) {
+                    if (!cacheHit && allTrips.length > 5) {
                         if (isMounted) setIsAiTraining(true);
 
-                        workerRef.current.trainModel(filteredTrips).then(({ loss }) => {
+                        // Use allTrips for training to be consistent regardless of filters
+                        workerRef.current.trainModel(allTrips).then(({ loss }) => {
                             if (!isMounted) return;
                             setAiLoss(loss);
 
@@ -185,14 +208,20 @@ export const useProcessedData = (
                                     scenarios,
                                     loss
                                 });
+                                setIsAiTraining(false);
+                            }).catch(() => {
+                                if (isMounted) setIsAiTraining(false);
                             });
                         })
-                            .catch(err => logger.warn('AI Training error:', err))
+                            .catch(err => {
+                                logger.warn('AI Training error:', err);
+                                if (isMounted) setIsAiTraining(false);
+                            })
                     }
 
                     // Train AI Parking Model
-                    if (filteredTrips.length > 5) {
-                        workerRef.current.trainParking(filteredTrips)
+                    if (allTrips.length > 5) {
+                        workerRef.current.trainParking(allTrips)
                             .then(({ loss }) => {
                                 logger.debug(`AI Parking Trained. Loss: ${loss.toFixed(4)}`);
                             })
@@ -202,11 +231,11 @@ export const useProcessedData = (
                     // Train AI SoH Model
                     if (!sohCacheHit && charges.length > 0) {
                         const capacity = processingSettings.batterySize;
-                        workerRef.current.trainSoH(JSON.parse(JSON.stringify(charges)), capacity).then(({ predictedSoH }) => {
+                        workerRef.current.trainSoH(structuredClone(charges), capacity).then(({ predictedSoH }) => {
                             if (!isMounted) return;
                             setAiSoH(predictedSoH);
 
-                            workerRef.current?.getSoHStats(JSON.parse(JSON.stringify(charges)), capacity).then(stats => {
+                            workerRef.current?.getSoHStats(structuredClone(charges), capacity).then(stats => {
                                 if (!isMounted) return;
                                 setAiSoHStats(stats);
                                 setSohCache({
@@ -228,12 +257,28 @@ export const useProcessedData = (
 
         process();
 
-    }, [filteredTrips, i18n.language, settings, charges, recalcTrigger]);
+    }, [filteredTrips, allTrips, language, settings, charges, recalcTrigger]);
 
     const predictDeparture = async (startTime: number) => {
         if (!workerRef.current) return null;
         return await workerRef.current.predictDeparture(startTime);
     };
 
-    return { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate: triggerRecalculation };
+    const findSmartChargingWindows = async (trips: Trip[], settings: Settings) => {
+        if (!workerRef.current) return null;
+        return await workerRef.current.findSmartChargingWindows(trips, settings);
+    };
+
+    return {
+        data,
+        isProcessing,
+        isAiTraining,
+        aiScenarios,
+        aiLoss,
+        aiSoH,
+        aiSoHStats,
+        predictDeparture,
+        findSmartChargingWindows,
+        forceRecalculate: triggerRecalculation
+    };
 };

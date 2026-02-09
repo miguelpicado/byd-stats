@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
 import { BYD_RED } from '@components/Icons';
 import OverviewContent from './OverviewContent';
-import MfgDateModal from '@components/modals/MfgDateModal';
-import ThermalStressModal from '@components/modals/ThermalStressModal';
-import RangeInsightsModal from '@components/modals/RangeInsightsModal';
+// Lazy load modals
+const MfgDateModal = React.lazy(() => import('@components/modals/MfgDateModal'));
+const ThermalStressModal = React.lazy(() => import('@components/modals/ThermalStressModal'));
+const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
 import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
 import { Summary, MonthlyData, Settings, Trip, TripInsightType } from '@/types';
@@ -141,25 +142,33 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         charges={charges}
         stats={stats || undefined}
       />
-      <MfgDateModal
-        isOpen={showMfgModal}
-        onClose={() => setShowMfgModal(false)}
-        onSave={handleMfgDateSave}
-        initialValue={settings.mfgDateDisplay}
-      />
-      <ThermalStressModal
-        isOpen={showThermalModal}
-        onClose={() => setShowThermalModal(false)}
-        onSave={handleThermalStressSave}
-        initialValue={settings.thermalStressFactor || 1.0}
-      />
-      <RangeInsightsModal
-        isOpen={showRangeModal}
-        onClose={() => setShowRangeModal(false)}
-        aiScenarios={aiScenarios}
-        aiLoss={aiLoss}
-        isTraining={isAiTraining}
-      />
+      <React.Suspense fallback={null}>
+        {showMfgModal && (
+          <MfgDateModal
+            isOpen={showMfgModal}
+            onClose={() => setShowMfgModal(false)}
+            onSave={handleMfgDateSave}
+            initialValue={settings.mfgDateDisplay}
+          />
+        )}
+        {showThermalModal && (
+          <ThermalStressModal
+            isOpen={showThermalModal}
+            onClose={() => setShowThermalModal(false)}
+            onSave={handleThermalStressSave}
+            initialValue={settings.thermalStressFactor || 1.0}
+          />
+        )}
+        {showRangeModal && (
+          <RangeInsightsModal
+            isOpen={showRangeModal}
+            onClose={() => setShowRangeModal(false)}
+            aiScenarios={aiScenarios}
+            aiLoss={aiLoss}
+            isTraining={isAiTraining}
+          />
+        )}
+      </React.Suspense>
     </>
   );
 });

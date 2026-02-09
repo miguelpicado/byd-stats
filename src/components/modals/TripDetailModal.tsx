@@ -1,10 +1,13 @@
 // BYD Stats - TripDetailModal Component
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatTime } from '@core/dateUtils';
 import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons';
+import { TripMapModal } from '../TripMapModal';
+import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { db } from '../../services/firebase';
 
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
@@ -18,10 +21,20 @@ const TripDetailModal: React.FC = () => {
     const { selectedTrip: trip, trips: allTrips, stats, modals, closeModal, setSelectedTrip } = useData();
     const summary = stats?.summary;
 
+    const [showMap, setShowMap] = useState(false);
+    const [tripPoints, setTripPoints] = useState<any[]>([]);
+    const [loadingPoints, setLoadingPoints] = useState(false);
+    const [scoreClicks, setScoreClicks] = useState(0);
+    const [lastClickTime, setLastClickTime] = useState(0);
+    const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+
     const isOpen = modals.tripDetail;
     const onClose = () => {
         closeModal('tripDetail');
         setSelectedTrip(null);
+        setShowMap(false);
+        setScoreClicks(0);
+        setShowDeleteConfirm(false);
     };
 
     const details = useMemo(() => {
@@ -51,6 +64,79 @@ const TripDetailModal: React.FC = () => {
         return { efficiency, score, scoreColor, comparisonPercent, percentile, cost, electricCost, fuelCost };
     }, [trip, allTrips, summary, settings]);
 
+    // Determine distance source
+    const getDistanceSource = (trip: any): 'gps' | 'odometer' | 'ec_database' => {
+        if (trip.gpsDistanceKm) return 'gps';
+        if (trip.source === 'db' || trip.source === 'local') return 'ec_database';
+        return 'odometer';
+    };
+
+    // Handle score click for hidden delete feature
+    const handleScoreClick = () => {
+        const now = Date.now();
+        if (now - lastClickTime > 2000) {
+            setScoreClicks(1);
+        } else {
+            setScoreClicks(prev => prev + 1);
+        }
+        setLastClickTime(now);
+
+        if (scoreClicks + 1 >= 10) {
+            setShowDeleteConfirm(true);
+            setScoreClicks(0);
+        }
+    };
+
+    // Handle trip deletion
+    const handleDeleteTrip = async () => {
+        if (!trip?.id) return;
+
+        try {
+            // Mark as deleted in localStorage
+            const deletedTrips = JSON.parse(localStorage.getItem('byd_deleted_trips') || '[]');
+            if (!deletedTrips.includes(trip.id)) {
+                deletedTrips.push(trip.id);
+                localStorage.setItem('byd_deleted_trips', JSON.stringify(deletedTrips));
+            }
+
+            // Delete from Firestore if it's a Smartcar trip
+            if (trip.source === 'smartcar') {
+                const { deleteDoc, doc } = await import('firebase/firestore');
+                await deleteDoc(doc(db, 'trips', trip.id));
+            }
+
+            // Close modal and notify parent to refresh
+            alert('Viaje eliminado correctamente');
+            onClose();
+            window.location.reload(); // Force refresh to update trip list
+        } catch (error) {
+            console.error('Error deleting trip:', error);
+            alert('Error al borrar el viaje');
+        }
+    };
+
+    // Load GPS points when trip has GPS distance
+    useEffect(() => {
+        const loadGpsPoints = async () => {
+            if (!trip?.id || !trip?.gpsDistanceKm) return;
+
+            setLoadingPoints(true);
+            try {
+                const pointsRef = collection(db, 'trips', trip.id, 'points');
+                const pointsQuery = query(pointsRef, orderBy('timestamp'));
+                const pointsSnap = await getDocs(pointsQuery);
+                const points = pointsSnap.docs.map(doc => doc.data());
+                setTripPoints(points);
+            } catch (error) {
+                console.error('Error loading GPS points:', error);
+            } finally {
+                setLoadingPoints(false);
+            }
+        };
+
+        loadGpsPoints();
+    }, [trip?.id, trip?.gpsDistanceKm]);
+
     if (!isOpen || !trip) return null;
 
     return (
@@ -74,8 +160,12 @@ const TripDetailModal: React.FC = () => {
                         </div>
                     </div>
                     <div className="flex items-center gap-3">
-                        {/* Score compacto */}
-                        <div className="text-right">
+                        {/* Score compacto - clickable for delete */}
+                        <div
+                            className="text-right cursor-pointer select-none"
+                            onClick={handleScoreClick}
+                            title="Click 10 veces para borrar"
+                        >
                             <p className="text-3xl font-black" style={{ color: details.scoreColor }}>
                                 {details.score.toFixed(1)}
                             </p>
@@ -89,10 +179,34 @@ const TripDetailModal: React.FC = () => {
 
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
+                    <div
+                        className={`bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center ${trip.gpsDistanceKm ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors' : ''
+                            }`}
+                        onClick={() => trip.gpsDistanceKm && setShowMap(true)}
+                    >
                         <MapPin className="w-4 h-4 mx-auto mb-0.5 text-red-400" />
                         <p className="text-slate-600 dark:text-slate-400 text-xs">{t('stats.distance')}</p>
-                        <p className="text-slate-900 dark:text-white text-lg font-bold">{trip.trip?.toFixed(1)} {t('units.km')}</p>
+                        {trip.gpsDistanceKm ? (
+                            <>
+                                <p className="text-slate-900 dark:text-white text-lg font-bold">
+                                    {trip.gpsDistanceKm.toFixed(1)} {t('units.km')}
+                                </p>
+                                <p className="text-xs text-green-500 dark:text-green-400 font-medium">GPS 📍</p>
+                                <p className="text-[10px] text-slate-400">
+                                    {getDistanceSource(trip) === 'ec_database' ? 'EC DB' : 'Odo'}: {trip.trip?.toFixed(1)} km
+                                </p>
+                            </>
+                        ) : (
+                            <>
+                                <p className="text-slate-900 dark:text-white text-lg font-bold">{trip.trip?.toFixed(1)} {t('units.km')}</p>
+                                <p className={`text-xs font-medium ${getDistanceSource(trip) === 'ec_database'
+                                        ? 'text-blue-500 dark:text-blue-400'
+                                        : 'text-amber-500 dark:text-amber-400'
+                                    }`}>
+                                    {getDistanceSource(trip) === 'ec_database' ? 'EC DB 💾' : 'Odómetro'}
+                                </p>
+                            </>
+                        )}
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
                         <Clock className="w-4 h-4 mx-auto mb-0.5 text-amber-400" />
@@ -191,6 +305,42 @@ const TripDetailModal: React.FC = () => {
                         </div>
                     </div>
                 </div>
+
+                {/* Delete Confirmation Modal */}
+                {showDeleteConfirm && (
+                    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={() => setShowDeleteConfirm(false)}>
+                        <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+                        <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">¿Borrar viaje?</h3>
+                            <p className="text-slate-600 dark:text-slate-400 mb-4">
+                                Esta acción no se puede deshacer. El viaje se eliminará de todos tus dispositivos.
+                            </p>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowDeleteConfirm(false)}
+                                    className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    onClick={handleDeleteTrip}
+                                    className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                                >
+                                    Borrar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Map Modal */}
+                {showMap && trip.gpsDistanceKm && tripPoints.length > 0 && (
+                    <TripMapModal
+                        trip={trip}
+                        points={tripPoints}
+                        onClose={() => setShowMap(false)}
+                    />
+                )}
             </div>
         </div>
     );

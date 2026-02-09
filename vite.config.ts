@@ -94,6 +94,9 @@ export default defineConfig({
     },
   },
   base: '', // Relative base for better subfolder support (GH Pages)
+  worker: {
+    format: 'es' // Fix for vite-plugin-pwa - IIFE not supported in newer Vite
+  },
   build: {
     rollupOptions: {
       external: ['fs', 'path', 'crypto'], // Externalize node built-ins

@@ -1,19 +1,24 @@
-import React, { createContext, useContext, useMemo, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useMemo, ReactNode, useEffect, useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { logger } from '@core/logger';
 import { toast } from 'react-hot-toast';
 import { useApp } from '@/context/AppContext';
-import useAppData from '@hooks/useAppData';
+import { useCar } from '@/context/CarContext';
+
+// Import new providers
+import { FilterProvider, useFiltersContext } from './FilterProvider';
+import { ChargesProvider, useChargesContext } from './ChargesProvider';
+import { ModalProvider, useModalContext } from './ModalProvider';
+import { TripsProvider, useTripsContext } from './TripsProvider';
+
 import { useDatabase } from '@hooks/useDatabase';
-import useChargesData from '@hooks/useChargesData';
 import { useGoogleSync } from '@hooks/useGoogleSync';
 import { useFileHandling } from '@hooks/useFileHandling';
 import { useConfirmation } from '@hooks/useConfirmation';
-import { useCar } from '@/context/CarContext';
-import useModalState, { ModalsState } from '@hooks/useModalState';
 import { Trip, Charge, ProcessedData, Settings } from '@/types';
+import { ModalsState } from '@hooks/useModalState';
 
-// Define context interfaces
+// Define context interfaces (Legacy Support)
 export interface DataState {
     trips: Trip[];
     filtered: Trip[];
@@ -51,6 +56,7 @@ export interface DataState {
     aiSoH: number | null;
     aiSoHStats: { points: any[]; trend: any[] } | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
+    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<any>;
     forceRecalculate: () => void;
 
     // Anomalies
@@ -58,8 +64,6 @@ export interface DataState {
     setAcknowledgedAnomalies: (ids: string[]) => void;
     deletedAnomalies: string[];
     setDeletedAnomalies: (ids: string[]) => void;
-
-    // ... other state
 }
 
 export interface DataDispatch {
@@ -94,7 +98,6 @@ export interface DataDispatch {
     closeModal: (modalName: keyof ModalsState) => void;
 }
 
-// Union type for legacy useData
 export type DataContextValue = DataState & DataDispatch;
 
 const DataStateContext = createContext<DataState | undefined>(undefined);
@@ -102,17 +105,13 @@ const DataDispatchContext = createContext<DataDispatch | undefined>(undefined);
 
 export const useDataState = (): DataState => {
     const context = useContext(DataStateContext);
-    if (!context) {
-        throw new Error('useDataState must be used within a DataProvider');
-    }
+    if (!context) throw new Error('useDataState must be used within a DataProvider');
     return context;
 };
 
 export const useDataDispatch = (): DataDispatch => {
     const context = useContext(DataDispatchContext);
-    if (!context) {
-        throw new Error('useDataDispatch must be used within a DataProvider');
-    }
+    if (!context) throw new Error('useDataDispatch must be used within a DataProvider');
     return context;
 };
 
@@ -130,109 +129,81 @@ export const useData = (): DataContextValue => {
     }), [state, dispatch]);
 };
 
-export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+// Internal component that connects the disconnected providers
+const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCarId, cars, updateCar, activeCar } = useCar();
 
-    // 1. Charges Data
-    const chargesData = useChargesData(activeCarId);
+    // Consume new contexts
+    const filterContext = useFiltersContext();
+    const chargesContext = useChargesContext();
+    const tripsContext = useTripsContext();
+    const modalContext = useModalContext();
 
-    const charges = chargesData.charges || [];
-    const replaceCharges = chargesData.replaceCharges;
-    const { charges: _c, replaceCharges: _rc, ...restChargesData } = chargesData;
+    // Local State not covered by providers (UI transient state)
+    const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+    const [selectedCharge, setSelectedCharge] = useState<Charge | null>(null);
+    const [editingCharge, setEditingCharge] = useState<Charge | null>(null);
+    const [legalInitialSection, setLegalInitialSection] = useState<string>('');
 
-    // 2. Core App Data
-    const appData = useAppData(settings, charges, activeCarId);
-
-    const rawTrips = appData.rawTrips || [];
-    const setRawTrips = appData.setRawTrips;
-    const tripHistory = appData.tripHistory || [];
-    const filtered = appData.filtered || []; // This is Trip[] based on usage
-    const data = appData.data || null;
-
-    const rawClearData = appData.clearData;
-    const rawSaveToHistory = appData.saveToHistory;
-    const rawClearHistory = appData.clearHistory;
-    const rawLoadFromHistory = appData.loadFromHistory;
-
-    // AI Data from useProcessedData (via appData)
-    const aiScenarios = appData.aiScenarios || [];
-    const aiLoss = appData.aiLoss || null;
-    const isAiTraining = appData.isAiTraining || false;
-    const aiSoH = appData.aiSoH || null;
-    const aiSoHStats = appData.aiSoHStats || null;
-    const predictDeparture = appData.predictDeparture;
-    const forceRecalculate = appData.forceRecalculate;
-    const acknowledgedAnomalies = appData.acknowledgedAnomalies;
-    const setAcknowledgedAnomalies = appData.setAcknowledgedAnomalies;
-    const deletedAnomalies = appData.deletedAnomalies;
-    const setDeletedAnomalies = appData.setDeletedAnomalies;
-
-    const {
-        filterType, setFilterType,
-        selMonth, setSelMonth,
-        dateFrom, setDateFrom,
-        dateTo, setDateTo,
-        months
-    } = appData;
-
-    // 3. Database Layer
+    // Database & File Handling
     const database = useDatabase();
-
-    // 4. Confirmation Dialogs
-    const confirmation = useConfirmation({
-        rawClearData,
-        rawSaveToHistory,
-        rawClearHistory,
-        rawLoadFromHistory,
-        tripHistory
-    });
-
-    // 5. File Handling
     const fileHandling = useFileHandling();
 
-    // 6. Global Modal State
-    const modalState = useModalState();
-
-    // 7. Google Sync
+    // Google Sync
     const googleSync = useGoogleSync({
-        localTrips: rawTrips,
-        setLocalTrips: setRawTrips,
+        localTrips: tripsContext.rawTrips,
+        setLocalTrips: tripsContext.setRawTrips,
         settings,
         setSettings: updateSettings,
-        localCharges: charges,
-        setLocalCharges: replaceCharges,
+        localCharges: chargesContext.charges,
+        setLocalCharges: chargesContext.replaceCharges,
         activeCarId: activeCarId || '',
         totalCars: cars.length,
-        openRegistryModal: modalState?.openRegistryModal,
-        isRegistryModalOpen: modalState?.modals?.registryRestore,
+        openRegistryModal: modalContext.openRegistryModal,
+        isRegistryModalOpen: modalContext.modals?.registryRestore,
         updateCar,
         carName: activeCar?.name || ''
     });
 
-    // 8. Auto-Sync Effect
+    // Confirmation
+    const confirmation = useConfirmation({
+        rawClearData: tripsContext.clearData,
+        rawSaveToHistory: tripsContext.saveToHistory,
+        rawClearHistory: tripsContext.clearHistory,
+        rawLoadFromHistory: tripsContext.loadFromHistory,
+        tripHistory: tripsContext.tripHistory
+    });
+
+    // Auto-Sync Effect
     useEffect(() => {
         if (!googleSync.isAuthenticated || googleSync.isSyncing) return;
-        if (rawTrips?.length === 0 && charges?.length === 0) return;
-        if (modalState?.modals?.registryRestore) return;
+        if (tripsContext.rawTrips?.length === 0 && chargesContext.charges?.length === 0) return;
+        if (modalContext.modals?.registryRestore) return;
 
         const timer = setTimeout(() => {
             googleSync.syncNow(null);
         }, 10000);
 
         return () => clearTimeout(timer);
-    }, [rawTrips?.length, charges?.length, settings, googleSync.isAuthenticated, modalState?.modals?.registryRestore]);
+    }, [
+        tripsContext.rawTrips?.length,
+        chargesContext.charges?.length,
+        settings,
+        googleSync.isAuthenticated,
+        modalContext.modals?.registryRestore
+    ]);
 
-    // 9. File Loading Functions
+    // File Loading
     const loadFile = useCallback(async (file: File, merge: boolean = false) => {
         try {
             if (!database.sqlReady) {
                 await database.initSql();
             }
-            const newTrips = await database.processDB(file, rawTrips, merge);
+            const newTrips = await database.processDB(file, tripsContext.rawTrips, merge);
             if (newTrips && newTrips.length > 0) {
-                setRawTrips(newTrips);
+                tripsContext.setRawTrips(newTrips);
                 logger.info(`Loaded ${newTrips.length} trips (merge: ${merge})`);
                 if (googleSync.isAuthenticated) {
                     googleSync.syncNow(newTrips);
@@ -242,16 +213,20 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             logger.error('Error loading file:', error);
             database.setError(error.message);
         }
-    }, [database, rawTrips, setRawTrips, googleSync]);
+    }, [database, tripsContext.rawTrips, tripsContext.setRawTrips, googleSync]);
 
     const exportData = useCallback(async () => {
         if (!database.sqlReady) {
             await database.initSql();
         }
-        return database.exportDatabase(rawTrips);
-    }, [database, rawTrips]);
+        return database.exportDatabase(tripsContext.rawTrips);
+    }, [database, tripsContext.rawTrips]);
 
     const loadChargeRegistry = useCallback(async (file: File) => {
+        // ... (Logic copied from previous DataProvider, keeping it here as it uses toast/settings/charges)
+        // Ideally this should move to a hook or util, but I'll keep it here for now to save time
+        // Just need to update references to chargesContext
+
         try {
             const text = await file.text();
             const lines = text.split('\n').filter(line => line.trim());
@@ -267,18 +242,14 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 (settings.chargerTypes || []).map(ct => ct.name.toLowerCase())
             );
 
-            // Parse each line (skip header)
             for (let i = 1; i < lines.length; i++) {
                 const line = lines[i];
                 const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
 
                 if (!values || values.length < 8) continue;
-
                 const [fechaHora, kmTotales, kwhFacturados, precioTotal, , tipoCargador, precioKw, porcentajeFinal] = values;
 
-                if (!fechaHora || !fechaHora.match(/^\d{4}-\d{2}-\d{2}/)) {
-                    break;
-                }
+                if (!fechaHora || !fechaHora.match(/^\d{4}-\d{2}-\d{2}/)) break;
 
                 const dateMatch = fechaHora.match(/(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
                 if (!dateMatch) continue;
@@ -331,8 +302,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             }
 
             if (chargesArray.length > 0) {
-                const count = chargesData.addMultipleCharges(chargesArray);
-
+                const count = chargesContext.addMultipleCharges(chargesArray);
                 let message = t('charges.chargesImported', { count });
                 if (newChargerTypes.length > 0) {
                     message += '\n' + t('charges.chargerTypesCreated', {
@@ -340,7 +310,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     });
                 }
                 toast.success(message);
-
                 if (googleSync.isAuthenticated) {
                     googleSync.syncNow(null);
                 }
@@ -351,39 +320,70 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             logger.error('Error loading charge registry:', error);
             toast.error(t('errors.processingFile') || 'Error processing file');
         }
-    }, [settings, updateSettings, chargesData, googleSync, t]);
+    }, [settings, updateSettings, chargesContext, googleSync, t]);
 
-    // State Value
+    // Construct State Object (Memoized)
     const stateValue: DataState = useMemo(() => ({
-        trips: rawTrips,
-        filtered: filtered,
-        filteredTrips: filtered,
-        stats: data,
-        charges,
-        tripHistory,
+        trips: tripsContext.rawTrips,
+        filtered: tripsContext.filteredTrips,
+        filteredTrips: tripsContext.filteredTrips,
+        stats: tripsContext.stats,
+        charges: chargesContext.charges,
+        tripHistory: tripsContext.tripHistory,
         settings,
-        googleSync: {
-            ...googleSync,
-        },
+        googleSync: { ...googleSync },
         database,
-        ...modalState, // Spread remaining modal state
+        modals: modalContext.modals,
+        openModal: modalContext.openModal,
+        closeModal: modalContext.closeModal,
+        isAnyModalOpen: modalContext.isAnyModalOpen,
         fileHandling,
-        filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture, forceRecalculate,
-        acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
+        filterType: filterContext.filterType,
+        selMonth: filterContext.selMonth,
+        dateFrom: filterContext.dateFrom,
+        dateTo: filterContext.dateTo,
+        months: tripsContext.months,
+        legalInitialSection,
+        setLegalInitialSection,
+        selectedTrip,
+        setSelectedTrip,
+        selectedCharge,
+        setSelectedCharge,
+        editingCharge,
+        setEditingCharge,
+
+        // AI
+        aiScenarios: tripsContext.aiScenarios,
+        aiLoss: tripsContext.aiLoss,
+        isAiTraining: tripsContext.isAiTraining,
+        aiSoH: tripsContext.aiSoH,
+        aiSoHStats: tripsContext.aiSoHStats,
+        predictDeparture: tripsContext.predictDeparture,
+        findSmartChargingWindows: tripsContext.findSmartChargingWindows,
+        forceRecalculate: tripsContext.forceRecalculate,
+
+        acknowledgedAnomalies: tripsContext.acknowledgedAnomalies,
+        setAcknowledgedAnomalies: tripsContext.setAcknowledgedAnomalies,
+        deletedAnomalies: tripsContext.deletedAnomalies,
+        setDeletedAnomalies: tripsContext.setDeletedAnomalies,
+
     }), [
-        rawTrips, filtered, data, charges, tripHistory,
-        settings, googleSync, database, modalState, fileHandling,
-        filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture, forceRecalculate,
-        acknowledgedAnomalies, deletedAnomalies
+        tripsContext, chargesContext, settings, googleSync, database, modalContext, fileHandling, filterContext,
+        legalInitialSection, selectedTrip, selectedCharge, editingCharge
     ]);
 
-    // Dispatch Value
+    // Construct Dispatch Object
     const dispatchValue: DataDispatch = useMemo(() => ({
-        setRawTrips,
-        replaceCharges,
-        ...restChargesData,
+        setRawTrips: tripsContext.setRawTrips,
+        replaceCharges: chargesContext.replaceCharges,
+
+        // Charges Actions
+        addCharge: chargesContext.addCharge,
+        updateCharge: chargesContext.updateCharge,
+        deleteCharge: chargesContext.deleteCharge,
+        addMultipleCharges: chargesContext.addMultipleCharges,
+        exportCharges: chargesContext.exportCharges,
+        loadChargeRegistry,
 
         clearData: confirmation?.clearData,
         saveToHistory: confirmation?.saveToHistory,
@@ -396,21 +396,16 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         loadFile,
         exportData,
-        loadChargeRegistry,
 
-        setFilterType,
-        setSelMonth,
-        setDateFrom,
-        setDateTo,
+        setFilterType: filterContext.setFilterType,
+        setSelMonth: filterContext.setSelMonth,
+        setDateFrom: filterContext.setDateFrom,
+        setDateTo: filterContext.setDateTo,
 
-        openModal: modalState.openModal,
-        closeModal: modalState.closeModal,
+        openModal: modalContext.openModal,
+        closeModal: modalContext.closeModal,
     }), [
-        setRawTrips, replaceCharges, restChargesData,
-        confirmation,
-        loadFile, exportData, loadChargeRegistry,
-        setFilterType, setSelMonth, setDateFrom, setDateTo,
-        modalState.openModal, modalState.closeModal
+        tripsContext, chargesContext, confirmation, loadFile, exportData, loadChargeRegistry, filterContext, modalContext
     ]);
 
     return (
@@ -419,5 +414,22 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 {children}
             </DataStateContext.Provider>
         </DataDispatchContext.Provider>
+    );
+};
+
+// Main Helper that wraps everything
+export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+    return (
+        <ModalProvider>
+            <FilterProvider>
+                <ChargesProvider>
+                    <TripsProvider>
+                        <DataProviderContent>
+                            {children}
+                        </DataProviderContent>
+                    </TripsProvider>
+                </ChargesProvider>
+            </FilterProvider>
+        </ModalProvider>
     );
 };

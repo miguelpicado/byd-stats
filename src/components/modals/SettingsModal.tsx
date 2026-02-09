@@ -17,8 +17,8 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getApp } from 'firebase/app';
 import toast from 'react-hot-toast';
 
-// @ts-ignore
-import MfgDateModal from './MfgDateModal';
+// Lazy load modals
+const MfgDateModal = React.lazy(() => import('./MfgDateModal'));
 import { Charge } from '../../types';
 
 /**
@@ -84,7 +84,7 @@ const SettingsModal: React.FC = () => {
     const smartcar = useMemo(() => new SmartcarAuth({
         clientId: import.meta.env.VITE_SMARTCAR_CLIENT_ID,
         redirectUri: import.meta.env.VITE_SMARTCAR_REDIRECT_URI,
-        scope: ['read_odometer', 'read_vehicle_info', 'read_charge', 'read_security', 'read_location', 'read_battery', 'read_tires'],
+        scope: ['read_odometer', 'read_vehicle_info', 'read_charge', 'read_security', 'read_location', 'read_battery', 'read_tires', 'control_security', 'control_climate', 'control_trunk'],
         mode: 'live',
         onComplete: async (err, code) => {
             if (err) {
@@ -869,18 +869,23 @@ const SettingsModal: React.FC = () => {
                 </button>
             </div>
 
-            <MfgDateModal
-                isOpen={showMfgModal}
-                onClose={() => setShowMfgModal(false)}
-                initialValue={settings.mfgDateDisplay || ''}
-                onSave={(isoDate: string, displayDate: string) => {
-                    onSettingsChange({
-                        ...settings,
-                        mfgDate: isoDate,
-                        mfgDateDisplay: displayDate
-                    });
-                }}
-            />
+            {/* Modals */}
+            <React.Suspense fallback={null}>
+                {showMfgModal && (
+                    <MfgDateModal
+                        isOpen={showMfgModal}
+                        onClose={() => setShowMfgModal(false)}
+                        onSave={(isoDate: string, displayDate: string) => {
+                            onSettingsChange({
+                                ...settings,
+                                mfgDate: isoDate,
+                                mfgDateDisplay: displayDate
+                            });
+                        }}
+                        initialValue={settings.mfgDateDisplay}
+                    />
+                )}
+            </React.Suspense>
         </div>
     );
 };

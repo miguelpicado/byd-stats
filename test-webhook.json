@@ -1,0 +1,72 @@
+{
+    "vehicleId": "REEMPLAZAR_CON_TU_VEHICLE_ID",
+    "eventName": "vehicle.state",
+    "data": {
+        "signals": [
+            {
+                "name": "TraveledDistance",
+                "body": {
+                    "value": 12345.6
+                },
+                "status": {
+                    "value": "SUCCESS"
+                }
+            },
+            {
+                "name": "StateOfCharge",
+                "body": {
+                    "value": 85
+                },
+                "status": {
+                    "value": "SUCCESS"
+                }
+            },
+            {
+                "name": "Location",
+                "body": {
+                    "latitude": 40.4168,
+                    "longitude": -3.7038
+                },
+                "status": {
+                    "value": "SUCCESS"
+                }
+            },
+            {
+                "name": "IsLocked",
+                "body": {
+                    "value": false
+                },
+                "status": {
+                    "value": "SUCCESS"
+                }
+            },
+            {
+                "name": "IsDigitalKeyPaired",
+                "body": {
+                    "value": false
+                },
+                "status": {
+                    "value": "SUCCESS"
+                }
+            },
+            {
+                "name": "IsAsleep",
+                "body": {
+                    "value": false
+                },
+                "status": {
+                    "value": "SUCCESS"
+                }
+            },
+            {
+                "name": "IsOnline",
+                "body": {
+                    "value": true
+                },
+                "status": {
+                    "value": "SUCCESS"
+                }
+            }
+        ]
+    }
+}

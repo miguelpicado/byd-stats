@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "byd-stats-app"
-  }
+    "default": "byd-stats-app",
+    "bydstats": "REDACTED_FIREBASE_PROJECT_ID"
+  },
+  "targets": {},
+  "etags": {}
 }
