@@ -307,14 +307,17 @@ const BatteryStatusModal: React.FC = () => {
                                 </p>
                             </div>
                             <button
-                                onClick={() => updateSettings({ ...settings, autoImportCharges: !settings.autoImportCharges })}
+                                onClick={() => {
+                                    const newValue = !settings?.autoImportCharges;
+                                    updateSettings({ autoImportCharges: newValue });
+                                }}
                                 className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                    settings.autoImportCharges ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                                    settings?.autoImportCharges ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
                                 }`}
                             >
                                 <span
                                     className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        settings.autoImportCharges ? 'translate-x-6' : 'translate-x-1'
+                                        settings?.autoImportCharges ? 'translate-x-6' : 'translate-x-1'
                                     }`}
                                 />
                             </button>
