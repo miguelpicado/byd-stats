@@ -1,9 +1,9 @@
-import { memo, useRef, FC } from 'react';
+import { memo, useRef, FC, useEffect } from 'react';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Trip } from '@/types';
 import TripCard from '../cards/TripCard';
 
-const ITEM_SIZE = 150; // Estimated height for Trip Card
+const ITEM_SIZE = 150;
 
 interface VirtualizedTripListProps {
     trips: Trip[];
@@ -11,9 +11,19 @@ interface VirtualizedTripListProps {
     maxEff: number;
     onTripClick: (trip: Trip) => void;
     scrollElement: HTMLElement | null;
+    onEndReached?: () => void;
+    isLoading?: boolean;
 }
 
-const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({ trips, minEff, maxEff, onTripClick, scrollElement }) => {
+const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({
+    trips,
+    minEff,
+    maxEff,
+    onTripClick,
+    scrollElement,
+    onEndReached,
+    isLoading
+}) => {
     const listRef = useRef<HTMLDivElement>(null);
 
     const virtualizer = useVirtualizer({
@@ -22,6 +32,22 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({ trips, minEff,
         estimateSize: () => ITEM_SIZE, // Fallback estimate
         overscan: 5,
     });
+
+    // Detect end of scroll
+    useEffect(() => {
+        if (!scrollElement || !onEndReached) return;
+
+        const handleScroll = () => {
+            const { scrollTop, scrollHeight, clientHeight } = scrollElement;
+            // Trigger when within 200px of bottom
+            if (scrollHeight - scrollTop - clientHeight < 200) {
+                onEndReached();
+            }
+        };
+
+        scrollElement.addEventListener('scroll', handleScroll);
+        return () => scrollElement.removeEventListener('scroll', handleScroll);
+    }, [scrollElement, onEndReached]);
 
     return (
         <div ref={listRef} style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
@@ -49,6 +75,19 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({ trips, minEff,
                     </div>
                 </div>
             ))}
+            {isLoading && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: -40,
+                        width: '100%',
+                        textAlign: 'center',
+                        padding: '10px'
+                    }}
+                >
+                    <span className="inline-block w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></span>
+                </div>
+            )}
         </div>
     );
 });

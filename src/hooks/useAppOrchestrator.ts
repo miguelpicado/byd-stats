@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { toast } from 'react-hot-toast';
 import { Capacitor } from '@capacitor/core';
-import { logger } from '@core/logger';
 import useAppVersion from '@hooks/useAppVersion';
 import { useApp } from '@/context/AppContext';
 import { useLayout } from '@/context/LayoutContext';
@@ -30,8 +28,6 @@ export const useAppOrchestrator = () => {
 
         // Actions
         setRawTrips,
-        addCharge,
-        deleteCharge,
         clearData,
 
         // Sub-Contexts
@@ -51,8 +47,7 @@ export const useAppOrchestrator = () => {
         selectedTrip,
         setSelectedTrip,
         selectedCharge,
-        setSelectedCharge,
-        setEditingCharge
+        setSelectedCharge
     } = useData();
 
     const { sqlReady, loading, error, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = database;

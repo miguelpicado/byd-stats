@@ -2,10 +2,34 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // DEVELOPMENT MODE: Allow all reads and writes
-    // WARNING: Revert this before going to production
-    match /{document=**} {
-      allow read, write: if true;
+    // Trips - solo el propietario puede leer/escribir
+    match /trips/{tripId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Vehicles - solo el propietario
+    match /vehicles/{vehicleId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.ownerId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerId;
+    }
+
+    // Charge Sessions - solo el propietario
+    match /chargeSessions/{sessionId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Users - solo su propio documento
+    match /users/{userId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
     }
   }
 }

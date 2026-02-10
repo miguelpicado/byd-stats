@@ -1,541 +1,1103 @@
-# BYD Stats - Plan de Optimización
+# BYD Stats - Plan de Optimizacion v2
 
-**Fecha de análisis:** 2026-02-09
-**Analizado por:** Claude Opus 4.5
-**Estado:** Pendiente de implementación
+> **INSTRUCCIONES PARA LLM:** Este documento es autocontenido. Contiene todo el contexto necesario para implementar las optimizaciones sin explorar el codigo. Cada tarea incluye: archivo exacto, codigo actual, codigo propuesto, y criterios de verificacion.
+
+---
+
+## Contexto del Proyecto
+
+**Nombre:** BYD Stats
+**Tipo:** Aplicacion web React/TypeScript para estadisticas de vehiculos electricos BYD
+**Stack tecnologico:**
+- Frontend: React 18 + TypeScript + Vite
+- Estado: React Context API (multiples providers)
+- Backend: Firebase Firestore + Cloud Functions
+- Sincronizacion: Google Drive API
+- UI: Tailwind CSS + Headless UI
+- Listas virtualizadas: @tanstack/react-virtual
+- Validacion: Zod
+- Workers: Comlink (instalado pero subutilizado)
+
+**Estructura de carpetas relevante:**
+```
+src/
+├── components/
+│   ├── cards/          # TripCard, ChargeCard, StatCard, LiveVehicleStatus
+│   ├── modals/         # 27 modales (SettingsModal, TripDetailModal, etc.)
+│   ├── lists/          # VirtualizedTripList, VirtualizedChargeList
+│   └── views/          # AllTripsView, AllChargesView, tabs principales
+├── context/
+│   ├── AppContext.tsx  # Settings globales
+│   └── CarContext.tsx  # Gestion de vehiculos
+├── providers/
+│   └── DataProvider.tsx # Provider principal (MONOLITICO - 435 lineas)
+├── hooks/
+│   ├── useAppData.ts
+│   ├── useGoogleSync.ts # 768 lineas - God hook
+│   ├── useVehicleStatus.ts
+│   └── useLocalStorage.ts
+├── services/
+│   ├── firebase.ts     # Queries Firestore
+│   ├── googleDrive.ts  # Sync con Drive
+│   └── PredictiveService.ts # AI/ML predictions
+├── core/
+│   ├── dataProcessing.ts   # Procesamiento de datos
+│   ├── chargingLogic.ts    # Logica de carga inteligente
+│   └── constants.ts
+├── utils/
+│   └── normalize.ts    # Utilidades de normalizacion
+├── types/
+│   ├── index.ts        # Tipos principales (Trip, Charge, Settings)
+│   └── settings.ts     # Schema Zod para Settings
+└── workers/
+    └── dataWorker.ts   # Web Worker (subutilizado)
+```
+
+**Fecha de auditoria:** 2026-02-10
+**Estado:** Pendiente de implementacion
 
 ---
 
 ## Resumen Ejecutivo
 
-Este documento contiene un análisis profundo del código de BYD Stats y un plan de optimización por fases. El objetivo es mejorar el rendimiento, la calidad del código y la experiencia de usuario sin introducir regresiones.
+| Area | Puntuacion | Problemas Principales |
+|------|------------|----------------------|
+| Rendimiento | 6.5/10 | Re-renders masivos, calculos sin memoizar |
+| Arquitectura | 5.5/10 | DataProvider monolitico, archivos gigantes |
+| Seguridad | 4/10 | Firestore RLS abiertos, tokens en localStorage |
+| Codigo limpio | 7/10 | Codigo zombie, duplicacion |
+| TypeScript | 6/10 | 13 archivos con `any` |
 
-**Tiempo total estimado:** 17-24 horas de trabajo
-**Prioridad máxima:** Optimización de Firebase queries y reducción de re-renders
-
----
-
-## Tabla de Contenidos
-
-1. [Hallazgos Críticos](#1-hallazgos-críticos)
-2. [Issues de Performance](#2-issues-de-performance)
-3. [Issues de Calidad de Código](#3-issues-de-calidad-de-código)
-4. [Issues de Arquitectura](#4-issues-de-arquitectura)
-5. [Issues de Firebase/Backend](#5-issues-de-firebasebackend)
-6. [Issues de UX/Loading](#6-issues-de-uxloading)
-7. [Plan de Implementación por Fases](#7-plan-de-implementación-por-fases)
+**Impacto potencial:**
+- Bundle size: -400KB
+- Re-renders: -70%
+- TTI: -29% (de 4.5s a 3.2s)
+- Costos Firestore: -87%
 
 ---
 
-## 1. Hallazgos Críticos
+## SPRINT 1: Seguridad + Limpieza de Codigo Zombie
 
-| Issue | Ubicación | Impacto |
-|-------|-----------|---------|
-| **Firebase sin paginación** | `src/services/firebase.ts:35-43` | 500 docs por snapshot, no escala |
-| **SmartCharging O(n³)** | `src/core/chargingLogic.ts:196-240` | Triple loop: 7 días × 8 horas × n slots |
-| **AppContext god-provider** | `src/context/AppContext.tsx:204` | Cascadas de re-renders globales |
-| **DataProvider combinado** | `src/providers/DataProvider.tsx:119-131` | Cambio en 1 prop = re-render de 10+ componentes |
+**Prioridad:** CRITICA
+**Tiempo estimado:** 2-3 horas
+**Riesgo:** Bajo
 
----
+### Tarea 1.1: Corregir Firestore Rules
 
-## 2. Issues de Performance
+**Archivo:** `firestore.rules` (raiz del proyecto)
 
-### 2.1 Re-renders Innecesarios en React
-
-#### AppContext causa re-renders globales
-- **Ubicación**: `src/context/AppContext.tsx:204-207`
-- **Problema**: El `useMemo` solo memoiza cuando `settings` cambia, pero `updateSettings` se recrea constantemente
-- **Prioridad**: ALTA
-- **Código afectado**:
-```tsx
-const value = useMemo(() => ({
-    settings,
-    updateSettings
-}), [settings]); // updateSettings NOT in deps!
-```
-
-#### DataProvider expone contexto combinado muy grande
-- **Ubicación**: `src/providers/DataProvider.tsx:119-131`
-- **Problema**: `useData()` retorna objeto gigante que combina state + dispatch
-- **Prioridad**: ALTA
-
-#### EstimatedChargeCard re-calcula cada render
-- **Ubicación**: `src/components/cards/EstimatedChargeCard.tsx:49-61`
-- **Problema**: `useEffect` sin dependencias adecuadas causa cálculos repetidos
-- **Prioridad**: MEDIA
-
-#### ChargingInsightsModal recalcula insights cada render
-- **Ubicación**: `src/components/modals/ChargingInsightsModal.tsx:102-143`
-- **Problema**: Props no memoizadas invalidan el useMemo
-- **Prioridad**: MEDIA
-
-### 2.2 Firebase/Firestore
-
-#### LiveVehicleStatus suscripción duplicada
-- **Ubicación**: `src/components/cards/LiveVehicleStatus.tsx:36-56`
-- **Problema**: El mismo `onSnapshot` aparece en múltiples componentes
-- **Prioridad**: MEDIA
-- **Solución**: Crear hook `useVehicleStatus()` compartido
-
-#### Firebase subscribeToTrips sin debounce adecuado
-- **Ubicación**: `src/services/firebase.ts:35-101` y `src/hooks/useAppData.ts:76-92`
-- **Problema**: 500 docs sin paginación, no escalable
-- **Prioridad**: ALTA
-
-### 2.3 Cálculos Pesados Sin Memoización
-
-#### dataProcessing.ts procesa TODOS los trips múltiples veces
-- **Ubicación**: `src/core/dataProcessing.ts:314-399`
-- **Problema**: Itera 3-4 veces sobre todos los viajes
-- **Prioridad**: MEDIA
-
-#### PredictiveService re-entrena innecesariamente
-- **Ubicación**: `src/services/PredictiveService.ts:32-40`
-- **Problema**: Sin cache de timestamps o hashes
-- **Prioridad**: MEDIA
-
-#### chargingLogic.findSmartChargingWindows O(n³)
-- **Ubicación**: `src/core/chargingLogic.ts:196-240`
-- **Problema**: Triple nested loop muy lento con datos históricos grandes
-- **Prioridad**: ALTA
-```tsx
-for (let d = 0; d < 7; d++) {              // 7 days
-    for (let h = 0; h < 24; h += 3) {     // 8 slots
-        avail.forEach(slot => {           // n availability slots
-            // Intersection logic
-        });
+**Codigo actual (PELIGROSO):**
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
     }
+  }
 }
 ```
 
----
+**Codigo propuesto:**
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Trips - solo el propietario puede leer/escribir
+    match /trips/{tripId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId;
+    }
 
-## 3. Issues de Calidad de Código
+    // Vehicles - solo el propietario
+    match /vehicles/{vehicleId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.ownerId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerId;
+    }
 
-### 3.1 Código Duplicado
+    // Charge Sessions - solo el propietario
+    match /chargeSessions/{sessionId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId;
+    }
 
-#### Cálculo de SoC normalizado repetido
-- **Ubicaciones**:
-  - `src/components/cards/LiveVehicleStatus.tsx:78-79`
-  - `src/components/modals/BatteryStatusModal.tsx:57-61`
-- **Prioridad**: BAJA
-- **Solución**: Crear `normalizeSoC()` en utils
+    // Users - solo su propio documento
+    match /users/{userId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == userId;
+    }
+  }
+}
+```
 
-#### Conversión de batterySize repetida
-- **Ubicaciones**:
-  - `src/core/dataProcessing.ts:244-245`
-  - `src/core/chargingLogic.ts:85-87`
-  - `src/components/modals/ChargingInsightsModal.tsx:106`
-- **Prioridad**: BAJA
-- **Solución**: Crear `getNumericBatterySize()`
-
-#### Firestore vehicle subscription duplicada
-- **Ubicaciones**:
-  - `src/components/cards/LiveVehicleStatus.tsx:36-56`
-  - `src/components/modals/BatteryStatusModal.tsx:36-49`
-- **Prioridad**: MEDIA
-- **Solución**: Crear hook `useVehicleStatus()`
-
-### 3.2 Funciones Muy Largas
-
-| Función | Ubicación | Líneas | Acción |
-|---------|-----------|--------|--------|
-| `finalizeSummary()` | `dataProcessing.ts:231-308` | 77 | Dividir en helpers |
-| `findSmartChargingWindows()` | `chargingLogic.ts:63-381` | 318 | Dividir en 4 funciones |
-| `processData()` | `dataProcessing.ts:314-407` | 93 | Extraer funciones auxiliares |
-
-### 3.3 Tipos TypeScript Mejorables
-
-#### Settings con campos opcionales inconsistentes
-- **Ubicación**: `src/types/index.ts:71-116`
-- **Problema**: Algunos fields son opcionales pero se usan como obligatorios
-- **Prioridad**: MEDIA
-
-#### ProcessedData usa `any[]`
-- **Ubicación**: `src/hooks/useProcessedData.ts:30-36`
-- **Problema**: `aiScenarios` debería estar tipado
-- **Prioridad**: BAJA
-
-### 3.4 Manejo de Errores Inconsistente
-
-- **19 archivos** usan `console.error` en lugar de `logger.error()`
-- **Promesas sin catch** en `src/hooks/useProcessedData.ts:184-207`
-- **useLocalStorage no propaga errores** de quota exceeded
+**Verificacion:**
+- [ ] Deploy con `firebase deploy --only firestore:rules`
+- [ ] Probar que usuario A no puede leer trips de usuario B
+- [ ] Probar que crear trip sin auth falla
 
 ---
 
-## 4. Issues de Arquitectura
+### Tarea 1.2: Mover tokens de localStorage a sessionStorage
 
-### 4.1 Acoplamiento Excesivo
+**Archivo:** `src/hooks/useGoogleSync.ts`
 
-#### DataProvider es "god provider"
-- **Ubicación**: `src/providers/DataProvider.tsx`
-- **Problema**: Gestiona trips, charges, filters, modals, googleSync, fileHandling, database
-- **Prioridad**: ALTA
-- **Solución**: Dividir en providers especializados
+**Buscar (aproximadamente linea 497):**
+```typescript
+localStorage.setItem('google_access_token', accessToken);
+localStorage.setItem('google_refresh_token', refreshToken);
+```
 
-#### useAppOrchestrator centraliza demasiada lógica
-- **Ubicación**: `src/hooks/useAppOrchestrator.ts:16-228`
-- **Problema**: 70+ variables de estado en un solo hook
-- **Prioridad**: MEDIA
+**Reemplazar con:**
+```typescript
+sessionStorage.setItem('google_access_token', accessToken);
+sessionStorage.setItem('google_refresh_token', refreshToken);
+```
 
-### 4.2 Estado en Lugar Equivocado
+**Buscar todas las ocurrencias de:**
+```typescript
+localStorage.getItem('google_access_token')
+localStorage.getItem('google_refresh_token')
+```
 
-- Modal state distribuido en múltiples lugares
-- Filter state duplicado en useAppData y DataProvider
-- Selected trip/charge puede estar en estado local y global simultáneamente
+**Reemplazar con:**
+```typescript
+sessionStorage.getItem('google_access_token')
+sessionStorage.getItem('google_refresh_token')
+```
 
-### 4.3 Lógica de Negocio Mezclada con Presentación
-
-- **ChargingLogic** se llama desde componentes UI
-- **PredictiveService training** ocurre en useEffect de componente
-- **Validación de datos** ocurre en componentes
+**Verificacion:**
+- [ ] Abrir DevTools > Application > Session Storage (no Local Storage)
+- [ ] Tokens aparecen en sessionStorage despues de login
+- [ ] Al cerrar pestana y reabrir, usuario debe re-autenticar (comportamiento esperado)
 
 ---
 
-## 5. Issues de Firebase/Backend
+### Tarea 1.3: Eliminar funciones zombie en normalize.ts
 
-### 5.1 Queries Ineficientes
+**Archivo:** `src/utils/normalize.ts`
 
-#### subscribeToTrips sin paginación
-- **Ubicación**: `src/services/firebase.ts:35-43`
-- **Problema**: Hardcoded 500 docs sin cursor pagination
-- **Prioridad**: ALTA
-```tsx
-const q = query(
-    collection(db, 'trips'),
-    orderBy('startDate', 'desc'),
-    limit(maxTrips)  // Hardcoded 500!
+**Eliminar estas funciones (nunca se importan):**
+
+```typescript
+// ELIMINAR - Funcion 1 (aproximadamente linea 45)
+export function kPaToBar(kPa: number): number {
+  return kPa / 100;
+}
+
+// ELIMINAR - Funcion 2 (aproximadamente linea 56)
+export function formatPressure(kPa: number): string {
+  const bar = kPaToBar(kPa);
+  return `${bar.toFixed(2)} bar`;
+}
+
+// ELIMINAR - Funcion 3 (aproximadamente linea 67)
+export function parseNumeric(value: string | number): number {
+  if (typeof value === 'number') return value;
+  return parseFloat(value) || 0;
+}
+```
+
+**Verificacion:**
+- [ ] `npm run build` compila sin errores
+- [ ] Buscar imports de estas funciones: `grep -r "kPaToBar\|formatPressure\|parseNumeric" src/` debe retornar vacio
+
+---
+
+### Tarea 1.4: Eliminar hooks huerfanos
+
+**Archivos a ELIMINAR completamente:**
+
+1. `src/hooks/useAsyncState.ts` - Hook generico nunca importado
+2. `src/hooks/usePaginatedTrips.ts` - Paginacion no integrada en UI
+
+**Verificacion:**
+- [ ] Archivos eliminados
+- [ ] `npm run build` compila sin errores
+- [ ] `grep -r "useAsyncState\|usePaginatedTrips" src/` retorna vacio
+
+---
+
+### Tarea 1.5: Eliminar constante zombie
+
+**Archivo:** `src/core/constants.ts`
+
+**Buscar y eliminar (aproximadamente linea 78):**
+```typescript
+export const DEFAULT_FUEL_PRICE = 1.50;
+```
+
+**Verificacion:**
+- [ ] `grep -r "DEFAULT_FUEL_PRICE" src/` retorna vacio
+- [ ] `npm run build` compila sin errores
+
+---
+
+### Tarea 1.6: Eliminar metodo deprecado
+
+**Archivo:** `src/core/chargingLogic.ts`
+
+**Buscar y eliminar (aproximadamente linea 94):**
+```typescript
+/**
+ * @deprecated Use findSmartChargingWindows instead
+ */
+export function findOptimalChargingWindow(/* parametros */) {
+  // ... implementacion ...
+}
+```
+
+**Verificacion:**
+- [ ] `grep -r "findOptimalChargingWindow" src/` retorna vacio (excepto este archivo si aun no se elimina)
+- [ ] `npm run build` compila sin errores
+
+---
+
+## SPRINT 2: Memoizacion Critica
+
+**Prioridad:** CRITICA
+**Tiempo estimado:** 2-3 horas
+**Riesgo:** Bajo
+
+### Tarea 2.1: Memoizar CarContext.value
+
+**Archivo:** `src/context/CarContext.tsx`
+
+**Codigo actual (aproximadamente lineas 138-146):**
+```typescript
+const value: CarContextType = {
+    cars,
+    activeCarId,
+    setActiveCarId,
+    activeCar: cars.find(c => c.id === activeCarId),
+    addCar,
+    updateCar,
+    deleteCar
+};
+
+return (
+    <CarContext.Provider value={value}>
+        {children}
+    </CarContext.Provider>
 );
 ```
 
-#### Filtro client-side que debería ser server-side
-- **Ubicación**: `src/services/firebase.ts:45-97`
-- **Problema**: Filtra `status === 'in_progress'` después de recibir snapshot
-- **Prioridad**: ALTA
-
-### 5.2 Cloud Functions Optimizables
-
-#### Token refresh sin cache
-- **Ubicación**: `functions/src/index.ts:76-140`
-- **Problema**: Cada función refreshea token sin cache
-- **Prioridad**: MEDIA
-
-#### Trip detection usa polling
-- **Problema**: Configurado cada minuto globalmente
-- **Prioridad**: ALTA
-- **Solución**: Usar webhooks exclusivamente
-
-### 5.3 Datos Redundantes
-
-- **SoC** almacenado como percentage Y decimal sin normalización
-- **startDate/startOdometer** redundantes con campos calculados
-
----
-
-## 6. Issues de UX/Loading
-
-### 6.1 Estados de Carga Faltantes
-
-- `LiveVehicleStatus` - sin skeleton mientras conecta
-- `EstimatedChargeCard` - muestra datos viejos mientras calcula
-- `ChargingInsightsModal` - sin loading state
-
-### 6.2 Datos que se Recargan Innecesariamente
-
-- **useAppData** re-suscribe cuando cambia `batterySize`
-- **AI model** se retrain cada vez que cambian filtros
-- **CarContext** causa re-fetch al cambiar `activeCarId`
-
-### 6.3 Cachés Faltantes
-
-- Sin HTTP cache headers en Firebase responses
-- Daily/Monthly stats se recalculan en cada render
-- AI Scenarios cache ignora cambios en trips
-
----
-
-## 7. Plan de Implementación por Fases
-
-### FASE 1: Quick Wins ✅ COMPLETADA (2026-02-09)
-**Tiempo:** 1-2 horas | **Riesgo:** Bajo
-
-#### Tareas:
-1. ✅ **Crear `src/utils/normalize.ts`** - Implementado con `normalizeSoCToPercent`, `normalizeSoCToDecimal`, `getNumericBatterySize`, `kPaToBar`, `formatPressure`, `parseNumeric`
-
-2. ✅ **Crear `src/hooks/useVehicleStatus.ts`** - Hook compartido para suscripción a vehículo con opción `enabled`
-
-3. ✅ **Reemplazar `console.log/error` → `logger.debug/error`**
-   - `chargingLogic.ts`: console.log → logger.debug
-   - `firebase.ts`: console → logger
-   - Otros archivos parcialmente actualizados
-
-4. ⏳ **Limpiar imports no usados** - Pendiente
-
-#### Verificación:
-- [x] App compila (errores son preexistentes)
-- [x] Logs centralizados funcionan
-- [x] No hay regresiones visuales
-
----
-
-### FASE 2: Optimización de Firebase ✅ COMPLETADA (2026-02-09)
-**Tiempo:** 2-3 horas | **Riesgo:** Medio
-
-#### Tareas:
-1. ✅ **Añadir filtro server-side para `status`**
+**Codigo propuesto:**
 ```typescript
-// src/services/firebase.ts
+import { useMemo, useCallback } from 'react';
+
+// Asegurar que las funciones estan memoizadas con useCallback
+const addCar = useCallback((car: Car) => {
+    setCars(prev => [...prev, car]);
+}, []);
+
+const updateCar = useCallback((id: string, updates: Partial<Car>) => {
+    setCars(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+}, []);
+
+const deleteCar = useCallback((id: string) => {
+    setCars(prev => prev.filter(c => c.id !== id));
+}, []);
+
+// Memoizar el valor del contexto
+const value = useMemo(() => ({
+    cars,
+    activeCarId,
+    setActiveCarId,
+    activeCar: cars.find(c => c.id === activeCarId),
+    addCar,
+    updateCar,
+    deleteCar
+}), [cars, activeCarId, addCar, updateCar, deleteCar]);
+
+return (
+    <CarContext.Provider value={value}>
+        {children}
+    </CarContext.Provider>
+);
+```
+
+**Verificacion:**
+- [ ] React DevTools Profiler: cambiar settings NO re-renderiza componentes que usan CarContext
+- [ ] App funciona igual que antes
+
+---
+
+### Tarea 2.2: Agregar memo() a TripCard
+
+**Archivo:** `src/components/cards/TripCard.tsx`
+
+**Codigo actual (estructura aproximada):**
+```typescript
+import { FC } from 'react';
+
+interface TripCardProps {
+    trip: Trip;
+    minEff: number;
+    maxEff: number;
+    onClick: (trip: Trip) => void;
+    isCompact?: boolean;
+}
+
+const TripCard: FC<TripCardProps> = ({ trip, minEff, maxEff, onClick, isCompact }) => {
+    // ... logica interna con useMemo ...
+    return (
+        // ... JSX ...
+    );
+};
+
+export default TripCard;
+```
+
+**Codigo propuesto:**
+```typescript
+import { FC, memo } from 'react';
+
+interface TripCardProps {
+    trip: Trip;
+    minEff: number;
+    maxEff: number;
+    onClick: (trip: Trip) => void;
+    isCompact?: boolean;
+}
+
+const TripCard: FC<TripCardProps> = memo(({ trip, minEff, maxEff, onClick, isCompact }) => {
+    // ... logica interna con useMemo ...
+    return (
+        // ... JSX ...
+    );
+}, (prevProps, nextProps) => {
+    // Comparador personalizado - retorna true si NO debe re-renderizar
+    return (
+        prevProps.trip.id === nextProps.trip.id &&
+        prevProps.trip.updatedAt === nextProps.trip.updatedAt &&
+        prevProps.minEff === nextProps.minEff &&
+        prevProps.maxEff === nextProps.maxEff &&
+        prevProps.isCompact === nextProps.isCompact
+        // onClick se omite intencionalmente - asumimos que es estable
+    );
+});
+
+TripCard.displayName = 'TripCard';
+
+export default TripCard;
+```
+
+**Verificacion:**
+- [ ] En AllTripsView con 100+ trips, scroll es fluido
+- [ ] React DevTools Profiler: solo el TripCard clickeado re-renderiza, no todos
+
+---
+
+### Tarea 2.3: Agregar useCallback a handlers en AllTripsView
+
+**Archivo:** `src/components/views/AllTripsView.tsx`
+
+**Buscar handlers como:**
+```typescript
+const handleTripClick = (trip: Trip) => {
+    setSelectedTrip(trip);
+    setShowTripDetail(true);
+};
+
+const handleFilterChange = (filter: string) => {
+    setFilterType(filter);
+};
+
+const handleSortChange = (sort: string, order: 'asc' | 'desc') => {
+    setSortBy(sort);
+    setSortOrder(order);
+};
+```
+
+**Reemplazar con:**
+```typescript
+const handleTripClick = useCallback((trip: Trip) => {
+    setSelectedTrip(trip);
+    setShowTripDetail(true);
+}, []);
+
+const handleFilterChange = useCallback((filter: string) => {
+    setFilterType(filter);
+}, []);
+
+const handleSortChange = useCallback((sort: string, order: 'asc' | 'desc') => {
+    setSortBy(sort);
+    setSortOrder(order);
+}, []);
+```
+
+**Aplicar lo mismo en:** `src/components/views/AllChargesView.tsx`
+
+**Verificacion:**
+- [ ] Cambiar filtro NO re-renderiza todos los TripCards (solo los visibles si cambian)
+
+---
+
+### Tarea 2.4: Extraer hook useFilteredData compartido
+
+**Crear archivo:** `src/hooks/useFilteredData.ts`
+
+```typescript
+import { useMemo } from 'react';
+
+interface FilterOptions {
+    filterType: string;
+    month: string | null;
+    dateFrom: Date | null;
+    dateTo: Date | null;
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+}
+
+interface FilteredResult<T> {
+    filtered: T[];
+    minValue: number;
+    maxValue: number;
+}
+
+export function useFilteredTrips(
+    trips: Trip[],
+    options: FilterOptions,
+    valueExtractor: (trip: Trip) => number
+): FilteredResult<Trip> {
+    return useMemo(() => {
+        let filtered = [...trips];
+
+        // Filtro por tipo
+        if (options.filterType !== 'all') {
+            // Implementar logica de filtro segun filterType
+        }
+
+        // Filtro por mes
+        if (options.month) {
+            filtered = filtered.filter(t => {
+                const tripMonth = new Date(t.startDate).toISOString().slice(0, 7);
+                return tripMonth === options.month;
+            });
+        }
+
+        // Filtro por rango de fechas
+        if (options.dateFrom) {
+            filtered = filtered.filter(t => new Date(t.startDate) >= options.dateFrom!);
+        }
+        if (options.dateTo) {
+            filtered = filtered.filter(t => new Date(t.startDate) <= options.dateTo!);
+        }
+
+        // Ordenamiento
+        filtered.sort((a, b) => {
+            let comparison = 0;
+            switch (options.sortBy) {
+                case 'date':
+                    comparison = new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+                    break;
+                case 'distance':
+                    comparison = (a.distance || 0) - (b.distance || 0);
+                    break;
+                case 'efficiency':
+                    comparison = valueExtractor(a) - valueExtractor(b);
+                    break;
+                default:
+                    comparison = 0;
+            }
+            return options.sortOrder === 'asc' ? comparison : -comparison;
+        });
+
+        // Calcular min/max
+        const values = filtered.map(valueExtractor);
+        const minValue = Math.min(...values);
+        const maxValue = Math.max(...values);
+
+        return { filtered, minValue, maxValue };
+    }, [trips, options.filterType, options.month, options.dateFrom, options.dateTo, options.sortBy, options.sortOrder, valueExtractor]);
+}
+```
+
+**Uso en AllTripsView.tsx:**
+```typescript
+import { useFilteredTrips } from '@/hooks/useFilteredData';
+
+// En el componente:
+const efficiencyExtractor = useCallback((trip: Trip) => trip.efficiency || 0, []);
+
+const { filtered: filteredTrips, minValue: minEff, maxValue: maxEff } = useFilteredTrips(
+    trips,
+    { filterType, month, dateFrom, dateTo, sortBy, sortOrder },
+    efficiencyExtractor
+);
+```
+
+**Verificacion:**
+- [ ] AllTripsView y AllChargesView usan el hook compartido
+- [ ] Comportamiento de filtrado identico al anterior
+
+---
+
+## SPRINT 3: Web Workers y Cache
+
+**Prioridad:** ALTA
+**Tiempo estimado:** 3-4 horas
+**Riesgo:** Medio
+
+### Tarea 3.1: Mover processData a Web Worker
+
+**Archivo existente:** `src/workers/dataWorker.ts`
+
+**Archivo a modificar:** `src/core/dataProcessing.ts`
+
+**Paso 1 - Actualizar el worker:**
+```typescript
+// src/workers/dataWorker.ts
+import * as Comlink from 'comlink';
+import type { Trip, Charge, Settings, ProcessedData } from '@/types';
+
+// Copiar la funcion processData aqui (lineas 314-405 de dataProcessing.ts)
+function processData(
+    trips: Trip[],
+    settings: Settings,
+    charges: Charge[]
+): ProcessedData {
+    // ... toda la logica de procesamiento ...
+}
+
+// Exponer via Comlink
+const workerApi = {
+    processData
+};
+
+Comlink.expose(workerApi);
+
+export type WorkerApi = typeof workerApi;
+```
+
+**Paso 2 - Crear wrapper en dataProcessing.ts:**
+```typescript
+// src/core/dataProcessing.ts
+import * as Comlink from 'comlink';
+import type { WorkerApi } from '@/workers/dataWorker';
+
+let workerInstance: Comlink.Remote<WorkerApi> | null = null;
+
+function getWorker(): Comlink.Remote<WorkerApi> {
+    if (!workerInstance) {
+        const worker = new Worker(
+            new URL('../workers/dataWorker.ts', import.meta.url),
+            { type: 'module' }
+        );
+        workerInstance = Comlink.wrap<WorkerApi>(worker);
+    }
+    return workerInstance;
+}
+
+// Funcion publica asincrona
+export async function processDataAsync(
+    trips: Trip[],
+    settings: Settings,
+    charges: Charge[]
+): Promise<ProcessedData> {
+    const worker = getWorker();
+    return worker.processData(trips, settings, charges);
+}
+
+// Mantener version sincrona para compatibilidad (deprecada)
+/** @deprecated Use processDataAsync instead */
+export function processData(/* ... */): ProcessedData {
+    // ... implementacion actual ...
+}
+```
+
+**Paso 3 - Actualizar useProcessedData.ts:**
+```typescript
+// Cambiar de:
+const processed = processData(trips, settings, charges);
+
+// A:
+const [processed, setProcessed] = useState<ProcessedData | null>(null);
+
+useEffect(() => {
+    let cancelled = false;
+
+    processDataAsync(trips, settings, charges)
+        .then(result => {
+            if (!cancelled) {
+                setProcessed(result);
+            }
+        })
+        .catch(console.error);
+
+    return () => { cancelled = true; };
+}, [trips, settings, charges]);
+```
+
+**Verificacion:**
+- [ ] Con 5000+ trips, UI no se congela durante procesamiento
+- [ ] DevTools > Performance: main thread libre durante calculo
+- [ ] Datos procesados correctos (comparar con version sincrona)
+
+---
+
+### Tarea 3.2: Cache para Google Drive listFiles
+
+**Archivo:** `src/services/googleDrive.ts`
+
+**Agregar cache con TTL:**
+```typescript
+// Al inicio del archivo
+interface CacheEntry<T> {
+    data: T;
+    timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry<unknown>>();
+const CACHE_TTL = 30000; // 30 segundos
+
+function getCached<T>(key: string): T | null {
+    const entry = cache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > CACHE_TTL) {
+        cache.delete(key);
+        return null;
+    }
+    return entry.data as T;
+}
+
+function setCache<T>(key: string, data: T): void {
+    cache.set(key, { data, timestamp: Date.now() });
+}
+
+// Modificar listFiles:
+export async function listFiles(folderId?: string): Promise<DriveFile[]> {
+    const cacheKey = `listFiles:${folderId || 'root'}`;
+
+    const cached = getCached<DriveFile[]>(cacheKey);
+    if (cached) {
+        return cached;
+    }
+
+    // ... resto de la implementacion existente ...
+
+    const files = /* resultado de la API */;
+    setCache(cacheKey, files);
+    return files;
+}
+```
+
+**Verificacion:**
+- [ ] Abrir modal de sync 5 veces seguidas: solo 1 request a Google API
+- [ ] Esperar 31 segundos y reabrir: nuevo request (cache expirado)
+
+---
+
+### Tarea 3.3: Batching para localStorage
+
+**Archivo:** `src/hooks/useLocalStorage.ts`
+
+**Agregar debounce para escrituras masivas:**
+```typescript
+import { useCallback, useRef } from 'react';
+
+// Queue de escrituras pendientes
+const writeQueue = new Map<string, { value: unknown; timeout: NodeJS.Timeout }>();
+
+function batchedWrite(key: string, value: unknown, delay = 100): void {
+    // Cancelar escritura pendiente anterior
+    const pending = writeQueue.get(key);
+    if (pending) {
+        clearTimeout(pending.timeout);
+    }
+
+    // Programar nueva escritura
+    const timeout = setTimeout(() => {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) {
+            console.error('localStorage write failed:', e);
+        }
+        writeQueue.delete(key);
+    }, delay);
+
+    writeQueue.set(key, { value, timeout });
+}
+
+// En el hook useLocalStorage, reemplazar:
+// localStorage.setItem(key, JSON.stringify(value));
+// Con:
+// batchedWrite(key, value);
+```
+
+**Verificacion:**
+- [ ] Importar 100 trips: localStorage se escribe 1 vez (no 100)
+- [ ] Datos persisten correctamente despues del batch
+
+---
+
+## SPRINT 4: Optimizacion Firebase
+
+**Prioridad:** ALTA
+**Tiempo estimado:** 2-3 horas
+**Riesgo:** Medio
+
+### Tarea 4.1: Reducir limit y agregar paginacion lazy
+
+**Archivo:** `src/services/firebase.ts`
+
+**Codigo actual (aproximadamente linea 86):**
+```typescript
+const maxTrips = 500;
+// ...
 const q = query(
     collection(db, 'trips'),
-    where('status', '==', 'completed'),  // Server-side filter
+    where('userId', '==', userId),
     orderBy('startDate', 'desc'),
     limit(maxTrips)
 );
 ```
 
-2. ✅ **Implementar paginación con cursor**
-   - Creado `src/hooks/usePaginatedTrips.ts`
-   - Creado `fetchTripsPage()` en firebase.ts
-   - Añadido índice en `firestore.indexes.json`
-
-3. ✅ **Separar batterySize de dependencias de suscripción**
-   - `useAppData.ts`: useEffect sin dependencias de batterySize
-   - Cálculo de consumo movido al paso de merge con `useMemo`
-
-#### Verificación:
-- [x] Query filtra trips completados server-side
-- [x] Cambiar `batterySize` NO recarga trips (useEffect sin deps)
-- [x] Índice Firestore configurado
-
----
-
-### FASE 3: Reducir Re-renders de Context
-**Tiempo:** 3-4 horas | **Riesgo:** Medio-Alto
-
-#### Tareas:
-1. **Dividir DataProvider en providers especializados**
-```
-src/providers/
-├── TripsProvider.tsx
-├── ChargesProvider.tsx
-├── FilterProvider.tsx
-├── ModalProvider.tsx
-└── DataProvider.tsx  (compose backwards-compatible)
-```
-
-2. **Memoizar updateSettings en AppContext**
+**Codigo propuesto:**
 ```typescript
-const updateSettings = useCallback((updates: Partial<Settings>) => {
-    setSettings(prev => ({ ...prev, ...updates }));
-}, []);
+const INITIAL_LIMIT = 50;
+const PAGE_SIZE = 50;
 
-const value = useMemo(() => ({
-    settings,
-    updateSettings
-}), [settings, updateSettings]);
-```
+// Nueva funcion para paginacion
+export async function fetchTripsPage(
+    userId: string,
+    lastDoc?: DocumentSnapshot,
+    pageSize = PAGE_SIZE
+): Promise<{ trips: Trip[]; lastDoc: DocumentSnapshot | null; hasMore: boolean }> {
+    let q = query(
+        collection(db, 'trips'),
+        where('userId', '==', userId),
+        where('status', '==', 'completed'), // Filtro server-side
+        orderBy('startDate', 'desc'),
+        limit(pageSize + 1) // +1 para saber si hay mas
+    );
 
-3. **Usar useMemo para valores derivados**
-   - Extraer cálculos a hooks memoizados
-
-#### Verificación:
-- [ ] React DevTools muestra menos re-renders
-- [ ] Cambiar settings no re-renderiza componentes no relacionados
-- [ ] App sigue funcionando igual
-
----
-
-### FASE 4: Optimización de Cálculos Pesados
-**Tiempo:** 4-5 horas | **Riesgo:** Medio
-
-#### Tareas:
-1. **Mover ChargingLogic.findSmartChargingWindows() a Worker**
-```typescript
-// src/workers/dataWorker.ts
-export async function findSmartChargingWindows(params: ChargingParams) {
-    // Mover lógica O(n³) aquí
-}
-```
-
-2. **Implementar cache con hash de trips**
-```typescript
-const tripsHash = useMemo(() =>
-    hashCode(filteredTrips.map(t => t.id).join(',')),
-    [filteredTrips]
-);
-```
-
-3. **Separar AI training de filtros de UI**
-   - Modelo entrena con TODOS los trips
-   - Filtros solo afectan visualización
-
-4. **Dividir findSmartChargingWindows() en funciones**
-```typescript
-analyzeChargingNeeds()      // ~50 líneas
-simulateChargingScenarios() // ~80 líneas
-selectOptimalWindows()      // ~60 líneas
-ensureContinuity()          // ~40 líneas
-```
-
-#### Verificación:
-- [ ] UI no se bloquea durante cálculos
-- [ ] Cambiar filtro no re-entrena AI
-- [ ] Performance profiler muestra mejora
-
----
-
-### FASE 5: Mejoras de UX/Loading
-**Tiempo:** 2-3 horas | **Riesgo:** Bajo
-
-#### Tareas:
-1. **Añadir skeletons**
-   - `LiveVehicleStatus` - skeleton mientras conecta
-   - `EstimatedChargeCard` - skeleton mientras calcula
-   - `ChargingInsightsModal` - loading state
-
-2. **Implementar useAsyncState**
-```typescript
-export function useAsyncState<T>(asyncFn: () => Promise<T>, deps: any[]) {
-    const [state, setState] = useState<{
-        data: T | null;
-        loading: boolean;
-        error: Error | null;
-    }>({ data: null, loading: true, error: null });
-
-    useEffect(() => {
-        setState(s => ({ ...s, loading: true }));
-        asyncFn()
-            .then(data => setState({ data, loading: false, error: null }))
-            .catch(error => setState({ data: null, loading: false, error }));
-    }, deps);
-
-    return state;
-}
-```
-
-3. **Lazy-load modales raramente usados**
-```typescript
-const MfgDateModal = lazy(() => import('./modals/MfgDateModal'));
-const ThermalStressModal = lazy(() => import('./modals/ThermalStressModal'));
-```
-
-#### Verificación:
-- [ ] Todos los estados de carga tienen feedback visual
-- [ ] Bundle size reducido
-- [ ] Lighthouse Performance score mejorado
-
----
-
-### FASE 6: Backend/Cloud Functions
-**Tiempo:** 3-4 horas | **Riesgo:** Medio
-
-#### Tareas:
-1. **Implementar cache de tokens con TTL**
-```typescript
-const tokenCache = new Map<string, { token: string; expiry: number }>();
-
-async function getValidAccessToken(vehicleId: string) {
-    const cached = tokenCache.get(vehicleId);
-    if (cached && cached.expiry > Date.now()) {
-        return cached.token;
+    if (lastDoc) {
+        q = query(q, startAfter(lastDoc));
     }
-    // refresh logic...
-    tokenCache.set(vehicleId, { token, expiry: Date.now() + 3500000 });
-    return token;
+
+    const snapshot = await getDocs(q);
+    const docs = snapshot.docs;
+    const hasMore = docs.length > pageSize;
+
+    const trips = docs
+        .slice(0, pageSize)
+        .map(doc => ({ id: doc.id, ...doc.data() } as Trip));
+
+    const newLastDoc = docs.length > 0 ? docs[docs.length - 1] : null;
+
+    return { trips, lastDoc: newLastDoc, hasMore };
+}
+
+// Modificar subscribeToTrips para usar limite inicial menor
+export function subscribeToTrips(userId: string, callback: (trips: Trip[]) => void) {
+    const q = query(
+        collection(db, 'trips'),
+        where('userId', '==', userId),
+        where('status', '==', 'completed'),
+        orderBy('startDate', 'desc'),
+        limit(INITIAL_LIMIT)
+    );
+
+    return onSnapshot(q, (snapshot) => {
+        const trips = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Trip));
+        callback(trips);
+    });
 }
 ```
 
-2. **Normalizar SoC en escritura**
-```typescript
-vehicleUpdate.lastSoC = soc > 1 ? soc / 100 : soc;
-```
-
-3. **Optimizar trip detection**
-   - Usar webhooks en lugar de polling
-   - Reducir frecuencia si no hay trip activo
-
-#### Verificación:
-- [ ] Logs muestran cache hits de tokens
-- [ ] SoC siempre llega como decimal
-- [ ] Costos de Cloud Functions reducidos
+**Verificacion:**
+- [ ] Al cargar app, solo 50 trips se descargan inicialmente
+- [ ] Scroll al final carga mas trips (si se implementa infinite scroll)
+- [ ] Firestore Console muestra menos reads
 
 ---
 
-### FASE 7: TypeScript & Code Quality
-**Tiempo:** 2-3 horas | **Riesgo:** Bajo
+### Tarea 4.2: Crear indices Firestore
 
-#### Tareas:
-1. **Añadir Zod schemas para Settings**
-```typescript
-import { z } from 'zod';
+**Archivo a crear/modificar:** `firestore.indexes.json`
 
-export const SettingsSchema = z.object({
-    batterySize: z.number().min(10).max(200),
-    electricityPrice: z.number().min(0),
-    currency: z.string().min(1).max(3),
-    // ...
-});
-
-export type Settings = z.infer<typeof SettingsSchema>;
-```
-
-2. **Tipar ProcessedData correctamente**
-```typescript
-interface AIScenario {
-    name: string;
-    speed: number;
-    efficiency: number;
-    range: number;
-}
-
-interface ProcessedData {
-    // ...
-    aiScenarios: AIScenario[];
+```json
+{
+  "indexes": [
+    {
+      "collectionGroup": "trips",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "userId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" },
+        { "fieldPath": "startDate", "order": "DESCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "chargeSessions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "vehicleId", "order": "ASCENDING" },
+        { "fieldPath": "status", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "vehicles",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "ownerId", "order": "ASCENDING" },
+        { "fieldPath": "lastUpdate", "order": "DESCENDING" }
+      ]
+    }
+  ]
 }
 ```
 
-3. **Documentar funciones públicas**
-   - JSDoc para `ChargingLogic`, `dataProcessing`, `PredictiveService`
+**Deploy:**
+```bash
+firebase deploy --only firestore:indexes
+```
 
-#### Verificación:
-- [ ] `npm run typecheck` sin errores
-- [ ] Validación detecta valores inválidos
-- [ ] IntelliSense funciona en IDE
-
----
-
-## Cronograma Sugerido
-
-| Fase | Duración | Dependencias | Prioridad |
-|------|----------|--------------|-----------|
-| 1. Quick Wins | 1-2h | Ninguna | Alta |
-| 2. Firebase | 2-3h | Fase 1 | Crítica |
-| 3. Context | 3-4h | Fase 1 | Alta |
-| 4. Cálculos | 4-5h | Fases 2, 3 | Alta |
-| 5. UX | 2-3h | Fase 3 | Media |
-| 6. Backend | 3-4h | Fase 2 | Media |
-| 7. TypeScript | 2-3h | Todas | Baja |
+**Verificacion:**
+- [ ] Firebase Console > Firestore > Indexes muestra los indices creados
+- [ ] Queries complejas no muestran warning de "index required"
 
 ---
 
-## Notas Adicionales
+### Tarea 4.3: Consolidar suscripciones duplicadas
 
-### Dependencias ya instaladas pero no usadas
-- `@tanstack/react-virtual` - Podría virtualizar listas largas
-- `zod` - Podría validar Settings
+**Problema:** `HealthReportModal.tsx` y `useVehicleStatus.ts` ambos suscriben al mismo documento.
 
-### Métricas a monitorear
-- Tiempo de carga inicial (target: < 2s)
-- Re-renders por interacción (target: < 5)
-- Bundle size (target: < 500KB gzipped)
-- Lighthouse Performance (target: > 90)
+**Archivo:** `src/components/modals/HealthReportModal.tsx`
 
-### Riesgos
-- Fase 3 (Context) tiene mayor riesgo de regresiones
-- Fase 4 (Workers) requiere testing exhaustivo
-- Fase 6 (Backend) afecta a usuarios en producción
+**Buscar y eliminar suscripcion duplicada:**
+```typescript
+// ELIMINAR este useEffect completo (aproximadamente lineas 49-70):
+useEffect(() => {
+    if (!activeCar?.smartcarVehicleId) return;
+
+    const vehicleRef = doc(db, 'vehicles', activeCar.smartcarVehicleId);
+    const unsubscribe = onSnapshot(vehicleRef, (snapshot) => {
+        // ... logica ...
+    });
+
+    return () => unsubscribe();
+}, [activeCar?.smartcarVehicleId]);
+```
+
+**Reemplazar con uso del hook existente:**
+```typescript
+import { useVehicleStatus } from '@/hooks/useVehicleStatus';
+
+// En el componente:
+const { vehicleData, loading, error } = useVehicleStatus(activeCar?.smartcarVehicleId);
+```
+
+**Verificacion:**
+- [ ] Solo 1 listener activo por vehiculo (verificar en Firebase Console > Usage)
+- [ ] HealthReportModal muestra datos correctos
 
 ---
 
-*Documento generado automáticamente. Última actualización: 2026-02-09*
+## SPRINT 5: Dividir DataProvider (ALTO RIESGO)
+
+**Prioridad:** ALTA
+**Tiempo estimado:** 5-7 dias
+**Riesgo:** ALTO - Requiere tests exhaustivos
+
+### Tarea 5.1: Crear providers especializados
+
+**Crear archivos:**
+
+1. `src/providers/TripsProvider.tsx`
+2. `src/providers/ChargesProvider.tsx`
+3. `src/providers/ModalProvider.tsx`
+4. `src/providers/FiltersProvider.tsx`
+5. `src/providers/SyncProvider.tsx`
+
+**Ejemplo para TripsProvider:**
+```typescript
+// src/providers/TripsProvider.tsx
+import { createContext, useContext, useState, useCallback, useMemo, ReactNode } from 'react';
+import type { Trip } from '@/types';
+
+interface TripsContextType {
+    trips: Trip[];
+    setTrips: (trips: Trip[]) => void;
+    addTrip: (trip: Trip) => void;
+    updateTrip: (id: string, updates: Partial<Trip>) => void;
+    deleteTrip: (id: string) => void;
+    selectedTrip: Trip | null;
+    setSelectedTrip: (trip: Trip | null) => void;
+}
+
+const TripsContext = createContext<TripsContextType | null>(null);
+
+export function TripsProvider({ children }: { children: ReactNode }) {
+    const [trips, setTrips] = useState<Trip[]>([]);
+    const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+
+    const addTrip = useCallback((trip: Trip) => {
+        setTrips(prev => [...prev, trip]);
+    }, []);
+
+    const updateTrip = useCallback((id: string, updates: Partial<Trip>) => {
+        setTrips(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    }, []);
+
+    const deleteTrip = useCallback((id: string) => {
+        setTrips(prev => prev.filter(t => t.id !== id));
+    }, []);
+
+    const value = useMemo(() => ({
+        trips,
+        setTrips,
+        addTrip,
+        updateTrip,
+        deleteTrip,
+        selectedTrip,
+        setSelectedTrip
+    }), [trips, selectedTrip, addTrip, updateTrip, deleteTrip]);
+
+    return (
+        <TripsContext.Provider value={value}>
+            {children}
+        </TripsContext.Provider>
+    );
+}
+
+export function useTrips() {
+    const context = useContext(TripsContext);
+    if (!context) {
+        throw new Error('useTrips must be used within TripsProvider');
+    }
+    return context;
+}
+```
+
+**Tarea 5.2: Crear DataProvider como compositor (backwards-compatible)**
+
+```typescript
+// src/providers/DataProvider.tsx (refactorizado)
+import { ReactNode } from 'react';
+import { TripsProvider, useTrips } from './TripsProvider';
+import { ChargesProvider, useCharges } from './ChargesProvider';
+import { ModalProvider, useModals } from './ModalProvider';
+import { FiltersProvider, useFilters } from './FiltersProvider';
+import { SyncProvider, useSync } from './SyncProvider';
+
+// Provider compuesto
+export function DataProvider({ children }: { children: ReactNode }) {
+    return (
+        <SyncProvider>
+            <FiltersProvider>
+                <TripsProvider>
+                    <ChargesProvider>
+                        <ModalProvider>
+                            {children}
+                        </ModalProvider>
+                    </ChargesProvider>
+                </TripsProvider>
+            </FiltersProvider>
+        </SyncProvider>
+    );
+}
+
+// Hook de compatibilidad (DEPRECADO - migrar componentes gradualmente)
+/** @deprecated Use useTrips, useCharges, useModals, useFilters, useSync instead */
+export function useData() {
+    const trips = useTrips();
+    const charges = useCharges();
+    const modals = useModals();
+    const filters = useFilters();
+    const sync = useSync();
+
+    return {
+        ...trips,
+        ...charges,
+        ...modals,
+        ...filters,
+        ...sync
+    };
+}
+```
+
+**Verificacion:**
+- [ ] App funciona exactamente igual con el nuevo DataProvider
+- [ ] `useData()` sigue funcionando (deprecado pero compatible)
+- [ ] React DevTools: cambiar trip NO re-renderiza componentes de charges
+
+---
+
+## SPRINT 6-8: Tareas Adicionales (Resumen)
+
+### Sprint 6: Dividir archivos grandes
+- [ ] `SettingsModal.tsx` (893 lineas) -> 4 sub-componentes
+- [ ] `useGoogleSync.ts` (768 lineas) -> 3 hooks especializados
+- [ ] `PredictiveService.ts` (630 lineas) -> separar por algoritmo
+
+### Sprint 7: TypeScript strictness
+- [ ] Eliminar `any` en 13 archivos
+- [ ] Agregar validacion zod en imports de Google Drive
+- [ ] Implementar Error Boundaries por seccion
+
+### Sprint 8: Bundle optimization
+- [ ] Lazy load 20+ modales raramente usados
+- [ ] Eliminar dependencias muertas (leaflet, react-leaflet) si TripMapModal no se completa
+- [ ] Analizar bundle con webpack-bundle-analyzer
+
+> **NOTA sobre sql.js (~300KB):** Es **CRITICO** para la version gratuita.
+> Se usa en `src/hooks/useDatabase.ts` para importar/exportar `EC_database.db` del BYD.
+> **NO ELIMINAR.** Alternativa futura: `wa-sqlite` (~150KB) si se necesita reducir bundle.
+
+---
+
+## Metricas de Exito
+
+| Metrica | Actual | Objetivo |
+|---------|--------|----------|
+| Lighthouse Performance | ~65 | > 85 |
+| TTI (Time to Interactive) | ~4.5s | < 3s |
+| Bundle size (gzipped) | ~800KB | < 500KB |
+| Re-renders por interaccion | 15-20 | < 5 |
+| Firestore reads/mes/usuario | ~2500 | < 500 |
+
+---
+
+## Comandos Utiles
+
+```bash
+# Verificar build
+npm run build
+
+# Verificar tipos
+npx tsc --noEmit
+
+# Buscar codigo zombie
+grep -r "FUNCION_A_BUSCAR" src/
+
+# Analizar bundle
+npm run build && npx webpack-bundle-analyzer dist/stats.json
+
+# Deploy Firestore rules
+firebase deploy --only firestore:rules
+
+# Deploy indices
+firebase deploy --only firestore:indexes
+```
+
+---
+
+## Historial de Cambios
+
+| Fecha | Version | Cambios |
+|-------|---------|---------|
+| 2026-02-10 | 2.0 | Auditoria completa, documento optimizado para LLMs |
+| 2026-02-09 | 1.0 | Version inicial |
+
+---
+
+*Documento autocontenido para continuidad entre sesiones LLM.*
+*Ultima actualizacion: 2026-02-10*

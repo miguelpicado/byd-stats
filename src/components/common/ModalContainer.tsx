@@ -18,48 +18,53 @@ const RegistryRestoreModalLazy = React.lazy(() => import('../modals/RegistryRest
 const ChargeNotificationModalLazy = React.lazy(() => import('../modals/ChargeNotificationModal'));
 const BatteryStatusModalLazy = React.lazy(() => import('../modals/BatteryStatusModal'));
 
+// Rarely used modals added in Sprint 8
+const AddCarModalLazy = React.lazy(() => import('../modals/AddCarModal'));
+const AlertHistoryModalLazy = React.lazy(() => import('../modals/AlertHistoryModal'));
+const ChargeInsightsModalLazy = React.lazy(() => import('../modals/ChargeInsightsModal'));
+const ChargingInsightsModalLazy = React.lazy(() => import('../modals/ChargingInsightsModal'));
+const FAQModalLazy = React.lazy(() => import('../modals/FAQModal'));
+const HealthReportModalLazy = React.lazy(() => import('../modals/HealthReportModal'));
+const MfgDateModalLazy = React.lazy(() => import('../modals/MfgDateModal'));
+const OdometerAdjustmentModalLazy = React.lazy(() => import('../modals/OdometerAdjustmentModal'));
+const RangeInsightsModalLazy = React.lazy(() => import('../modals/RangeInsightsModal'));
+const SoHExplanationModalLazy = React.lazy(() => import('../modals/SoHExplanationModal'));
+const ThermalStressModalLazy = React.lazy(() => import('../modals/ThermalStressModal'));
+const TripInsightsModalLazy = React.lazy(() => import('../modals/TripInsightsModal'));
+
 const ModalContainer: React.FC = () => {
-    const { modals, googleSync, confirmModalState } = useData();
+    const {
+        modals,
+        googleSync,
+        confirmModalState,
+        closeModal,
+        openModal,
+        charges,
+        settings,
+        stats,
+        aiScenarios,
+        aiLoss,
+        aiSoH,
+        aiSoHStats,
+        trips
+    } = useData();
 
     return (
         <Suspense fallback={null}>
-            {/* Trip Detail Modal */}
+            {/* Core/Primary Modals */}
             {modals.tripDetail && <TripDetailModalLazy />}
-
-            {/* Settings Modal */}
             {modals.settings && <SettingsModalLazy />}
-
-            {/* Database Management Modal (History) */}
             {modals.history && <DatabaseUploadModalLazy />}
-
-            {/* Upload Options Modal (Simple) */}
             {modals.upload && <UploadOptionsModalLazy />}
-
-            {/* Filter Modal */}
             {modals.filter && <FilterModalLazy />}
-
-            {/* Legal Modal */}
             {modals.legal && <LegalModalLazy />}
-
-            {/* Add/Edit Charge Modal */}
             {modals.addCharge && <AddChargeModalLazy />}
-
-            {/* Charge Detail Modal */}
             {modals.chargeDetail && <ChargeDetailModalLazy />}
-
-            {/* Help/Bug Report Modal */}
             {modals.help && <HelpModalLazy />}
-
-            {/* Sync Conflict Modal */}
             {googleSync?.pendingConflict && <SyncConflictModalLazy />}
-
-            {/* Confirmation Modal */}
             {confirmModalState?.isOpen && <ConfirmationModalLazy />}
-
-            {/* Cloud Backups Modal */}
             {modals.backups && <CloudBackupsModalLazy />}
 
-            {/* Registry Restore Modal */}
             {modals.registryRestore && (
                 <RegistryRestoreModalLazy
                     registryCars={modals.registryCars}
@@ -68,11 +73,112 @@ const ModalContainer: React.FC = () => {
                 />
             )}
 
-            {/* Charge Notification Modal (auto-shows when charge sessions complete) */}
             <ChargeNotificationModalLazy />
-
-            {/* Battery Status Modal */}
             {modals.batteryStatus && <BatteryStatusModalLazy />}
+
+            {/* Sprint 8 Lazy Modals */}
+            {modals.addCar && (
+                <AddCarModalLazy
+                    isOpen={modals.addCar}
+                    onClose={() => closeModal('addCar')}
+                    onSave={() => { }}
+                />
+            )}
+
+            {modals.alertHistory && (
+                <AlertHistoryModalLazy
+                    isOpen={modals.alertHistory}
+                    onClose={() => closeModal('alertHistory')}
+                    historyAnomalies={[]}
+                    onDelete={() => { }}
+                />
+            )}
+
+            {modals.chargeInsights && (
+                <ChargeInsightsModalLazy
+                    isOpen={modals.chargeInsights}
+                    onClose={() => closeModal('chargeInsights')}
+                    type={modals.chargeInsightsType || 'kwh'}
+                    charges={charges}
+                    batterySize={Number(settings.batterySize)}
+                    chargerTypes={settings.chargerTypes}
+                />
+            )}
+
+            {modals.chargingInsights && (
+                <ChargingInsightsModalLazy
+                    isOpen={modals.chargingInsights}
+                    onClose={() => closeModal('chargingInsights')}
+                    stats={stats as any}
+                    settings={settings}
+                />
+            )}
+
+            {modals.faq && <FAQModalLazy />}
+
+            {modals.healthReport && (
+                <HealthReportModalLazy
+                    isOpen={modals.healthReport}
+                    onClose={() => closeModal('healthReport')}
+                    anomalies={[]}
+                    onAcknowledge={() => { }}
+                />
+            )}
+
+            {modals.mfgDate && (
+                <MfgDateModalLazy
+                    isOpen={modals.mfgDate}
+                    onClose={() => closeModal('mfgDate')}
+                    onSave={() => { }}
+                />
+            )}
+
+            {modals.odometerAdjustment && (
+                <OdometerAdjustmentModalLazy
+                    isOpen={modals.odometerAdjustment}
+                    onClose={() => closeModal('odometerAdjustment')}
+                />
+            )}
+
+            {modals.rangeInsights && (
+                <RangeInsightsModalLazy
+                    isOpen={modals.rangeInsights}
+                    onClose={() => closeModal('rangeInsights')}
+                    aiScenarios={aiScenarios || []}
+                    aiLoss={aiLoss}
+                />
+            )}
+
+            {modals.sohExplanation && (
+                <SoHExplanationModalLazy
+                    isOpen={modals.sohExplanation}
+                    onClose={() => closeModal('sohExplanation')}
+                    type={modals.sohExplanationType as any}
+                />
+            )}
+
+            {modals.thermalStress && (
+                <ThermalStressModalLazy
+                    isOpen={modals.thermalStress}
+                    onClose={() => closeModal('thermalStress')}
+                    onSave={() => { }}
+                />
+            )}
+
+            {modals.tripInsights && (
+                <TripInsightsModalLazy
+                    isOpen={modals.tripInsights}
+                    onClose={() => closeModal('tripInsights')}
+                    type={modals.tripInsightsType || 'distance'}
+                    trips={trips}
+                    settings={settings}
+                    summary={stats?.summary}
+                    aiSoH={aiSoH}
+                    aiSoHStats={aiSoHStats}
+                    onMfgDateClick={() => openModal('mfgDate')}
+                    onThermalStressClick={() => openModal('thermalStress')}
+                />
+            )}
         </Suspense>
     );
 };

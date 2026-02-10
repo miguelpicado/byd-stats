@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '../components/Icons'; // Assuming BYD_RED is exported from Icons or another constant file
@@ -9,18 +9,27 @@ import { Upload, Cloud } from '../components/Icons';
 // But usually constants are in utils/constants.js. 
 // However, assuming App.jsx import is correct for now.
 
+interface LandingPageProps {
+    isCompact?: boolean;
+    sqlReady: boolean;
+    error: string | null;
+    googleSync: any;
+    isNative: boolean;
+    onFileProcess: (file: File, merge?: boolean) => Promise<void>;
+}
+
 const LandingPage = ({
     isCompact,
     sqlReady,
     error,
     googleSync,
     isNative,
-    onFileProcess, // Wrapper around processDB to handle file object
-}) => {
+    onFileProcess,
+}: LandingPageProps) => {
     const { t } = useTranslation();
     const [dragOver, setDragOver] = useState(false);
 
-    const handleDrop = useCallback((e) => {
+    const handleDrop = useCallback((e: any) => {
         e.preventDefault();
         setDragOver(false);
         const f = e.dataTransfer.files[0];
@@ -34,7 +43,7 @@ const LandingPage = ({
         }
     }, [onFileProcess, t]);
 
-    const handleFileChange = useCallback((e) => {
+    const handleFileChange = useCallback((e: any) => {
         const f = e.target.files[0];
         if (f) {
             const fileName = f.name.toLowerCase();

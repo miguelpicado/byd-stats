@@ -96,7 +96,7 @@ const TabsManager: FC<TabsManagerProps> = memo(({
     t
 }) => {
     // Helper for class names
-    const getTabClassName = (tabId: string, isActive: boolean, isFading: boolean, baseClass = 'tab-content-container') => {
+    const getTabClassName = (_tabId: string, isActive: boolean, isFading: boolean, baseClass = 'tab-content-container') => {
         const classes = [baseClass];
         if (isActive && isFading) {
             classes.push('tab-fade-in');
@@ -177,7 +177,7 @@ const TabsManager: FC<TabsManagerProps> = memo(({
                                                 monthly={monthly}
                                                 tripDist={tripDist}
                                                 smallChartHeight={smallChartHeight}
-                                                overviewSpacing={overviewSpacingVertical}
+                                                overviewSpacing={String(overviewSpacingVertical)}
                                                 onAddCharge={() => openModal('addCharge')}
                                                 trips={rawTrips}
                                                 settings={settings}
@@ -235,9 +235,9 @@ const TabsManager: FC<TabsManagerProps> = memo(({
                                                 <RecordsTab
                                                     summary={summary}
                                                     top={top}
-                                                    recordsItemPadding={recordsItemPadding}
-                                                    recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                                                    recordsListHeightHorizontal={recordsListHeightHorizontal}
+                                                    recordsItemPadding={String(recordsItemPadding)}
+                                                    recordsItemPaddingHorizontal={String(recordsItemPaddingHorizontal)}
+                                                    recordsListHeightHorizontal={String(recordsListHeightHorizontal)}
                                                 />
                                             </Suspense>
                                         )}
@@ -308,7 +308,7 @@ const TabsManager: FC<TabsManagerProps> = memo(({
                                     monthly={monthly}
                                     tripDist={tripDist}
                                     smallChartHeight={smallChartHeight}
-                                    overviewSpacing={overviewSpacingHorizontal}
+                                    overviewSpacing={String(overviewSpacingHorizontal)}
                                     trips={rawTrips}
                                     settings={settings}
                                 />
@@ -361,9 +361,9 @@ const TabsManager: FC<TabsManagerProps> = memo(({
                                     key={isActive ? 'records-active' : 'records-bg'}
                                     summary={summary}
                                     top={top}
-                                    recordsItemPadding={recordsItemPadding}
-                                    recordsItemPaddingHorizontal={recordsItemPaddingHorizontal}
-                                    recordsListHeightHorizontal={recordsListHeightHorizontal}
+                                    recordsItemPadding={String(recordsItemPadding)}
+                                    recordsItemPaddingHorizontal={String(recordsItemPaddingHorizontal)}
+                                    recordsListHeightHorizontal={String(recordsListHeightHorizontal)}
                                 />
                             )}
                             {tab.id === 'history' && (

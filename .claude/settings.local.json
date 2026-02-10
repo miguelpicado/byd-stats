@@ -37,7 +37,9 @@
       "Bash(git commit:*)",
       "Bash(npx firebase:*)",
       "Bash(grep:*)",
-      "Bash(npm run typecheck:*)"
+      "Bash(npm run typecheck:*)",
+      "Bash(dir:*)",
+      "Bash(findstr:*)"
     ]
   }
 }

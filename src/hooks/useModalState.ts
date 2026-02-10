@@ -16,9 +16,23 @@ export interface ModalsState {
     backups: boolean;
     registryRestore: boolean;
     registryCars: any[]; // Define specific type if possible
-    legal: boolean; // Added dynamically in original code but better defined here
+    legal: boolean;
     faq: boolean;
     batteryStatus: boolean;
+    addCar: boolean;
+    alertHistory: boolean;
+    chargeInsights: boolean;
+    chargeInsightsType?: 'kwh' | 'cost' | 'price' | 'count' | 'fuel';
+    chargingInsights: boolean;
+    healthReport: boolean;
+    mfgDate: boolean;
+    odometerAdjustment: boolean;
+    rangeInsights: boolean;
+    sohExplanation: boolean;
+    sohExplanationType?: string;
+    thermalStress: boolean;
+    tripInsights: boolean;
+    tripInsightsType?: 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays' | 'stationary' | 'soh' | 'fuel' | 'range';
 }
 
 /**
@@ -43,7 +57,18 @@ const useModalState = () => {
         registryCars: [],
         legal: false,
         faq: false,
-        batteryStatus: false
+        batteryStatus: false,
+        addCar: false,
+        alertHistory: false,
+        chargeInsights: false,
+        chargingInsights: false,
+        healthReport: false,
+        mfgDate: false,
+        odometerAdjustment: false,
+        rangeInsights: false,
+        sohExplanation: false,
+        thermalStress: false,
+        tripInsights: false
     });
 
     // Track additional modal-related state
@@ -138,7 +163,18 @@ const useModalState = () => {
             registryCars: [],
             legal: false,
             faq: false,
-            batteryStatus: false
+            batteryStatus: false,
+            addCar: false,
+            alertHistory: false,
+            chargeInsights: false,
+            chargingInsights: false,
+            healthReport: false,
+            mfgDate: false,
+            odometerAdjustment: false,
+            rangeInsights: false,
+            sohExplanation: false,
+            thermalStress: false,
+            tripInsights: false
         });
         setSelectedTrip(null);
         setSelectedCharge(null);

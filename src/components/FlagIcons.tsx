@@ -1,13 +1,13 @@
-import React from 'react';
 
-export const GaliciaFlag = ({ className }) => (
+
+export const GaliciaFlag = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 640 480" className={className} xmlns="http://www.w3.org/2000/svg">
         <rect width="640" height="480" fill="white" />
         <path d="M0,0 L0,160 L427,480 L640,480 L640,320 L213,0 Z" fill="#0092E6" />
     </svg>
 );
 
-export const CataloniaFlag = ({ className }) => (
+export const CataloniaFlag = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 640 480" className={className} xmlns="http://www.w3.org/2000/svg">
         <rect width="640" height="480" fill="#FFED00" />
         <rect y="48" width="640" height="48" fill="#DA121A" />
@@ -17,7 +17,7 @@ export const CataloniaFlag = ({ className }) => (
     </svg>
 );
 
-export const BasqueFlag = ({ className }) => (
+export const BasqueFlag = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 640 480" className={className} xmlns="http://www.w3.org/2000/svg">
         <path fill="#d52b1e" d="M0 0h640v480H0z" />
         <path fill="#fff" d="M0 200h640v80H0z" />
@@ -27,14 +27,14 @@ export const BasqueFlag = ({ className }) => (
     </svg>
 );
 
-export const SpainFlag = ({ className }) => (
+export const SpainFlag = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 640 480" className={className} xmlns="http://www.w3.org/2000/svg">
         <rect width="640" height="480" fill="#AA151B" />
         <rect width="640" height="240" y="120" fill="#F1BF00" />
     </svg>
 );
 
-export const UKFlag = ({ className }) => (
+export const UKFlag = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 640 480" className={className} xmlns="http://www.w3.org/2000/svg">
         <path fill="#012169" d="M0 0h640v480H0z" />
         <path fill="#FFF" d="M75 0 0 53v28L640 480h-87l-75-53v28L0 0h75zM640 0v53L0 480v-28L640 0z" />
@@ -44,7 +44,7 @@ export const UKFlag = ({ className }) => (
     </svg>
 );
 
-export const PortugalFlag = ({ className }) => (
+export const PortugalFlag = ({ className }: { className?: string }) => (
     <svg viewBox="0 0 640 480" className={className} xmlns="http://www.w3.org/2000/svg">
         <rect width="640" height="480" fill="#C60C30" />
         <rect width="240" height="480" fill="#006600" />

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { DataProvider, useData } from '../../../providers/DataProvider';
@@ -32,8 +32,8 @@ vi.mock('@/hooks/useDatabase', () => ({
 }));
 
 // Mock window.crypto.randomUUID for CarContext
-if (!global.crypto.randomUUID) {
-    global.crypto.randomUUID = () => 'test-uuid-' + Math.random();
+if (!global.crypto.randomUUID) { // eslint-disable-line no-undef
+    global.crypto.randomUUID = () => 'test-uuid-' + Math.random(); // eslint-disable-line no-undef
 }
 
 describe('Import DB Integration Flow', () => {
@@ -62,7 +62,7 @@ describe('Import DB Integration Flow', () => {
                 <input
                     type="file"
                     data-testid="db-input"
-                    onChange={(e) => {
+                    onChange={(_e) => {
                         // In reality, this is handled by useFileHandling
                         // But we want to see if the action reaches the database hook
                     }}

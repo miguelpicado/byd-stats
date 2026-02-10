@@ -20,6 +20,9 @@ interface TripsContextValue {
     allTrips: Trip[];
     filteredTrips: Trip[];
     months: string[];
+    hasMore: boolean;
+    isLoadingMore: boolean;
+    loadMore: () => Promise<void>;
 
     // Stats & AI
     stats: ProcessedData | null;
@@ -56,7 +59,7 @@ export const useTripsContext = () => {
     return context;
 };
 
-export const TripsProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function TripsProvider({ children }: { children: ReactNode }) {
     const { settings } = useApp();
     const { activeCarId } = useCar();
     const { charges } = useChargesContext();
@@ -75,7 +78,7 @@ export const TripsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     } = useTrips(activeCarId);
 
     // 2. Merged Trips (Firebase + Local)
-    const { allTrips, months } = useMergedTrips(localTrips, settings);
+    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings);
 
     // 3. Filtering
     const filteredTrips = useMemo(() => {
@@ -120,6 +123,9 @@ export const TripsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         allTrips,
         filteredTrips,
         months,
+        hasMore,
+        isLoadingMore,
+        loadMore,
 
         stats: processed.data,
         isProcessing: processed.isProcessing,
@@ -143,7 +149,7 @@ export const TripsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         setDeletedAnomalies
     }), [
         allTrips, setRawTrips, tripHistory, setTripHistory,
-        filteredTrips, months,
+        filteredTrips, months, hasMore, isLoadingMore, loadMore,
         processed,
         clearData, saveToHistory, loadFromHistory, clearHistory,
         acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
@@ -154,4 +160,4 @@ export const TripsProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             {children}
         </TripsContext.Provider>
     );
-};
+}

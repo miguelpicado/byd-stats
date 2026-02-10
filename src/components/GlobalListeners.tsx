@@ -5,24 +5,24 @@ import { App as CapacitorApp } from '@capacitor/app';
 import { logger } from '@core/logger';
 import { useData } from '@/providers/DataProvider';
 
-const GlobalListeners = ({ activeTab }) => {
+const GlobalListeners = ({ activeTab }: { activeTab: string }) => {
     const { t } = useTranslation();
     const isNative = Capacitor.isNativePlatform();
 
     const {
-        trips: rawTrips,
-        setRawTrips,
         // File handling
         fileHandling,
         // Database
         database,
         // Modals
         modals,
-        openModal,
         closeModal,
         isAnyModalOpen,
         // Selection
-        setSelectedTrip
+        setSelectedTrip,
+        // Data
+        trips: rawTrips,
+        setRawTrips
     } = useData();
 
     const { pendingFile, clearPendingFile, readFile } = fileHandling;
@@ -89,7 +89,7 @@ const GlobalListeners = ({ activeTab }) => {
                 clearPendingFile();
             } catch (err) {
                 logger.error('[FileHandling] Error processing file:', err);
-                alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + err.message);
+                alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + (err as Error).message);
                 clearPendingFile();
             }
         };

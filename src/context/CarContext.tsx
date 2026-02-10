@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, ReactNode, useMemo } from 'react';
 import { logger } from '@core/logger';
 import { STORAGE_KEY, TRIP_HISTORY_KEY, CHARGES_STORAGE_KEY, SETTINGS_KEY } from '@core/constants';
 import { Car } from '@/types';
@@ -135,7 +135,7 @@ export const CarProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         }
     }, [activeCarId]);
 
-    const value: CarContextType = {
+    const value: CarContextType = useMemo(() => ({
         cars,
         activeCarId,
         setActiveCarId,
@@ -143,7 +143,7 @@ export const CarProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         addCar,
         updateCar,
         deleteCar
-    };
+    }), [cars, activeCarId, addCar, updateCar, deleteCar]);
 
     return (
         <CarContext.Provider value={value}>

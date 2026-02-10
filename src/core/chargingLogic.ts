@@ -87,20 +87,7 @@ export const ChargingLogic = {
         };
     },
 
-    /**
-     * Legacy function kept for compatibility if needed, but redirects to smart logic wrapper
-     * @deprecated Use findSmartChargingWindows
-     */
-    findOptimalChargingWindow: (_trips: Trip[], _settings?: Settings): { day: string; start: string; end: string; confidence: number } | null => {
-        // Warning: This legacy function is synchronous and cannot call the new async logic.
-        // Returning default Sunday window as fallback.
-        return {
-            day: 'Domingo',
-            start: '00:00',
-            end: '10:00',
-            confidence: 0.5
-        };
-    },
+
 
     /**
      * Recommends charging type (Slow vs Fast)

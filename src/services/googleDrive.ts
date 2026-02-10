@@ -6,6 +6,28 @@ const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
 const DB_FILENAME = 'byd_stats_data.json';
 const FOLDER_ID = 'appDataFolder';
 
+interface CacheEntry<T> {
+    data: T;
+    timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry<unknown>>();
+const CACHE_TTL = 30000; // 30 seconds
+
+function getCached<T>(key: string): T | null {
+    const entry = cache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.timestamp > CACHE_TTL) {
+        cache.delete(key);
+        return null;
+    }
+    return entry.data as T;
+}
+
+function setCache<T>(key: string, data: T): void {
+    cache.set(key, { data, timestamp: Date.now() });
+}
+
 let accessToken: string | null = null;
 
 export interface GoogleDriveFile {
@@ -74,6 +96,13 @@ export const googleDriveService = {
      */
     listFiles: async (filename: string = DB_FILENAME): Promise<GoogleDriveFile[]> => {
         try {
+            const cacheKey = `listFiles:${filename}`;
+            const cached = getCached<GoogleDriveFile[]>(cacheKey);
+            if (cached) {
+                logger.debug(`[Drive] Serving ${filename} from cache`);
+                return cached;
+            }
+
             const query = `name = '${filename}'`;
             const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=10&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
 
@@ -86,7 +115,9 @@ export const googleDriveService = {
             }
 
             const data = await response.json();
-            return data.files as GoogleDriveFile[];
+            const files = data.files as GoogleDriveFile[];
+            setCache(cacheKey, files);
+            return files;
         } catch (error) {
             logger.error('Error listing files', error);
             throw error;

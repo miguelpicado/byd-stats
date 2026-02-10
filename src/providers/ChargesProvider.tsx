@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import useChargesData from '@hooks/useChargesData';
 import { useCar } from '@/context/CarContext';
 
@@ -15,7 +15,7 @@ export const useChargesContext = () => {
     return context;
 };
 
-export const ChargesProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function ChargesProvider({ children }: { children: ReactNode }) {
     const { activeCarId } = useCar();
     const chargesData = useChargesData(activeCarId);
 
@@ -24,4 +24,4 @@ export const ChargesProvider: React.FC<{ children: ReactNode }> = ({ children })
             {children}
         </ChargesContext.Provider>
     );
-};
+}

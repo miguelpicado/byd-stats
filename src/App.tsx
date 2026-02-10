@@ -33,7 +33,6 @@ export default function BYDStatsAnalyzer() {
 
     // Sub-state Objects
     allTripsState,
-    allChargesState,
 
     // Actions
     processDB,
@@ -146,18 +145,6 @@ export default function BYDStatsAnalyzer() {
         <AllChargesViewLazy
           charges={charges}
           chargerTypes={settings.chargerTypes || []}
-          filterType={allChargesState.filterType}
-          month={allChargesState.month}
-          dateFrom={allChargesState.dateFrom}
-          dateTo={allChargesState.dateTo}
-          sortBy={allChargesState.sortBy}
-          sortOrder={allChargesState.sortOrder as 'asc' | 'desc'}
-          setFilterType={allChargesState.setFilterType}
-          setMonth={allChargesState.setMonth}
-          setDateFrom={allChargesState.setDateFrom}
-          setDateTo={allChargesState.setDateTo}
-          setSortBy={allChargesState.setSortBy}
-          setSortOrder={allChargesState.setSortOrder as React.Dispatch<React.SetStateAction<'asc' | 'desc'>>}
           openModal={openModal as any}
           closeModal={closeModal as any}
           setSelectedCharge={setSelectedCharge}

@@ -9,7 +9,7 @@ const ThemeManager = () => {
 
     // Theme management - UNIFIED AND ROBUST
     useEffect(() => {
-        const applyTheme = (isDark) => {
+        const applyTheme = (isDark: boolean) => {
             // 1. CSS Classes
             if (isDark) {
                 document.documentElement.classList.add('dark');
@@ -25,11 +25,11 @@ const ThemeManager = () => {
             let colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
             if (!colorSchemeMeta) {
                 colorSchemeMeta = document.createElement('meta');
-                colorSchemeMeta.name = 'color-scheme';
+                (colorSchemeMeta as HTMLMetaElement).name = 'color-scheme';
                 document.head.appendChild(colorSchemeMeta);
             }
             // Set to ONLY the active theme, not "light dark" which allows system override
-            colorSchemeMeta.content = isDark ? 'dark' : 'light';
+            (colorSchemeMeta as HTMLMetaElement).content = isDark ? 'dark' : 'light';
 
             // 3. PWA theme-color meta tag (for status bar in PWA)
             let themeColorMeta = document.querySelector('meta[name="theme-color"]');
@@ -42,7 +42,7 @@ const ThemeManager = () => {
             // 4. Native StatusBar (for Capacitor apps)
             if (isNative && window.StatusBar) {
                 window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-                    .catch(e => logger.error('StatusBar error:', e));
+                    .catch((e: any) => logger.error('StatusBar error:', e));
             }
         };
 
@@ -54,7 +54,7 @@ const ThemeManager = () => {
 
             // Listen for system changes
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            const handler = (e) => applyTheme(e.matches);
+            const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
 
             mediaQuery.addEventListener('change', handler);
             return () => mediaQuery.removeEventListener('change', handler);

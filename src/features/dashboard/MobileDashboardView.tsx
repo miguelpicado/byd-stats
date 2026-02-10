@@ -63,7 +63,7 @@ const MobileDashboardView = memo(({
     const { smallChartHeight, patternsChartHeight, largeChartHeight, overviewSpacingVertical, patternsSpacing, recordsItemPadding, recordsItemPaddingHorizontal, recordsListHeightHorizontal } = useChartDimensions({ isVertical: true, isFullscreenBYD: false, isCompact });
 
     // Helper for class names
-    const getTabClassName = (tabId: string, isActive: boolean, isFading: boolean, baseClass = 'tab-content-container') => {
+    const getTabClassName = (_tabId: string, isActive: boolean, isFading: boolean, baseClass = 'tab-content-container') => {
         const classes = [baseClass];
         if (isActive && isFading) {
             classes.push('tab-fade-in');
@@ -155,7 +155,7 @@ const MobileDashboardView = memo(({
                                                             trips={rawTrips}
                                                             charges={charges}
                                                             isActive={isActive}
-                                                            onTripSelect={onTripSelect}
+                                                            onTripSelect={onTripSelect || (() => { })}
                                                             onChargeSelect={onChargeSelect}
                                                         />
                                                     </Suspense>
@@ -183,7 +183,7 @@ const MobileDashboardView = memo(({
                                                             weekday={weekday || []}
                                                             hourly={hourly || []}
                                                             summary={summary || null}
-                                                            patternsSpacing={patternsSpacing}
+                                                            patternsSpacing={parseFloat(patternsSpacing)}
                                                             patternsChartHeight={patternsChartHeight}
                                                             isActive={isActive}
                                                         />

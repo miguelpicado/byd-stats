@@ -9,7 +9,7 @@ import LiveVehicleStatus from '@components/cards/LiveVehicleStatus';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
 import HealthReportModal from '@components/modals/HealthReportModal';
-import { MapPin, Zap, Battery, TrendingUp, Activity, Fuel, IconProps, AlertTriangle } from '@components/Icons';
+import { MapPin, Zap, Battery, Activity, Fuel, IconProps, AlertTriangle } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
 import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
 import { AnomalyService, Anomaly } from '@/services/AnomalyService';

@@ -1,25 +1,14 @@
-import React, { useMemo } from 'react';
+import React, { useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import ModalContainer from '../../components/common/ModalContainer';
 import VirtualizedChargeList from '../../components/lists/VirtualizedChargeList';
+import { useFilteredData } from '../../hooks/useFilteredData';
 
 import { Charge, ChargerType } from '@/types';
 
 interface AllChargesViewProps {
     charges: Charge[];
     chargerTypes: ChargerType[];
-    filterType: string;
-    month: string;
-    dateFrom: string;
-    dateTo: string;
-    sortBy: string;
-    sortOrder: 'asc' | 'desc';
-    setFilterType: (val: string) => void;
-    setMonth: (val: string) => void;
-    setDateFrom: (val: string) => void;
-    setDateTo: (val: string) => void;
-    setSortBy: (val: string) => void;
-    setSortOrder: React.Dispatch<React.SetStateAction<'asc' | 'desc'>>;
     openModal: (modal: string) => void;
     closeModal: (modal: string) => void;
     setSelectedCharge: (charge: Charge | null) => void;
@@ -30,18 +19,6 @@ interface AllChargesViewProps {
 const AllChargesView = ({
     charges,
     chargerTypes,
-    filterType,
-    month,
-    dateFrom,
-    dateTo,
-    sortBy,
-    sortOrder,
-    setFilterType,
-    setMonth,
-    setDateFrom,
-    setDateTo,
-    setSortBy,
-    setSortOrder,
     openModal,
     closeModal,
     setSelectedCharge,
@@ -50,49 +27,60 @@ const AllChargesView = ({
 }: AllChargesViewProps) => {
     const { t } = useTranslation();
 
-    const finalCharges = useMemo(() => {
-        let filtered = [...charges];
-
-        // Apply filters
+    const filterFunction = useCallback((charge: Charge, filterType: string, month: string, dateFrom: string, dateTo: string) => {
         if (filterType === 'month' && month) {
-            filtered = filtered.filter(c => c.date.startsWith(month));
+            return charge.date.startsWith(month);
         } else if (filterType === 'range') {
-            if (dateFrom) filtered = filtered.filter(c => c.date >= dateFrom);
-            if (dateTo) filtered = filtered.filter(c => c.date <= dateTo);
+            if (dateFrom && charge.date < dateFrom) return false;
+            if (dateTo && charge.date > dateTo) return false;
+            return true;
         }
+        return true;
+    }, []);
 
-        // Sort
-        filtered.sort((a, b) => {
-            let comparison = 0;
-            if (sortBy === 'date') {
-                comparison = b.date.localeCompare(a.date) || b.time.localeCompare(a.time);
-            } else if (sortBy === 'kwh') {
-                comparison = (b.kwhCharged || 0) - (a.kwhCharged || 0);
-            } else if (sortBy === 'cost') {
-                comparison = (b.totalCost || 0) - (a.totalCost || 0);
-            }
-            return sortOrder === 'asc' ? -comparison : comparison;
-        });
+    const sortFunction = useCallback((a: Charge, b: Charge, sortBy: string) => {
+        if (sortBy === 'date') {
+            return b.date.localeCompare(a.date) || b.time.localeCompare(a.time);
+        } else if (sortBy === 'kwh') {
+            return (b.kwhCharged || 0) - (a.kwhCharged || 0);
+        } else if (sortBy === 'cost') {
+            return (b.totalCost || 0) - (a.totalCost || 0);
+        }
+        return 0;
+    }, []);
 
-        return filtered;
-    }, [charges, filterType, month, dateFrom, dateTo, sortBy, sortOrder]);
+    const {
+        filterType, setFilterType,
+        month, setMonth,
+        dateFrom, setDateFrom,
+        dateTo, setDateTo,
+        sortBy, setSortBy,
+        sortOrder, setSortOrder,
+        filteredData: finalCharges
+    } = useFilteredData({
+        data: charges,
+        initialSortBy: 'date',
+        filterFunction,
+        sortFunction
+    });
 
-
-    const handleChargeClick = (charge: Charge) => {
+    const handleChargeClick = useCallback((charge: Charge) => {
         setSelectedCharge(charge);
         openModal('chargeDetail');
-    };
+    }, [setSelectedCharge, openModal]);
 
-    const getChargerTypeName = (chargerTypeId: string) => {
+    const getChargerTypeName = useCallback((chargerTypeId: string) => {
         const chargerType = (chargerTypes || []).find(ct => ct.id === chargerTypeId);
         return chargerType?.name || chargerTypeId || '-';
-    };
+    }, [chargerTypes]);
 
-    const formatDate = (dateStr: string) => {
+    const formatDate = useCallback((dateStr: string) => {
         if (!dateStr) return '';
         const [year, month, day] = dateStr.split('-');
         return `${day}/${month}/${year}`;
-    };
+    }, []);
+
+    const handleClose = useCallback(() => closeModal('allCharges'), [closeModal]);
 
     // State for scroller element to ensure virtualizer updates on mount
     const [scroller, setScroller] = React.useState<HTMLDivElement | null>(null);
@@ -115,7 +103,7 @@ const AllChargesView = ({
                 <div className="flex flex-col gap-4 mb-6">
                     <div>
                         <button
-                            onClick={() => closeModal('allCharges')}
+                            onClick={handleClose}
                             className="text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center gap-2 mb-2 transition-colors"
                         >
                             ← {t('common.back', 'Volver')}

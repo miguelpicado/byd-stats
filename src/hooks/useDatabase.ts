@@ -1,6 +1,6 @@
 // BYD Stats - useDatabase Hook
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { logger } from '@core/logger';
 import { toast } from 'react-hot-toast';
 import { Trip } from '@/types';
@@ -84,7 +84,7 @@ export function useDatabase(): UseDatabaseReturn {
 
                 if (lines.length < 2) throw new Error('CSV vacío o formato incorrecto');
 
-                const rows = lines.slice(1).map((line, index) => {
+                const rows = lines.slice(1).map((line, _index) => {
                     // Method from DataProvider.jsx (loadChargeRegistry)
                     // Matches quoted strings OR non-comma sequences
                     const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
