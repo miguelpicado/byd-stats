@@ -52,8 +52,9 @@ const AddCarModal: React.FC<AddCarModalProps> = ({ isOpen, onClose, onSave }) =>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                        <label className={labelClass}>{t('cars.name', 'Nombre del coche')}</label>
+                        <label htmlFor="carName" className={labelClass}>{t('cars.name', 'Nombre del coche')}</label>
                         <input
+                            id="carName"
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}

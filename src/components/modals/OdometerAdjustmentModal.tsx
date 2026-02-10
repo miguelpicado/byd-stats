@@ -67,10 +67,11 @@ const OdometerAdjustmentModal: React.FC<OdometerAdjustmentModalProps> = ({ isOpe
                         </p>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+                            <label htmlFor="odometerOffset" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
                                 {t('modals.offset', 'Desfase (km)')}
                             </label>
                             <input
+                                id="odometerOffset"
                                 type="number"
                                 value={offset}
                                 onChange={(e) => setOffset(e.target.value)}

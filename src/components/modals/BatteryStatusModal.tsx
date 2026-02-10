@@ -205,7 +205,7 @@ const BatteryStatusModal: React.FC = () => {
                         <div className="border-t border-slate-200 dark:border-slate-700 pt-4 space-y-3">
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    <label htmlFor="targetSoCInput" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                         {t('settings.targetSoC', 'SoC Objetivo')}
                                     </label>
                                     <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -215,6 +215,7 @@ const BatteryStatusModal: React.FC = () => {
                                 {isEditingTarget ? (
                                     <div className="flex items-center gap-1">
                                         <input
+                                            id="targetSoCInput"
                                             type="number"
                                             min="50"
                                             max="100"
@@ -257,11 +258,10 @@ const BatteryStatusModal: React.FC = () => {
                                     <button
                                         key={val}
                                         onClick={() => handleTargetSoCChange(val)}
-                                        className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
-                                            targetSoC === val
+                                        className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${targetSoC === val
                                                 ? 'bg-emerald-500 text-white'
                                                 : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
-                                        }`}
+                                            }`}
                                     >
                                         {val}%
                                     </button>
@@ -279,9 +279,9 @@ const BatteryStatusModal: React.FC = () => {
                     {isConnected && (
                         <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-700/30 rounded-xl p-3">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <p className="block text-sm font-medium text-slate-700 dark:text-slate-300">
                                     {t('settings.autoImportCharges', 'Auto-importar Cargas')}
-                                </label>
+                                </p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">
                                     {t('settings.autoImportChargesDesc', 'Guardar sesiones automáticamente')}
                                 </p>
@@ -291,14 +291,12 @@ const BatteryStatusModal: React.FC = () => {
                                     const newValue = !settings?.autoImportCharges;
                                     updateSettings({ autoImportCharges: newValue });
                                 }}
-                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                                    settings?.autoImportCharges ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
-                                }`}
+                                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings?.autoImportCharges ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
+                                    }`}
                             >
                                 <span
-                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                                        settings?.autoImportCharges ? 'translate-x-6' : 'translate-x-1'
-                                    }`}
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings?.autoImportCharges ? 'translate-x-6' : 'translate-x-1'
+                                        }`}
                                 />
                             </button>
                         </div>

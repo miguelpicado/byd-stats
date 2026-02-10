@@ -77,7 +77,7 @@ const ThermalStressModal: React.FC<ThermalStressModalProps> = ({ isOpen, onClose
                         {/* Slider / Input */}
                         <div className="space-y-3 py-2">
                             <div className="flex justify-between items-end">
-                                <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                                <label htmlFor="thermalStressFactor" className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
                                     {t('modals.thermalStress.factor', 'Factor Seleccionado')}
                                 </label>
                                 <span className="text-3xl font-black text-slate-900 dark:text-white">
@@ -85,6 +85,7 @@ const ThermalStressModal: React.FC<ThermalStressModalProps> = ({ isOpen, onClose
                                 </span>
                             </div>
                             <input
+                                id="thermalStressFactor"
                                 type="range"
                                 min="0.8"
                                 max="2.0"

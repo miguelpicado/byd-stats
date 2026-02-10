@@ -251,7 +251,7 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             <button
                                 type="button"
                                 onClick={() => handleChange('type', 'electric')}
-                                className={`flex items - center justify - center gap - 2 py - 2.5 px - 4 rounded - xl font - medium text - sm transition - all border - 2 ${formData.type === 'electric'
+                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition-all border-2 ${formData.type === 'electric'
                                     ? 'bg-emerald-500/20 border-emerald-500 text-emerald-700 dark:text-emerald-300'
                                     : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                                     } `}
@@ -262,7 +262,7 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             <button
                                 type="button"
                                 onClick={() => handleChange('type', 'fuel')}
-                                className={`flex items - center justify - center gap - 2 py - 2.5 px - 4 rounded - xl font - medium text - sm transition - all border - 2 ${formData.type === 'fuel'
+                                className={`flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition-all border-2 ${formData.type === 'fuel'
                                     ? 'bg-amber-500/20 border-amber-500 text-amber-700 dark:text-amber-300'
                                     : 'bg-slate-100 dark:bg-slate-700/50 border-transparent text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                                     } `}
@@ -276,8 +276,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                     {/* Date and Time */}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className={labelClass}>{t('charges.date')}</label>
+                            <label htmlFor="chargeDate" className={labelClass}>{t('charges.date')}</label>
                             <input
+                                id="chargeDate"
                                 type="date"
                                 value={formData.date}
                                 onChange={(e) => handleChange('date', e.target.value)}
@@ -285,8 +286,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             />
                         </div>
                         <div>
-                            <label className={labelClass}>{t('charges.time')}</label>
+                            <label htmlFor="chargeTime" className={labelClass}>{t('charges.time')}</label>
                             <input
+                                id="chargeTime"
                                 type="time"
                                 value={formData.time}
                                 onChange={(e) => handleChange('time', e.target.value)}
@@ -297,8 +299,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
 
                     {/* Odometer */}
                     <div>
-                        <label className={labelClass}>{t('charges.odometer')} (km)</label>
+                        <label htmlFor="chargeOdometer" className={labelClass}>{t('charges.odometer')} (km)</label>
                         <input
+                            id="chargeOdometer"
                             type="number"
                             inputMode="decimal"
                             value={formData.odometer}
@@ -314,8 +317,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             {/* kWh and Charger Type */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className={labelClass}>{t('charges.kwhCharged')}</label>
+                                    <label htmlFor="kwhCharged" className={labelClass}>{t('charges.kwhCharged')}</label>
                                     <input
+                                        id="kwhCharged"
                                         type="number"
                                         inputMode="decimal"
                                         step="0.01"
@@ -331,8 +335,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <label className={labelClass}>{t('charges.chargerType')}</label>
+                                    <label htmlFor="chargerTypeId" className={labelClass}>{t('charges.chargerType')}</label>
                                     <select
+                                        id="chargerTypeId"
                                         value={formData.chargerTypeId}
                                         onChange={(e) => handleChange('chargerTypeId', e.target.value)}
                                         className={inputClass}
@@ -347,8 +352,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             {/* Price and Total Cost (electric) */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className={labelClass}>{t('charges.pricePerKwh')} (€)</label>
+                                    <label htmlFor="pricePerKwh" className={labelClass}>{t('charges.pricePerKwh')} (€)</label>
                                     <input
+                                        id="pricePerKwh"
                                         type="number"
                                         inputMode="decimal"
                                         step="0.001"
@@ -358,8 +364,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className={labelClass}>{t('charges.totalCost')} (€)</label>
+                                    <label htmlFor="totalCostElectric" className={labelClass}>{t('charges.totalCost')} (€)</label>
                                     <input
+                                        id="totalCostElectric"
                                         type="number"
                                         inputMode="decimal"
                                         step="0.01"
@@ -373,8 +380,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             {/* Battery Percentages */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className={labelClass}>{t('charges.finalPercentage')}</label>
+                                    <label htmlFor="finalPercentage" className={labelClass}>{t('charges.finalPercentage')}</label>
                                     <input
+                                        id="finalPercentage"
                                         type="number"
                                         inputMode="numeric"
                                         min="0"
@@ -386,8 +394,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className={labelClass}>{t('charges.initialPercentage')}</label>
+                                    <label htmlFor="initialPercentage" className={labelClass}>{t('charges.initialPercentage')}</label>
                                     <input
+                                        id="initialPercentage"
                                         type="number"
                                         inputMode="numeric"
                                         min="0"
@@ -407,8 +416,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                         <>
                             {/* Liters */}
                             <div>
-                                <label className={labelClass}>{t('charges.litersCharged')}</label>
+                                <label htmlFor="litersCharged" className={labelClass}>{t('charges.litersCharged')}</label>
                                 <input
+                                    id="litersCharged"
                                     type="number"
                                     inputMode="decimal"
                                     step="0.01"
@@ -422,8 +432,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                             {/* Price per liter and Total Cost */}
                             <div className="grid grid-cols-2 gap-3">
                                 <div>
-                                    <label className={labelClass}>{t('charges.pricePerLiter')} (€)</label>
+                                    <label htmlFor="pricePerLiter" className={labelClass}>{t('charges.pricePerLiter')} (€)</label>
                                     <input
+                                        id="pricePerLiter"
                                         type="number"
                                         inputMode="decimal"
                                         step="0.001"
@@ -433,8 +444,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className={labelClass}>{t('charges.totalCost')} (€)</label>
+                                    <label htmlFor="totalCostFuel" className={labelClass}>{t('charges.totalCost')} (€)</label>
                                     <input
+                                        id="totalCostFuel"
                                         type="number"
                                         inputMode="decimal"
                                         step="0.01"
