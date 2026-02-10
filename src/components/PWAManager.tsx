@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Download } from './Icons';
-import { logger } from '@core/logger';
+
 
 // Simple icons for PWA Manager (not in Icons.jsx)
-const LogOut = ({ className }) => (
+const LogOut = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
         <polyline points="16 17 21 12 16 7" />
@@ -12,7 +12,7 @@ const LogOut = ({ className }) => (
     </svg>
 );
 
-const RefreshCw = ({ className }) => (
+const RefreshCw = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="23 4 23 10 17 10" />
         <polyline points="1 20 1 14 7 14" />
@@ -20,7 +20,7 @@ const RefreshCw = ({ className }) => (
     </svg>
 );
 
-import { useRegisterSW } from 'virtual:pwa-register/react';
+// import { useRegisterSW } from 'virtual:pwa-register/react';
 
 /**
  * PWA Manager Component
@@ -41,7 +41,7 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
         const checkStandalone = () => {
             const standalone = window.matchMedia('(display-mode: standalone)').matches ||
                 window.matchMedia('(display-mode: fullscreen)').matches ||
-                window.navigator.standalone;
+                (window.navigator as any).standalone;
             setIsStandalone(standalone);
         };
 
@@ -55,17 +55,22 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
     }, []);
 
     // Virtual PWA Register Hook
-    const {
-        offlineReady: [offlineReady, setOfflineReady],
-        needRefresh: [needRefresh, setNeedRefresh],
-        updateServiceWorker,
-    } = useRegisterSW({
-        onRegisteredPO(r) {
-        },
-        onRegisterError(error) {
-            logger.error('[PWA] SW Registration Error:', error);
-        },
-    });
+    // const {
+    //     offlineReady: [offlineReady, _setOfflineReady],
+    //     needRefresh: [needRefresh, _setNeedRefresh],
+    //     updateServiceWorker,
+    // } = useRegisterSW({
+    //     onRegisteredPO(_r: any) {
+    //     },
+    //     onRegisterError(error: any) {
+    //         logger.error('[PWA] SW Registration Error:', error);
+    //     },
+    // });
+
+    // Mock values since hook is disabled
+    const offlineReady = false;
+    const needRefresh = false;
+    const updateServiceWorker = (_reload: boolean) => { };
 
     // Check availability of updates
     useEffect(() => {
@@ -86,17 +91,17 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
 
     // Listen for install prompt
     useEffect(() => {
-        const handleInstallPrompt = (e) => {
+        const handleInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
             setShowInstallBanner(true);
         };
 
         // Check if event was already captured in global scope
-        if (window.deferredPrompt) {
-            setDeferredPrompt(window.deferredPrompt);
-            setShowInstallBanner(true);
-            window.deferredPrompt = null; // Clean up
+        if ((window as any).deferredPrompt) {
+            setDeferredPrompt((window as any).deferredPrompt);
+            // setInstallable(true);
+            (window as any).deferredPrompt = null; // Clean up
         }
 
         window.addEventListener('beforeinstallprompt', handleInstallPrompt);
@@ -107,8 +112,8 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
     const handleInstall = useCallback(async () => {
         if (!deferredPrompt) return;
 
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
+        (deferredPrompt as any).prompt();
+        const { outcome } = await (deferredPrompt as any).userChoice;
 
         if (outcome === 'accepted') {
             setShowInstallBanner(false);

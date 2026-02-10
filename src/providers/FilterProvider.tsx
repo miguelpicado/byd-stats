@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import { useFilters, UseFiltersReturn } from '@hooks/useFilters';
 
 const FilterContext = createContext<UseFiltersReturn | undefined>(undefined);
@@ -11,7 +11,7 @@ export const useFiltersContext = () => {
     return context;
 };
 
-export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function FilterProvider({ children }: { children: ReactNode }) {
     const filters = useFilters();
 
     return (
@@ -19,4 +19,4 @@ export const FilterProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             {children}
         </FilterContext.Provider>
     );
-};
+}

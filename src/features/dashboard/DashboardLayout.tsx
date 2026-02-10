@@ -30,7 +30,13 @@ const DashboardLayout = memo((props: DashboardLayoutProps) => {
         return <MobileDashboardView {...props} setSwipeContainer={props.setSwipeContainer} />;
     }
 
-    return <DesktopDashboardView {...props} />;
+    return <DesktopDashboardView
+        {...props}
+        fadingTab={props.fadingTab || ''}
+        backgroundLoad={props.backgroundLoad || false}
+        onTripSelect={props.onTripSelect || (() => { })}
+        onChargeSelect={props.onChargeSelect || (() => { })}
+    />;
 });
 
 DashboardLayout.displayName = 'DashboardLayout';

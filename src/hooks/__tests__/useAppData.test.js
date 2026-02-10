@@ -25,7 +25,7 @@ vi.mock('i18next', () => ({
 }));
 
 // Mock Worker and Comlink
-global.Worker = class {
+global.Worker = class { // eslint-disable-line no-undef
     constructor(url) {
         this.url = url;
     }

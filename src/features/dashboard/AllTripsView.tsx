@@ -1,7 +1,9 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import ModalContainer from '../../components/common/ModalContainer';
 import VirtualizedTripList from '../../components/lists/VirtualizedTripList';
+import { useFilteredData } from '../../hooks/useFilteredData';
+import { useTripsContext } from '../../providers/TripsProvider';
 
 import { Trip } from '@/types';
 
@@ -27,18 +29,6 @@ interface AllTripsViewProps {
 
 const AllTripsView = ({
     rawTrips,
-    filterType,
-    month,
-    dateFrom,
-    dateTo,
-    sortBy,
-    sortOrder,
-    setFilterType,
-    setMonth,
-    setDateFrom,
-    setDateTo,
-    setSortBy,
-    setSortOrder,
     closeModal,
     openTripDetail,
     scrollRef,
@@ -46,57 +36,69 @@ const AllTripsView = ({
 }: AllTripsViewProps) => {
     const { t } = useTranslation();
 
-    // Filter and sort logic moved here or kept in memo
-    const { finalTrips, minEff, maxEff } = useMemo(() => {
-        let allTripsFiltered = [...rawTrips];
-
-        // Apply filters
+    // Define filter/sort functions
+    const filterFunction = useCallback((trip: Trip, filterType: string, month: string, dateFrom: string, dateTo: string) => {
         if (filterType === 'month' && month) {
-            allTripsFiltered = allTripsFiltered.filter(t => t.month === month);
+            return trip.month === month;
         } else if (filterType === 'range') {
-            if (dateFrom) allTripsFiltered = allTripsFiltered.filter(t => t.date >= dateFrom.replace(/-/g, ''));
-            if (dateTo) allTripsFiltered = allTripsFiltered.filter(t => t.date <= dateTo.replace(/-/g, ''));
+            const dDateFrom = dateFrom ? dateFrom.replace(/-/g, '') : '';
+            const dDateTo = dateTo ? dateTo.replace(/-/g, '') : '';
+            if (dDateFrom && trip.date < dDateFrom) return false;
+            if (dDateTo && trip.date > dDateTo) return false;
+            return true;
         }
+        return true;
+    }, []);
 
-        // Sort trips
-        allTripsFiltered.sort((a, b) => {
-            let comparison = 0;
+    const sortFunction = useCallback((a: Trip, b: Trip, sortBy: string) => {
+        if (sortBy === 'date') {
+            const dateCompare = (b.date || '').localeCompare(a.date || '');
+            if (dateCompare !== 0) return dateCompare;
+            return (b.start_timestamp || 0) - (a.start_timestamp || 0);
+        } else if (sortBy === 'efficiency') {
+            const effA = a.trip > 0 && a.electricity !== undefined && a.electricity !== null && a.electricity !== 0
+                ? (a.electricity / a.trip) * 100
+                : Infinity;
+            const effB = b.trip > 0 && b.electricity !== undefined && b.electricity !== null && b.electricity !== 0
+                ? (b.electricity / b.trip) * 100
+                : Infinity;
+            return effA - effB;
+        } else if (sortBy === 'distance') {
+            return (b.trip || 0) - (a.trip || 0);
+        } else if (sortBy === 'consumption') {
+            return (b.electricity || 0) - (a.electricity || 0);
+        }
+        return 0;
+    }, []);
 
-            if (sortBy === 'date') {
-                const dateCompare = (b.date || '').localeCompare(a.date || '');
-                if (dateCompare !== 0) {
-                    comparison = dateCompare;
-                } else {
-                    comparison = (b.start_timestamp || 0) - (a.start_timestamp || 0);
-                }
-            } else if (sortBy === 'efficiency') {
-                const effA = a.trip > 0 && a.electricity !== undefined && a.electricity !== null && a.electricity !== 0
-                    ? (a.electricity / a.trip) * 100
-                    : Infinity;
-                const effB = b.trip > 0 && b.electricity !== undefined && b.electricity !== null && b.electricity !== 0
-                    ? (b.electricity / b.trip) * 100
-                    : Infinity;
-                comparison = effA - effB;
-            } else if (sortBy === 'distance') {
-                comparison = (b.trip || 0) - (a.trip || 0);
-            } else if (sortBy === 'consumption') {
-                comparison = (b.electricity || 0) - (a.electricity || 0);
-            }
+    const {
+        filterType, setFilterType,
+        month, setMonth,
+        dateFrom, setDateFrom,
+        dateTo, setDateTo,
+        sortBy, setSortBy,
+        sortOrder, setSortOrder,
+        filteredData: finalTrips
+    } = useFilteredData({
+        data: rawTrips,
+        initialSortBy: 'date',
+        filterFunction,
+        sortFunction
+    });
 
-            return sortOrder === 'asc' ? -comparison : comparison;
-        });
-
-        // Calculate eficiencies for scoring
-        const validTrips = allTripsFiltered.filter(t => t.trip >= 1 && t.electricity !== 0);
+    // Score calculations
+    const { minEff, maxEff } = useMemo(() => {
+        const validTrips = finalTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
         const efficiencies = validTrips.map(t => (t.electricity / t.trip) * 100);
         const min = efficiencies.length > 0 ? Math.min(...efficiencies) : 0;
         const max = efficiencies.length > 0 ? Math.max(...efficiencies) : 0;
+        return { minEff: min, maxEff: max };
+    }, [finalTrips]);
 
-        return { finalTrips: allTripsFiltered, minEff: min, maxEff: max };
-    }, [rawTrips, filterType, month, dateFrom, dateTo, sortBy, sortOrder]);
+    // Handle close callback
+    const handleClose = useCallback(() => closeModal('allTrips'), [closeModal]);
 
-
-    // State for scroller element to ensure virtualizer updates on mount
+    // State for scroller element
     const [scroller, setScroller] = React.useState<HTMLDivElement | null>(null);
 
     const scrollRefCallback = React.useCallback((node: HTMLDivElement | null) => {
@@ -105,6 +107,16 @@ const AllTripsView = ({
             setScroller(node);
         }
     }, [scrollRef]);
+
+    // NEW: Infinite Scroll
+    const { loadMore, hasMore, isLoadingMore } = useTripsContext();
+
+    // Pass this to VirtualizedTripList
+    const handleEndReached = useCallback(() => {
+        if (hasMore && !isLoadingMore) {
+            loadMore();
+        }
+    }, [hasMore, isLoadingMore, loadMore]);
 
     return (
         <div
@@ -117,7 +129,7 @@ const AllTripsView = ({
                 <div className="flex flex-col gap-4 mb-6">
                     <div>
                         <button
-                            onClick={() => closeModal('allTrips')}
+                            onClick={handleClose}
                             className="text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center gap-2 mb-2 transition-colors"
                         >
                             ← {t('common.back', 'Volver')}
@@ -233,6 +245,8 @@ const AllTripsView = ({
                         minEff={minEff}
                         maxEff={maxEff}
                         scrollElement={scroller}
+                        onEndReached={handleEndReached}
+                        isLoading={isLoadingMore}
                     />
                 </div>
             </div>

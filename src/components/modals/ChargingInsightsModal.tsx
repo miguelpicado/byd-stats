@@ -29,7 +29,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     settings,
     charges = [],
     summary,
-    trips = [],
+    trips: _trips = [],
     smartCharging: smartChargingProp = null,
     isCalculating: isCalculatingProp = false
 }) => {

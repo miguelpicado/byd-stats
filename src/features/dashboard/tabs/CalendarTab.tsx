@@ -1,4 +1,4 @@
-import { useState, useMemo, FC } from 'react';
+import React, { useState, useMemo, FC, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
     format,
@@ -14,8 +14,9 @@ import {
 } from 'date-fns';
 import { enGB, es } from 'date-fns/locale';
 import { ChevronLeft, Car, Zap } from '@components/Icons';
-import DayDetailsModal from '@components/modals/DayDetailsModal';
 import { Trip, Charge } from '@/types';
+
+const DayDetailsModalLazy = React.lazy(() => import('@components/modals/DayDetailsModal'));
 
 interface CalendarTabProps {
     trips?: Trip[];
@@ -216,15 +217,19 @@ const CalendarTab: FC<CalendarTabProps> = ({
                 </div>
             </div>
 
-            <DayDetailsModal
-                isOpen={isModalOpen}
-                onClose={closeModal}
-                date={selectedDate}
-                trips={selectedDayData.trips}
-                charges={selectedDayData.charges}
-                onTripSelect={onTripSelect}
-                onChargeSelect={onChargeSelect}
-            />
+            {isModalOpen && (
+                <Suspense fallback={null}>
+                    <DayDetailsModalLazy
+                        isOpen={isModalOpen}
+                        onClose={closeModal}
+                        date={selectedDate}
+                        trips={selectedDayData.trips}
+                        charges={selectedDayData.charges}
+                        onTripSelect={onTripSelect}
+                        onChargeSelect={onChargeSelect}
+                    />
+                </Suspense>
+            )}
         </div>
     );
 };

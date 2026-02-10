@@ -1,16 +1,18 @@
 // BYD Stats - TripDetailModal Component
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatTime } from '@core/dateUtils';
 import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons';
-import { TripMapModal } from '../TripMapModal';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
+
+// Lazy load TripMapModal to avoid bundling Leaflet in the main bundle
+const TripMapModalLazy = React.lazy(() => import('../TripMapModal').then(module => ({ default: module.TripMapModal })));
 
 /**
  * Trip detail modal showing full trip information
@@ -23,7 +25,7 @@ const TripDetailModal: React.FC = () => {
 
     const [showMap, setShowMap] = useState(false);
     const [tripPoints, setTripPoints] = useState<any[]>([]);
-    const [loadingPoints, setLoadingPoints] = useState(false);
+
     const [scoreClicks, setScoreClicks] = useState(0);
     const [lastClickTime, setLastClickTime] = useState(0);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -120,7 +122,7 @@ const TripDetailModal: React.FC = () => {
         const loadGpsPoints = async () => {
             if (!trip?.id || !trip?.gpsDistanceKm) return;
 
-            setLoadingPoints(true);
+
             try {
                 const pointsRef = collection(db, 'trips', trip.id, 'points');
                 const pointsQuery = query(pointsRef, orderBy('timestamp'));
@@ -129,8 +131,6 @@ const TripDetailModal: React.FC = () => {
                 setTripPoints(points);
             } catch (error) {
                 console.error('Error loading GPS points:', error);
-            } finally {
-                setLoadingPoints(false);
             }
         };
 
@@ -180,8 +180,8 @@ const TripDetailModal: React.FC = () => {
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-2 mb-3">
                     <div
-                        className={`bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center ${trip.gpsDistanceKm ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors' : ''
-                            }`}
+                        className={`bg - slate - 100 dark: bg - slate - 700 / 50 rounded - xl p - 3 text - center ${trip.gpsDistanceKm ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors' : ''
+                            } `}
                         onClick={() => trip.gpsDistanceKm && setShowMap(true)}
                     >
                         <MapPin className="w-4 h-4 mx-auto mb-0.5 text-red-400" />
@@ -199,10 +199,10 @@ const TripDetailModal: React.FC = () => {
                         ) : (
                             <>
                                 <p className="text-slate-900 dark:text-white text-lg font-bold">{trip.trip?.toFixed(1)} {t('units.km')}</p>
-                                <p className={`text-xs font-medium ${getDistanceSource(trip) === 'ec_database'
+                                <p className={`text - xs font - medium ${getDistanceSource(trip) === 'ec_database'
                                         ? 'text-blue-500 dark:text-blue-400'
                                         : 'text-amber-500 dark:text-amber-400'
-                                    }`}>
+                                    } `}>
                                     {getDistanceSource(trip) === 'ec_database' ? 'EC DB 💾' : 'Odómetro'}
                                 </p>
                             </>
@@ -335,11 +335,13 @@ const TripDetailModal: React.FC = () => {
 
                 {/* Map Modal */}
                 {showMap && trip.gpsDistanceKm && tripPoints.length > 0 && (
-                    <TripMapModal
-                        trip={trip}
-                        points={tripPoints}
-                        onClose={() => setShowMap(false)}
-                    />
+                    <Suspense fallback={<div className="h-[500px] flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl">Cargando mapa...</div>}>
+                        <TripMapModalLazy
+                            trip={trip}
+                            points={tripPoints}
+                            onClose={() => setShowMap(false)}
+                        />
+                    </Suspense>
                 )}
             </div>
         </div>

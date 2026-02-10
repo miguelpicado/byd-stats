@@ -1,6 +1,6 @@
-import React from 'react';
+
 import { useTranslation } from 'react-i18next';
-import { Shield, AlertCircle } from './Icons';
+import { AlertCircle } from './Icons';
 
 const LegalContent = ({ section = 'privacy' }) => {
     const { t } = useTranslation();

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import { createContext, useContext, ReactNode } from 'react';
 import useModalState from '@hooks/useModalState';
 
 type ModalContextValue = ReturnType<typeof useModalState>;
@@ -13,7 +13,7 @@ export const useModalContext = () => {
     return context;
 };
 
-export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function ModalProvider({ children }: { children: ReactNode }) {
     const modalState = useModalState();
 
     return (
@@ -21,4 +21,4 @@ export const ModalProvider: React.FC<{ children: ReactNode }> = ({ children }) =
             {children}
         </ModalContext.Provider>
     );
-};
+}

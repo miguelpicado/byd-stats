@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { HelpCircle, Database, Smartphone, Heart, Mail, ChevronDown, ChevronUp } from './Icons';
+import { HelpCircle, Database, Smartphone, Heart, ChevronDown, ChevronUp } from './Icons';
 
-const FaqItem = ({ question, children, defaultOpen = false }) => {
+const FaqItem = ({ question, children, defaultOpen = false }: { question: string, children: React.ReactNode, defaultOpen?: boolean }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
     return (

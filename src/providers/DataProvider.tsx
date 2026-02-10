@@ -1,21 +1,14 @@
-import React, { createContext, useContext, useMemo, ReactNode, useEffect, useCallback, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import { logger } from '@core/logger';
-import { toast } from 'react-hot-toast';
+import React, { createContext, useContext, useMemo, ReactNode, useState } from 'react';
 import { useApp } from '@/context/AppContext';
-import { useCar } from '@/context/CarContext';
 
 // Import new providers
 import { FilterProvider, useFiltersContext } from './FilterProvider';
 import { ChargesProvider, useChargesContext } from './ChargesProvider';
 import { ModalProvider, useModalContext } from './ModalProvider';
+import { SyncProvider, useSyncContext } from './SyncProvider';
 import { TripsProvider, useTripsContext } from './TripsProvider';
-
-import { useDatabase } from '@hooks/useDatabase';
-import { useGoogleSync } from '@hooks/useGoogleSync';
-import { useFileHandling } from '@hooks/useFileHandling';
-import { useConfirmation } from '@hooks/useConfirmation';
 import { Trip, Charge, ProcessedData, Settings } from '@/types';
+import { useConfirmation } from '@hooks/useConfirmation';
 import { ModalsState } from '@hooks/useModalState';
 
 // Define context interfaces (Legacy Support)
@@ -131,41 +124,21 @@ export const useData = (): DataContextValue => {
 
 // Internal component that connects the disconnected providers
 const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) => {
-    const { t } = useTranslation();
-    const { settings, updateSettings } = useApp();
-    const { activeCarId, cars, updateCar, activeCar } = useCar();
+    const { settings } = useApp(); // Removed unused cars/updateCar/activeCar
+    // const { activeCarId, cars, updateCar, activeCar } = useCar(); // Not needed here anymore
 
     // Consume new contexts
     const filterContext = useFiltersContext();
     const chargesContext = useChargesContext();
     const tripsContext = useTripsContext();
     const modalContext = useModalContext();
+    const syncContext = useSyncContext();
 
     // Local State not covered by providers (UI transient state)
     const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
     const [selectedCharge, setSelectedCharge] = useState<Charge | null>(null);
     const [editingCharge, setEditingCharge] = useState<Charge | null>(null);
     const [legalInitialSection, setLegalInitialSection] = useState<string>('');
-
-    // Database & File Handling
-    const database = useDatabase();
-    const fileHandling = useFileHandling();
-
-    // Google Sync
-    const googleSync = useGoogleSync({
-        localTrips: tripsContext.rawTrips,
-        setLocalTrips: tripsContext.setRawTrips,
-        settings,
-        setSettings: updateSettings,
-        localCharges: chargesContext.charges,
-        setLocalCharges: chargesContext.replaceCharges,
-        activeCarId: activeCarId || '',
-        totalCars: cars.length,
-        openRegistryModal: modalContext.openRegistryModal,
-        isRegistryModalOpen: modalContext.modals?.registryRestore,
-        updateCar,
-        carName: activeCar?.name || ''
-    });
 
     // Confirmation
     const confirmation = useConfirmation({
@@ -176,151 +149,7 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
         tripHistory: tripsContext.tripHistory
     });
 
-    // Auto-Sync Effect
-    useEffect(() => {
-        if (!googleSync.isAuthenticated || googleSync.isSyncing) return;
-        if (tripsContext.rawTrips?.length === 0 && chargesContext.charges?.length === 0) return;
-        if (modalContext.modals?.registryRestore) return;
 
-        const timer = setTimeout(() => {
-            googleSync.syncNow(null);
-        }, 10000);
-
-        return () => clearTimeout(timer);
-    }, [
-        tripsContext.rawTrips?.length,
-        chargesContext.charges?.length,
-        settings,
-        googleSync.isAuthenticated,
-        modalContext.modals?.registryRestore
-    ]);
-
-    // File Loading
-    const loadFile = useCallback(async (file: File, merge: boolean = false) => {
-        try {
-            if (!database.sqlReady) {
-                await database.initSql();
-            }
-            const newTrips = await database.processDB(file, tripsContext.rawTrips, merge);
-            if (newTrips && newTrips.length > 0) {
-                tripsContext.setRawTrips(newTrips);
-                logger.info(`Loaded ${newTrips.length} trips (merge: ${merge})`);
-                if (googleSync.isAuthenticated) {
-                    googleSync.syncNow(newTrips);
-                }
-            }
-        } catch (error: any) {
-            logger.error('Error loading file:', error);
-            database.setError(error.message);
-        }
-    }, [database, tripsContext.rawTrips, tripsContext.setRawTrips, googleSync]);
-
-    const exportData = useCallback(async () => {
-        if (!database.sqlReady) {
-            await database.initSql();
-        }
-        return database.exportDatabase(tripsContext.rawTrips);
-    }, [database, tripsContext.rawTrips]);
-
-    const loadChargeRegistry = useCallback(async (file: File) => {
-        // ... (Logic copied from previous DataProvider, keeping it here as it uses toast/settings/charges)
-        // Ideally this should move to a hook or util, but I'll keep it here for now to save time
-        // Just need to update references to chargesContext
-
-        try {
-            const text = await file.text();
-            const lines = text.split('\n').filter(line => line.trim());
-
-            if (lines.length < 2) {
-                toast.error(t('errors.noDataFound'));
-                return;
-            }
-
-            const chargesArray: any[] = [];
-            const newChargerTypes: any[] = [];
-            const existingChargerNames = new Set(
-                (settings.chargerTypes || []).map(ct => ct.name.toLowerCase())
-            );
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
-
-                if (!values || values.length < 8) continue;
-                const [fechaHora, kmTotales, kwhFacturados, precioTotal, , tipoCargador, precioKw, porcentajeFinal] = values;
-
-                if (!fechaHora || !fechaHora.match(/^\d{4}-\d{2}-\d{2}/)) break;
-
-                const dateMatch = fechaHora.match(/(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
-                if (!dateMatch) continue;
-
-                const date = dateMatch[1];
-                const time = dateMatch[2];
-
-                let chargerTypeId: string | null = null;
-                const chargerName = tipoCargador?.trim();
-
-                if (chargerName) {
-                    const existing = (settings.chargerTypes || []).find(
-                        ct => ct.name.toLowerCase() === chargerName.toLowerCase()
-                    );
-
-                    if (existing) {
-                        chargerTypeId = existing.id;
-                    } else if (!existingChargerNames.has(chargerName.toLowerCase())) {
-                        const newId = `csv_${Date.now()}_${i}`;
-                        newChargerTypes.push({
-                            id: newId,
-                            name: chargerName,
-                            speedKw: 11,
-                            efficiency: 1
-                        });
-                        chargerTypeId = newId;
-                        existingChargerNames.add(chargerName.toLowerCase());
-                    } else {
-                        chargerTypeId = newChargerTypes.find(
-                            ct => ct.name.toLowerCase() === chargerName.toLowerCase()
-                        )?.id || null;
-                    }
-                }
-
-                chargesArray.push({
-                    date,
-                    time,
-                    odometer: parseFloat(kmTotales) || 0,
-                    kwhCharged: parseFloat(kwhFacturados) || 0,
-                    totalCost: parseFloat(precioTotal) || 0,
-                    chargerTypeId,
-                    pricePerKwh: parseFloat(precioKw) || 0,
-                    finalPercentage: parseFloat(porcentajeFinal) || 0
-                });
-            }
-
-            if (newChargerTypes.length > 0) {
-                const updatedChargerTypes = [...(settings.chargerTypes || []), ...newChargerTypes];
-                updateSettings({ ...settings, chargerTypes: updatedChargerTypes });
-            }
-
-            if (chargesArray.length > 0) {
-                const count = chargesContext.addMultipleCharges(chargesArray);
-                let message = t('charges.chargesImported', { count });
-                if (newChargerTypes.length > 0) {
-                    message += '\n' + t('charges.chargerTypesCreated', {
-                        types: newChargerTypes.map(ct => ct.name).join(', ')
-                    });
-                }
-                toast.success(message);
-                if (googleSync.isAuthenticated) {
-                    googleSync.syncNow(null);
-                }
-            } else {
-                toast.error(t('errors.noDataFound'));
-            }
-        } catch (error) {
-            logger.error('Error loading charge registry:', error);
-            toast.error(t('errors.processingFile') || 'Error processing file');
-        }
-    }, [settings, updateSettings, chargesContext, googleSync, t]);
 
     // Construct State Object (Memoized)
     const stateValue: DataState = useMemo(() => ({
@@ -331,13 +160,13 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
         charges: chargesContext.charges,
         tripHistory: tripsContext.tripHistory,
         settings,
-        googleSync: { ...googleSync },
-        database,
+        googleSync: syncContext.googleSync,
+        database: syncContext.database,
         modals: modalContext.modals,
         openModal: modalContext.openModal,
         closeModal: modalContext.closeModal,
         isAnyModalOpen: modalContext.isAnyModalOpen,
-        fileHandling,
+        fileHandling: syncContext.fileHandling,
         filterType: filterContext.filterType,
         selMonth: filterContext.selMonth,
         dateFrom: filterContext.dateFrom,
@@ -368,7 +197,7 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
         setDeletedAnomalies: tripsContext.setDeletedAnomalies,
 
     }), [
-        tripsContext, chargesContext, settings, googleSync, database, modalContext, fileHandling, filterContext,
+        tripsContext, chargesContext, settings, syncContext, modalContext, filterContext,
         legalInitialSection, selectedTrip, selectedCharge, editingCharge
     ]);
 
@@ -383,7 +212,8 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
         deleteCharge: chargesContext.deleteCharge,
         addMultipleCharges: chargesContext.addMultipleCharges,
         exportCharges: chargesContext.exportCharges,
-        loadChargeRegistry,
+
+        loadChargeRegistry: syncContext.loadChargeRegistry,
 
         clearData: confirmation?.clearData,
         saveToHistory: confirmation?.saveToHistory,
@@ -394,8 +224,8 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
         closeConfirmation: confirmation?.closeConfirmation,
         showConfirmation: confirmation?.showConfirmation,
 
-        loadFile,
-        exportData,
+        loadFile: syncContext.loadFile,
+        exportData: syncContext.exportData,
 
         setFilterType: filterContext.setFilterType,
         setSelMonth: filterContext.setSelMonth,
@@ -405,7 +235,7 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
         openModal: modalContext.openModal,
         closeModal: modalContext.closeModal,
     }), [
-        tripsContext, chargesContext, confirmation, loadFile, exportData, loadChargeRegistry, filterContext, modalContext
+        tripsContext, chargesContext, confirmation, syncContext, filterContext, modalContext
     ]);
 
     return (
@@ -424,9 +254,11 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             <FilterProvider>
                 <ChargesProvider>
                     <TripsProvider>
-                        <DataProviderContent>
-                            {children}
-                        </DataProviderContent>
+                        <SyncProvider>
+                            <DataProviderContent>
+                                {children}
+                            </DataProviderContent>
+                        </SyncProvider>
                     </TripsProvider>
                 </ChargesProvider>
             </FilterProvider>

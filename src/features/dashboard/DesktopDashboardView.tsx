@@ -128,7 +128,7 @@ const DesktopDashboardView = memo(({
                                         weekday={weekday}
                                         hourly={hourly}
                                         summary={summary}
-                                        patternsSpacing={patternsSpacing}
+                                        patternsSpacing={parseFloat(patternsSpacing)}
                                         patternsChartHeight={patternsChartHeight as any}
                                         isActive={isActive}
                                     />

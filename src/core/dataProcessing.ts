@@ -310,6 +310,7 @@ function finalizeSummary(
 /**
  * Core data processing function
  * Processes raw trip data into statistics and aggregated data
+ * @deprecated Use worker-based processing via useProcessedData hook instead
  */
 export function processData(rows: Trip[], priceSettings: Settings = {} as Settings, charges: Charge[] = [], language: string = 'es'): ProcessedData | null {
     if (!rows || rows.length === 0) return null;
