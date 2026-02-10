@@ -156,7 +156,7 @@ export const ChargingSettings: React.FC = () => {
                         <div className="space-y-3 pl-2 border-l-2 border-slate-200 dark:border-slate-600">
                             {/* Weekday Schedule */}
                             <div className="space-y-1">
-                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('settings.offPeakWeekday', 'Horario L-V')}</label>
+                                <p className="block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('settings.offPeakWeekday', 'Horario L-V')}</p>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label htmlFor="offPeakStart" className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t('settings.startTime', 'Inicio')}</label>
@@ -185,7 +185,7 @@ export const ChargingSettings: React.FC = () => {
 
                             {/* Weekend Schedule */}
                             <div className="space-y-1">
-                                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('settings.offPeakWeekend', 'Horario Fin de Semana')}</label>
+                                <p className="block text-xs font-semibold text-slate-700 dark:text-slate-300">{t('settings.offPeakWeekend', 'Horario Fin de Semana')}</p>
                                 <div className="grid grid-cols-2 gap-2">
                                     <div>
                                         <label htmlFor="offPeakStartWeekend" className="block text-[10px] text-slate-500 dark:text-slate-400 mb-1">{t('settings.startTime', 'Inicio')}</label>

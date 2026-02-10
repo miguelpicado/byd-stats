@@ -79,12 +79,14 @@ export const VehicleSettings: React.FC = () => {
             </div>
 
             <div className="space-y-3">
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-1">{t('settings.sohMode')}</label>
+                <p className="block text-sm text-slate-600 dark:text-slate-400 mb-1">{t('settings.sohMode')}</p>
 
-                <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl">
+                <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl" role="radiogroup" aria-label={t('settings.sohMode')}>
                     {(['manual', 'calculated'] as const).map(mode => (
                         <button
                             key={mode}
+                            role="radio"
+                            aria-checked={currentSohMode === mode}
                             onClick={() => {
                                 if (mode === 'calculated' && !settings.mfgDate) {
                                     setShowMfgModal(true);
@@ -103,6 +105,7 @@ export const VehicleSettings: React.FC = () => {
 
                 {currentSohMode === 'manual' ? (
                     <div className="space-y-3">
+                        <label htmlFor="soh" className="sr-only">{t('settings.sohMode')}</label>
                         <input
                             id="soh"
                             name="soh"

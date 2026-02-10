@@ -17,11 +17,13 @@ export const AppPreferences: React.FC = () => {
     return (
         <div className="space-y-4">
             <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.language')}</label>
-                <div className="flex flex-wrap gap-2">
+                <p className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.language')}</p>
+                <div role="radiogroup" aria-label={t('settings.language')} className="flex flex-wrap gap-2">
                     {languages.map(lang => (
                         <button
                             key={lang.code}
+                            role="radio"
+                            aria-checked={i18n.language === lang.code || i18n.language?.startsWith(lang.code)}
                             onClick={() => handleLanguageChange(lang.code)}
                             className={`py-2 px-3 rounded-xl text-sm font-medium transition-colors flex items-center justify-center gap-2 border ${i18n.language === lang.code || i18n.language?.startsWith(lang.code)
                                 ? 'byd-active-item'
@@ -44,11 +46,13 @@ export const AppPreferences: React.FC = () => {
             </div>
 
             <div>
-                <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.theme')}</label>
-                <div className="flex gap-2">
+                <p className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.theme')}</p>
+                <div role="radiogroup" aria-label={t('settings.theme')} className="flex gap-2">
                     {(['auto', 'light', 'dark'] as const).map(theme => (
                         <button
                             key={theme}
+                            role="radio"
+                            aria-checked={settings?.theme === theme}
                             onClick={() => updateSettings({ ...settings, theme })}
                             className={`flex-1 py-2 px-4 rounded-xl text-sm font-medium transition-colors border ${settings?.theme === theme
                                 ? 'byd-active-item'
@@ -60,8 +64,8 @@ export const AppPreferences: React.FC = () => {
                     ))}
                 </div>
 
-                <div>
-                    <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.customizeTabs')}</label>
+                <div className="mt-4">
+                    <p className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.customizeTabs')}</p>
                     <div className="grid grid-cols-2 gap-2">
                         {TAB_ORDER.filter(tab => tab !== 'overview').map(tabId => {
                             const isHidden = (settings.hiddenTabs || []).includes(tabId);

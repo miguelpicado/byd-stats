@@ -61,7 +61,7 @@ const FilterModal: React.FC = () => {
                 <div className="space-y-4">
                     {/* Filter Type Buttons */}
                     <div className="space-y-2">
-                        <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</label>
+                        <p className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.type')}:</p>
                         <div className="flex flex-col gap-2">
                             <button
                                 onClick={() => { setFilterType('all'); setSelMonth(''); setDateFrom(''); setDateTo(''); }}
@@ -99,8 +99,9 @@ const FilterModal: React.FC = () => {
                     {/* Month Selector */}
                     {filterType === 'month' && (
                         <div className="space-y-2">
-                            <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
+                            <label htmlFor="selMonth" className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.selectMonth')}:</label>
                             <select
+                                id="selMonth"
                                 value={selMonth}
                                 onChange={(e) => setSelMonth(e.target.value)}
                                 className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
@@ -116,21 +117,27 @@ const FilterModal: React.FC = () => {
                     {/* Date Range Selector */}
                     {filterType === 'range' && (
                         <div className="space-y-2">
-                            <label className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</label>
+                            <p className="text-slate-600 dark:text-slate-400 text-sm">{t('filter.byRange')}:</p>
                             <div className="flex flex-col gap-2">
+                                <label htmlFor="dateFrom" className="sr-only">{t('common.from', 'Desde')}</label>
                                 <input
+                                    id="dateFrom"
                                     type="date"
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
                                     className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                                     placeholder="Desde"
+                                    aria-label={t('common.from', 'Desde')}
                                 />
+                                <label htmlFor="dateTo" className="sr-only">{t('common.to', 'Hasta')}</label>
                                 <input
+                                    id="dateTo"
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}
                                     className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-600 text-sm"
                                     placeholder="Hasta"
+                                    aria-label={t('common.to', 'Hasta')}
                                 />
                             </div>
                         </div>

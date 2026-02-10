@@ -180,8 +180,7 @@ const TripDetailModal: React.FC = () => {
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-2 mb-3">
                     <div
-                        className={`bg - slate - 100 dark: bg - slate - 700 / 50 rounded - xl p - 3 text - center ${trip.gpsDistanceKm ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors' : ''
-                            } `}
+                        className={`bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center ${trip.gpsDistanceKm ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors' : ''}`}
                         onClick={() => trip.gpsDistanceKm && setShowMap(true)}
                     >
                         <MapPin className="w-4 h-4 mx-auto mb-0.5 text-red-400" />
@@ -199,10 +198,7 @@ const TripDetailModal: React.FC = () => {
                         ) : (
                             <>
                                 <p className="text-slate-900 dark:text-white text-lg font-bold">{trip.trip?.toFixed(1)} {t('units.km')}</p>
-                                <p className={`text - xs font - medium ${getDistanceSource(trip) === 'ec_database'
-                                        ? 'text-blue-500 dark:text-blue-400'
-                                        : 'text-amber-500 dark:text-amber-400'
-                                    } `}>
+                                <p className={`text-xs font-medium ${getDistanceSource(trip) === 'ec_database' ? 'text-blue-500 dark:text-blue-400' : 'text-amber-500 dark:text-amber-400'}`}>
                                     {getDistanceSource(trip) === 'ec_database' ? 'EC DB 💾' : 'Odómetro'}
                                 </p>
                             </>
@@ -284,7 +280,7 @@ const TripDetailModal: React.FC = () => {
                     <div className="space-y-1.5">
                         <div className="flex items-center justify-between">
                             <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.comparedToAvg')}</span>
-                            <span className={`font - bold ${details.comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'} `}>
+                            <span className={`font-bold ${details.comparisonPercent < 0 ? 'text-green-400' : 'text-red-400'}`}>
                                 {details.comparisonPercent > 0 ? '+' : ''}{details.comparisonPercent.toFixed(1)}%
                             </span>
                         </div>
