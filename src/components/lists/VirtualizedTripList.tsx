@@ -13,6 +13,7 @@ interface VirtualizedTripListProps {
     scrollElement: HTMLElement | null;
     onEndReached?: () => void;
     isLoading?: boolean;
+    hasMore?: boolean;
 }
 
 const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({
@@ -22,7 +23,8 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({
     onTripClick,
     scrollElement,
     onEndReached,
-    isLoading
+    isLoading,
+    hasMore
 }) => {
     const listRef = useRef<HTMLDivElement>(null);
 
@@ -50,7 +52,7 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({
     }, [scrollElement, onEndReached]);
 
     return (
-        <div ref={listRef} style={{ height: `${virtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+        <div ref={listRef} style={{ height: `${virtualizer.getTotalSize() + (isLoading || hasMore ? 60 : 0)}px`, width: '100%', position: 'relative' }}>
             {virtualizer.getVirtualItems().map((virtualItem) => (
                 <div
                     key={virtualItem.key}
@@ -79,13 +81,31 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({
                 <div
                     style={{
                         position: 'absolute',
-                        bottom: -40,
+                        bottom: 10,
                         width: '100%',
                         textAlign: 'center',
                         padding: '10px'
                     }}
                 >
                     <span className="inline-block w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></span>
+                </div>
+            )}
+            {!isLoading && hasMore && onEndReached && (
+                <div
+                    style={{
+                        position: 'absolute',
+                        bottom: 0,
+                        width: '100%',
+                        textAlign: 'center',
+                        padding: '10px'
+                    }}
+                >
+                    <button
+                        onClick={onEndReached}
+                        className="px-4 py-2 text-sm text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 transition-colors"
+                    >
+                        Cargar más viajes
+                    </button>
                 </div>
             )}
         </div>

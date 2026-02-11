@@ -6,26 +6,51 @@ const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
 const DB_FILENAME = 'byd_stats_data.json';
 const FOLDER_ID = 'appDataFolder';
 
+// ============================================
+// CACHE SYSTEM
+// ============================================
 interface CacheEntry<T> {
     data: T;
     timestamp: number;
+    etag?: string;
 }
 
 const cache = new Map<string, CacheEntry<unknown>>();
 const CACHE_TTL = 30000; // 30 seconds
+const CACHE_TTL_LONG = 300000; // 5 minutes for infrequently changed data
 
-function getCached<T>(key: string): T | null {
+function getCached<T>(key: string, ttl = CACHE_TTL): T | null {
     const entry = cache.get(key);
     if (!entry) return null;
-    if (Date.now() - entry.timestamp > CACHE_TTL) {
+
+    if (Date.now() - entry.timestamp > ttl) {
         cache.delete(key);
         return null;
     }
+
     return entry.data as T;
 }
 
-function setCache<T>(key: string, data: T): void {
-    cache.set(key, { data, timestamp: Date.now() });
+function setCache<T>(key: string, data: T, etag?: string): void {
+    cache.set(key, { data, timestamp: Date.now(), etag });
+}
+
+/**
+ * Invalidate cache by pattern or clear all
+ */
+export function invalidateCache(pattern?: string): void {
+    if (!pattern) {
+        cache.clear();
+        logger.debug('[Drive] Cache cleared');
+        return;
+    }
+
+    for (const key of cache.keys()) {
+        if (key.includes(pattern)) {
+            cache.delete(key);
+        }
+    }
+    logger.debug(`[Drive] Cache invalidated for pattern: ${pattern}`);
 }
 
 let accessToken: string | null = null;
@@ -41,6 +66,11 @@ export interface SyncData {
     trips: Trip[];
     settings: Settings;
     charges: Charge[];
+    aiCache?: {
+        efficiency?: { hash: string; scenarios: any[]; loss: number };
+        soh?: { hash: string; soh: number; stats: { points: any[]; trend: any[] } };
+        parking?: { hash: string; trained: boolean };
+    };
 }
 
 export interface RegistryData {
@@ -78,6 +108,7 @@ export const googleDriveService = {
      */
     signOut: async (): Promise<void> => {
         accessToken = null;
+        invalidateCache();
     },
 
     /**
@@ -94,13 +125,16 @@ export const googleDriveService = {
     /**
      * List files in the App Data folder to find our DB
      */
-    listFiles: async (filename: string = DB_FILENAME): Promise<GoogleDriveFile[]> => {
+    listFiles: async (filename: string = DB_FILENAME, options?: { forceRefresh?: boolean }): Promise<GoogleDriveFile[]> => {
         try {
             const cacheKey = `listFiles:${filename}`;
-            const cached = getCached<GoogleDriveFile[]>(cacheKey);
-            if (cached) {
-                logger.debug(`[Drive] Serving ${filename} from cache`);
-                return cached;
+
+            if (!options?.forceRefresh) {
+                const cached = getCached<GoogleDriveFile[]>(cacheKey);
+                if (cached) {
+                    logger.debug(`[Drive] Cache hit: ${cacheKey}`);
+                    return cached;
+                }
             }
 
             const query = `name = '${filename}'`;
@@ -127,8 +161,18 @@ export const googleDriveService = {
     /**
      * List ALL BYD Stats database files (including UUIDs)
      */
-    listAllDatabaseFiles: async (): Promise<GoogleDriveFile[]> => {
+    listAllDatabaseFiles: async (options?: { forceRefresh?: boolean }): Promise<GoogleDriveFile[]> => {
         try {
+            const cacheKey = 'listAllDatabaseFiles';
+
+            if (!options?.forceRefresh) {
+                const cached = getCached<GoogleDriveFile[]>(cacheKey);
+                if (cached) {
+                    logger.debug(`[Drive] Cache hit: ${cacheKey}`);
+                    return cached;
+                }
+            }
+
             const query = `name contains 'byd_stats_data' and mimeType = 'application/json'`;
             const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=20&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
 
@@ -141,7 +185,9 @@ export const googleDriveService = {
             }
 
             const data = await response.json();
-            return data.files as GoogleDriveFile[];
+            const files = data.files as GoogleDriveFile[];
+            setCache(cacheKey, files);
+            return files;
         } catch (error) {
             logger.error('Error listing all database files', error);
             throw error;
@@ -173,7 +219,8 @@ export const googleDriveService = {
                 return {
                     trips: Array.isArray(result.trips) ? result.trips : [],
                     settings: result.settings || {} as Settings,
-                    charges: Array.isArray(result.charges) ? result.charges : []
+                    charges: Array.isArray(result.charges) ? result.charges : [],
+                    aiCache: result.aiCache || undefined
                 };
             }
 
@@ -226,6 +273,9 @@ export const googleDriveService = {
                 throw new Error('Failed to upload file content: ' + await updateRes.text());
             }
 
+            invalidateCache('listFiles');
+            invalidateCache('listAllDatabaseFiles');
+
             return await updateRes.json();
 
         } catch (error) {
@@ -248,6 +298,10 @@ export const googleDriveService = {
             if (!response.ok) {
                 throw new Error(`Error deleting file: ${response.status} ${response.statusText}`);
             }
+
+            invalidateCache('listFiles');
+            invalidateCache('listAllDatabaseFiles');
+
             return true;
         } catch (error) {
             logger.error('Error deleting file', error);
@@ -258,21 +312,31 @@ export const googleDriveService = {
     /**
      * Get Registry File
      */
-    getRegistry: async (): Promise<RegistryData | null> => {
+    getRegistry: async (options?: { forceRefresh?: boolean }): Promise<RegistryData | null> => {
         try {
-            const files = await googleDriveService.listFiles('byd_stats_registry.json');
+            const cacheKey = 'registry';
+            if (!options?.forceRefresh) {
+                const cached = getCached<RegistryData>(cacheKey, CACHE_TTL_LONG);
+                if (cached) {
+                    logger.debug('[Drive] Cache hit: registry');
+                    return cached;
+                }
+            }
+
+            const files = await googleDriveService.listFiles('byd_stats_registry.json', options);
             if (files && files.length > 0) {
-                // We use downloadFile but check if it matches RegistryData structure
-                // But downloadFile returns SyncData... allow loose typing here or distinct method
                 const url = `${DRIVER_API_URL}/files/${files[0].id}?alt=media`;
                 const response = await fetch(url, { headers: googleDriveService._getHeaders() });
                 if (!response.ok) throw new Error('Failed to DL registry');
                 const fileContent = await response.json();
 
-                return {
+                const registry = {
                     lastUpdated: fileContent.lastUpdated,
                     cars: Array.isArray(fileContent.cars) ? fileContent.cars : []
                 };
+
+                setCache(cacheKey, registry);
+                return registry;
             }
             return null;
         } catch (e) {
@@ -289,6 +353,7 @@ export const googleDriveService = {
             const files = await googleDriveService.listFiles('byd_stats_registry.json');
             const fileId = files && files.length > 0 ? files[0].id : null;
             await googleDriveService.uploadFile(registryData, fileId, 'byd_stats_registry.json');
+            invalidateCache('registry');
         } catch (e) {
             logger.error('Error updating registry', e);
             throw e;
@@ -401,10 +466,31 @@ export const googleDriveService = {
 
         const mergedCharges = Array.from(chargeMap.values()).sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
+        // 4. Merge AI Cache (Keep whichever has more data trained)
+        let mergedAiCache = localData.aiCache;
+
+        if (remoteData.aiCache) {
+            // Helper to get count from hash string "count:123|..."
+            const getCount = (hash?: string) => parseInt(hash?.match(/count:(\d+)/)?.[1] || '0');
+
+            const localEfficiencyHash = localData.aiCache?.efficiency?.hash;
+            const remoteEfficiencyHash = remoteData.aiCache?.efficiency?.hash;
+
+            const remoteCount = getCount(remoteEfficiencyHash);
+
+            // If remote has more training data, prefer remote
+            if (remoteCount > getCount(localEfficiencyHash)) {
+                mergedAiCache = remoteData.aiCache;
+            } else if (!mergedAiCache) {
+                mergedAiCache = remoteData.aiCache;
+            }
+        }
+
         return {
             trips: mergedTrips,
             settings: mergedSettings as Settings,
-            charges: mergedCharges
+            charges: mergedCharges,
+            aiCache: mergedAiCache
         };
     }
 };

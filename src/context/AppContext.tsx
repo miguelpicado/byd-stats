@@ -8,9 +8,13 @@ import { useCar } from './CarContext';
 import { SETTINGS_KEY as BASE_SETTINGS_KEY } from '@core/constants';
 import { Settings, ChargerType } from '@/types';
 
+import { Capacitor } from '@capacitor/core';
+
 interface AppContextType {
     settings: Settings;
     updateSettings: (newSettings: Partial<Settings> | ((prev: Settings) => Partial<Settings>)) => void;
+    isNative: boolean;
+    isPro: boolean;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -84,8 +88,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const { activeCarId } = useCar();
     const settingsKey = activeCarId ? `${BASE_SETTINGS_KEY}_${activeCarId}` : null;
 
-    // --- Settings State ---
+    // --- App State ---
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+    const [isPro, setIsPro] = useState(false); // Default to false, will be updated via Auth/Firebase
+    const isNative = Capacitor.isNativePlatform();
 
     // Load settings when activeCarId (key) changes
     useEffect(() => {
@@ -203,8 +209,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     // Memoize context value to prevent unnecessary re-renders
     const value = useMemo(() => ({
         settings,
-        updateSettings
-    }), [settings, updateSettings]);
+        updateSettings,
+        isNative,
+        isPro
+    }), [settings, updateSettings, isNative, isPro]);
 
     return (
         <AppContext.Provider value={value}>

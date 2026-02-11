@@ -69,6 +69,7 @@ export interface Car {
 }
 
 export * from './settings';
+export * from './workers';
 
 
 export interface MonthlyData {

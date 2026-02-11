@@ -13,7 +13,7 @@ declare global {
     }
 }
 
-interface UseDatabaseReturn {
+export interface UseDatabaseReturn {
     sqlReady: boolean;
     loading: boolean;
     error: string | null;

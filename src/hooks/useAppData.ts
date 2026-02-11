@@ -74,22 +74,27 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
     const [firebaseTrips, setFirebaseTrips] = useState<Trip[]>([]);
 
     useEffect(() => {
+        if (!activeCarId) {
+            setFirebaseTrips([]);
+            return;
+        }
+
         let debounceTimer: NodeJS.Timeout;
 
-        // Subscribe without batterySize - consumption calculated at merge time
+        // Subscribe with activeCarId as userId
         const unsubscribe = subscribeToTrips((trips) => {
             // Debounce updates to prevent excessive re-renders
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 setFirebaseTrips(trips);
             }, 300); // 300ms debounce
-        }, 500);
+        }, activeCarId, 500);
 
         return () => {
             clearTimeout(debounceTimer);
             unsubscribe();
         };
-    }, []); // No dependencies - subscribe once
+    }, [activeCarId]); // Depend on activeCarId
 
     // 3.1 Computed: Merged Trips (Local + Remote)
     // Also calculates consumption from SoC if not provided

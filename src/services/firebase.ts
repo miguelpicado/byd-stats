@@ -7,13 +7,13 @@ import {
     limit,
     where,
     onSnapshot,
-    QuerySnapshot,
     DocumentData,
     DocumentSnapshot,
     startAfter,
     getDocs,
     persistentLocalCache,
-    persistentMultipleTabManager
+    persistentMultipleTabManager,
+    QueryConstraint
 } from 'firebase/firestore';
 import { Trip } from '../types';
 import { logger } from '@core/logger';
@@ -76,94 +76,105 @@ const mapDocToTrip = (doc: DocumentSnapshot<DocumentData>): Trip | null => {
  * Falls back to client-side filtering if index is still building
  * batterySize removed - consumption calculation moved to useAppData
  */
-export const subscribeToTrips = (onUpdate: (trips: Trip[]) => void, maxTrips = 500) => {
-    logger.info('[Firebase] Subscribe init:', firebaseConfig.projectId, `(limit: ${maxTrips})`);
+export const subscribeToTrips = (
+    onUpdate: (trips: Trip[]) => void,
+    userId: string,
+    maxTrips = 500,
+    dateRange?: { start?: string; end?: string }
+) => {
+    logger.info('[Firebase] Subscribe init:', firebaseConfig.projectId, `(userId: ${userId}, limit: ${maxTrips}, range: ${JSON.stringify(dateRange)})`);
 
-    // Try optimized query first (requires composite index)
+    const constraints: QueryConstraint[] = [
+        where('userId', '==', userId),
+        where('status', '==', 'completed')
+    ];
+
+    if (dateRange?.start) {
+        // Convert YYYYMMDD string or ensure timestamp
+        const startTimestamp = new Date(
+            parseInt(dateRange.start.substring(0, 4)),
+            parseInt(dateRange.start.substring(4, 6)) - 1,
+            parseInt(dateRange.start.substring(6, 8))
+        );
+        constraints.push(where('startDate', '>=', startTimestamp));
+    }
+
+    if (dateRange?.end) {
+        const endTimestamp = new Date(
+            parseInt(dateRange.end.substring(0, 4)),
+            parseInt(dateRange.end.substring(4, 6)) - 1,
+            parseInt(dateRange.end.substring(6, 8)),
+            23, 59, 59
+        );
+        constraints.push(where('startDate', '<=', endTimestamp));
+    }
+
+    // Try optimized query (requires composite index)
+    // Always order by startDate desc
     const optimizedQuery = query(
         collection(db, 'trips'),
-        where('status', '==', 'completed'),
+        ...(constraints as any),
         orderBy('startDate', 'desc'),
         limit(maxTrips)
     );
 
-    // Fallback query (no index required, filters client-side)
-    const fallbackQuery = query(
-        collection(db, 'trips'),
-        orderBy('startDate', 'desc'),
-        limit(maxTrips)
-    );
+    // Explicit fallback removed for clarity - we should assume indexes exist for S6
 
-    let usingFallback = false;
-    let unsubscribe: (() => void) | null = null;
-
-    const handleSnapshot = (snapshot: QuerySnapshot<DocumentData>) => {
+    let unsubscribe = onSnapshot(optimizedQuery, (snapshot) => {
         const trips: Trip[] = [];
-        let skippedInProgress = 0;
-        logger.debug('[Firebase] Snapshot received:', snapshot.size, snapshot.metadata.fromCache ? '(CACHED)' : '(SERVER)', usingFallback ? '(FALLBACK)' : '');
-
         snapshot.forEach((doc) => {
-            const data = doc.data();
-
-            // Client-side filter when using fallback query
-            if (usingFallback && data.status === 'in_progress') {
-                skippedInProgress++;
-                return;
-            }
-
             const trip = mapDocToTrip(doc as DocumentSnapshot<DocumentData>);
             if (trip) trips.push(trip);
         });
-
-        logger.debug('[Firebase] Mapped trips:', trips.length, skippedInProgress > 0 ? `(skipped ${skippedInProgress} in_progress)` : '');
         onUpdate(trips);
-    };
+    }, (error) => {
+        logger.error('[Firebase] Subscribe error:', error);
+    });
 
-    const handleError = (error: Error) => {
-        // Check if this is an index-building error
-        if (error.message?.includes('index') && !usingFallback) {
-            logger.warn('[Firebase] Index not ready, falling back to client-side filtering');
-            usingFallback = true;
-
-            // Unsubscribe from failed query and use fallback
-            if (unsubscribe) unsubscribe();
-            unsubscribe = onSnapshot(fallbackQuery, handleSnapshot, (fallbackError) => {
-                logger.error('[Firebase] Fallback subscribe error:', fallbackError);
-            });
-        } else {
-            logger.error('[Firebase] Subscribe error:', error);
-        }
-    };
-
-    // Start with optimized query
-    unsubscribe = onSnapshot(optimizedQuery, handleSnapshot, handleError);
-
-    return () => {
-        if (unsubscribe) unsubscribe();
-    };
+    return () => unsubscribe();
 };
 
 /**
  * Fetch trips with cursor pagination for infinite scroll
- * @param cursor - Last document from previous page (null for first page)
- * @param pageSize - Number of trips per page
- * @returns Object with trips array and last document for next page
  */
 export const fetchTripsPage = async (
+    userId: string,
     cursor: DocumentSnapshot<DocumentData> | null = null,
-    pageSize = 50
+    pageSize = 50,
+    dateRange?: { start?: string; end?: string }
 ): Promise<{ trips: Trip[]; lastDoc: DocumentSnapshot<DocumentData> | null; hasMore: boolean }> => {
-    logger.debug('[Firebase] Fetching page:', cursor ? 'next' : 'first', `(size: ${pageSize})`);
+    logger.debug('[Firebase] Fetching page:', cursor ? 'next' : 'first', `(userId: ${userId}, size: ${pageSize})`);
 
-    const baseConstraints = [
-        where('status', '==', 'completed'),
-        orderBy('startDate', 'desc'),
-        limit(pageSize)
+    const constraints: QueryConstraint[] = [
+        where('userId', '==', userId),
+        where('status', '==', 'completed')
     ];
 
+    if (dateRange?.start) {
+        const startTimestamp = new Date(
+            parseInt(dateRange.start.substring(0, 4)),
+            parseInt(dateRange.start.substring(4, 6)) - 1,
+            parseInt(dateRange.start.substring(6, 8))
+        );
+        constraints.push(where('startDate', '>=', startTimestamp));
+    }
+
+    if (dateRange?.end) {
+        const endTimestamp = new Date(
+            parseInt(dateRange.end.substring(0, 4)),
+            parseInt(dateRange.end.substring(4, 6)) - 1,
+            parseInt(dateRange.end.substring(6, 8)),
+            23, 59, 59
+        );
+        constraints.push(where('startDate', '<=', endTimestamp));
+    }
+
+    constraints.push(orderBy('startDate', 'desc'));
+    constraints.push(limit(pageSize));
+
     const q = cursor
-        ? query(collection(db, 'trips'), ...baseConstraints, startAfter(cursor))
-        : query(collection(db, 'trips'), ...baseConstraints);
+        ? query(collection(db, 'trips'), ...(constraints as any), startAfter(cursor))
+        : query(collection(db, 'trips'), ...(constraints as any));
 
     const snapshot = await getDocs(q);
     const trips: Trip[] = [];

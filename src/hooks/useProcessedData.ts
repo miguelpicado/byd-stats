@@ -21,6 +21,9 @@ interface DataWorkerApi {
     getSoHStats(charges: Charge[], capacity: number): Promise<{ points: any[]; trend: any[] }>;
 
     trainParking(trips: Trip[]): Promise<{ loss: number; samples: number }>;
+    exportParkingModel(): Promise<any[] | null>;
+    importParkingModel(weights: any[]): Promise<void>;
+
     predictDeparture(startTime: number): Promise<{ departureTime: number; duration: number } | null>;
 
     findSmartChargingWindows(trips: Trip[], settings: Settings): Promise<any>;
@@ -73,12 +76,21 @@ export const useProcessedData = (
         stats: { points: any[]; trend: any[] };
     } | null>('ai_soh_predictions', null);
 
+    const [parkingCache, setParkingCache] = useLocalStorage<{
+        hash: string;
+        weights: any[];
+    } | null>('ai_parking_predictions', null);
+
+
     // Recalculation Trigger
     const [recalcTrigger, setRecalcTrigger] = useState(0);
 
     const triggerRecalculation = () => {
         setAiCache(null);
         setSohCache(null);
+        setParkingCache(null);
+
+        setRecalcTrigger(prev => prev + 1);
         setRecalcTrigger(prev => prev + 1);
     };
 
@@ -87,7 +99,7 @@ export const useProcessedData = (
 
     useEffect(() => {
         if (!workerRef.current) {
-            const worker = new Worker(new URL('../workers/dataWorker.js', import.meta.url), { type: 'module' });
+            const worker = new Worker(new URL('../workers/dataWorker.ts', import.meta.url), { type: 'module' });
             rawWorkerRef.current = worker;
             workerRef.current = Comlink.wrap<DataWorkerApi>(worker);
         }
@@ -220,10 +232,39 @@ export const useProcessedData = (
                     }
 
                     // Train AI Parking Model
-                    if (allTrips.length > 5) {
+                    // Check local cache for weights
+                    const parkingHash = currentHash;
+                    let parkingCacheHit = false;
+
+                    if (parkingCache && parkingCache.hash === parkingHash && parkingCache.weights && parkingCache.weights.length > 0) {
+                        // Validate Cache Format (v2: { data, shape })
+                        const isValid = (parkingCache.weights[0] as any).data && (parkingCache.weights[0] as any).shape;
+
+                        if (isValid) {
+                            // Restore Model from Cache
+                            workerRef.current.importParkingModel(parkingCache.weights).then(() => {
+                                // logger.debug('[AI Parking] Model Restored from Cache');
+                            }).catch(err => {
+                                logger.warn('Failed to restore parking model', err);
+                                setParkingCache(null); // Corrupt cache
+                            });
+                            parkingCacheHit = true;
+                        } else {
+                            // Invalid format (legacy) -> Invalidate
+                            setParkingCache(null);
+                        }
+                    }
+
+                    // Train if Miss
+                    if (!parkingCacheHit && allTrips.length > 5) {
                         workerRef.current.trainParking(allTrips)
-                            .then(({ loss }) => {
-                                logger.debug(`AI Parking Trained. Loss: ${loss.toFixed(4)}`);
+                            .then(async () => {
+                                // Save Model Weights
+                                const weights = await workerRef.current!.exportParkingModel();
+                                if (isMounted && weights) {
+                                    // Weights are now { data: number[], shape: number[] }[] -> Serializable
+                                    setParkingCache({ hash: parkingHash, weights });
+                                }
                             })
                             .catch(err => logger.warn('AI Parking Training error:', err));
                     }

@@ -1,45 +1,53 @@
-import { Trip, Charge } from '../types';
-import { EfficiencyModel } from './ai/EfficiencyModel';
-import { SoHModel } from './ai/SoHModel';
-import { ParkingModel } from './ai/ParkingModel';
+// PredictiveService - Thin wrapper over Web Worker
+// All heavy TensorFlow logic now lives in workers/tensorflowWorker.ts
+// This file is kept for backward compatibility with any direct imports
+
+import * as Comlink from 'comlink';
+import type { DataWorkerApi } from '../workers/dataWorker';
+
+let worker: Comlink.Remote<DataWorkerApi> | null = null;
+
+function getWorker(): Comlink.Remote<DataWorkerApi> {
+    if (!worker) {
+        const w = new Worker(
+            new URL('../workers/dataWorker.ts', import.meta.url),
+            { type: 'module' }
+        );
+        worker = Comlink.wrap<DataWorkerApi>(w);
+    }
+    return worker;
+}
 
 /**
- * Service to handle AI predictions for Range/Efficiency, SoH, and Parking.
- * Composes specialized models from `src/services/ai/`.
+ * PredictiveService - Public API
+ * Delegates all work to Web Workers to keep main thread free.
+ * NOTE: All methods are now async since they cross worker boundaries.
  */
 export class PredictiveService {
-    private efficiencyModel = new EfficiencyModel();
-    private sohModel = new SoHModel();
-    private parkingModel = new ParkingModel();
-
-    // Efficiency Delegation
-    async train(trips: Trip[]): Promise<{ loss: number; samples: number }> {
-        return this.efficiencyModel.train(trips);
+    async train(trips: any[]) {
+        return getWorker().trainModel(trips);
     }
 
-    predict(speed: number, distance: number = 50): number {
-        return this.efficiencyModel.predict(speed, distance);
+    async getScenarios(batteryCapacity: number, soh: number) {
+        return getWorker().getRangeScenarios(batteryCapacity, soh);
     }
 
-    getScenarios(batteryCapacity: number = 60, soh: number = 100) {
-        return this.efficiencyModel.getScenarios(batteryCapacity, soh);
+    async trainSoH(charges: any[], capacity: number) {
+        return getWorker().trainSoH(charges, capacity);
     }
 
-    // SoH Delegation
-    async trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ loss: number, samples: number, predictedSoH: number }> {
-        return this.sohModel.train(charges, nominalCapacity);
+    async getSoHDataPoints(charges: any[], capacity: number) {
+        return getWorker().getSoHStats(charges, capacity);
     }
 
-    getSoHDataPoints(charges: Charge[], nominalCapacity: number) {
-        return this.sohModel.getDataPoints(charges, nominalCapacity);
+    async trainParking(trips: any[]) {
+        return getWorker().trainParking(trips);
     }
 
-    // Parking Delegation
-    async trainParking(trips: Trip[]): Promise<{ loss: number; samples: number }> {
-        return this.parkingModel.train(trips);
-    }
-
-    predictDeparture(startTime: number): { departureTime: number; duration: number } | null {
-        return this.parkingModel.predictDeparture(startTime);
+    async predictDeparture(startTime: number) {
+        return getWorker().predictDeparture(startTime);
     }
 }
+
+// Singleton export for backwards compatibility
+export const predictiveService = new PredictiveService();

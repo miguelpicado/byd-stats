@@ -1,10 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
 import { logger } from '@core/logger';
 
+// Configuration
+const BATCH_DELAY = 150;
+
 // Queue for pending writes
 const writeQueue = new Map<string, { value: unknown; timeout: NodeJS.Timeout }>();
 
-function batchedWrite(key: string, value: unknown, delay = 100): void {
+/**
+ * Forcefully write all pending changes to localStorage
+ */
+export function flushWrites(): void {
+    writeQueue.forEach((entry, key) => {
+        clearTimeout(entry.timeout);
+        try {
+            localStorage.setItem(key, JSON.stringify(entry.value));
+            // logger.debug(`[Storage] Flushed write for ${key}`);
+        } catch (error) {
+            logger.error(`Error flushing localStorage key "${key}":`, error);
+        }
+    });
+    writeQueue.clear();
+}
+
+/**
+ * Flush on page unload to prevent data loss
+ */
+if (typeof window !== 'undefined') {
+    window.addEventListener('beforeunload', flushWrites);
+}
+
+function batchedWrite(key: string, value: unknown): void {
     // Clear existing timeout for this key
     const pending = writeQueue.get(key);
     if (pending) {
@@ -20,7 +46,7 @@ function batchedWrite(key: string, value: unknown, delay = 100): void {
             logger.error(`Error writing localStorage key "${key}":`, error);
         }
         writeQueue.delete(key);
-    }, delay);
+    }, BATCH_DELAY);
 
     writeQueue.set(key, { value, timeout });
 }
@@ -44,7 +70,11 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
     useEffect(() => {
         if (storedValue === undefined || storedValue === null) {
             try {
+                // Remove immediately from storage to avoid inconsistency
                 localStorage.removeItem(key);
+                const pending = writeQueue.get(key);
+                if (pending) clearTimeout(pending.timeout);
+                writeQueue.delete(key);
             } catch (error) {
                 logger.error(`Error removing localStorage key "${key}":`, error);
             }
@@ -63,6 +93,9 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
         try {
             localStorage.removeItem(key);
             setStoredValue(initialValue);
+            const pending = writeQueue.get(key);
+            if (pending) clearTimeout(pending.timeout);
+            writeQueue.delete(key);
         } catch (error) {
             logger.error(`Error removing localStorage key "${key}":`, error);
         }

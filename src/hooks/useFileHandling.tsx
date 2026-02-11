@@ -21,7 +21,7 @@ interface PendingFile {
     source: 'android' | 'pwa-launch' | 'pwa-share';
 }
 
-interface UseFileHandlingReturn {
+export interface UseFileHandlingReturn {
     pendingFile: PendingFile | null;
     error: string | null;
     clearPendingFile: () => void;
