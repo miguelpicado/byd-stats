@@ -78,16 +78,21 @@ const mapDocToTrip = (doc: DocumentSnapshot<DocumentData>): Trip | null => {
  */
 export const subscribeToTrips = (
     onUpdate: (trips: Trip[]) => void,
-    userId: string,
+    vehicleId: string, // Smartcar vehicleId (matches Firestore trips.vehicleId)
     maxTrips = 500,
     dateRange?: { start?: string; end?: string }
 ) => {
-    logger.info('[Firebase] Subscribe init:', firebaseConfig.projectId, `(userId: ${userId}, limit: ${maxTrips}, range: ${JSON.stringify(dateRange)})`);
+    logger.info('[Firebase] Subscribe init:', firebaseConfig.projectId, `(vehicleId: ${vehicleId}, limit: ${maxTrips}, range: ${JSON.stringify(dateRange)})`);
 
     const constraints: QueryConstraint[] = [
-        where('userId', '==', userId),
         where('status', '==', 'completed')
     ];
+
+    // Only add vehicleId filter for top-level collection queries
+    const isByd = vehicleId.length === 17;
+    if (!isByd) {
+        constraints.push(where('vehicleId', '==', vehicleId));
+    }
 
     if (dateRange?.start) {
         // Convert YYYYMMDD string or ensure timestamp
@@ -109,10 +114,16 @@ export const subscribeToTrips = (
         constraints.push(where('startDate', '<=', endTimestamp));
     }
 
+    // Determine collection path based on vehicleId format (VIN vs UUID)
+    // BYD VINs are 17 chars, Smartcar IDs are UUIDs (36 chars)
+    const tripsCollection = isByd
+        ? collection(db, 'bydVehicles', vehicleId, 'trips')
+        : collection(db, 'trips');
+
     // Try optimized query (requires composite index)
     // Always order by startDate desc
     const optimizedQuery = query(
-        collection(db, 'trips'),
+        tripsCollection,
         ...(constraints as any),
         orderBy('startDate', 'desc'),
         limit(maxTrips)
@@ -138,17 +149,21 @@ export const subscribeToTrips = (
  * Fetch trips with cursor pagination for infinite scroll
  */
 export const fetchTripsPage = async (
-    userId: string,
+    vehicleId: string, // Smartcar vehicleId (matches Firestore trips.vehicleId)
     cursor: DocumentSnapshot<DocumentData> | null = null,
     pageSize = 50,
     dateRange?: { start?: string; end?: string }
 ): Promise<{ trips: Trip[]; lastDoc: DocumentSnapshot<DocumentData> | null; hasMore: boolean }> => {
-    logger.debug('[Firebase] Fetching page:', cursor ? 'next' : 'first', `(userId: ${userId}, size: ${pageSize})`);
+    logger.debug('[Firebase] Fetching page:', cursor ? 'next' : 'first', `(vehicleId: ${vehicleId}, size: ${pageSize})`);
 
     const constraints: QueryConstraint[] = [
-        where('userId', '==', userId),
         where('status', '==', 'completed')
     ];
+
+    const isByd = vehicleId.length === 17;
+    if (!isByd) {
+        constraints.push(where('vehicleId', '==', vehicleId));
+    }
 
     if (dateRange?.start) {
         const startTimestamp = new Date(
@@ -172,9 +187,13 @@ export const fetchTripsPage = async (
     constraints.push(orderBy('startDate', 'desc'));
     constraints.push(limit(pageSize));
 
+    const tripsCollection = isByd
+        ? collection(db, 'bydVehicles', vehicleId, 'trips')
+        : collection(db, 'trips');
+
     const q = cursor
-        ? query(collection(db, 'trips'), ...(constraints as any), startAfter(cursor))
-        : query(collection(db, 'trips'), ...(constraints as any));
+        ? query(tripsCollection, ...(constraints as any), startAfter(cursor))
+        : query(tripsCollection, ...(constraints as any));
 
     const snapshot = await getDocs(q);
     const trips: Trip[] = [];

@@ -1,9 +1,12 @@
 import { useEffect, useRef, useState, Dispatch, SetStateAction } from 'react';
 
+import type { FC } from 'react';
+import { IconProps } from '@components/Icons';
+
 interface Tab {
     id: string;
     label: string;
-    icon?: any;
+    icon?: FC<IconProps>;
 }
 
 interface UseSwipeGestureParams {

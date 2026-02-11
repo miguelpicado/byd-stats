@@ -1,6 +1,6 @@
-import React, { Suspense, memo } from 'react';
+import React, { Suspense, memo, FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle } from '@components/Icons';
+import { AlertCircle, IconProps } from '@components/Icons';
 import { TAB_PADDING, COMPACT_TAB_PADDING } from '@utils/constants';
 import ErrorBoundary from '@components/common/ErrorBoundary';
 import { Trip, Charge } from '@/types';
@@ -25,12 +25,18 @@ const PatternsTab = React.lazy(() => import('@tabs/PatternsTab'));
 const EfficiencyTab = React.lazy(() => import('@tabs/EfficiencyTab'));
 const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
 
+interface Tab {
+    id: string;
+    label: string;
+    icon: FC<IconProps>;
+}
+
 /**
  * Mobile Dashboard View - Optimized for touch gestures and vertical slider navigation
  */
 interface MobileDashboardViewProps {
     activeTab: string;
-    tabs: any[];
+    tabs: Tab[];
     isTransitioning: boolean;
     transitionDuration?: number;
     fadingTab?: string;

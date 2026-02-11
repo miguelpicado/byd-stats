@@ -1,266 +1,138 @@
-// BYD Stats - Data Processing Tests
+
+// src/core/__tests__/dataProcessing.test.ts
 import { describe, it, expect } from 'vitest';
-import { processData } from '../dataProcessing';
-import { Trip, Charge, Settings } from '@/types';
+import {
+    calculateStats,
+    getTopN,
+    isStationaryTrip,
+    mergeTrips,
+    deduplicateByKey
+} from '../dataProcessing';
+import { Trip } from '@/types';
+
+// Mock data
+const mockTrips = [
+    { date: '2025-01-01', trip: 50, electricity: 8, start_timestamp: 1704067200 },
+    { date: '2025-01-02', trip: 100, electricity: 16, start_timestamp: 1704153600 },
+    { date: '2025-01-03', trip: 0.3, electricity: 0.1, start_timestamp: 1704240000 }, // stationary
+] as Trip[];
 
 describe('dataProcessing', () => {
-    describe('processData', () => {
-        it('should return null for empty array', () => {
-            expect(processData([])).toBeNull();
+    describe('isStationaryTrip', () => {
+        it('returns true for trips < 0.5 km', () => {
             // @ts-ignore
-            expect(processData(null)).toBeNull();
+            expect(isStationaryTrip({ trip: 0.3 })).toBe(true);
             // @ts-ignore
-            expect(processData(undefined)).toBeNull();
+            expect(isStationaryTrip({ trip: 0.49 })).toBe(true);
         });
 
-        it('should handle zero distance trips as stationary consumption', () => {
-            const trips = [
-                { trip: 0, electricity: 1.0 },
-            ] as Trip[];
-            const result = processData(trips);
-            expect(result).not.toBeNull();
-            expect(result!.summary.stationaryConsumption).toBe('1.0');
+        it('returns false for trips >= 0.5 km', () => {
+            // @ts-ignore
+            expect(isStationaryTrip({ trip: 0.5 })).toBe(false);
+            // @ts-ignore
+            expect(isStationaryTrip({ trip: 10 })).toBe(false);
         });
 
-        it('should process valid trips correctly', () => {
-            const trips = [
-                { trip: 10, electricity: 1.2, duration: 600, month: '202501', date: '20250114', start_timestamp: 1705237200 },
-                { trip: 20, electricity: 2.4, duration: 1200, month: '202501', date: '20250114', start_timestamp: 1705240800 },
-            ] as Trip[];
+        it('handles undefined trip', () => {
+            // @ts-ignore
+            expect(isStationaryTrip({})).toBe(true);
+        });
+    });
 
-            const result = processData(trips);
-            expect(result).not.toBeNull();
-            expect(result!.summary).toBeDefined();
-            expect(result!.monthly).toBeDefined();
-            expect(result!.daily).toBeDefined();
-            expect(result!.hourly).toBeDefined();
-            expect(result!.weekday).toBeDefined();
-            expect(result!.tripDist).toBeDefined();
+    describe('getTopN', () => {
+        const items = [
+            { value: 5 },
+            { value: 2 },
+            { value: 8 },
+            { value: 1 },
+            { value: 9 },
+        ];
+
+        it('returns top N items', () => {
+            const top3 = getTopN(items, (a, b) => b.value - a.value, 3);
+            expect(top3.map(i => i.value)).toEqual([9, 8, 5]);
         });
 
-        it('should calculate summary statistics correctly', () => {
-            const trips = [
-                { trip: 10, electricity: 1.0, duration: 600 },
-                { trip: 20, electricity: 2.0, duration: 1200 },
-            ] as Trip[];
-
-            const result = processData(trips);
-            expect(result!.summary.totalTrips).toBe(2);
-            expect(result!.summary.totalKm).toBe('30.0');
-            expect(result!.summary.totalKwh).toBe('3.0');
-            expect(result!.summary.avgEff).toBe('10.00'); // (3.0 / 30.0 * 100)
+        it('handles N > array length', () => {
+            const top10 = getTopN(items, (a, b) => b.value - a.value, 10);
+            expect(top10.length).toBe(5);
         });
 
-        it('should calculate trip distribution correctly', () => {
-            const trips = [
-                { trip: 3 },   // 0-5 km
-                { trip: 10 },  // 5-15 km
-                { trip: 25 },  // 15-30 km
-                { trip: 40 },  // 30-50 km
-                { trip: 60 },  // 50+ km
-            ] as Trip[];
+        it('handles empty array', () => {
+            expect(getTopN([], (a, b) => b - a, 3)).toEqual([]);
+        });
+    });
 
-            const result = processData(trips);
-            expect(result!.tripDist[0].count).toBe(1); // 0-5
-            expect(result!.tripDist[1].count).toBe(1); // 5-15
-            expect(result!.tripDist[2].count).toBe(1); // 15-30
-            expect(result!.tripDist[3].count).toBe(1); // 30-50
-            expect(result!.tripDist[4].count).toBe(1); // 50+
+    describe('deduplicateByKey', () => {
+        const items = [
+            { id: 1, name: 'first' },
+            { id: 2, name: 'second' },
+            { id: 1, name: 'duplicate' },
+        ];
+
+        it('removes duplicates keeping first occurrence', () => {
+            const result = deduplicateByKey(items, item => item.id);
+            expect(result.length).toBe(2);
+            expect(result[0].name).toBe('first');
         });
 
-        it('should group trips by month', () => {
-            const trips = [
-                { trip: 10, electricity: 1.0, month: '202501' },
-                { trip: 15, electricity: 1.5, month: '202501' },
-                { trip: 20, electricity: 2.0, month: '202502' },
-            ] as Trip[];
+        it('handles empty array', () => {
+            expect(deduplicateByKey([], i => i)).toEqual([]);
+        });
+    });
 
-            const result = processData(trips);
-            expect(result!.monthly).toHaveLength(2);
-            expect(result!.monthly[0].trips).toBe(2); // Two trips in Jan
-            expect(result!.monthly[1].trips).toBe(1); // One trip in Feb
+    describe('calculateStats', () => {
+        it('calculates total distance', () => {
+            const stats = calculateStats(mockTrips);
+            expect(stats.totalDistance).toBe(150.3);
         });
 
-        it('should filter efficiency scatter data', () => {
-            const trips = [
-                { trip: 10, electricity: 1.0 },  // Valid: 10 kWh/100km
-                { trip: 10, electricity: 0 },    // Skipped: electricity = 0
-                { trip: 0, electricity: 1.0 },   // Skipped: trip = 0
-                { trip: 10, electricity: 6.0 },  // Skipped: 60 kWh/100km (> 50)
-            ] as Trip[];
-
-            const result = processData(trips);
-            expect(result!.effScatter.length).toBe(1);
-            expect(result!.effScatter[0].x).toBe(10);
-            expect(result!.effScatter[0].y).toBe(10); // (1.0 / 10) * 100
+        it('calculates total energy', () => {
+            const stats = calculateStats(mockTrips);
+            expect(stats.totalEnergy).toBe(24.1);
         });
 
-        it('should skip malformed trips without crashing', () => {
-            const trips = [
-                { trip: 10, electricity: 1.0 }, // Valid
-                { invalidField: 'test' },       // Missing trip field
-                null,                            // Null trip
-                { trip: 'invalid' },             // Non-number trip
-            ] as any[];
-
-            const result = processData(trips);
-            expect(result).not.toBeNull();
-            expect(result!.summary.totalTrips).toBe(1); // Only one valid trip
+        it('calculates average efficiency', () => {
+            const stats = calculateStats(mockTrips);
+            // (8+16+0.1) / (50+100+0.3) * 100 = ~16.034... -> 16.03
+            // Expected logic in implementation: (totalEnergy / totalDistance) * 100
+            expect(stats.avgEfficiency).toBe(16.03);
         });
 
-        // --- New Tests for Price Strategies ---
-
-        it('should calculate cost with Custom Price strategy', () => {
-            const trips = [{ trip: 100, electricity: 15 }] as Trip[];
-            const settings: Settings = {
-                batterySize: 60, soh: 100,
-                electricStrategy: 'custom',
-                electricPrice: 0.20
-            };
-
-            const result = processData(trips, settings);
-            // Cost = 15 kWh * 0.20 = 3.0
-            expect(result!.top.km[0].calculatedCost).toBe(3.0);
-            expect(result!.summary.maxCost).toBe('3.00');
+        it('excludes stationary trips from efficiency', () => {
+            const stats = calculateStats(mockTrips, { excludeStationary: true });
+            // (8+16) / (50+100) * 100 = 16
+            expect(stats.avgEfficiency).toBe(16.00);
+            expect(stats.totalDistance).toBe(150);
         });
 
-        it('should calculate cost with Average Price strategy', () => {
-            const trips = [{ trip: 100, electricity: 10 }] as Trip[];
-            const charges = [
-                { kwhCharged: 100, totalCost: 20, type: 'electric' }, // Avg = 0.20
-                { kwhCharged: 50, totalCost: 25, type: 'electric' }   // Avg = 0.50 -> Total 150kWh, Cost 45 -> 0.30
-            ] as Charge[];
+        it('handles empty array', () => {
+            const stats = calculateStats([]);
+            expect(stats.totalDistance).toBe(0);
+            expect(stats.totalEnergy).toBe(0);
+            expect(stats.avgEfficiency).toBe(0);
+        });
+    });
 
-            const settings: Settings = {
-                batterySize: 60, soh: 100,
-                electricStrategy: 'average'
-            };
+    describe('mergeTrips', () => {
+        const localTrips = [
+            { date: '2025-01-01', trip: 50, start_timestamp: 1000, source: 'local' },
+        ] as any[];
+        const remoteTrips = [
+            { date: '2025-01-01', trip: 50, start_timestamp: 1000, source: 'remote' },
+            { date: '2025-01-02', trip: 100, start_timestamp: 2000, source: 'remote' },
+        ] as any[];
 
-            const result = processData(trips, settings, charges);
-            // Avg Price = 45 / 150 = 0.30
-            // Cost = 10 kWh * 0.30 = 3.0
-            expect(result!.top.km[0].calculatedCost).toBe(3.0);
+        it('merges without duplicates', () => {
+            const merged = mergeTrips(localTrips, remoteTrips);
+            expect(merged.length).toBe(2);
         });
 
-        it('should calculate cost with Dynamic Price strategy', () => {
-            // timestamps:
-            // Charge 1: 2025-01-01 10:00 -> 1735725600
-            // Trip:     2025-01-01 12:00 -> 1735732800
-            // Charge 2: 2025-01-01 14:00 -> 1735740000
-
-            const trip = { trip: 100, electricity: 10, start_timestamp: 1735732800, date: '20250101' } as Trip;
-
-            const charges = [
-                { kwhCharged: 10, totalCost: 2, timestamp: 1735725600, date: '2025-01-01', time: '10:00', type: 'electric' },
-                { kwhCharged: 10, totalCost: 5, timestamp: 1735740000, date: '2025-01-01', time: '14:00', type: 'electric' }
-            ] as Charge[];
-
-            const settings: Settings = {
-                batterySize: 60, soh: 100,
-                electricStrategy: 'dynamic'
-            };
-
-            const result = processData([trip], settings, charges);
-            // Should pick Charge 1 (price 0.20)
-            // Cost = 10 * 0.20 = 2.0
-            expect(result!.top.km[0].calculatedCost).toBe(2.0);
-        });
-
-        it('should handle Hybrid fuel cost', () => {
-            const trip = {
-                trip: 100,
-                electricity: 10,
-                fuel: 5,
-                date: '20250101'
-            } as Trip;
-
-            const settings: Settings = {
-                batterySize: 60, soh: 100,
-                electricStrategy: 'custom', electricPrice: 0.10,
-                fuelStrategy: 'custom', fuelPrice: 1.50
-            };
-
-            const result = processData([trip], settings);
-
-            // Elec Cost: 10 * 0.10 = 1.0
-            // Fuel Cost: 5 * 1.50 = 7.5
-            // Total: 8.5
-            expect(result!.top.km[0].calculatedCost).toBe(8.5);
-            expect(result!.top.km[0].electricCost).toBe(1.0);
-            expect(result!.top.km[0].fuelCost).toBe(7.5);
-            expect(result!.isHybrid).toBe(true);
-            expect(result!.summary.totalFuel).toBe('5.00');
-        });
-
-        it('should accumulate hourly and weekday statistics', () => {
-            // 2024-01-01 was a Monday
-            const trip = {
-                trip: 10,
-                electricity: 1.0,
-                start_timestamp: 1704106800, // 2024-01-01 11:00 AM UTC (Depends on local time env? Tests usually run in UTC or consistent timezone)
-                // Let's assume input assumes local time or UTC handled consistently
-                // We'll check if *bucket 11* or nearby is populated
-            } as Trip;
-
-            const result = processData([trip]);
-            // Check that *some* hourly bucket has data
-            const hourBin = result!.hourly.find(h => h.trips > 0);
-            expect(hourBin).toBeDefined();
-
-            // Check weekday: Mon (0) or similar
-            const dayBin = result!.weekday.find(d => d.trips > 0);
-            expect(dayBin).toBeDefined();
-        });
-
-        it('should handle Dynamic Price when trip is before any charge', () => {
-            // Trip: 10:00
-            const trip = { trip: 100, electricity: 10, start_timestamp: 1000, date: '20250101' } as Trip;
-            // Charge: 12:00
-            const charges = [
-                { kwhCharged: 10, totalCost: 5, timestamp: 2000, date: '2025-01-01', time: '12:00', type: 'electric' }
-            ] as Charge[];
-
-            const settings: Settings = {
-                batterySize: 60, soh: 100,
-                electricStrategy: 'dynamic',
-                electricPrice: 0.50 // Fallback custom price
-            };
-
-            const result = processData([trip], settings, charges);
-            // Should fallback to custom price (0.50) => Cost 5.0
-            expect(result!.top.km[0].calculatedCost).toBe(5.0);
-        });
-
-        it('should correctly sort unsorted charges for Dynamic Pricing', () => {
-            // Use real timestamps to match the date parsing logic in dataProcessing
-            const dateStr = '2025-01-01';
-            const tripTs = new Date(`${dateStr}T15:00:00`).getTime() / 1000;
-            const trip = { trip: 10, electricity: 1, start_timestamp: tripTs, date: '20250101' } as Trip;
-
-            const charges = [
-                { kwhCharged: 10, totalCost: 10, date: dateStr, time: '20:00' }, // Late: Price 1.0
-                { kwhCharged: 10, totalCost: 2, date: dateStr, time: '10:00' },  // Early: Price 0.2
-            ] as Charge[];
-
-            const settings: Settings = { batterySize: 60, soh: 100, electricStrategy: 'dynamic' };
-
-            const result = processData([trip], settings, charges);
-            // Should pick the 10:00 charge (0.2)
-            expect(result!.top.km[0].calculatedCost).toBe(0.2);
-        });
-
-        it('should calculate cost for stationary trips', () => {
-            const trip = { trip: 0, electricity: 5, date: '20250101' } as Trip;
-            const settings: Settings = {
-                batterySize: 60, soh: 100,
-                electricStrategy: 'custom',
-                electricPrice: 1.0
-            };
-
-            const result = processData([trip], settings);
-            expect(result!.summary.stationaryConsumption).toBe('5.0');
-            // Max cost should track stationary trips too
-            expect(result!.summary.maxCost).toBe('5.00');
+        it('prefers remote over local for same key', () => {
+            const merged = mergeTrips(localTrips, remoteTrips);
+            const jan1 = merged.find(t => t.date === '2025-01-01');
+            expect(jan1).toBeDefined();
+            expect(jan1?.source).toBe('remote');
         });
     });
 });

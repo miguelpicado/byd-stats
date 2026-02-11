@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Dispatch, SetStateAction } from 'react';
 import { logger } from '@core/logger';
 
 // Configuration
@@ -54,7 +54,7 @@ function batchedWrite(key: string, value: unknown): void {
 /**
  * Custom hook for localStorage with automatic serialization and batched writes
  */
-export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void, () => void] {
+export function useLocalStorage<T>(key: string, initialValue: T): [T, Dispatch<SetStateAction<T>>, () => void] {
     // Get initial value from localStorage or use default
     const [storedValue, setStoredValue] = useState<T>(() => {
         try {
@@ -83,8 +83,8 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
         }
     }, [key, storedValue]);
 
-    // Update state wrapper
-    const setValue = useCallback((value: T) => {
+    // Update state wrapper - now accepts functional updates
+    const setValue = useCallback((value: SetStateAction<T>) => {
         setStoredValue(value);
     }, []);
 

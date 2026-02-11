@@ -11,7 +11,7 @@ import { logger } from '@core/logger';
 export const useMergedTrips = (
     rawTrips: Trip[],
     settings: Settings,
-    activeCarId: string | null,
+    vehicleId: string | null, // Smartcar vehicleId for Firebase queries
     dateRange?: { start?: string; end?: string }
 ) => {
     // Firebase Trips State (Cumulative)
@@ -26,7 +26,7 @@ export const useMergedTrips = (
 
     // 1. Initial Load & Real-time Updates (Latest 20)
     useEffect(() => {
-        if (!activeCarId) {
+        if (!vehicleId) {
             setLatestTrips([]);
             setHistoricalTrips([]);
             setHasMore(false);
@@ -48,7 +48,7 @@ export const useMergedTrips = (
                     loadMore();
                 }
             }, 300);
-        }, activeCarId, 20, dateRange);
+        }, vehicleId, 20, dateRange);
 
         return () => {
             clearTimeout(debounceTimer);
@@ -60,15 +60,15 @@ export const useMergedTrips = (
             setHasMore(true);
             isFirstLoad.current = true;
         };
-    }, [activeCarId, dateRange?.start, dateRange?.end]);
+    }, [vehicleId, dateRange?.start, dateRange?.end]);
 
     // 2. Load More (Pagination)
     const loadMore = useCallback(async () => {
-        if (!activeCarId || !hasMore || isLoadingMore) return;
+        if (!vehicleId || !hasMore || isLoadingMore) return;
 
         setIsLoadingMore(true);
         try {
-            const result = await fetchTripsPage(activeCarId, lastDoc, 20, dateRange);
+            const result = await fetchTripsPage(vehicleId, lastDoc, 20, dateRange);
 
             if (result.trips.length > 0) {
                 // Determine if we need to replace or append (first historical load vs subsequent)
@@ -93,7 +93,7 @@ export const useMergedTrips = (
         } finally {
             setIsLoadingMore(false);
         }
-    }, [activeCarId, hasMore, isLoadingMore, lastDoc, latestTrips]);
+    }, [vehicleId, hasMore, isLoadingMore, lastDoc, latestTrips]);
 
     // Computed: Merged Trips (Local + Latest + Historical)
     const batterySize = typeof settings?.batterySize === 'string'

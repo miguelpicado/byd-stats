@@ -1,8 +1,23 @@
 import React, { Suspense, memo, FC } from 'react';
+import { TFunction } from 'i18next';
 import { AlertCircle } from '../Icons';
 import { TAB_PADDING, COMPACT_TAB_PADDING } from '@core/constants';
 import { Trip, Charge, Summary, MonthlyData, DailyData, Settings, ProcessedData } from '@/types';
 import { ModalsState } from '@hooks/useModalState';
+
+// Tab definition type
+interface TabDefinition {
+    id: string;
+    label: string;
+    icon?: React.ReactNode;
+}
+
+// Chart data types (from ProcessedData)
+type HourlyData = ProcessedData['hourly'][number];
+type WeekdayData = ProcessedData['weekday'][number];
+type TripDistData = ProcessedData['tripDist'][number];
+type EffScatterData = ProcessedData['effScatter'][number];
+type TopData = ProcessedData['top'];
 
 // Tabs
 import OverviewTab from '@tabs/OverviewTab';
@@ -20,7 +35,7 @@ const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
 
 interface TabsManagerProps {
     activeTab: string;
-    tabs: any[];
+    tabs: TabDefinition[];
     layoutMode: 'vertical' | 'horizontal';
     isCompact: boolean;
     isTransitioning: boolean;
@@ -34,11 +49,11 @@ interface TabsManagerProps {
     summary: Summary | null;
     monthly: MonthlyData[];
     daily: DailyData[];
-    hourly: any[];
-    weekday: any[];
-    tripDist: any[];
-    effScatter: any[];
-    top: any;
+    hourly: HourlyData[];
+    weekday: WeekdayData[];
+    tripDist: TripDistData[];
+    effScatter: EffScatterData[];
+    top: TopData | null;
     charges: Charge[];
     filtered: Trip[]; // trips filtered
     // Chart Dimensions
@@ -54,12 +69,12 @@ interface TabsManagerProps {
         recordsListHeightHorizontal: number;
     };
     // Handlers
-    openModal: (modalName: keyof ModalsState, props?: any) => void;
+    openModal: (modalName: keyof ModalsState, props?: Record<string, unknown>) => void;
     openTripDetail: (trip: Trip) => void;
     setShowAllTripsModal: (show: boolean) => void;
     setShowAllChargesModal: (show: boolean) => void;
     setSelectedCharge: (charge: Charge | null) => void;
-    t: any;
+    t: TFunction;
 }
 
 const TabsManager: FC<TabsManagerProps> = memo(({

@@ -9,7 +9,12 @@ import StatItem from '../ui/StatItem';
 import ModalPortal from '../common/ModalPortal';
 import SoHExplanationModal, { SoHMetricType } from './SoHExplanationModal';
 import { isStationaryTrip } from '../../core/dataProcessing';
-import { Trip, Settings as SettingsType } from '../../types'; // Correct import path
+import { Trip, Settings as SettingsType, Summary } from '../../types'; // Correct import path
+
+interface SoHPoint {
+    x: number;
+    y: number;
+}
 
 interface TripInsightsModalProps {
     isOpen: boolean;
@@ -17,11 +22,11 @@ interface TripInsightsModalProps {
     type: 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays' | 'stationary' | 'soh' | 'fuel' | 'range';
     trips: Trip[];
     settings?: SettingsType;
-    summary?: any;
+    summary?: Summary;
     onMfgDateClick?: () => void;
     onThermalStressClick?: () => void;
     aiSoH?: number | null;
-    aiSoHStats?: { points: any[]; trend: any[] } | null;
+    aiSoHStats?: { points: SoHPoint[]; trend: SoHPoint[] } | null;
 }
 
 /**
@@ -598,7 +603,7 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
                                 className="flex flex-col items-center justify-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
                             >
                                 <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">{t('tripInsights.stressFactor', 'Factor Estrés')}</span>
-                                <span className={`text-xs font-bold ${summary?.sohData?.thermal_stress > 1.0 ? 'text-orange-500' : 'text-slate-600 dark:text-slate-300'}`}>
+                                <span className={`text-xs font-bold ${(summary?.sohData?.thermal_stress ?? 0) > 1.0 ? 'text-orange-500' : 'text-slate-600 dark:text-slate-300'}`}>
                                     {summary?.sohData?.thermal_stress ? `${summary.sohData.thermal_stress}x` : '1.0x'}
                                 </span>
                             </button>

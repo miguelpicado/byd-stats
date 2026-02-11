@@ -39,7 +39,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bydDiagnostic = exports.bydPollVehicle = exports.bydFlashLights = exports.bydStopClimate = exports.bydStartClimate = exports.bydUnlock = exports.bydLock = exports.bydGetCharging = exports.bydGetGps = exports.bydGetRealtime = exports.bydDisconnect = exports.bydConnect = void 0;
+exports.bydScheduledPoll = exports.bydGetMqttCredentials = exports.bydMqttWebhook = exports.bydDiagnostic = exports.bydPollVehicle = exports.bydFlashLights = exports.bydStopClimate = exports.bydStartClimate = exports.bydUnlock = exports.bydLock = exports.bydGetCharging = exports.bydGetGps = exports.bydGetRealtime = exports.bydDisconnect = exports.bydConnect = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const byd_1 = require("./byd");
@@ -228,10 +228,15 @@ exports.bydGetRealtime = regionalFunctions.https.onCall(async (data, context) =>
             isOnline: realtime.isOnline,
             lastUpdate: admin.firestore.Timestamp.now(),
         });
-        console.log(`[bydGetRealtime] ${vin}: SOC=${realtime.soc}%, range=${realtime.range}km, odo=${realtime.odometer}km`);
+        console.log(`[bydGetRealtime] ${vin}: SOC=${realtime.soc}%, range=${realtime.range}km, odo=${realtime.odometer}km, online=${realtime.isOnline}`);
+        // Warn if car appears offline (all zeros)
+        const warning = !realtime.isOnline
+            ? 'Vehicle appears offline - data may be stale. Try again when the car is awake (driving, charging, or recently used).'
+            : undefined;
         return {
             success: true,
             data: realtime,
+            warning,
         };
     }
     catch (error) {
@@ -618,4 +623,363 @@ exports.bydDiagnostic = regionalFunctions.https.onCall(async (data, context) => 
         throw new functions.https.HttpsError('internal', error.message);
     }
 });
+// =============================================================================
+// MQTT WEBHOOK (receives events from Raspberry Pi listener)
+// =============================================================================
+const WEBHOOK_SECRET = process.env.BYD_WEBHOOK_SECRET || 'change-me-in-production';
+/**
+ * Webhook endpoint for MQTT listener
+ * Receives vehicle events and processes them
+ */
+exports.bydMqttWebhook = regionalFunctions.https.onRequest(async (req, res) => {
+    // Only allow POST
+    if (req.method !== 'POST') {
+        res.status(405).send('Method not allowed');
+        return;
+    }
+    // Validate webhook secret
+    const secret = req.headers['x-webhook-secret'];
+    if (secret !== WEBHOOK_SECRET) {
+        console.error('[bydMqttWebhook] Invalid webhook secret');
+        res.status(401).send('Unauthorized');
+        return;
+    }
+    try {
+        const { source, timestamp, event } = req.body;
+        if (!event) {
+            res.status(400).send('Missing event data');
+            return;
+        }
+        console.log(`[bydMqttWebhook] Received ${event.event} event for VIN ${event.vin} from ${source} at ${timestamp}`);
+        // Process based on event type
+        switch (event.event) {
+            case 'vehicleInfo':
+                await processVehicleInfoEvent(event);
+                break;
+            case 'remoteControl':
+                await processRemoteControlEvent(event);
+                break;
+            default:
+                console.log(`[bydMqttWebhook] Unknown event type: ${event.event}`);
+        }
+        res.status(200).json({ success: true });
+    }
+    catch (error) {
+        console.error('[bydMqttWebhook] Error:', error.message);
+        res.status(500).json({ error: error.message });
+    }
+});
+/**
+ * Process vehicleInfo MQTT event
+ * Updates vehicle state and detects trips
+ */
+async function processVehicleInfoEvent(event) {
+    var _a;
+    const vin = event.vin;
+    if (!vin) {
+        console.log('[processVehicleInfoEvent] No VIN in event');
+        return;
+    }
+    const data = ((_a = event.data) === null || _a === void 0 ? void 0 : _a.respondData) || event.data || {};
+    const vehicleRef = db.collection('bydVehicles').doc(vin);
+    // Get previous state for trip detection
+    const prevDoc = await vehicleRef.get();
+    const prevState = prevDoc.exists ? prevDoc.data() : null;
+    // Parse new state
+    const newState = {
+        lastSoC: (data.elecPercent || 0) / 100,
+        lastRange: data.evEndurance || 0,
+        lastOdometer: data.odo || data.mileage || 0,
+        isCharging: data.chargeState === 1,
+        isOnline: true, // If we received MQTT event, car is online
+        lastMqttUpdate: admin.firestore.Timestamp.now(),
+    };
+    // Update vehicle state
+    await vehicleRef.update(newState);
+    // Trip detection: check if odometer increased
+    if (prevState && prevState.lastOdometer && newState.lastOdometer > prevState.lastOdometer) {
+        const distance = newState.lastOdometer - prevState.lastOdometer;
+        // Only create trip if distance > 0.5 km (avoid noise)
+        if (distance > 0.5) {
+            await createTripFromMqtt(vin, prevState, newState, distance);
+        }
+    }
+    console.log(`[processVehicleInfoEvent] Updated ${vin}: SOC=${newState.lastSoC * 100}%, odo=${newState.lastOdometer}km`);
+}
+/**
+ * Process remoteControl MQTT event
+ */
+async function processRemoteControlEvent(event) {
+    var _a, _b;
+    const vin = event.vin;
+    if (!vin)
+        return;
+    console.log(`[processRemoteControlEvent] Control event for ${vin}:`, event.data);
+    // Log the control event
+    const vehicleRef = db.collection('bydVehicles').doc(vin);
+    await vehicleRef.update({
+        lastControlEvent: {
+            type: (_a = event.data) === null || _a === void 0 ? void 0 : _a.controlType,
+            status: (_b = event.data) === null || _b === void 0 ? void 0 : _b.controlState,
+            timestamp: admin.firestore.Timestamp.now(),
+        },
+    });
+}
+/**
+ * Create a trip record from MQTT state changes
+ */
+async function createTripFromMqtt(vin, prevState, newState, distance) {
+    const tripData = {
+        vin,
+        source: 'byd-mqtt',
+        startTime: prevState.lastMqttUpdate || prevState.lastUpdate,
+        endTime: admin.firestore.Timestamp.now(),
+        distance,
+        startOdometer: prevState.lastOdometer,
+        endOdometer: newState.lastOdometer,
+        startSoC: prevState.lastSoC,
+        endSoC: newState.lastSoC,
+        energyUsed: (prevState.lastSoC - newState.lastSoC) * 100, // Approximate kWh based on SOC diff
+        createdAt: admin.firestore.Timestamp.now(),
+    };
+    // Store in bydTrips collection
+    const tripRef = await db.collection('bydTrips').add(tripData);
+    console.log(`[createTripFromMqtt] Created trip ${tripRef.id}: ${distance.toFixed(1)}km, SOC ${(prevState.lastSoC * 100).toFixed(0)}% → ${(newState.lastSoC * 100).toFixed(0)}%`);
+}
+/**
+ * Get MQTT credentials for a vehicle
+ * Used by Raspberry Pi to get the tokens needed for MQTT connection
+ */
+exports.bydGetMqttCredentials = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin } = data;
+    if (!vin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+    }
+    ensureBydInit();
+    try {
+        // Get a fresh session to get current tokens
+        const client = await getBydClientForVehicle(vin);
+        await client.login();
+        // Get session tokens
+        const session = client.session;
+        if (!session || !session.token) {
+            throw new Error('No active session');
+        }
+        // Get MQTT broker info
+        const brokerInfo = await client.getEmqBrokerInfo();
+        console.log('[bydGetMqttCredentials] brokerInfo:', JSON.stringify(brokerInfo));
+        const credentials = {
+            userId: session.token.userId,
+            signToken: session.token.signToken,
+            encryToken: session.token.encryToken,
+            brokerHost: (brokerInfo === null || brokerInfo === void 0 ? void 0 : brokerInfo.host) || 'emqoversea-eu.byd.auto',
+            brokerPort: (brokerInfo === null || brokerInfo === void 0 ? void 0 : brokerInfo.port) || 8883,
+        };
+        console.log('[bydGetMqttCredentials] Returning broker:', credentials.brokerHost, credentials.brokerPort);
+        return {
+            success: true,
+            credentials,
+        };
+    }
+    catch (error) {
+        console.error('[bydGetMqttCredentials] Error:', error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+// =============================================================================
+// SCHEDULED POLLING (runs every minute)
+// =============================================================================
+/**
+ * Scheduled function that runs every minute
+ * Polls all BYD vehicles that have pollingActive = true
+ */
+exports.bydScheduledPoll = regionalFunctions.pubsub
+    .schedule('every 1 minutes')
+    .onRun(async (context) => {
+    console.log('[bydScheduledPoll] Starting scheduled poll...');
+    ensureBydInit();
+    try {
+        // Find all vehicles with active polling
+        const activeVehicles = await db.collection('bydVehicles')
+            .where('pollingActive', '==', true)
+            .get();
+        if (activeVehicles.empty) {
+            console.log('[bydScheduledPoll] No vehicles with active polling');
+            return null;
+        }
+        console.log(`[bydScheduledPoll] Polling ${activeVehicles.size} active vehicle(s)`);
+        // Poll each vehicle
+        const promises = activeVehicles.docs.map(async (doc) => {
+            const vin = doc.id;
+            try {
+                await pollVehicleInternal(vin);
+            }
+            catch (error) {
+                console.error(`[bydScheduledPoll] Error polling ${vin}:`, error.message);
+            }
+        });
+        await Promise.all(promises);
+        console.log('[bydScheduledPoll] Scheduled poll complete');
+        return null;
+    }
+    catch (error) {
+        console.error('[bydScheduledPoll] Error:', error.message);
+        return null;
+    }
+});
+/**
+ * Internal polling function - used by both scheduler and manual calls
+ */
+async function pollVehicleInternal(vin) {
+    const client = await getBydClientForVehicle(vin);
+    await client.login();
+    // Get all data in parallel
+    const [realtime, gps] = await Promise.all([
+        client.getRealtime(vin),
+        client.getGps(vin).catch(() => null), // GPS might fail
+    ]);
+    const now = admin.firestore.Timestamp.now();
+    const vehicleRef = db.collection('bydVehicles').doc(vin);
+    const vehicleDoc = await vehicleRef.get();
+    const vehicleData = vehicleDoc.data() || {};
+    const prevOdometer = vehicleData.lastOdometer || 0;
+    const activeTripId = vehicleData.activeTripId || null;
+    const stationaryPollCount = vehicleData.stationaryPollCount || 0;
+    // Calculate movement
+    const odoDelta = realtime.odometer - prevOdometer;
+    const hasMovement = odoDelta > 0.03; // 30 meters
+    const isStationary = !hasMovement;
+    console.log(`[pollVehicleInternal] ${vin}: odo=${realtime.odometer}, delta=${odoDelta.toFixed(3)}, movement=${hasMovement}, locked=${realtime.isLocked}`);
+    const vehicleUpdate = {
+        lastSoC: realtime.soc / 100,
+        lastRange: realtime.range,
+        lastOdometer: realtime.odometer,
+        isCharging: realtime.isCharging,
+        isLocked: realtime.isLocked,
+        isOnline: realtime.isOnline,
+        lastPollTime: now,
+        lastUpdate: now,
+    };
+    if (gps) {
+        vehicleUpdate.lastLocation = { lat: gps.latitude, lon: gps.longitude };
+    }
+    if (hasMovement) {
+        vehicleUpdate.lastMoveTime = now;
+        vehicleUpdate.stationaryPollCount = 0;
+    }
+    // Trip logic
+    if (!activeTripId && hasMovement) {
+        // Start new trip
+        const tripRef = db.collection('bydTrips').doc();
+        await tripRef.set({
+            vin,
+            startDate: now,
+            startOdometer: prevOdometer,
+            startSoC: vehicleData.lastSoC || realtime.soc / 100,
+            endOdometer: realtime.odometer,
+            endSoC: realtime.soc / 100,
+            distanceKm: Math.round(odoDelta * 100) / 100,
+            status: 'in_progress',
+            source: 'byd_polling',
+            lastUpdate: now,
+            points: gps ? [{
+                    lat: gps.latitude,
+                    lon: gps.longitude,
+                    timestamp: now.toMillis(),
+                    type: 'start',
+                }] : [],
+        });
+        vehicleUpdate.activeTripId = tripRef.id;
+        console.log(`[pollVehicleInternal] STARTED trip: ${tripRef.id}`);
+    }
+    else if (activeTripId && realtime.isLocked && isStationary && stationaryPollCount >= 4) {
+        // Close trip after 5 stationary polls while locked
+        const tripRef = db.collection('bydTrips').doc(activeTripId);
+        const tripDoc = await tripRef.get();
+        const tripData = tripDoc.data();
+        if (tripData) {
+            const totalDistance = realtime.odometer - (tripData.startOdometer || 0);
+            // Adjust end time backwards by 5 minutes (since we've been stationary)
+            const adjustedEndDate = admin.firestore.Timestamp.fromMillis(now.toMillis() - 5 * 60 * 1000);
+            const updateData = {
+                status: 'completed',
+                endDate: adjustedEndDate,
+                endOdometer: realtime.odometer,
+                endSoC: realtime.soc / 100,
+                distanceKm: Math.round(Math.max(0, totalDistance) * 100) / 100,
+                lastUpdate: now,
+            };
+            // Add end point if we have GPS
+            if (gps && tripData.points) {
+                updateData.points = [...tripData.points, {
+                        lat: gps.latitude,
+                        lon: gps.longitude,
+                        timestamp: adjustedEndDate.toMillis(),
+                        type: 'end',
+                    }];
+            }
+            await tripRef.update(updateData);
+            console.log(`[pollVehicleInternal] CLOSED trip: ${activeTripId}, ${totalDistance.toFixed(2)}km`);
+        }
+        // Deactivate polling - trip is done
+        vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
+        vehicleUpdate.stationaryPollCount = 0;
+        vehicleUpdate.pollingActive = false; // STOP POLLING!
+        console.log(`[pollVehicleInternal] Polling DEACTIVATED for ${vin} - trip complete`);
+    }
+    else if (activeTripId && realtime.isLocked && isStationary) {
+        // Increment stationary counter
+        vehicleUpdate.stationaryPollCount = stationaryPollCount + 1;
+        console.log(`[pollVehicleInternal] Locked + stationary: ${stationaryPollCount + 1}/5`);
+        // Update trip with current data
+        const tripRef = db.collection('bydTrips').doc(activeTripId);
+        const tripDoc = await tripRef.get();
+        if (tripDoc.exists) {
+            const tripData = tripDoc.data();
+            const updateData = {
+                endOdometer: realtime.odometer,
+                endSoC: realtime.soc / 100,
+                distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
+                lastUpdate: now,
+            };
+            // Add tracking point if GPS available
+            if (gps && tripData.points) {
+                updateData.points = [...tripData.points, {
+                        lat: gps.latitude,
+                        lon: gps.longitude,
+                        timestamp: now.toMillis(),
+                        type: 'tracking',
+                    }];
+            }
+            await tripRef.update(updateData);
+        }
+    }
+    else if (activeTripId && hasMovement) {
+        // Trip ongoing with movement - add tracking point
+        vehicleUpdate.stationaryPollCount = 0;
+        const tripRef = db.collection('bydTrips').doc(activeTripId);
+        const tripDoc = await tripRef.get();
+        if (tripDoc.exists) {
+            const tripData = tripDoc.data();
+            const updateData = {
+                endOdometer: realtime.odometer,
+                endSoC: realtime.soc / 100,
+                distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
+                lastUpdate: now,
+            };
+            // Add tracking point
+            if (gps && tripData.points) {
+                updateData.points = [...tripData.points, {
+                        lat: gps.latitude,
+                        lon: gps.longitude,
+                        timestamp: now.toMillis(),
+                        type: 'tracking',
+                    }];
+            }
+            await tripRef.update(updateData);
+        }
+    }
+    // Update vehicle state
+    await vehicleRef.update(vehicleUpdate);
+}
 //# sourceMappingURL=bydFunctions.js.map

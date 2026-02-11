@@ -1,6 +1,7 @@
 import { useRef, useEffect, useState, useMemo, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
+import type { TooltipItem, ChartOptions, ChartData, Chart } from 'chart.js';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
 import HybridStatsCard from '@components/cards/HybridStatsCard';
@@ -21,10 +22,10 @@ const PIE_CHART_OPTIONS = {
         legend: { display: false },
         tooltip: {
             callbacks: {
-                label: (context: any) => {
+                label: (context: TooltipItem<'pie'>) => {
                     const label = context.label || '';
                     const value = context.parsed;
-                    const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
+                    const total = (context.dataset.data as number[]).reduce((a: number, b: number) => a + b, 0);
                     const percent = ((value / total) * 100).toFixed(0) + '%';
                     return `${label}: ${context.raw} (${percent})`;
                 }
@@ -33,14 +34,19 @@ const PIE_CHART_OPTIONS = {
     }
 };
 
+interface SoHDataPoint {
+    x: number;
+    y: number;
+}
+
 interface OverviewContentProps {
     summary: Summary;
     tripDist: { range: string; count: number; color: string }[];
     smallChartHeight: number | string;
     overviewSpacing: string;
-    lineChartOptions: any;
-    lineChartData: any;
-    pieChartData: any;
+    lineChartOptions: ChartOptions<'line'>;
+    lineChartData: ChartData<'line'>;
+    pieChartData: ChartData<'pie'>;
     trips?: Trip[];
     settings: Settings;
     onInsightClick: (type: TripInsightType) => void;
@@ -55,7 +61,7 @@ interface OverviewContentProps {
     onRangeClick?: () => void;
     isAiReady?: boolean;
     aiSoH?: number | null;
-    aiSoHStats?: { points: any[]; trend: any[] } | null;
+    aiSoHStats?: { points: SoHDataPoint[]; trend: SoHDataPoint[] } | null;
     charges?: Charge[];
     stats?: ProcessedData;
 }
@@ -89,9 +95,9 @@ const OverviewContent: FC<OverviewContentProps> = ({
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
 
-    // Refs to chart instances for manual animation control
-    const lineChartRef = useRef<any>(null);
-    const pieChartRef = useRef<any>(null);
+    // Refs to chart instances for manual animation control - typed to match react-chartjs-2 ref expectations
+    const lineChartRef = useRef<Chart<'line'>>(null!);
+    const pieChartRef = useRef<Chart<'pie'>>(null!);
 
     const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies, openModal } = useData();
     const [showHealthModal, setShowHealthModal] = useState(false);

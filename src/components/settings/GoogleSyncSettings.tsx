@@ -3,13 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { useData } from '../../providers/DataProvider';
 import { Cloud, LogOut, RefreshCw, Database } from '../Icons';
 
+interface UserProfile {
+    name?: string;
+    email?: string;
+    imageUrl?: string;
+}
+
 interface GoogleSyncSettingsProps {
     googleSync: {
         isAuthenticated: boolean;
         isSyncing: boolean;
         lastSyncTime: Date | null;
         error: string | null;
-        userProfile: any;
+        userProfile: UserProfile | null;
         login: () => void;
         logout: () => void;
         syncNow: () => void;
@@ -24,9 +30,9 @@ const GoogleSyncSettings: React.FC<GoogleSyncSettingsProps> = ({ googleSync }) =
     // Reset error when profile changes
     React.useEffect(() => {
         setImgError(false);
-    }, [googleSync.userProfile?.picture, googleSync.userProfile?.imageUrl]);
+    }, [googleSync.userProfile?.imageUrl]);
 
-    const userImage = googleSync.userProfile?.picture || googleSync.userProfile?.imageUrl;
+    const userImage = googleSync.userProfile?.imageUrl;
     const showImage = userImage && !imgError;
 
     return (
@@ -108,7 +114,7 @@ const GoogleSyncSettings: React.FC<GoogleSyncSettingsProps> = ({ googleSync }) =
 
                         {/* Manage Backups Button */}
                         <button
-                            onClick={() => (openModal as any)('backups')}
+                            onClick={() => openModal('backups')}
                             className="w-full py-3 px-4 rounded-xl text-sm font-medium bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-600 transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98]"
                         >
                             <Database className="w-4 h-4 text-slate-500 dark:text-slate-400" />

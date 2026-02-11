@@ -68,7 +68,7 @@ const ModalContainer: React.FC = () => {
             {modals.registryRestore && (
                 <RegistryRestoreModalLazy
                     registryCars={modals.registryCars}
-                    onRestore={googleSync.restoreFromRegistry}
+                    onRestore={async (car) => { await googleSync.restoreFromRegistry(car); }}
                     onSkip={googleSync.skipRegistryRestore}
                 />
             )}
@@ -109,7 +109,7 @@ const ModalContainer: React.FC = () => {
                 <ChargingInsightsModalLazy
                     isOpen={modals.chargingInsights}
                     onClose={() => closeModal('chargingInsights')}
-                    stats={stats as any}
+                    stats={stats ? { ...stats, sohData: stats.sohData || null } : null}
                     settings={settings}
                 />
             )}

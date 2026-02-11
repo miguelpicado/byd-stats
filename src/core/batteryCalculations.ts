@@ -152,7 +152,7 @@ export const calculateAdvancedSoH = (
     };
 };
 
-function checkNum(val: any): number {
+function checkNum(val: unknown): number {
     return typeof val === 'number' ? val : 0;
 }
 
@@ -176,4 +176,43 @@ export const estimateInitialSoC = (
 
     const estimatedInitial = Math.max(0, Math.min(100, previousCharge.finalPercentage - socConsumed));
     return Math.round(estimatedInitial);
+};
+
+/**
+ * Calculates consumption in kWh/100km
+ */
+export const calculateConsumption = (kwh: number, distanceKm: number): number => {
+    if (!distanceKm || distanceKm <= 0) return 0;
+    if (kwh < 0) return 0;
+    return parseFloat(((kwh / distanceKm) * 100).toFixed(2));
+};
+
+/**
+ * Validates and calculates basic SoH percentage
+ */
+export const calculateSoH = (currentCapacity: number, nominalCapacity: number): number => {
+    if (!nominalCapacity || nominalCapacity <= 0) return 0;
+    if (currentCapacity < 0) return 0;
+    const soh = (currentCapacity / nominalCapacity) * 100;
+    return Math.min(100, parseFloat(soh.toFixed(2)));
+};
+
+/**
+ * Estimates SoC percentage from kWh charged relative to battery size
+ */
+export const estimateSoCFromKwh = (kwhCharged: number, batterySize: number): number => {
+    if (!batterySize || batterySize <= 0) return 0;
+    if (kwhCharged < 0) return 0;
+    const percentage = (kwhCharged / batterySize) * 100;
+    return Math.min(100, parseFloat(percentage.toFixed(2)));
+};
+
+/**
+ * Returns a qualitative rating for efficiency (kWh/100km)
+ */
+export const getEfficiencyRating = (efficiency: number): 'excellent' | 'good' | 'average' | 'poor' => {
+    if (efficiency < 14) return 'excellent';
+    if (efficiency < 17) return 'good';
+    if (efficiency < 20) return 'average';
+    return 'poor';
 };

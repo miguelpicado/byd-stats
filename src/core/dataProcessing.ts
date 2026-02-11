@@ -1,7 +1,6 @@
 // BYD Stats - Data Processing Utilities
 
 import { BYD_RED } from './constants';
-// @ts-ignore
 import { formatMonth, formatDate } from './dateUtils';
 import { Trip, Charge, ProcessedData, Summary, MonthlyData, DailyData, Settings } from '../types';
 import { calculateAdvancedSoH } from './batteryCalculations.ts';
@@ -37,8 +36,9 @@ interface PriceStrategies {
  */
 export const isStationaryTrip = (trip: Trip): boolean => (trip.trip || 0) < 0.5;
 
+
 // Helper to get top N items without full sort - O(N) for small K
-function getTopN<T>(arr: T[], compareFn: (a: T, b: T) => number, n: number): T[] {
+export function getTopN<T>(arr: T[], compareFn: (a: T, b: T) => number, n: number): T[] {
     if (arr.length <= n) return [...arr].sort(compareFn);
 
     // Sort first N items
@@ -58,6 +58,68 @@ function getTopN<T>(arr: T[], compareFn: (a: T, b: T) => number, n: number): T[]
     }
     return result;
 }
+
+/**
+ * Calculates basic statistics from a list of trips
+ */
+export const calculateStats = (trips: Trip[], options: { excludeStationary?: boolean } = {}) => {
+    if (!trips || trips.length === 0) {
+        return { totalDistance: 0, totalEnergy: 0, avgEfficiency: 0 };
+    }
+
+    let totalDistance = 0;
+    let totalEnergy = 0;
+
+    trips.forEach(t => {
+        if (options.excludeStationary && isStationaryTrip(t)) return;
+        totalDistance += (t.trip || 0);
+        totalEnergy += (t.electricity || 0);
+    });
+
+    const avgEfficiency = totalDistance > 0 ? (totalEnergy / totalDistance) * 100 : 0;
+
+    return {
+        totalDistance: parseFloat(totalDistance.toFixed(1)),
+        totalEnergy: parseFloat(totalEnergy.toFixed(1)),
+        avgEfficiency: parseFloat(avgEfficiency.toFixed(2))
+    };
+};
+
+/**
+ * Merges two lists of trips, preferring remote (second list) over local (first list)
+ */
+export const mergeTrips = (local: Trip[], remote: Trip[]): Trip[] => {
+    const map = new Map<string, Trip>();
+
+    // Process local first
+    local.forEach(t => {
+        const key = t.date + (t.start_timestamp || ''); // Simple key
+        map.set(key, t);
+    });
+
+    // Process remote, overwriting local
+    remote.forEach(t => {
+        const key = t.date + (t.start_timestamp || '');
+        map.set(key, t);
+    });
+
+    return Array.from(map.values()).sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+};
+
+/**
+ * Deduplicates array by key
+ */
+export const deduplicateByKey = <T>(arr: T[], keyFn: (item: T) => any): T[] => {
+    const map = new Map();
+    arr.forEach(item => {
+        const key = keyFn(item);
+        if (!map.has(key)) {
+            map.set(key, item);
+        }
+    });
+    return Array.from(map.values());
+};
+
 
 // Helper to determine cost based on strategy
 function getPriceForTrip(trip: Trip, strategy: string, customPrice: number, avgPrice: number, processedCharges: Charge[]): number {

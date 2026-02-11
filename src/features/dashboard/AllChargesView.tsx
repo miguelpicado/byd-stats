@@ -5,12 +5,13 @@ import VirtualizedChargeList from '../../components/lists/VirtualizedChargeList'
 import { useFilteredData } from '../../hooks/useFilteredData';
 
 import { Charge, ChargerType } from '@/types';
+import { OpenModalFn, CloseModalFn } from '../../hooks/useModalState';
 
 interface AllChargesViewProps {
     charges: Charge[];
     chargerTypes: ChargerType[];
-    openModal: (modal: string) => void;
-    closeModal: (modal: string) => void;
+    openModal: OpenModalFn;
+    closeModal: CloseModalFn;
     setSelectedCharge: (charge: Charge | null) => void;
     scrollRef: React.MutableRefObject<any>;
     isNative: boolean;
@@ -147,7 +148,9 @@ const AllChargesView = ({
                         {/* Date Inputs */}
                         {filterType === 'month' && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                                <label htmlFor="charge-month-filter" className="sr-only">{t('filter.byMonth', 'Filtrar por mes')}</label>
                                 <input
+                                    id="charge-month-filter"
                                     type="month"
                                     value={month}
                                     onChange={(e) => setMonth(e.target.value)}
@@ -158,14 +161,18 @@ const AllChargesView = ({
 
                         {filterType === 'range' && (
                             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <label htmlFor="charge-date-from" className="sr-only">{t('common.from', 'Desde')}</label>
                                 <input
+                                    id="charge-date-from"
                                     type="date"
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
                                     className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 outline-none"
                                 />
                                 <span className="text-slate-400">-</span>
+                                <label htmlFor="charge-date-to" className="sr-only">{t('common.to', 'Hasta')}</label>
                                 <input
+                                    id="charge-date-to"
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}

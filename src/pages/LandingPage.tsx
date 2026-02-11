@@ -9,11 +9,19 @@ import { Upload, Cloud } from '../components/Icons';
 // But usually constants are in utils/constants.js. 
 // However, assuming App.jsx import is correct for now.
 
+interface GoogleSyncState {
+    isAuthenticated: boolean;
+    isSyncing: boolean;
+    userProfile?: { imageUrl?: string; name?: string };
+    syncNow: () => void;
+    login: () => void;
+}
+
 interface LandingPageProps {
     isCompact?: boolean;
     sqlReady: boolean;
     error: string | null;
-    googleSync: any;
+    googleSync: GoogleSyncState;
     isNative: boolean;
     onFileProcess: (file: File, merge?: boolean) => Promise<void>;
 }
@@ -29,7 +37,7 @@ const LandingPage = ({
     const { t } = useTranslation();
     const [dragOver, setDragOver] = useState(false);
 
-    const handleDrop = useCallback((e: any) => {
+    const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setDragOver(false);
         const f = e.dataTransfer.files[0];
@@ -43,8 +51,8 @@ const LandingPage = ({
         }
     }, [onFileProcess, t]);
 
-    const handleFileChange = useCallback((e: any) => {
-        const f = e.target.files[0];
+    const handleFileChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0];
         if (f) {
             const fileName = f.name.toLowerCase();
             if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
@@ -99,6 +107,7 @@ const LandingPage = ({
                         className="hidden"
                         onChange={handleFileChange}
                         disabled={!sqlReady}
+                        aria-label={t('landing.clickToSelect')}
                     />
                     <div
                         className={`${isCompact ? 'w-12 h-12 mb-4' : 'w-16 h-16 mb-6'} rounded-2xl mx-auto flex items-center justify-center`}

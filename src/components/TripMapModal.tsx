@@ -11,9 +11,11 @@ L.Icon.Default.mergeOptions({
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
+import type { Trip } from '@/types';
+
 interface TripMapModalProps {
-    trip: any;
-    points: { lat: number; lon: number; timestamp: any }[];
+    trip: Trip;
+    points: { lat: number; lon: number; timestamp: number }[];
     onClose: () => void;
 }
 

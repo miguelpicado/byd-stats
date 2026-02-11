@@ -5,7 +5,7 @@
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "userId",
+                    "fieldPath": "vehicleId",
                     "order": "ASCENDING"
                 },
                 {
@@ -23,7 +23,7 @@
             "queryScope": "COLLECTION",
             "fields": [
                 {
-                    "fieldPath": "userId",
+                    "fieldPath": "vehicleId",
                     "order": "ASCENDING"
                 },
                 {

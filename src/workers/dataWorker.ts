@@ -199,17 +199,19 @@ async function findSmartChargingWindows(
         if (!exists) deduped.push(cand);
     });
 
+    type ChargingPref = { day: string; start: string; end: string; active: boolean };
     if (settings?.smartChargingPreferences && Array.isArray(settings.smartChargingPreferences) && settings.smartChargingPreferences.length > 0) {
-        const daysToOverride = new Set(settings.smartChargingPreferences.filter((p: any) => p.active).map((p: any) => p.day));
+        const prefs = settings.smartChargingPreferences as ChargingPref[];
+        const daysToOverride = new Set(prefs.filter((p) => p.active).map((p) => p.day));
         daysToOverride.forEach(dayName => {
-            const dayIdx = days.indexOf(dayName as string);
+            const dayIdx = days.indexOf(dayName);
             if (dayIdx === -1) return;
             for (let i = deduped.length - 1; i >= 0; i--) {
                 if (deduped[i].dayIndex === dayIdx) deduped.splice(i, 1);
             }
         });
 
-        settings.smartChargingPreferences.forEach((pref: any) => {
+        prefs.forEach((pref) => {
             if (!pref.active) return;
             const dayIdx = days.indexOf(pref.day);
             if (dayIdx === -1) return;
@@ -372,7 +374,7 @@ const api = {
         return tf.exportParkingModel();
     },
 
-    async importParkingModel(weights: any[]) {
+    async importParkingModel(weights: { data: number[]; shape: number[] }[]) {
         const tf = await getTfWorker();
         return tf.importParkingModel(weights);
     },

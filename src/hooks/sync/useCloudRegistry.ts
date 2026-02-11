@@ -6,7 +6,7 @@ import { Car, Settings } from '@/types';
 interface UseCloudRegistryProps {
     activeCarId: string;
     settings: Settings;
-    openRegistryModal: (cars: any[]) => void;
+    openRegistryModal: (cars: Car[]) => void;
 }
 
 export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: UseCloudRegistryProps) {
@@ -25,7 +25,7 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: U
 
                 try {
                     const allFiles = await googleDriveService.listAllDatabaseFiles();
-                    const recoveredCars: any[] = [];
+                    const recoveredCars: Array<Car & { isRecovered?: boolean }> = [];
 
                     for (const file of allFiles) {
                         if (file.name.startsWith('byd_stats_data')) {
@@ -46,6 +46,8 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: U
                             recoveredCars.push({
                                 id: carId,
                                 name: carName,
+                                type: 'ev',
+                                isHybrid: false,
                                 model: 'BYD (Backup)',
                                 lastSync: file.modifiedTime,
                                 fileId: file.id,
@@ -125,7 +127,7 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: U
     }, [activeCarId, settings]);
 
     // Restore from Registry
-    const restoreFromRegistry = useCallback(async (car: any) => {
+    const restoreFromRegistry = useCallback(async (car: Pick<Car, 'id' | 'name'>) => {
         try {
             logger.info("Restoring from registry car:", car.id);
             const carsKey = 'byd_cars';
@@ -142,9 +144,10 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: U
             localStorage.setItem(activeKey, car.id);
             window.location.reload();
             return true;
-        } catch (e: any) {
-            logger.error('Restore failed', e);
-            throw e;
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            logger.error('Restore failed', error);
+            throw error;
         }
     }, []);
 

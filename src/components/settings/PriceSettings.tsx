@@ -9,7 +9,6 @@ export const PriceSettings: React.FC = () => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCar } = useCar();
-    // @ts-ignore
     const { charges } = useData();
 
     // Calculate average electricity and fuel prices

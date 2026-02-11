@@ -72,8 +72,8 @@ const CloudBackupsModal: React.FC = () => {
             } else {
                 alert(t('errors.restoreFailed', 'Error al importar datos.'));
             }
-        } catch (err: any) {
-            alert(err.message);
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : String(err));
         } finally {
             setRestoringId(null);
         }
@@ -90,8 +90,8 @@ const CloudBackupsModal: React.FC = () => {
 
             await googleSync.deleteBackup(file.id);
             await loadBackups();
-        } catch (err: any) {
-            alert(t('errors.deleteFailed', 'Error eliminando copia: ') + err.message);
+        } catch (err: unknown) {
+            alert(t('errors.deleteFailed', 'Error eliminando copia: ') + (err instanceof Error ? err.message : String(err)));
         } finally {
             setDeletingId(null);
         }

@@ -2666,4 +2666,7 @@ export {
     bydFlashLights,
     bydPollVehicle,
     bydDiagnostic,
+    bydMqttWebhook,
+    bydGetMqttCredentials,
+    bydScheduledPoll,
 } from './bydFunctions';

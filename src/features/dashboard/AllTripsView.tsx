@@ -6,6 +6,7 @@ import { useFilteredData } from '../../hooks/useFilteredData';
 import { useTripsContext } from '../../providers/TripsProvider';
 
 import { Trip } from '@/types';
+import { CloseModalFn } from '../../hooks/useModalState';
 
 interface AllTripsViewProps {
     rawTrips: Trip[];
@@ -21,7 +22,7 @@ interface AllTripsViewProps {
     setDateTo: (val: string) => void;
     setSortBy: (val: string) => void;
     setSortOrder: React.Dispatch<React.SetStateAction<'asc' | 'desc'>>;
-    closeModal: (modal: string) => void;
+    closeModal: CloseModalFn;
     openTripDetail: (trip: Trip) => void;
     scrollRef: React.MutableRefObject<any>;
     isNative: boolean;
@@ -173,7 +174,9 @@ const AllTripsView = ({
                         {/* Date Inputs */}
                         {filterType === 'month' && (
                             <div className="animate-in fade-in slide-in-from-top-2 duration-200">
+                                <label htmlFor="trip-month-filter" className="sr-only">{t('filter.byMonth', 'Filtrar por mes')}</label>
                                 <input
+                                    id="trip-month-filter"
                                     type="month"
                                     value={month}
                                     onChange={(e) => setMonth(e.target.value)}
@@ -184,14 +187,18 @@ const AllTripsView = ({
 
                         {filterType === 'range' && (
                             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-top-2 duration-200">
+                                <label htmlFor="trip-date-from" className="sr-only">{t('common.from', 'Desde')}</label>
                                 <input
+                                    id="trip-date-from"
                                     type="date"
                                     value={dateFrom}
                                     onChange={(e) => setDateFrom(e.target.value)}
                                     className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 outline-none"
                                 />
                                 <span className="text-slate-400">-</span>
+                                <label htmlFor="trip-date-to" className="sr-only">{t('common.to', 'Hasta')}</label>
                                 <input
+                                    id="trip-date-to"
                                     type="date"
                                     value={dateTo}
                                     onChange={(e) => setDateTo(e.target.value)}

@@ -1,6 +1,7 @@
 import React, { useMemo, useRef, useEffect, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Scatter as ScatterJS } from 'react-chartjs-2';
+import type { TooltipItem, ChartOptions, ChartDataset, Chart } from 'chart.js';
 import { Battery, Zap, MapPin, TrendingUp, Fuel, BYD_RED } from '@components/Icons';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
@@ -26,13 +27,16 @@ const LINE_CHART_BASE = {
 };
 
 // Static scatter chart tick callback
-const scatterTickCallback = function (value: any) {
+const scatterTickCallback = function (value: string | number) {
   const allowed = [1, 2, 5, 10, 50, 200, 500];
-  return allowed.includes(value) ? value : '';
+  return allowed.includes(Number(value)) ? value : '';
 };
 
 // Scatter tooltip callback
-const scatterTooltipCallback = (c: any) => `Dist: ${c.raw.x.toFixed(1)}km, Eff: ${c.raw.y.toFixed(1)}`;
+const scatterTooltipCallback = (c: TooltipItem<'scatter'>) => {
+  const raw = c.raw as { x: number; y: number };
+  return `Dist: ${raw.x.toFixed(1)}km, Eff: ${raw.y.toFixed(1)}`;
+};
 
 /**
  * Efficiency tab showing consumption patterns and efficiency analysis
@@ -47,9 +51,9 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
   const { t } = useTranslation();
   const { isCompact, isLargerCard, isVertical } = useLayout();
 
-  // Refs for animation control
-  const lineChartRef = useRef<any>(null);
-  const scatterChartRef = useRef<any>(null);
+  // Refs for animation control - typed to match react-chartjs-2 ref expectations
+  const lineChartRef = useRef<Chart<'line'>>(null!);
+  const scatterChartRef = useRef<Chart<'scatter'>>(null!);
 
   // Trigger animation on activation
   useEffect(() => {
@@ -96,8 +100,8 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
   const hasHybridData = isHybrid && monthly.some(m => (m.fuelEfficiency ?? 0) > 0);
 
   // Memoize line chart options (depends on efficiencyYAxis and hybrid mode)
-  const lineChartOptions = useMemo(() => {
-    const options: any = {
+  const lineChartOptions = useMemo((): ChartOptions<'line'> => {
+    const options: ChartOptions<'line'> = {
       ...LINE_CHART_BASE,
       plugins: {
         legend: { display: hasHybridData, position: 'top' as const, labels: { usePointStyle: true, boxWidth: 6 } }
@@ -120,7 +124,7 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
     };
 
     // Add second Y-axis for fuel efficiency if hybrid
-    if (hasHybridData) {
+    if (hasHybridData && options.scales) {
       options.scales.y1 = {
         type: 'linear' as const,
         display: true,
@@ -173,7 +177,7 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
 
   // Memoize chart data with optional fuel efficiency line for hybrids
   const lineChartData = useMemo(() => {
-    const datasets: any[] = [{
+    const datasets: ChartDataset<'line', (number | undefined)[]>[] = [{
       label: 'kWh/100km',
       data: monthly.map(m => m.efficiency),
       borderColor: '#10b981',

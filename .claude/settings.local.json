@@ -39,7 +39,17 @@
       "Bash(grep:*)",
       "Bash(npm run typecheck:*)",
       "Bash(dir:*)",
-      "Bash(findstr:*)"
+      "Bash(findstr:*)",
+      "Bash(wc:*)",
+      "Bash(tree:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(npm install)",
+      "Bash(xxd:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(openssl rand:*)",
+      "Bash(ssh:*)",
+      "Bash(scp:*)"
     ]
   }
 }

@@ -32,14 +32,16 @@ export const dayNamesFull: Record<string, string> = {
     'Dom': 'Domingo'
 };
 
+import { Settings } from '@/types';
+
 // Default settings
-export const DEFAULT_SETTINGS = {
+export const DEFAULT_SETTINGS: Settings = {
     carModel: '',
     licensePlate: '',
     insurancePolicy: '',
     batterySize: 60.48,
     soh: 100,
-    electricityPrice: 0.15,
+    electricPrice: 0.15,
     fuelPrice: 1.50, // €/L - only used for hybrid vehicles
     useCalculatedPrice: false,
     theme: 'auto',

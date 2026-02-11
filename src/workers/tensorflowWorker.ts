@@ -9,9 +9,14 @@ if (typeof requestAnimationFrame === 'undefined') {
 }
 
 import * as Comlink from 'comlink';
+import type { Trip, Charge } from '../types';
+
+// TensorFlow types
+type TFLib = typeof import('@tensorflow/tfjs');
+type Sequential = ReturnType<TFLib['sequential']>;
 
 // Dynamic TensorFlow loading
-let tf: typeof import('@tensorflow/tfjs') | null = null;
+let tf: TFLib | null = null;
 
 async function ensureTensorFlow() {
     if (!tf) {
@@ -29,22 +34,22 @@ async function ensureTensorFlow() {
 // ============================================================
 // Model State
 // ============================================================
-let efficiencyModel: any = null;
+let efficiencyModel: Sequential | null = null;
 let efficiencyNormData: {
     mean: number[];
     variance: number[];
 } | null = null;
 let efficiencyTrained = false;
 
-let parkingModel: any = null;
+let parkingModel: Sequential | null = null;
 
-let sohModel: any = null;
+let sohModel: Sequential | null = null;
 let sohNormData: { mean: number; variance: number } | null = null;
 
 // ============================================================
 // Efficiency Model (from EfficiencyModel.ts)
 // ============================================================
-async function trainEfficiency(trips: any[]): Promise<{ loss: number; samples: number }> {
+async function trainEfficiency(trips: Trip[]): Promise<{ loss: number; samples: number }> {
     const tfLib = await ensureTensorFlow();
 
     efficiencyModel = null;
@@ -56,7 +61,7 @@ async function trainEfficiency(trips: any[]): Promise<{ loss: number; samples: n
     const features: number[][] = [];
     const labels: number[][] = [];
 
-    trips.forEach((trip: any) => {
+    trips.forEach((trip) => {
         const distance = trip.trip;
         const kwh = trip.electricity;
         const durationHours = (trip.duration / 3600);
@@ -164,12 +169,12 @@ function predictEfficiency(speed: number, distance: number = 50): number {
 // ============================================================
 // Parking Model (from ParkingModel.ts)
 // ============================================================
-async function trainParking(trips: any[]): Promise<{ loss: number; samples: number }> {
+async function trainParking(trips: Trip[]): Promise<{ loss: number; samples: number }> {
     const tfLib = await ensureTensorFlow();
 
     parkingModel = null;
 
-    const sorted = [...trips].sort((a: any, b: any) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
+    const sorted = [...trips].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
     const events: { start: number; end: number; duration: number; dayOfWeek: number; startHour: number }[] = [];
 
     for (let i = 0; i < sorted.length - 1; i++) {
@@ -282,7 +287,7 @@ function predictDeparture(startTime: number): { departureTime: number; duration:
 // ============================================================
 // SoH Model (from SoHModel.ts)
 // ============================================================
-async function trainSoH(charges: any[], nominalCapacity: number): Promise<{ loss: number; samples: number; predictedSoH: number }> {
+async function trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ loss: number; samples: number; predictedSoH: number }> {
     const tfLib = await ensureTensorFlow();
 
     sohModel = null;
@@ -293,7 +298,7 @@ async function trainSoH(charges: any[], nominalCapacity: number): Promise<{ loss
         return { loss: 0, samples: 0, predictedSoH: 100 };
     }
 
-    const validCharges = charges.filter((c: any) => {
+    const validCharges = charges.filter((c) => {
         const kwh = c.kwhCharged ?? c.kwh;
         const start = c.initialPercentage;
         const end = c.finalPercentage;
@@ -311,10 +316,10 @@ async function trainSoH(charges: any[], nominalCapacity: number): Promise<{ loss
     const labels: number[] = [];
     const impliedCapacities: { cap: number; weight: number }[] = [];
 
-    validCharges.sort((a: any, b: any) => a.date.localeCompare(b.date));
+    validCharges.sort((a, b) => a.date.localeCompare(b.date));
     const firstDate = new Date(validCharges[0].date).getTime();
 
-    validCharges.forEach((c: any) => {
+    validCharges.forEach((c) => {
         const kwh = c.kwhCharged ?? c.kwh;
         if (c.finalPercentage === undefined || c.initialPercentage === undefined) return;
 
@@ -410,21 +415,24 @@ function sohPredictInternal(days: number): number {
     });
 }
 
-function getSoHStats(charges: any[], nominalCapacity: number): { points: any[]; trend: any[] } {
+interface SoHPoint { x: string; y: number; cap: number }
+interface SoHTrend { x: string; y: number }
+
+function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHPoint[]; trend: SoHTrend[] } {
     if (!sohModel) return { points: [], trend: [] };
 
-    const validCharges = charges.filter((c: any) => {
+    const validCharges = charges.filter((c) => {
         const kwh = c.kwhCharged ?? c.kwh;
         const start = c.initialPercentage;
         const end = c.finalPercentage;
         if (kwh === undefined || start === undefined || end === undefined || !c.date) return false;
         return kwh > 0 && start >= 0 && end > start && (end - start) >= 10;
-    }).sort((a: any, b: any) => a.date.localeCompare(b.date));
+    }).sort((a, b) => a.date.localeCompare(b.date));
 
     if (validCharges.length === 0) return { points: [], trend: [] };
 
     const firstDate = new Date(validCharges[0].date).getTime();
-    const points = validCharges.map((c: any) => {
+    const points = validCharges.map((c): SoHPoint | null => {
         const kwh = c.kwhCharged || c.kwh;
         if (c.finalPercentage === undefined || c.initialPercentage === undefined || kwh === undefined) return null;
         const percentAddedDecimal = (c.finalPercentage - c.initialPercentage) / 100;
@@ -435,7 +443,7 @@ function getSoHStats(charges: any[], nominalCapacity: number): { points: any[]; 
             y: (cap / nominalCapacity) * 100,
             cap: cap
         };
-    }).filter((p: any) => p !== null && p.cap > nominalCapacity * 0.5 && p.cap < nominalCapacity * 1.5) as { x: string; y: number; cap: number }[];
+    }).filter((p): p is SoHPoint => p !== null && p.cap > nominalCapacity * 0.5 && p.cap < nominalCapacity * 1.5);
 
     const trend = points.map(p => {
         const days = (new Date(p.x).getTime() - firstDate) / (1000 * 3600 * 24);
@@ -482,9 +490,9 @@ const api = {
     async exportParkingModel(): Promise<{ data: number[], shape: number[] }[] | null> {
         if (!parkingModel) return null;
         // Return weights with shape
-        return parkingModel.getWeights().map((w: any) => ({
-            data: Array.from(w.dataSync()),
-            shape: w.shape
+        return parkingModel.getWeights().map((w) => ({
+            data: Array.from(w.dataSync() as Float32Array),
+            shape: w.shape as number[]
         }));
     },
 
@@ -516,7 +524,7 @@ const api = {
         // Set weights with correct shapes
         const tensors = weights.map(w => tfLib.tensor(w.data, w.shape));
         parkingModel.setWeights(tensors);
-        tensors.forEach((t: any) => t.dispose());
+        tensors.forEach((t) => t.dispose());
 
         console.debug('[TF Worker] Parking model restored from cache.');
     },

@@ -38,7 +38,7 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
             const stopCharge = httpsCallable(functions, 'stopCharge');
             await stopCharge({ vehicleId: activeCar.smartcarVehicleId });
             toast.success(t('charges.chargeStopped', 'Carga detenida'));
-        } catch (error: any) {
+        } catch (error) {
             logger.error('[LiveVehicleStatus] Error stopping charge:', error);
             toast.error(t('charges.stopError', 'Error al detener la carga'));
         } finally {

@@ -79,8 +79,8 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                     const refresh = httpsCallable(functions, 'refreshVehicleData');
                     const result = await refresh({ vehicleId: activeCar.smartcarVehicleId });
                     console.log('[HealthReportModal] Auto-refresh result:', result.data);
-                } catch (error: any) {
-                    console.error('[HealthReportModal] Auto-refresh failed:', error.message || error);
+                } catch (error: unknown) {
+                    console.error('[HealthReportModal] Auto-refresh failed:', error instanceof Error ? error.message : error);
                 } finally {
                     setActionLoading(null);
                 }
@@ -96,10 +96,10 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
     const tires = vehicleData?.tires ?? activeCar?.tires;
 
     // Tire Pressure View
-    const TiresView = ({ tires }: { tires: any }) => {
+    const TiresView = ({ tires }: { tires: { frontLeft: number; frontRight: number; backLeft: number; backRight: number } }) => {
         if (!tires) return null;
 
-        const Tire = ({ label, value }: any) => {
+        const Tire = ({ label, value }: { label: string; value: number }) => {
             // Smartcar often returns kPa. 250 kPa = 2.5 bar.
             // If value > 10, it's likely kPa, so we divide by 100
             const displayValue = value > 10 ? (value / 100).toFixed(1) : value.toFixed(1);
@@ -144,7 +144,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
             if (action === 'fullSmartcarDiagnostic') {
                 console.log('=== SMARTCAR DIAGNOSTIC RESULTS ===');
                 console.log(JSON.stringify(result.data, null, 2));
-                const data = result.data as any;
+                const data = result.data as { summary?: { available?: unknown[]; unavailable?: unknown[] } };
                 toast.success(`Diagnóstico completo. Disponibles: ${data.summary?.available?.length || 0}, No disponibles: ${data.summary?.unavailable?.length || 0}. Ver consola (F12)`, { id: toastId, duration: 8000 });
                 return;
             }
@@ -156,9 +156,9 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
             if (action === 'stopClimate') updateCar(activeCarId, { climateActive: false });
 
             toast.success(`${t('common.success', '¡Éxito!')}`, { id: toastId });
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error(`Action ${action} failed:`, error);
-            toast.error(`${t('common.error', 'Error')}: ${error.message}`, { id: toastId });
+            toast.error(`${t('common.error', 'Error')}: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
         } finally {
             setActionLoading(null);
         }
@@ -173,7 +173,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
     const effAnomalies = anomalies.filter(a => a.type === 'efficiency');
 
     // Helper for rows
-    const StatusRow = ({ title, items, icon, emptyText }: any) => (
+    const StatusRow = ({ title, items, icon, emptyText }: { title: string; items: Anomaly[]; icon: React.ReactNode; emptyText: string }) => (
         <div className="mb-6 last:mb-0">
             <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
                 {icon}

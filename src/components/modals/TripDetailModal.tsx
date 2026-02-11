@@ -7,6 +7,7 @@ import { formatDuration, calculateScore, getScoreColor, calculatePercentile } fr
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../../services/firebase';
+import { Trip } from '@/types';
 
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
@@ -24,7 +25,7 @@ const TripDetailModal: React.FC = () => {
     const summary = stats?.summary;
 
     const [showMap, setShowMap] = useState(false);
-    const [tripPoints, setTripPoints] = useState<any[]>([]);
+    const [tripPoints, setTripPoints] = useState<Array<{ lat: number; lon: number; timestamp: number }>>([]);
 
     const [scoreClicks, setScoreClicks] = useState(0);
     const [lastClickTime, setLastClickTime] = useState(0);
@@ -42,20 +43,20 @@ const TripDetailModal: React.FC = () => {
     const details = useMemo(() => {
         if (!trip) return { efficiency: 0, score: 0, scoreColor: '', comparisonPercent: 0, percentile: 0, cost: 0, electricCost: 0, fuelCost: 0, dayName: '' };
 
-        // @ts-ignore
-        const validTrips = allTrips ? allTrips.filter(t => t.trip >= 1 && t.electricity !== 0) : [];
+        const validTrips = allTrips ? allTrips.filter(t => (t.trip || 0) >= 1 && (t.electricity || 0) !== 0) : [];
         const efficiencies = validTrips.map(t => ((t.electricity || 0) / (t.trip || 1)) * 100);
         const minEff = Math.min(...efficiencies);
         const maxEff = Math.max(...efficiencies);
 
         const efficiency = (trip.trip || 0) > 0 ? ((trip.electricity || 0) / (trip.trip || 1)) * 100 : 0;
-        // @ts-ignore - calculateScore types might need adjustment if they expect numbers but receive potentially NaN/Infinity without safe checks, but logic seems fine
         const score = calculateScore(efficiency, minEff, maxEff);
         const scoreColor = getScoreColor(score);
         const avgEfficiency = parseFloat(summary?.avgEff?.toString() || '0');
         const comparisonPercent = avgEfficiency > 0 ? ((efficiency - avgEfficiency) / avgEfficiency) * 100 : 0;
-        // @ts-ignore
-        const percentile = calculatePercentile(trip, allTrips || []);
+        const percentile = calculatePercentile(
+            { trip: trip.trip || 0, electricity: trip.electricity || 0 },
+            (allTrips || []).map(t => ({ trip: t.trip || 0, electricity: t.electricity || 0 }))
+        );
 
         // Calculate costs (electricity + fuel for hybrids)
         // Use pre-calculated values if available (respects Dynamic/Average strategies), otherwise fallback to custom price
@@ -67,9 +68,9 @@ const TripDetailModal: React.FC = () => {
     }, [trip, allTrips, summary, settings]);
 
     // Determine distance source
-    const getDistanceSource = (trip: any): 'gps' | 'odometer' | 'ec_database' => {
-        if (trip.gpsDistanceKm) return 'gps';
-        if (trip.source === 'db' || trip.source === 'local') return 'ec_database';
+    const getDistanceSource = (tripData: Pick<Trip, 'gpsDistanceKm' | 'source'>): 'gps' | 'odometer' | 'ec_database' => {
+        if (tripData.gpsDistanceKm) return 'gps';
+        if (tripData.source === 'db' || tripData.source === 'local') return 'ec_database';
         return 'odometer';
     };
 
@@ -127,7 +128,7 @@ const TripDetailModal: React.FC = () => {
                 const pointsRef = collection(db, 'trips', trip.id, 'points');
                 const pointsQuery = query(pointsRef, orderBy('timestamp'));
                 const pointsSnap = await getDocs(pointsQuery);
-                const points = pointsSnap.docs.map(doc => doc.data());
+                const points = pointsSnap.docs.map(doc => doc.data() as { lat: number; lon: number; timestamp: number });
                 setTripPoints(points);
             } catch (error) {
                 console.error('Error loading GPS points:', error);
@@ -223,7 +224,7 @@ const TripDetailModal: React.FC = () => {
                 </div>
 
                 {/* Fuel consumption - Only for hybrid vehicles (even if 0L) */}
-                {((summary as any)?.isHybrid || (trip.fuel || 0) > 0) && (
+                {(summary?.isHybrid || (trip.fuel || 0) > 0) && (
                     <div className="grid grid-cols-2 gap-2 mb-3">
                         <div className="bg-amber-50 dark:bg-amber-900/20 rounded-xl p-3 text-center border border-amber-200 dark:border-amber-800/50">
                             <span className="text-lg">⛽</span>
@@ -292,7 +293,7 @@ const TripDetailModal: React.FC = () => {
                             <span className="text-slate-500 dark:text-slate-400 text-sm">{t('tripDetail.cost')}</span>
                             <div className="text-right">
                                 <span className="font-bold text-amber-500">{details.cost.toFixed(2)}€</span>
-                                {((summary as any)?.isHybrid || (trip.fuel || 0) > 0) && (
+                                {(summary?.isHybrid || (trip.fuel || 0) > 0) && (
                                     <p className="text-[10px] text-slate-400">
                                         ⚡ {details.electricCost.toFixed(2)}€ + ⛽ {details.fuelCost.toFixed(2)}€
                                     </p>

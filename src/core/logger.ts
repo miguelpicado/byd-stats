@@ -36,7 +36,7 @@ export const logger = {
     /**
      * Debug level logging
      */
-    debug: (...args: any[]) => {
+    debug: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.DEBUG) {
             console.log('[DEBUG]', ...args);
         }
@@ -45,7 +45,7 @@ export const logger = {
     /**
      * Info level logging
      */
-    info: (...args: any[]) => {
+    info: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.INFO) {
             console.info('[INFO]', ...args);
         }
@@ -54,7 +54,7 @@ export const logger = {
     /**
      * Warning level logging
      */
-    warn: (...args: any[]) => {
+    warn: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.WARN) {
             console.warn('[WARN]', ...args);
         }
@@ -63,7 +63,7 @@ export const logger = {
     /**
      * Error level logging
      */
-    error: (...args: any[]) => {
+    error: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.ERROR) {
             console.error('[ERROR]', ...args);
         }

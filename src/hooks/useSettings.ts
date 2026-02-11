@@ -1,7 +1,6 @@
 // BYD Stats - useSettings Hook
 
 import { useEffect } from 'react';
-// @ts-ignore - useLocalStorage is still JS
 import { useLocalStorage } from './useLocalStorage';
 import { SETTINGS_KEY, DEFAULT_SETTINGS } from '@core/constants';
 import { Settings } from '@/types';
@@ -11,7 +10,7 @@ import { Settings } from '@/types';
  * @returns {[Settings, Function]} [settings, updateSettings]
  */
 export function useSettings(): [Settings, (s: Settings | ((prev: Settings) => Settings)) => void] {
-    const [settings, setSettings] = useLocalStorage(SETTINGS_KEY, DEFAULT_SETTINGS) as any;
+    const [settings, setSettings] = useLocalStorage<Settings>(SETTINGS_KEY, DEFAULT_SETTINGS);
 
     // Ensure all default settings exist
     useEffect(() => {

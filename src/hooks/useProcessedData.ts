@@ -3,42 +3,48 @@ import { useTranslation } from 'react-i18next';
 import * as Comlink from 'comlink';
 import { logger } from '@core/logger';
 import { useLocalStorage } from './useLocalStorage';
-import { Trip, Charge, Settings, ProcessedData } from '@/types';
+import { Trip, Charge, Settings, ProcessedData, RangeScenario, SoHStats, SmartChargingResult } from '@/types';
+
+// Model weight structure for parking model serialization
+interface ModelWeight {
+    data: number[];
+    shape: number[];
+}
 
 // Define the worker API interface
 interface DataWorkerApi {
     processData(
         trips: Trip[],
-        settings: any,
+        settings: Partial<Settings>,
         charges: Charge[],
         language: string
     ): Promise<ProcessedData>;
 
     trainModel(trips: Trip[]): Promise<{ loss: number; samples: number }>;
-    getRangeScenarios(batteryCapacity: number, soh: number): Promise<Array<{ name: string; speed: number; efficiency: number; range: number }>>;
+    getRangeScenarios(batteryCapacity: number, soh: number): Promise<RangeScenario[]>;
 
     trainSoH(charges: Charge[], capacity: number): Promise<{ loss: number; samples: number; predictedSoH: number }>;
-    getSoHStats(charges: Charge[], capacity: number): Promise<{ points: any[]; trend: any[] }>;
+    getSoHStats(charges: Charge[], capacity: number): Promise<SoHStats>;
 
     trainParking(trips: Trip[]): Promise<{ loss: number; samples: number }>;
-    exportParkingModel(): Promise<any[] | null>;
-    importParkingModel(weights: any[]): Promise<void>;
+    exportParkingModel(): Promise<ModelWeight[] | null>;
+    importParkingModel(weights: ModelWeight[]): Promise<void>;
 
     predictDeparture(startTime: number): Promise<{ departureTime: number; duration: number } | null>;
 
-    findSmartChargingWindows(trips: Trip[], settings: Settings): Promise<any>;
+    findSmartChargingWindows(trips: Trip[], settings: Settings): Promise<SmartChargingResult>;
 }
 
 export interface UseProcessedDataReturn {
     data: ProcessedData | null;
     isProcessing: boolean;
-    aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
+    aiScenarios: RangeScenario[];
     aiLoss: number | null;
     aiSoH: number | null;
-    aiSoHStats: { points: any[]; trend: any[] } | null;
+    aiSoHStats: SoHStats | null;
     isAiTraining: boolean;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
-    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<any>;
+    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<SmartChargingResult | null>;
     forceRecalculate: () => void;
 }
 
@@ -56,29 +62,29 @@ export const useProcessedData = (
     const [isAiTraining, setIsAiTraining] = useState(false);
 
     // AI State
-    const [aiScenarios, setAiScenarios] = useState<any[]>([]);
+    const [aiScenarios, setAiScenarios] = useState<RangeScenario[]>([]);
     const [aiLoss, setAiLoss] = useState<number | null>(null);
 
     // AI Cache Persistence
     const [aiCache, setAiCache] = useLocalStorage<{
         hash: string;
-        scenarios: any[];
+        scenarios: RangeScenario[];
         loss: number;
     } | null>('ai_predictions', null);
 
     // AI SoH State
     const [aiSoH, setAiSoH] = useState<number | null>(null);
-    const [aiSoHStats, setAiSoHStats] = useState<{ points: any[]; trend: any[] } | null>(null);
+    const [aiSoHStats, setAiSoHStats] = useState<SoHStats | null>(null);
 
     const [sohCache, setSohCache] = useLocalStorage<{
         hash: string;
         soh: number;
-        stats: { points: any[]; trend: any[] };
+        stats: SoHStats;
     } | null>('ai_soh_predictions', null);
 
     const [parkingCache, setParkingCache] = useLocalStorage<{
         hash: string;
-        weights: any[];
+        weights: ModelWeight[];
     } | null>('ai_parking_predictions', null);
 
 
@@ -138,8 +144,8 @@ export const useProcessedData = (
                 odometerOffset: 0
             };
 
-            const rawSettings: any = settings || {};
-            processingSettings.odometerOffset = parseFloat(rawSettings.odometerOffset) || 0;
+            const rawSettings = settings as Settings & { priceStrategy?: 'custom' | 'average' | 'dynamic'; useCalculatedPrice?: boolean };
+            processingSettings.odometerOffset = parseFloat(String(rawSettings.odometerOffset)) || 0;
 
             if (rawSettings.priceStrategy) processingSettings.electricStrategy = rawSettings.priceStrategy;
             if (rawSettings.useCalculatedPrice) processingSettings.electricStrategy = 'average';

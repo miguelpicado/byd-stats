@@ -55,7 +55,7 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                 title: { display: true, text: t('insights.rangeAxis', 'Range (km)') }
             }
         },
-        onClick: (_event: any, elements: any[]) => {
+        onClick: (_event: unknown, elements: Array<{ index: number }>) => {
             if (elements.length > 0) {
                 const index = elements[0].index;
                 const scenario = aiScenarios[index];

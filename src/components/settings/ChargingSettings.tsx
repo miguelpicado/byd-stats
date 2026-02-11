@@ -3,20 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { Zap, Trash2 } from '../Icons';
 import { BYD_RED } from '@core/constants';
 import { useApp } from '@/context/AppContext';
+import { ChargerType } from '@/types';
 
 export const ChargingSettings: React.FC = () => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
 
     // Charger types management
-    const handleChargerTypeChange = useCallback((index: number, field: string, value: any) => {
+    const handleChargerTypeChange = useCallback((index: number, field: keyof ChargerType, value: string | number) => {
         const updatedTypes = [...(settings.chargerTypes || [])];
         updatedTypes[index] = { ...updatedTypes[index], [field]: value };
         updateSettings({ ...settings, chargerTypes: updatedTypes });
     }, [settings, updateSettings]);
 
     const handleAddChargerType = useCallback(() => {
-        const newType = {
+        const newType: ChargerType = {
             id: `custom_${Date.now()}`,
             name: t('settings.newChargerType'),
             speedKw: 7.4,
@@ -27,7 +28,7 @@ export const ChargingSettings: React.FC = () => {
     }, [settings, updateSettings, t]);
 
     const handleDeleteChargerType = useCallback((index: number) => {
-        const updatedTypes = (settings.chargerTypes || []).filter((_: any, i: number) => i !== index);
+        const updatedTypes = (settings.chargerTypes || []).filter((_, i) => i !== index);
         updateSettings({ ...settings, chargerTypes: updatedTypes });
     }, [settings, updateSettings]);
 
@@ -40,7 +41,7 @@ export const ChargingSettings: React.FC = () => {
                     {t('settings.chargerTypes')}
                 </h3>
 
-                {(settings?.chargerTypes || []).map((charger: any, index: number) => {
+                {(settings?.chargerTypes || []).map((charger: ChargerType, index: number) => {
                     const nameId = `charger_${index}_name`;
                     const speedId = `charger_${index}_speed`;
                     const efficiencyId = `charger_${index}_efficiency`;

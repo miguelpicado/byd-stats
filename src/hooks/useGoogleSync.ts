@@ -16,7 +16,7 @@ export interface UseGoogleSyncProps {
     setLocalCharges: (charges: Charge[]) => void;
     activeCarId: string;
     totalCars?: number;
-    openRegistryModal: (cars: any[]) => void;
+    openRegistryModal: (cars: Car[]) => void;
     isRegistryModalOpen?: boolean;
     updateCar?: (id: string, updates: Partial<Car>) => void;
     carName?: string;
@@ -37,7 +37,7 @@ export interface UseGoogleSyncReturn {
     checkCloudBackups: () => Promise<GoogleDriveFile[]>;
     importFromCloud: (fileId: string) => Promise<boolean>;
     deleteBackup: (fileId: string) => Promise<boolean>;
-    restoreFromRegistry: (car: any) => Promise<boolean>;
+    restoreFromRegistry: (car: Pick<Car, 'id' | 'name'>) => Promise<boolean>;
     skipRegistryRestore: () => Promise<boolean>;
     updateCloudRegistry: () => Promise<void>;
 }

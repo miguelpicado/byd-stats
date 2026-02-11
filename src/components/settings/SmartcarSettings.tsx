@@ -76,8 +76,8 @@ export const SmartcarSettings: React.FC = () => {
                 // Pass batterySize so Cloud Functions know the battery capacity
                 const batteryCapacity = settings?.batterySize || 82.5;
                 const result = await exchange({ code, batteryCapacity });
-                // @ts-ignore
-                const { vehicleId, make, model } = result.data;
+                const response = result.data as { vehicleId: string; make: string; model: string };
+                const { vehicleId, make, model } = response;
 
                 // Save the smartcarVehicleId to the user's active car
                 if (activeCarId && vehicleId) {
@@ -155,7 +155,7 @@ export const SmartcarSettings: React.FC = () => {
             const data = result.data as SmartcarTestResponse;
             console.log('Parsed test data:', data);
 
-            const successCount = Object.values(data.permissions).filter((p: any) => p.status === 'SUCCESS').length;
+            const successCount = Object.values(data.permissions).filter((p) => p.status === 'SUCCESS').length;
             const totalCount = Object.keys(data.permissions).length;
 
             if (data.errors.length === 0) {
@@ -163,14 +163,15 @@ export const SmartcarSettings: React.FC = () => {
             } else {
                 toast.error(`⚠️ Errores: ${data.errors.join(', ')}`, { id: 'test-connection', duration: 8000 });
             }
-        } catch (error: any) {
+        } catch (error) {
             console.error('Test error caught in frontend:', error);
 
             // Log more details about the error
-            if (error.code) console.error('Error code:', error.code);
-            if (error.details) console.error('Error details:', error.details);
+            const err = error as { code?: string; details?: unknown; message?: string };
+            if (err.code) console.error('Error code:', err.code);
+            if (err.details) console.error('Error details:', err.details);
 
-            toast.error(`Error: ${error.message || 'Error desconocido'}`, { id: 'test-connection' });
+            toast.error(`Error: ${err.message || 'Error desconocido'}`, { id: 'test-connection' });
         }
     };
 
