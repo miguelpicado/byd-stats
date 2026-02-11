@@ -1609,6 +1609,61 @@ rm -rf node_modules/.vite dist
 
 ---
 
+## Compatibilidad por Modelo LLM
+
+> **IMPORTANTE:** No todos los modelos LLM son adecuados para todas las tareas. Esta guia ayuda a elegir que tareas asignar segun el modelo disponible.
+
+### Modelos Recomendados por Sprint
+
+| Sprint | Claude Opus/Sonnet | Gemini 2.5 Pro | Gemini Flash | GPT-4 |
+|--------|-------------------|----------------|--------------|-------|
+| 1 (TensorFlow) | ✅ Recomendado | ✅ Con cuidado | ❌ NO | ✅ Con cuidado |
+| 2 (Workers) | ✅ Recomendado | ✅ Con cuidado | ❌ NO | ✅ Con cuidado |
+| 3.1 (Cache) | ✅ | ✅ | ✅ SÍ | ✅ |
+| 3.2 (Batching) | ✅ | ✅ | ✅ SÍ | ✅ |
+| 4 (Pagination) | ✅ | ✅ | ⚠️ Supervisado | ✅ |
+| 5.1 (Tipos) | ✅ | ✅ | ✅ SÍ | ✅ |
+| 5.2 (DataProvider) | ✅ | ✅ | ❌ NO | ✅ |
+| 5.3 (Script) | ✅ | ✅ | ✅ SÍ | ✅ |
+| 6 (Indexes) | ✅ | ✅ | ✅ SÍ | ✅ |
+
+### Orden Especifico para Gemini Flash
+
+Si solo tienes acceso a Gemini Flash, ejecuta en este orden (de menor a mayor riesgo):
+
+1. **Sprint 6** - Firestore Indexes (JSON puro, copy-paste)
+2. **Sprint 5.1** - Crear tipos workers (archivo nuevo)
+3. **Sprint 5.3** - Script check-any (script simple)
+4. **Sprint 3.2** - localStorage batching (codigo aislado)
+5. **Sprint 3.1** - Cache Google Drive (codigo aislado)
+6. **Sprint 4** - Pagination (⚠️ supervisar resultado)
+
+**NUNCA ejecutar con Gemini Flash:**
+- Sprint 1 y 2 (TensorFlow/Workers) - Afecta IA calibrada, alto riesgo
+- Sprint 5.2 (DataProvider types) - Requiere demasiado contexto
+
+### Razones de las Restricciones
+
+**Gemini Flash tiende a:**
+- Dar muchas vueltas a lo mismo sin avanzar
+- "Mejorar" codigo que no debe tocar
+- Perder contexto en tareas largas
+- Equivocarse en integraciones complejas
+
+**Tareas SEGURAS para Flash:**
+- Crear archivos nuevos con codigo completo proporcionado
+- Modificaciones aisladas que no afectan otros archivos
+- Configuraciones (JSON, scripts)
+- Tareas con verificacion inmediata (`tsc --noEmit`, `npm run build`)
+
+**Tareas PELIGROSAS para Flash:**
+- Modificar codigo existente complejo
+- Tareas que requieren entender flujo de datos entre archivos
+- Cualquier cosa que afecte los modelos de IA calibrados
+- Refactorizaciones que tocan multiples archivos
+
+---
+
 ## Notas para el LLM Implementador
 
 1. **Antes de cada cambio:** Lee el archivo completo para entender el contexto
@@ -1616,6 +1671,190 @@ rm -rf node_modules/.vite dist
 3. **Si hay errores de tipo:** Revisa imports y asegurate de que los tipos estan exportados
 4. **Workers en Vite:** Los workers se importan con `new URL('./worker.ts', import.meta.url)`
 5. **No eliminar sql.js:** Es critico para la funcionalidad offline de importacion DB
+
+---
+
+## ⚠️ CONFIGURACIONES CALIBRADAS DE IA - NO MODIFICAR ⚠️
+
+> **ADVERTENCIA CRITICA:** Los siguientes valores han sido calibrados manualmente mediante pruebas reales con vehiculos BYD. Estos valores representan horas de ajuste fino para que las predicciones coincidan con la realidad. **NO MODIFICAR** estos valores a menos que se tenga evidencia empirica de que estan incorrectos.
+
+### 1. EfficiencyModel (`src/services/ai/EfficiencyModel.ts`)
+
+**Anchor Points Sinteticos (lineas 44-48):**
+Estos puntos ancla fuerzan al modelo a predecir eficiencias realistas para vehiculos BYD:
+
+```typescript
+// ❌ NO MODIFICAR ESTOS VALORES
+const anchors = [
+    { speed: 30, distance: 15, eff: 14.5, count: 500 },  // Ciudad
+    { speed: 80, distance: 35, eff: 17.5, count: 500 },  // Mixto
+    { speed: 100, distance: 100, eff: 23.5, count: 500 } // Autopista
+];
+```
+
+| Parametro | Valor | Justificacion |
+|-----------|-------|---------------|
+| Ciudad eff | 14.5 kWh/100km | Basado en conduccion real urbana BYD Atto 3 |
+| Mixto eff | 17.5 kWh/100km | Promedio real carretera + ciudad |
+| Autopista eff | 23.5 kWh/100km | Mediciones reales a 100-120 km/h |
+| count | 500 | Peso necesario para anclar el modelo sin sobreajuste |
+
+**Filtros de Outliers (lineas 36-37):**
+```typescript
+// ❌ NO MODIFICAR ESTOS RANGOS
+if (isNaN(speed) || speed > 160 || speed < 15) return;
+if (isNaN(efficiency) || efficiency > 40 || efficiency < 5) return;
+```
+
+**Hiperparametros del Modelo:**
+```typescript
+// ❌ NO MODIFICAR SIN PRUEBAS EXHAUSTIVAS
+optimizer: tf.train.adam(0.1),    // Learning rate calibrado
+epochs: 500,                       // Suficiente convergencia
+batchSize: 64,                     // Balance memoria/velocidad
+```
+
+**Valores por Defecto y Limites:**
+```typescript
+// ❌ NO MODIFICAR
+return 16.0;  // Prediccion por defecto cuando no hay modelo
+return Math.max(10, Math.min(40, prediction));  // Limites de salida
+```
+
+**Escenarios de Calculo:**
+```typescript
+// ❌ NO MODIFICAR - Representan casos de uso reales
+const scenarios = [
+    { name: 'City', speed: 30, distance: 15 },
+    { name: 'Mixed', speed: 70, distance: 35 },
+    { name: 'Highway', speed: 100, distance: 100 }
+];
+```
+
+---
+
+### 2. SoHModel (`src/services/ai/SoHModel.ts`)
+
+**Filtro de Cargas Validas (linea 29):**
+```typescript
+// ❌ NO MODIFICAR - Cargas pequeñas introducen error
+return kwh > 0 && start >= 0 && end > start && (end - start) >= 5;
+// El >= 5% es critico: cargas menores tienen demasiado error de medicion
+```
+
+**Filtro de Sanidad (linea 54):**
+```typescript
+// ❌ NO MODIFICAR - Evita datos corruptos
+if (impliedCapacity > nominalCapacity * 1.5 || impliedCapacity < nominalCapacity * 0.5) return;
+// Rango 50%-150% filtra errores de lectura del BMS
+```
+
+**Hybrid Blending (lineas 105-112):**
+Este es el algoritmo MAS CRITICO - combina AI con estadistica robusta:
+```typescript
+// ❌ NO MODIFICAR ESTOS PESOS - Calibrados para estabilidad
+const deviation = Math.abs(predCapacityAI - medianCap) / medianCap;
+let finalCapacity = predCapacityAI;
+
+if (deviation > 0.05) {
+    // Si AI se desvia >5%, confiar mas en mediana
+    finalCapacity = (predCapacityAI * 0.1) + (medianCap * 0.9);
+} else {
+    // Si AI es estable, darle algo mas de peso
+    finalCapacity = (predCapacityAI * 0.3) + (medianCap * 0.7);
+}
+```
+
+| Escenario | Peso AI | Peso Mediana | Razon |
+|-----------|---------|--------------|-------|
+| Desviacion > 5% | 10% | 90% | AI inestable, confiar en datos |
+| Desviacion <= 5% | 30% | 70% | AI estable pero mediana mas robusta |
+
+**Valor por Defecto:**
+```typescript
+// ❌ NO MODIFICAR
+return 60.48;  // Capacidad nominal BYD Atto 3 por defecto
+```
+
+**Hiperparametros:**
+```typescript
+// ❌ NO MODIFICAR
+optimizer: tf.train.adam(0.1),
+epochs: 300,  // Menos epochs que eficiencia (datos mas simples)
+```
+
+---
+
+### 3. ParkingModel (`src/services/ai/ParkingModel.ts`)
+
+**Filtro de Eventos (linea 33):**
+```typescript
+// ❌ NO MODIFICAR
+if (durationHours > 0.25 && durationHours < 24 * 14) {
+// Minimo 15 min (evita paradas cortas)
+// Maximo 14 dias (evita datos anomalos de vacaciones)
+```
+
+**Feature Engineering - Bloque Fin de Semana (lineas 53, 111):**
+```typescript
+// ❌ NO MODIFICAR - Patron de uso real
+const isWeekendBlock = (e.dayOfWeek === 6 || e.dayOfWeek === 0 ||
+                        (e.dayOfWeek === 1 && e.startHour < 8)) ? 1 : 0;
+// Incluye lunes antes de las 8am como "extension de fin de semana"
+```
+
+**Arquitectura de Red Neuronal:**
+```typescript
+// ❌ NO MODIFICAR SIN REENTRENAR
+tf.layers.dense({ units: 16, inputShape: [5], activation: 'relu' }),
+tf.layers.dense({ units: 8, activation: 'relu' }),
+tf.layers.dense({ units: 1, activation: 'linear' })
+// 16->8->1 es el balance optimo para este problema
+```
+
+**Hiperparametros:**
+```typescript
+// ❌ NO MODIFICAR
+optimizer: tf.train.adam(0.01),  // LR mas bajo que otros modelos
+epochs: 200,
+batchSize: 32,
+```
+
+**Prediccion Minima:**
+```typescript
+// ❌ NO MODIFICAR
+const duration = Math.max(0.5, output.dataSync()[0]);
+// Minimo 30 minutos - evita predicciones irreales
+```
+
+---
+
+### Resumen de Valores Criticos
+
+| Archivo | Valor | Linea(s) | Descripcion |
+|---------|-------|----------|-------------|
+| EfficiencyModel.ts | `eff: 14.5, 17.5, 23.5` | 45-47 | Eficiencias ancla |
+| EfficiencyModel.ts | `count: 500` | 45-47 | Peso de anchors |
+| EfficiencyModel.ts | `speed > 160, < 15` | 36 | Filtro velocidad |
+| EfficiencyModel.ts | `efficiency > 40, < 5` | 37 | Filtro eficiencia |
+| EfficiencyModel.ts | `return 16.0` | 108 | Default efficiency |
+| EfficiencyModel.ts | `Math.max(10, Math.min(40, ...))` | 125 | Limites output |
+| SoHModel.ts | `(end - start) >= 5` | 29 | Min SoC diff |
+| SoHModel.ts | `* 1.5, * 0.5` | 54 | Rango sanidad |
+| SoHModel.ts | `0.1, 0.9` y `0.3, 0.7` | 109, 111 | Pesos blending |
+| SoHModel.ts | `return 60.48` | 128 | Default capacity |
+| ParkingModel.ts | `> 0.25, < 24 * 14` | 33 | Filtro duracion |
+| ParkingModel.ts | `dayOfWeek === 1 && startHour < 8` | 53 | Weekend block |
+| ParkingModel.ts | `units: 16, 8, 1` | 69-80 | Arquitectura NN |
+| ParkingModel.ts | `Math.max(0.5, ...)` | 121 | Min prediccion |
+
+### Si Necesitas Modificar Algo
+
+1. **Documenta el cambio** con datos reales que justifiquen la modificacion
+2. **Crea una rama separada** para pruebas
+3. **Prueba con datos reales** de al menos 100 viajes/cargas
+4. **Compara metricas** antes/despues (loss, predicciones vs realidad)
+5. **Actualiza esta seccion** con los nuevos valores y justificacion
 
 ---
 

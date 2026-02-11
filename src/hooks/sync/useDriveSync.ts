@@ -115,7 +115,22 @@ export function useDriveSync({
 
             const currentTrips = newTripsData || localTrips;
             const currentCharges = localCharges || [];
-            const localDataToMerge: SyncData = { trips: currentTrips, settings, charges: currentCharges };
+
+            // Read AI caches from localStorage for cloud sync
+            const aiCacheStr = localStorage.getItem('ai_predictions');
+            const sohCacheStr = localStorage.getItem('ai_soh_predictions');
+            const parkingCacheStr = localStorage.getItem('ai_parking_predictions');
+
+            const localDataToMerge: SyncData = {
+                trips: currentTrips,
+                settings,
+                charges: currentCharges,
+                aiCache: {
+                    efficiency: aiCacheStr ? JSON.parse(aiCacheStr) : undefined,
+                    soh: sohCacheStr ? JSON.parse(sohCacheStr) : undefined,
+                    parking: parkingCacheStr ? JSON.parse(parkingCacheStr) : undefined,
+                }
+            };
 
             if (currentTrips.length > 0 && remoteData.trips.length > 0 && !options.forcePull && !options.forcePush) {
                 const conflict = detectConflict(localDataToMerge, remoteData);
@@ -134,6 +149,17 @@ export function useDriveSync({
             setLocalTrips(merged.trips);
             setSettings(merged.settings);
             setLocalCharges(merged.charges);
+
+            // Write merged AI caches to localStorage
+            if (merged.aiCache?.efficiency) {
+                localStorage.setItem('ai_predictions', JSON.stringify(merged.aiCache.efficiency));
+            }
+            if (merged.aiCache?.soh) {
+                localStorage.setItem('ai_soh_predictions', JSON.stringify(merged.aiCache.soh));
+            }
+            if (merged.aiCache?.parking) {
+                localStorage.setItem('ai_parking_predictions', JSON.stringify(merged.aiCache.parking));
+            }
 
             const uploadResult = await googleDriveService.uploadFile(merged, legacyImport ? null : fileId, targetFilename);
 
@@ -189,6 +215,17 @@ export function useDriveSync({
             setLocalTrips(merged.trips);
             setSettings(merged.settings);
             setLocalCharges(merged.charges);
+
+            // Write merged AI caches to localStorage
+            if (merged.aiCache?.efficiency) {
+                localStorage.setItem('ai_predictions', JSON.stringify(merged.aiCache.efficiency));
+            }
+            if (merged.aiCache?.soh) {
+                localStorage.setItem('ai_soh_predictions', JSON.stringify(merged.aiCache.soh));
+            }
+            if (merged.aiCache?.parking) {
+                localStorage.setItem('ai_parking_predictions', JSON.stringify(merged.aiCache.parking));
+            }
 
             const targetFilename = getTargetFilename();
             const upload = await googleDriveService.uploadFile(merged, null, targetFilename);

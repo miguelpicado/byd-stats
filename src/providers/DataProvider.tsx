@@ -8,8 +8,12 @@ import { ModalProvider, useModalContext } from './ModalProvider';
 import { SyncProvider, useSyncContext } from './SyncProvider';
 import { TripsProvider, useTripsContext } from './TripsProvider';
 import { Trip, Charge, ProcessedData, Settings } from '@/types';
-import { useConfirmation } from '@hooks/useConfirmation';
+import { useConfirmation, ConfirmModalState } from '@hooks/useConfirmation';
 import { ModalsState } from '@hooks/useModalState';
+import type { UseGoogleSyncReturn } from '@hooks/useGoogleSync';
+import type { UseDatabaseReturn } from '@hooks/useDatabase';
+import type { UseFileHandlingReturn } from '@hooks/useFileHandling';
+import type { ChargeData } from '@hooks/useChargesData';
 
 // Define context interfaces (Legacy Support)
 export interface DataState {
@@ -20,12 +24,12 @@ export interface DataState {
     charges: Charge[];
     tripHistory: Trip[];
     settings: Settings;
-    googleSync: any;
-    database: any;
+    googleSync: UseGoogleSyncReturn;
+    database: UseDatabaseReturn;
     modals: ModalsState;
-    openModal: (modalName: keyof ModalsState, props?: any) => void;
+    openModal: (modalName: keyof ModalsState, props?: Record<string, unknown>) => void;
     closeModal: (modalName: keyof ModalsState) => void;
-    fileHandling: any;
+    fileHandling: UseFileHandlingReturn;
     filterType: string;
     selMonth: string;
     dateFrom: string;
@@ -47,9 +51,9 @@ export interface DataState {
     aiLoss: number | null;
     isAiTraining: boolean;
     aiSoH: number | null;
-    aiSoHStats: { points: any[]; trend: any[] } | null;
+    aiSoHStats: { points: Array<{ x: number; y: number }>; trend: Array<{ x: number; y: number }> } | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
-    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<any>;
+    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<{ windows: unknown[]; weeklyKwh: number; requiredHours: number; hoursFound: number; note?: string } | null>;
     forceRecalculate: () => void;
 
     // Anomalies
@@ -65,10 +69,10 @@ export interface DataDispatch {
 
     clearData: () => void;
     saveToHistory: (name: string) => void;
-    loadFromHistory: (item: any) => void;
+    loadFromHistory: () => void;
     clearHistory: () => void;
 
-    confirmModalState: any;
+    confirmModalState: ConfirmModalState;
     closeConfirmation: () => void;
     showConfirmation: (title: string, message: string, onConfirm: () => void, isDangerous?: boolean) => void;
 
@@ -76,10 +80,10 @@ export interface DataDispatch {
     exportData: () => Promise<{ success: boolean; reason?: string }>;
     loadChargeRegistry: (file: File) => Promise<void>;
 
-    addCharge: (charge: any) => any;
-    updateCharge: (id: string, updates: any) => void;
+    addCharge: (charge: ChargeData) => Charge;
+    updateCharge: (id: string, updates: Partial<Charge>) => void;
     deleteCharge: (id: string) => void;
-    addMultipleCharges: (charges: any[]) => number;
+    addMultipleCharges: (charges: ChargeData[]) => number;
     exportCharges: () => boolean;
 
     setFilterType: (type: string) => void;
@@ -87,7 +91,7 @@ export interface DataDispatch {
     setDateFrom: (date: string) => void;
     setDateTo: (date: string) => void;
 
-    openModal: (modalName: keyof ModalsState, props?: any) => void;
+    openModal: (modalName: keyof ModalsState, props?: Record<string, unknown>) => void;
     closeModal: (modalName: keyof ModalsState) => void;
 }
 

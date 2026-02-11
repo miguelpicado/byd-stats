@@ -1,18 +1,21 @@
-// BYD Stats - Data Processing Worker (v20)
+// BYD Stats - Data Processing Worker (v21 - TensorFlow Isolated)
 import * as Comlink from 'comlink';
 import { processData } from '../core/dataProcessing';
-import type { PredictiveService as PredictiveServiceType } from '../services/PredictiveService';
-import { Trip, Settings } from '../types';
+import type { TensorFlowWorkerApi } from './tensorflowWorker';
+import type { Trip, Settings, Charge } from '../types';
 
-// Lazy load PredictiveService to reduce initial bundle (~2MB from TensorFlow)
-let predictiveService: PredictiveServiceType | null = null;
+// TensorFlow Worker (lazy loaded, isolated in its own worker)
+let tfWorker: Comlink.Remote<TensorFlowWorkerApi> | null = null;
 
-async function getPredictiveService(): Promise<PredictiveServiceType> {
-    if (!predictiveService) {
-        const { PredictiveService } = await import('../services/PredictiveService');
-        predictiveService = new PredictiveService();
+async function getTfWorker() {
+    if (!tfWorker) {
+        const worker = new Worker(
+            new URL('./tensorflowWorker.ts', import.meta.url),
+            { type: 'module' }
+        );
+        tfWorker = Comlink.wrap<TensorFlowWorkerApi>(worker);
     }
-    return predictiveService;
+    return tfWorker;
 }
 
 /**
@@ -29,7 +32,7 @@ async function findSmartChargingWindows(
     hoursFound: number;
     note?: string;
 }> {
-    const service = await getPredictiveService();
+    const tf = await getTfWorker();
 
     // 1. Calculate Needs (Volume-Based)
     let totalKwh = 0;
@@ -60,10 +63,10 @@ async function findSmartChargingWindows(
         if (valid.length > 0) {
             // Sort by start_timestamp to get proper date range
             const sorted = [...valid].sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
-            const first = sorted[0].start_timestamp * 1000;
+            const first = sorted[0].start_timestamp! * 1000;
             // Use end_timestamp if available, otherwise fall back to start_timestamp
             const lastTrip = sorted[sorted.length - 1];
-            const last = (lastTrip.end_timestamp || lastTrip.start_timestamp) * 1000;
+            const last = (lastTrip.end_timestamp || lastTrip.start_timestamp!) * 1000;
             const span = Math.max(1, (last - first) / (1000 * 3600 * 24));
             daysActive = span;
         }
@@ -135,10 +138,10 @@ async function findSmartChargingWindows(
 
     // 2. Simulation Loop (The "AI Probe")
     // Check if model is trained by probing current time
-    const probe = service.predictDeparture(Date.now());
+    const probe = await tf.predictDeparture(Date.now());
     if (!probe && trips.length > 5) {
         // Auto-train if missing
-        await service.trainParking(trips);
+        await tf.trainParking(trips);
     }
 
     // We simulate hour by hour for 7 days
@@ -152,9 +155,9 @@ async function findSmartChargingWindows(
             simDate.setDate(simDate.getDate() + d);
             simDate.setHours(h, 0, 0, 0);
 
-            // Use internal service directly, no callback needed
-            const prediction = service.predictDeparture(simDate.getTime());
-            if (!prediction || prediction.duration < 1.5) continue; // Lower threshold to discover more slots
+            // Delegate to TF worker
+            const prediction = await tf.predictDeparture(simDate.getTime());
+            if (!prediction || prediction.duration < 1.5) continue;
 
             const naturalStartMins = h * 60;
             const naturalDurationMins = prediction.duration * 60;
@@ -197,16 +200,16 @@ async function findSmartChargingWindows(
     });
 
     if (settings?.smartChargingPreferences && Array.isArray(settings.smartChargingPreferences) && settings.smartChargingPreferences.length > 0) {
-        const daysToOverride = new Set(settings.smartChargingPreferences.filter(p => p.active).map(p => p.day));
+        const daysToOverride = new Set(settings.smartChargingPreferences.filter((p: any) => p.active).map((p: any) => p.day));
         daysToOverride.forEach(dayName => {
-            const dayIdx = days.indexOf(dayName);
+            const dayIdx = days.indexOf(dayName as string);
             if (dayIdx === -1) return;
             for (let i = deduped.length - 1; i >= 0; i--) {
                 if (deduped[i].dayIndex === dayIdx) deduped.splice(i, 1);
             }
         });
 
-        settings.smartChargingPreferences.forEach(pref => {
+        settings.smartChargingPreferences.forEach((pref: any) => {
             if (!pref.active) return;
             const dayIdx = days.indexOf(pref.day);
             if (dayIdx === -1) return;
@@ -331,26 +334,57 @@ async function findSmartChargingWindows(
 const api = {
     processData,
 
-    // AI Methods - lazy loaded
-    trainModel: async (trips: any[]) => (await getPredictiveService()).train(trips),
-    getRangeScenarios: async (batteryCapacity: number, soh: number) =>
-        (await getPredictiveService()).getScenarios(batteryCapacity, soh),
+    // AI Methods - delegated to TensorFlow worker
+    async trainModel(trips: Trip[]) {
+        const tf = await getTfWorker();
+        return tf.trainEfficiency(trips);
+    },
 
-    // AI SoH Methods
-    trainSoH: async (charges: any[], capacity: number) =>
-        (await getPredictiveService()).trainSoH(charges, capacity),
+    async getRangeScenarios(batteryCapacity: number, soh: number) {
+        const tf = await getTfWorker();
+        return tf.getRangeScenarios(batteryCapacity, soh);
+    },
 
-    getSoHStats: async (charges: any[], capacity: number) =>
-        (await getPredictiveService()).getSoHDataPoints(charges, capacity),
+    async trainSoH(charges: Charge[], capacity: number) {
+        const tf = await getTfWorker();
+        return tf.trainSoH(charges, capacity);
+    },
 
-    // AI Parking Methods
-    trainParking: async (trips: any[]) => (await getPredictiveService()).trainParking(trips),
-    predictDeparture: async (startTime: number) =>
-        (await getPredictiveService()).predictDeparture(startTime),
+    async getSoHStats(charges: Charge[], capacity: number) {
+        const tf = await getTfWorker();
+        return tf.getSoHStats(charges, capacity);
+    },
 
-    // New Worker Method
-    findSmartChargingWindows
+    async trainParking(trips: Trip[]) {
+        const tf = await getTfWorker();
+        return tf.trainParking(trips);
+    },
+
+    async predictDeparture(startTime: number) {
+        const tf = await getTfWorker();
+        return tf.predictDeparture(startTime);
+    },
+
+    findSmartChargingWindows,
+
+    async exportParkingModel() {
+        const tf = await getTfWorker();
+        return tf.exportParkingModel();
+    },
+
+    async importParkingModel(weights: any[]) {
+        const tf = await getTfWorker();
+        return tf.importParkingModel(weights);
+    },
+
+    async dispose() {
+        if (tfWorker) {
+            await tfWorker.dispose();
+        }
+    }
 };
 
 // Expose the API to the main thread
 Comlink.expose(api);
+
+export type DataWorkerApi = typeof api;

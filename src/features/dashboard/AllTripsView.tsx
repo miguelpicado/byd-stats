@@ -247,6 +247,7 @@ const AllTripsView = ({
                         scrollElement={scroller}
                         onEndReached={handleEndReached}
                         isLoading={isLoadingMore}
+                        hasMore={hasMore}
                     />
                 </div>
             </div>

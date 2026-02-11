@@ -8,9 +8,13 @@ import { logger } from '@core/logger';
  * Hook to manage trips from Firebase and merge them with local storage
  * Handles subscription, pagination, and consumption calculation
  */
-export const useMergedTrips = (rawTrips: Trip[], settings: Settings) => {
+export const useMergedTrips = (
+    rawTrips: Trip[],
+    settings: Settings,
+    activeCarId: string | null,
+    dateRange?: { start?: string; end?: string }
+) => {
     // Firebase Trips State (Cumulative)
-    // const [firebaseTrips, setFirebaseTrips] = useState<Trip[]>([]); // REMOVED: Replaced by latestTrips
     const [latestTrips, setLatestTrips] = useState<Trip[]>([]); // Real-time updates
     const [historicalTrips, setHistoricalTrips] = useState<Trip[]>([]); // Paginating history
 
@@ -20,43 +24,65 @@ export const useMergedTrips = (rawTrips: Trip[], settings: Settings) => {
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const isFirstLoad = useRef(true);
 
-    // 1. Initial Load & Real-time Updates (Latest 50)
+    // 1. Initial Load & Real-time Updates (Latest 20)
     useEffect(() => {
+        if (!activeCarId) {
+            setLatestTrips([]);
+            setHistoricalTrips([]);
+            setHasMore(false);
+            return;
+        }
+
         let debounceTimer: NodeJS.Timeout;
 
-        // Subscribe to latest 50 trips for real-time updates
+        // Subscribe to latest 20 trips for real-time updates
         const unsubscribe = subscribeToTrips((trips) => {
             clearTimeout(debounceTimer);
             debounceTimer = setTimeout(() => {
                 setLatestTrips(trips);
 
-                // If first load, set historical cursor
-                if (isFirstLoad.current && trips.length > 0) {
+                // If first load, we need to handle the initial historical fetch to set the cursor
+                if (isFirstLoad.current) {
                     isFirstLoad.current = false;
-                    // We don't have the doc snapshot from subscribe, so we rely on fetchTripsPage for history
-                    // But to avoid gaps, we might want to fetch history starting after the last real-time trip
-                    // For simplicity in this sprint: Real-time covers the "latest", Pagination covers "older".
-                    // The merge logic will deduplicate.
+                    // Trigger first history fetch to set up lastDoc and hasMore properly
+                    loadMore();
                 }
             }, 300);
-        }, 50); // Reduced limit to 50
+        }, activeCarId, 20, dateRange);
 
         return () => {
             clearTimeout(debounceTimer);
             unsubscribe();
+            // Reset state when car/filter changes
+            setLatestTrips([]);
+            setHistoricalTrips([]);
+            setLastDoc(null);
+            setHasMore(true);
+            isFirstLoad.current = true;
         };
-    }, []);
+    }, [activeCarId, dateRange?.start, dateRange?.end]);
 
     // 2. Load More (Pagination)
     const loadMore = useCallback(async () => {
-        if (!hasMore || isLoadingMore) return;
+        if (!activeCarId || !hasMore || isLoadingMore) return;
 
         setIsLoadingMore(true);
         try {
-            const result = await fetchTripsPage(lastDoc, 50); // Fetch next 50
+            const result = await fetchTripsPage(activeCarId, lastDoc, 20, dateRange);
 
             if (result.trips.length > 0) {
-                setHistoricalTrips(prev => [...prev, ...result.trips]);
+                // Determine if we need to replace or append (first historical load vs subsequent)
+                setHistoricalTrips(prev => {
+                    // Avoid duplicating trips that might already be in latestTrips
+                    const existingIds = new Set(latestTrips.map(t => t.id));
+                    const newTrips = result.trips.filter(t => !existingIds.has(t.id));
+
+                    if (lastDoc === null) {
+                        return newTrips; // First historical page
+                    }
+                    return [...prev, ...newTrips];
+                });
+
                 setLastDoc(result.lastDoc);
                 setHasMore(result.hasMore);
             } else {
@@ -67,7 +93,7 @@ export const useMergedTrips = (rawTrips: Trip[], settings: Settings) => {
         } finally {
             setIsLoadingMore(false);
         }
-    }, [hasMore, isLoadingMore, lastDoc]);
+    }, [activeCarId, hasMore, isLoadingMore, lastDoc, latestTrips]);
 
     // Computed: Merged Trips (Local + Latest + Historical)
     const batterySize = typeof settings?.batterySize === 'string'

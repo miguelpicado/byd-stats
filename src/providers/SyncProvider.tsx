@@ -7,14 +7,14 @@ import { useCar } from '@/context/CarContext';
 import { useTripsContext } from './TripsProvider';
 import { useChargesContext } from './ChargesProvider';
 import { useModalContext } from './ModalProvider';
-import { useDatabase } from '@hooks/useDatabase';
-import { useGoogleSync } from '@hooks/useGoogleSync';
-import { useFileHandling } from '@hooks/useFileHandling';
+import { useDatabase, UseDatabaseReturn } from '@hooks/useDatabase';
+import { useGoogleSync, UseGoogleSyncReturn } from '@hooks/useGoogleSync';
+import { useFileHandling, UseFileHandlingReturn } from '@hooks/useFileHandling';
 
 interface SyncContextType {
-    googleSync: any;
-    database: any;
-    fileHandling: any;
+    googleSync: UseGoogleSyncReturn;
+    database: UseDatabaseReturn;
+    fileHandling: UseFileHandlingReturn;
     loadFile: (file: File, merge?: boolean) => Promise<void>;
     exportData: () => Promise<{ success: boolean; reason?: string }>;
     loadChargeRegistry: (file: File) => Promise<void>;

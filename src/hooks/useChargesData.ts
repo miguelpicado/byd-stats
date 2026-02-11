@@ -6,7 +6,7 @@ import { CHARGES_STORAGE_KEY as BASE_CHARGES_KEY } from '@core/constants';
 import { logger } from '@core/logger';
 import { Charge } from '@/types';
 
-interface ChargeData {
+export interface ChargeData {
     date: string;
     time: string;
     kwhCharged?: number;

@@ -31,9 +31,9 @@ interface TripsContextValue {
     aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
     aiLoss: number | null;
     aiSoH: number | null;
-    aiSoHStats: { points: any[]; trend: any[] } | null;
+    aiSoHStats: { points: Array<{ x: number; y: number }>; trend: Array<{ x: number; y: number }> } | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
-    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<any>;
+    findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<{ windows: unknown[]; weeklyKwh: number; requiredHours: number; hoursFound: number; note?: string } | null>;
     forceRecalculate: () => void;
 
     // Actions
@@ -66,6 +66,7 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     const { filterType, selMonth, dateFrom, dateTo } = useFiltersContext();
 
     // 1. Storage & Local Trips
+    // 1. Storage & Local Trips
     const {
         rawTrips: localTrips, // Rename to avoid confusion
         setRawTrips,
@@ -77,8 +78,31 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         clearHistory
     } = useTrips(activeCarId);
 
+    // Compute Date Range for Server-Side Filtering
+    const serverDateRange = useMemo(() => {
+        if (filterType === 'month' && selMonth) { // selMonth is "YYYY-MM"
+            const [yStr, mStr] = selMonth.split('-');
+            const year = parseInt(yStr);
+            const month = parseInt(mStr);
+            // Last day of month
+            const lastDay = new Date(year, month, 0).getDate();
+
+            return {
+                start: `${yStr}${mStr}01`,
+                end: `${yStr}${mStr}${lastDay.toString().padStart(2, '0')}`
+            };
+        }
+        if (filterType === 'range' && dateFrom && dateTo) {
+            return {
+                start: dateFrom.replace(/-/g, ''),
+                end: dateTo.replace(/-/g, '')
+            };
+        }
+        return undefined;
+    }, [filterType, selMonth, dateFrom, dateTo]);
+
     // 2. Merged Trips (Firebase + Local)
-    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings);
+    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings, activeCarId, serverDateRange);
 
     // 3. Filtering
     const filteredTrips = useMemo(() => {
