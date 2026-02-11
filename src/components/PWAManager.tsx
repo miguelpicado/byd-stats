@@ -2,6 +2,24 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Download } from './Icons';
 
+// PWA BeforeInstallPrompt event type
+interface BeforeInstallPromptEvent extends Event {
+    prompt(): Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+// Extend Navigator for iOS standalone detection
+interface NavigatorStandalone extends Navigator {
+    standalone?: boolean;
+}
+
+// Extend Window for deferred prompt
+declare global {
+    interface Window {
+        deferredPrompt?: BeforeInstallPromptEvent;
+    }
+}
+
 
 // Simple icons for PWA Manager (not in Icons.jsx)
 const LogOut = ({ className }: { className?: string }) => (
@@ -30,7 +48,7 @@ const RefreshCw = ({ className }: { className?: string }) => (
  */
 export default function PWAManager({ layoutMode = 'vertical', isCompact = false }) {
     const { t } = useTranslation();
-    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -41,8 +59,8 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
         const checkStandalone = () => {
             const standalone = window.matchMedia('(display-mode: standalone)').matches ||
                 window.matchMedia('(display-mode: fullscreen)').matches ||
-                (window.navigator as any).standalone;
-            setIsStandalone(standalone);
+                (window.navigator as NavigatorStandalone).standalone;
+            setIsStandalone(!!standalone);
         };
 
         checkStandalone();
@@ -91,17 +109,16 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
 
     // Listen for install prompt
     useEffect(() => {
-        const handleInstallPrompt = (e: any) => {
+        const handleInstallPrompt = (e: Event) => {
             e.preventDefault();
-            setDeferredPrompt(e);
+            setDeferredPrompt(e as BeforeInstallPromptEvent);
             setShowInstallBanner(true);
         };
 
         // Check if event was already captured in global scope
-        if ((window as any).deferredPrompt) {
-            setDeferredPrompt((window as any).deferredPrompt);
-            // setInstallable(true);
-            (window as any).deferredPrompt = null; // Clean up
+        if (window.deferredPrompt) {
+            setDeferredPrompt(window.deferredPrompt);
+            window.deferredPrompt = undefined; // Clean up
         }
 
         window.addEventListener('beforeinstallprompt', handleInstallPrompt);
@@ -112,8 +129,8 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
     const handleInstall = useCallback(async () => {
         if (!deferredPrompt) return;
 
-        (deferredPrompt as any).prompt();
-        const { outcome } = await (deferredPrompt as any).userChoice;
+        await deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
 
         if (outcome === 'accepted') {
             setShowInstallBanner(false);

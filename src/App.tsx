@@ -88,7 +88,7 @@ export default function BYDStatsAnalyzer() {
             isCompact={isCompact}
             sqlReady={sqlReady}
             error={error}
-            googleSync={googleSync}
+            googleSync={{ ...googleSync, userProfile: googleSync.userProfile ?? undefined }}
             isNative={isNative}
             onFileProcess={processDB}
           />
@@ -125,7 +125,7 @@ export default function BYDStatsAnalyzer() {
           setDateTo={allTripsState.setDateTo}
           setSortBy={allTripsState.setSortBy}
           setSortOrder={allTripsState.setSortOrder as React.Dispatch<React.SetStateAction<'asc' | 'desc'>>}
-          closeModal={closeModal as (modal: string) => void}
+          closeModal={closeModal}
           openTripDetail={openTripDetail}
           scrollRef={allTripsScrollRef}
           isNative={isNative}
@@ -145,8 +145,8 @@ export default function BYDStatsAnalyzer() {
         <AllChargesViewLazy
           charges={charges}
           chargerTypes={settings.chargerTypes || []}
-          openModal={openModal as any}
-          closeModal={closeModal as any}
+          openModal={openModal}
+          closeModal={closeModal}
           setSelectedCharge={setSelectedCharge}
           scrollRef={allChargesScrollRef}
           isNative={isNative}

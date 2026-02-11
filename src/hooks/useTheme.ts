@@ -6,9 +6,13 @@ import { logger } from '@core/logger';
 
 // Add type definition for StatusBar if needed, or act as if global
 // Assuming window.StatusBar exists in Capacitor context if plugin loaded
+interface StatusBarPlugin {
+    setStyle: (options: { style: string }) => Promise<void>;
+}
+
 declare global {
     interface Window {
-        StatusBar?: any;
+        StatusBar?: StatusBarPlugin;
     }
 }
 
@@ -34,7 +38,7 @@ export function useTheme(theme: string) {
             // 3. Native StatusBar
             if (isNative && window.StatusBar) {
                 window.StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' })
-                    .catch((e: any) => logger.error('StatusBar error:', e));
+                    .catch((e: unknown) => logger.error('StatusBar error:', e));
             }
         };
 

@@ -92,9 +92,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
                     googleSync.syncNow(newTrips);
                 }
             }
-        } catch (error: any) {
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
             logger.error('Error loading file:', error);
-            database.setError(error.message);
+            database.setError(err.message);
         }
     }, [database, tripsContext.rawTrips, tripsContext.setRawTrips, googleSync]);
 
@@ -116,8 +117,22 @@ export function SyncProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            const chargesArray: any[] = [];
-            const newChargerTypes: any[] = [];
+            const chargesArray: Array<{
+                date: string;
+                time: string;
+                odometer: number;
+                kwhCharged: number;
+                totalCost: number;
+                chargerTypeId: string | null;
+                pricePerKwh: number;
+                finalPercentage: number;
+            }> = [];
+            const newChargerTypes: Array<{
+                id: string;
+                name: string;
+                speedKw: number;
+                efficiency: number;
+            }> = [];
             const existingChargerNames = new Set(
                 (settings.chargerTypes || []).map(ct => ct.name.toLowerCase())
             );

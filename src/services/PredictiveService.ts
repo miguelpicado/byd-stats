@@ -4,6 +4,7 @@
 
 import * as Comlink from 'comlink';
 import type { DataWorkerApi } from '../workers/dataWorker';
+import type { Trip, Charge } from '../types';
 
 let worker: Comlink.Remote<DataWorkerApi> | null = null;
 
@@ -24,7 +25,7 @@ function getWorker(): Comlink.Remote<DataWorkerApi> {
  * NOTE: All methods are now async since they cross worker boundaries.
  */
 export class PredictiveService {
-    async train(trips: any[]) {
+    async train(trips: Trip[]) {
         return getWorker().trainModel(trips);
     }
 
@@ -32,15 +33,15 @@ export class PredictiveService {
         return getWorker().getRangeScenarios(batteryCapacity, soh);
     }
 
-    async trainSoH(charges: any[], capacity: number) {
+    async trainSoH(charges: Charge[], capacity: number) {
         return getWorker().trainSoH(charges, capacity);
     }
 
-    async getSoHDataPoints(charges: any[], capacity: number) {
+    async getSoHDataPoints(charges: Charge[], capacity: number) {
         return getWorker().getSoHStats(charges, capacity);
     }
 
-    async trainParking(trips: any[]) {
+    async trainParking(trips: Trip[]) {
         return getWorker().trainParking(trips);
     }
 

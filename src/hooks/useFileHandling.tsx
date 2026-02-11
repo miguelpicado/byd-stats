@@ -30,10 +30,16 @@ export interface UseFileHandlingReturn {
 }
 
 // Extend Window interface for LaunchQueue API
+interface LaunchParams {
+    files?: Array<{
+        getFile: () => Promise<File>;
+    }>;
+}
+
 declare global {
     interface Window {
         launchQueue?: {
-            setConsumer: (callback: (launchParams: any) => void) => void;
+            setConsumer: (callback: (launchParams: LaunchParams) => void) => void;
         };
     }
 }
@@ -69,7 +75,7 @@ export function useFileHandling(): UseFileHandlingReturn {
             };
 
             // Handle app URL open events (when a file is opened or shared)
-            const handleAppUrlOpen = async (event: any) => {
+            const handleAppUrlOpen = async (event: { url?: string }) => {
                 if (!isSubscribed) return;
 
                 try {
@@ -80,9 +86,10 @@ export function useFileHandling(): UseFileHandlingReturn {
                             setPendingFile({ uri: fileUri, source: 'android' });
                         }
                     }
-                } catch (err: any) {
-                    logger.error('[Android] Error handling app URL open:', err);
-                    setError(err.message || 'Error handling URL');
+                } catch (err) {
+                    const error = err instanceof Error ? err : new Error(String(err));
+                    logger.error('[Android] Error handling app URL open:', error);
+                    setError(error.message || 'Error handling URL');
                 }
             };
 
@@ -114,7 +121,7 @@ export function useFileHandling(): UseFileHandlingReturn {
         else {
             // 1. Handle File Handling API (when user opens .db file from system)
             if ('launchQueue' in window && window.launchQueue) {
-                window.launchQueue.setConsumer(async (launchParams: any) => {
+                window.launchQueue.setConsumer(async (launchParams: LaunchParams) => {
                     if (!isSubscribed) return;
 
                     try {

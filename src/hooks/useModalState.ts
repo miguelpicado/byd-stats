@@ -1,6 +1,6 @@
 // BYD Stats - Modal State Management Hook
 import { useState, useCallback, useMemo, useEffect } from 'react';
-import { Charge, Trip } from '@/types';
+import { Car, Charge, Trip } from '@/types';
 
 export interface ModalsState {
     upload: boolean;
@@ -15,7 +15,7 @@ export interface ModalsState {
     chargeDetail: boolean;
     backups: boolean;
     registryRestore: boolean;
-    registryCars: any[]; // Define specific type if possible
+    registryCars: Car[];
     legal: boolean;
     faq: boolean;
     batteryStatus: boolean;
@@ -34,6 +34,9 @@ export interface ModalsState {
     tripInsights: boolean;
     tripInsightsType?: 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays' | 'stationary' | 'soh' | 'fuel' | 'range';
 }
+
+export type OpenModalFn = (name: keyof ModalsState) => void;
+export type CloseModalFn = (name: keyof ModalsState) => void;
 
 /**
  * Hook to manage all modal states in a centralized way
@@ -184,7 +187,7 @@ const useModalState = () => {
     /**
      * Open registry restore modal
      */
-    const openRegistryModal = useCallback((cars: any[]) => {
+    const openRegistryModal = useCallback((cars: Car[]) => {
         setModals(prev => ({ ...prev, registryRestore: true, registryCars: cars }));
     }, []);
 

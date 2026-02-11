@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, FC } from 'react';
 import { Toaster } from 'react-hot-toast';
 // Components
 import BaseLayout from '@components/layout/MainLayout';
@@ -8,21 +8,29 @@ import DesktopSidebar from '@components/layout/DesktopSidebar';
 import DashboardLayout from '@features/dashboard/DashboardLayout';
 import ErrorBoundary from '@components/common/ErrorBoundary';
 import ModalCoordinator from '@components/common/ModalCoordinator';
+import { Trip, Charge } from '@/types';
+import { IconProps } from '@components/Icons';
 
 // Lazy load
 const PWAManagerLazy = lazy(() => import('@components/PWAManager'));
+
+interface Tab {
+    id: string;
+    label: string;
+    icon: FC<IconProps>;
+}
 
 interface MainLayoutProps {
     layoutMode: string;
     isCompact?: boolean;
     activeTab: string;
-    tabs: any[];
+    tabs: Tab[];
     handleTabClick: (id: string) => void;
     isTransitioning: boolean;
     fadingTab?: string;
     backgroundLoad?: boolean;
-    onTripSelect?: (trip: any) => void;
-    onChargeSelect?: (charge: any) => void;
+    onTripSelect?: (trip: Trip) => void;
+    onChargeSelect?: (charge: Charge) => void;
     setSwipeContainer?: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
 }
 

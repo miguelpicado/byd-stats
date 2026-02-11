@@ -46,7 +46,7 @@ const SyncConflictModal: React.FC = () => {
 
                     {/* Differences List */}
                     <div className="space-y-2">
-                        {differences.map((diff: any, index: number) => (
+                        {differences.map((diff: { label: string; local: string | number; cloud: string | number }, index: number) => (
                             <div
                                 key={index}
                                 className="p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg text-sm"

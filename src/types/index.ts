@@ -17,10 +17,21 @@ export interface Trip {
     id?: string;
     startTime?: string;
     source?: 'local' | 'smartcar' | 'db';
+    vehicleId?: string; // Smartcar vehicle ID for Firebase queries
     // GPS tracking fields
     gpsDistanceKm?: number;
     startLocation?: { latitude: number; longitude: number };
     endLocation?: { latitude: number; longitude: number };
+    gps_points?: GpsPoint[];
+}
+
+export interface GpsPoint {
+    lat: number;
+    lng: number;
+    timestamp?: number;
+    speed?: number;
+    altitude?: number;
+    accuracy?: number;
 }
 
 export interface Charge {
@@ -163,4 +174,5 @@ export interface ProcessedData {
         fuel: Trip[];
     };
     isHybrid: boolean;
+    sohData: SoHData | null;
 }

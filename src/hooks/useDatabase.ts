@@ -5,11 +5,29 @@ import { logger } from '@core/logger';
 import { toast } from 'react-hot-toast';
 import { Trip } from '@/types';
 
+// SQL.js types
+interface SqlJsDatabase {
+    exec(sql: string): Array<{ columns: string[]; values: unknown[][] }>;
+    run(sql: string, params?: unknown[]): void;
+    prepare(sql: string): SqlJsStatement;
+    export(): Uint8Array;
+    close(): void;
+}
+
+interface SqlJsStatement {
+    run(params?: unknown[]): void;
+    free(): void;
+}
+
+interface SqlJsStatic {
+    Database: new (data?: ArrayLike<number>) => SqlJsDatabase;
+}
+
 // Declare types for window.SQL and initSqlJs
 declare global {
     interface Window {
-        SQL?: any;
-        initSqlJs?: (config: any) => Promise<any>;
+        SQL?: SqlJsStatic;
+        initSqlJs?: (config: { locateFile: (file: string) => string }) => Promise<SqlJsStatic>;
     }
 }
 
@@ -186,9 +204,9 @@ export function useDatabase(): UseDatabaseReturn {
 
             if (res.length && res[0].values.length) {
                 const cols = res[0].columns;
-                const rows = res[0].values.map((r: any[]) => {
-                    const o: any = {};
-                    cols.forEach((c: string, i: number) => { o[c] = r[i]; });
+                const rows = res[0].values.map((r) => {
+                    const o: Record<string, unknown> = {};
+                    cols.forEach((c, i) => { o[c] = r[i]; });
                     return o as Trip;
                 });
 
@@ -205,10 +223,11 @@ export function useDatabase(): UseDatabaseReturn {
             } else {
                 throw new Error('Sin datos');
             }
-        } catch (e: any) {
-            const msg = `Error importando: ${e.message}`;
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            const msg = `Error importando: ${error.message}`;
             toast.error(msg);
-            setError(e.message);
+            setError(error.message);
             logger.error('Database/File processing error:', e);
             return null;
         } finally {
@@ -268,9 +287,10 @@ export function useDatabase(): UseDatabaseReturn {
 
             db.close();
             return { success: true };
-        } catch (e: any) {
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
             logger.error('Error exporting database:', e);
-            return { success: false, reason: 'error', message: e.message };
+            return { success: false, reason: 'error', message: error.message };
         }
     }, []);
 

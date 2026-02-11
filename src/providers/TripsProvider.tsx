@@ -61,7 +61,8 @@ export const useTripsContext = () => {
 
 export function TripsProvider({ children }: { children: ReactNode }) {
     const { settings } = useApp();
-    const { activeCarId } = useCar();
+    const { activeCarId, activeCar } = useCar();
+    const smartcarVehicleId = activeCar?.smartcarVehicleId || null;
     const { charges } = useChargesContext();
     const { filterType, selMonth, dateFrom, dateTo } = useFiltersContext();
 
@@ -102,7 +103,8 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     }, [filterType, selMonth, dateFrom, dateTo]);
 
     // 2. Merged Trips (Firebase + Local)
-    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings, activeCarId, serverDateRange);
+    // Pass smartcarVehicleId for Firebase queries (matches vehicleId field in Firestore)
+    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings, smartcarVehicleId, serverDateRange);
 
     // 3. Filtering
     const filteredTrips = useMemo(() => {

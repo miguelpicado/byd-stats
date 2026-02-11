@@ -1,6 +1,14 @@
+
 // BYD Stats - Battery Calculations Tests
 import { describe, it, expect } from 'vitest';
-import { calculateAdvancedSoH, estimateInitialSoC } from '../batteryCalculations';
+import {
+    calculateAdvancedSoH,
+    estimateInitialSoC,
+    calculateConsumption,
+    calculateSoH,
+    estimateSoCFromKwh,
+    getEfficiencyRating
+} from '../batteryCalculations';
 import { Charge } from '@/types';
 
 describe('batteryCalculations', () => {
@@ -77,9 +85,87 @@ describe('batteryCalculations', () => {
         });
     });
 
+    describe('calculateConsumption', () => {
+        it('returns 0 for zero distance', () => {
+            expect(calculateConsumption(10, 0)).toBe(0);
+        });
+
+        it('calculates kWh/100km correctly', () => {
+            // 15 kWh for 100km = 15 kWh/100km
+            expect(calculateConsumption(15, 100)).toBe(15);
+        });
+
+        it('handles decimal values', () => {
+            // 7.5 kWh for 50km = 15 kWh/100km
+            expect(calculateConsumption(7.5, 50)).toBe(15);
+        });
+
+        it('handles negative values gracefully', () => {
+            expect(calculateConsumption(-5, 100)).toBe(0);
+            expect(calculateConsumption(5, -100)).toBe(0);
+        });
+    });
+
+    describe('calculateSoH', () => {
+        it('returns 100% for new battery', () => {
+            expect(calculateSoH(82.56, 82.56)).toBe(100);
+        });
+
+        it('calculates percentage correctly', () => {
+            // 80 kWh actual vs 82.56 nominal = ~96.9%
+            expect(calculateSoH(80, 82.56)).toBeCloseTo(96.9, 1);
+        });
+
+        it('caps at 100% for overperforming batteries', () => {
+            expect(calculateSoH(85, 82.56)).toBe(100);
+        });
+
+        it('handles zero nominal capacity', () => {
+            expect(calculateSoH(80, 0)).toBe(0);
+        });
+    });
+
+    describe('estimateSoCFromKwh', () => {
+        it('estimates SoC percentage from kWh charged', () => {
+            // 41.28 kWh = 50% of 82.56 kWh battery
+            expect(estimateSoCFromKwh(41.28, 82.56)).toBe(50);
+        });
+
+        it('caps at 100%', () => {
+            // 41.28 kWh charged but if battery is small or result > 100
+            expect(estimateSoCFromKwh(100, 82.56)).toBe(100);
+        });
+
+        it('handles zero battery size', () => {
+            expect(estimateSoCFromKwh(10, 0)).toBe(0);
+        });
+    });
+
+    describe('getEfficiencyRating', () => {
+        it('returns "excellent" for < 14 kWh/100km', () => {
+            expect(getEfficiencyRating(13)).toBe('excellent');
+        });
+
+        it('returns "good" for 14-17 kWh/100km', () => {
+            expect(getEfficiencyRating(15)).toBe('good');
+        });
+
+        it('returns "average" for 17-20 kWh/100km', () => {
+            expect(getEfficiencyRating(18)).toBe('average');
+        });
+
+        it('returns "poor" for > 20 kWh/100km', () => {
+            expect(getEfficiencyRating(22)).toBe('poor');
+        });
+    });
+
     describe('Edge Cases', () => {
         it('should flag calibration warning if no charges reach 100%', () => {
             const charges = [
+                { kwhCharged: 10, finalPercentage: 80, type: 'electric' },
+                { kwhCharged: 10, finalPercentage: 80, type: 'electric' },
+                { kwhCharged: 10, finalPercentage: 80, type: 'electric' },
+                { kwhCharged: 10, finalPercentage: 80, type: 'electric' },
                 { kwhCharged: 10, finalPercentage: 80, type: 'electric' },
                 { kwhCharged: 10, finalPercentage: 90, type: 'electric' }
             ] as Charge[];

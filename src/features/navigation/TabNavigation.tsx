@@ -1,7 +1,14 @@
-import { memo } from 'react';
+import { memo, FC } from 'react';
+import { IconProps } from '@components/Icons';
+
+interface Tab {
+    id: string;
+    label: string;
+    icon: FC<IconProps>;
+}
 
 interface TabNavigationProps {
-    tabs: any[];
+    tabs: Tab[];
     activeTab: string;
     handleTabClick: (id: string) => void;
 }

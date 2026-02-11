@@ -9,7 +9,7 @@ import { SyncProvider, useSyncContext } from './SyncProvider';
 import { TripsProvider, useTripsContext } from './TripsProvider';
 import { Trip, Charge, ProcessedData, Settings } from '@/types';
 import { useConfirmation, ConfirmModalState } from '@hooks/useConfirmation';
-import { ModalsState } from '@hooks/useModalState';
+import { ModalsState, OpenModalFn, CloseModalFn } from '@hooks/useModalState';
 import type { UseGoogleSyncReturn } from '@hooks/useGoogleSync';
 import type { UseDatabaseReturn } from '@hooks/useDatabase';
 import type { UseFileHandlingReturn } from '@hooks/useFileHandling';
@@ -27,8 +27,8 @@ export interface DataState {
     googleSync: UseGoogleSyncReturn;
     database: UseDatabaseReturn;
     modals: ModalsState;
-    openModal: (modalName: keyof ModalsState, props?: Record<string, unknown>) => void;
-    closeModal: (modalName: keyof ModalsState) => void;
+    openModal: OpenModalFn;
+    closeModal: CloseModalFn;
     fileHandling: UseFileHandlingReturn;
     filterType: string;
     selMonth: string;
@@ -91,8 +91,8 @@ export interface DataDispatch {
     setDateFrom: (date: string) => void;
     setDateTo: (date: string) => void;
 
-    openModal: (modalName: keyof ModalsState, props?: Record<string, unknown>) => void;
-    closeModal: (modalName: keyof ModalsState) => void;
+    openModal: OpenModalFn;
+    closeModal: CloseModalFn;
 }
 
 export type DataContextValue = DataState & DataDispatch;

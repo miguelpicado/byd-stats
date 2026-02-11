@@ -3,10 +3,13 @@ import { useTranslation } from 'react-i18next';
 import { Activity, TrendingUp, Clock, Zap, BarChart3, List, Battery, Calendar } from '../components/Icons';
 import { Settings } from '@/types';
 
+import type { FC } from 'react';
+import { IconProps } from '@components/Icons';
+
 interface Tab {
     id: string;
     label: string;
-    icon: any; // Icon component type
+    icon: FC<IconProps>;
 }
 
 interface UseTabNavigationProps {
@@ -39,7 +42,7 @@ export const useTabNavigation = ({ settings }: UseTabNavigationProps) => {
         { id: 'records', label: t('tabs.records'), icon: BarChart3 },
         { id: 'history', label: t('tabs.history'), icon: List },
         { id: 'charges', label: t('tabs.charges'), icon: Battery }
-    ].filter(t => t.id === 'overview' || !(settings.hiddenTabs || []).includes(t.id as any)), [t, settings.hiddenTabs]);
+    ].filter(t => t.id === 'overview' || !(settings.hiddenTabs || []).includes(t.id)), [t, settings.hiddenTabs]);
 
     // Handle browser back/forward buttons
     useEffect(() => {

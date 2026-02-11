@@ -1,7 +1,8 @@
-import React, { Suspense, memo } from 'react';
+import React, { Suspense, memo, FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle } from '@components/Icons';
+import { AlertCircle, IconProps } from '@components/Icons';
 import ErrorBoundary from '@components/common/ErrorBoundary';
+import { Trip, Charge } from '@/types';
 
 // Contexts & Hooks
 import { useData } from '@/providers/DataProvider';
@@ -22,16 +23,22 @@ const PatternsTab = React.lazy(() => import('@tabs/PatternsTab'));
 const EfficiencyTab = React.lazy(() => import('@tabs/EfficiencyTab'));
 const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
 
+interface Tab {
+    id: string;
+    label: string;
+    icon: FC<IconProps>;
+}
+
 /**
  * Desktop Dashboard View - Optimized for tab navigation and larger screens
  */
 interface DesktopDashboardViewProps {
     activeTab: string;
-    tabs: any[];
+    tabs: Tab[];
     fadingTab: string;
     backgroundLoad: boolean;
-    onTripSelect: (trip: any) => void;
-    onChargeSelect: (charge: any) => void;
+    onTripSelect: (trip: Trip) => void;
+    onChargeSelect: (charge: Charge) => void;
 }
 
 const DesktopDashboardView = memo(({

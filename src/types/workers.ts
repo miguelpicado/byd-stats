@@ -41,6 +41,6 @@ export interface SmartChargingResult {
 }
 
 export interface SoHStats {
-    points: Array<{ x: number; y: number }>;
-    trend: Array<{ x: number; y: number }>;
+    points: Array<{ x: string; y: number; cap?: number }>;
+    trend: Array<{ x: string; y: number }>;
 }

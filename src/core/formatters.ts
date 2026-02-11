@@ -1,5 +1,11 @@
 // BYD Stats - Formatting Utilities
 
+/** Minimal trip interface for percentile calculation */
+interface TripForPercentile {
+    trip: number;
+    electricity: number;
+}
+
 /**
  * Calculate efficiency score (0-10) based on consumption
  * @param {number} efficiency - kWh/100km consumption
@@ -54,11 +60,11 @@ export const formatDuration = (seconds: number): string => {
 
 /**
  * Calculate trip percentile compared to all trips
- * @param {any} trip - Trip object with trip and electricity properties
- * @param {any[]} allTrips - Array of all trips
+ * @param {TripForPercentile} trip - Trip object with trip and electricity properties
+ * @param {TripForPercentile[]} allTrips - Array of all trips
  * @returns {number} Percentile (0-100)
  */
-export const calculatePercentile = (trip: any, allTrips: any[]): number => {
+export const calculatePercentile = (trip: TripForPercentile, allTrips: TripForPercentile[]): number => {
     if (!trip || !allTrips || allTrips.length === 0) return 50;
     const tripEfficiency = trip.trip > 0 ? (trip.electricity / trip.trip) * 100 : 999;
     const validTrips = allTrips.filter(t => t.trip >= 1 && t.electricity !== 0);
@@ -76,4 +82,64 @@ export const calculatePercentile = (trip: any, allTrips: any[]): number => {
 export const formatNumber = (num: number, decimals: number = 1): string => {
     if (num === null || num === undefined || isNaN(num)) return '0';
     return Number(num).toFixed(decimals);
+};
+
+/**
+ * Format duration in minutes/hours from minutes
+ * @param {number} minutes - Duration in minutes
+ * @returns {string} Formatted duration string
+ */
+export const formatDurationMinutes = (minutes: number): string => {
+    if (!minutes) return '0 min';
+    const hours = Math.floor(minutes / 60);
+    const mins = Math.floor(minutes % 60);
+    if (hours > 0) {
+        return `${hours}h ${mins}min`;
+    }
+    return `${mins} min`;
+};
+
+export const formatDistance = (km: number): string => {
+    if (km === null || km === undefined) return '-- km';
+    return `${Number(km).toFixed(1)} km`;
+};
+
+export const formatEnergy = (kwh: number): string => {
+    if (kwh === null || kwh === undefined) return '-- kWh';
+    return `${Number(kwh).toFixed(2)} kWh`;
+};
+
+export const formatEfficiency = (cons: number): string => {
+    if (cons === null || cons === undefined) return '-- kWh/100km';
+    return `${Number(cons).toFixed(1)} kWh/100km`;
+};
+
+export const formatCurrency = (amount: number, currency: string = 'EUR'): string => {
+    try {
+        return new Intl.NumberFormat('es-ES', { style: 'currency', currency }).format(amount);
+    } catch (e) {
+        return `${amount.toFixed(2)} ${currency}`;
+    }
+};
+
+export const formatPercentage = (val: number): string => {
+    return `${Number(val).toFixed(1)}%`;
+};
+
+export const formatDate = (dateStr: string | number | Date): string => {
+    if (!dateStr) return '';
+    try {
+        return new Date(dateStr).toLocaleDateString();
+    } catch (e) {
+        return String(dateStr);
+    }
+};
+
+export const formatTime = (dateStr: string | number | Date): string => {
+    if (!dateStr) return '';
+    try {
+        return new Date(dateStr).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+        return '';
+    }
 };

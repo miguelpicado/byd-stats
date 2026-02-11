@@ -22,8 +22,13 @@ const VirtualizedChargeList: FC<VirtualizedChargeListProps> = memo(({
 }) => {
     const listRef = useRef<HTMLDivElement>(null);
 
+    interface EnhancedCharge extends Charge {
+        _formattedDate: string;
+        _chargerTypeName: string;
+    }
+
     // Pre-compute formatted dates and charger names to avoid re-computation during scroll
-    const enhancedCharges = useMemo(() =>
+    const enhancedCharges: EnhancedCharge[] = useMemo(() =>
         charges.map(charge => ({
             ...charge,
             _formattedDate: formatDate(charge.date),
@@ -60,8 +65,8 @@ const VirtualizedChargeList: FC<VirtualizedChargeListProps> = memo(({
                             <ChargeCard
                                 charge={charge}
                                 onClick={onChargeClick}
-                                formattedDate={(charge as any)._formattedDate}
-                                chargerTypeName={(charge as any)._chargerTypeName}
+                                formattedDate={charge._formattedDate}
+                                chargerTypeName={charge._chargerTypeName}
                             />
                         </div>
                     </div>

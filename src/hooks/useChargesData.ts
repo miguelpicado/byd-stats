@@ -248,7 +248,7 @@ const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn
                 const duration = 0; // Duration not currently tracked in model, default to 0
                 const type = c.chargerTypeId || (c.type === 'fuel' ? 'Gasolina' : 'Desconocido');
                 // Cast to any to access pricePerLiter if it exists on Charge or assume dynamic mismatch
-                const priceUnit = c.type === 'fuel' ? ((c as any).pricePerLiter || 0) : (c.pricePerKwh || 0);
+                const priceUnit = c.type === 'fuel' ? (c.pricePerLiter || 0) : (c.pricePerKwh || 0);
                 const finalPct = c.finalPercentage || 0;
 
                 return [
@@ -299,7 +299,7 @@ const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn
         const totalLiters = fuelCharges.reduce((sum, c) => sum + (c.litersCharged || 0), 0);
         const fuelCost = fuelCharges.reduce((sum, c) => sum + (c.totalCost || 0), 0);
         const avgPricePerLiter = fuelCharges.length > 0
-            ? fuelCharges.reduce((sum, c) => sum + ((c as any).pricePerLiter || 0), 0) / fuelCharges.length
+            ? fuelCharges.reduce((sum, c) => sum + (c.pricePerLiter || 0), 0) / fuelCharges.length
             : 0;
 
         return {

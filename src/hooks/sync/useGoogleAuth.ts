@@ -99,16 +99,35 @@ export function useGoogleAuth() {
                     provider: 'google',
                     options: { scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata'] }
                 });
-                const resultAny = result as any;
-                const accessToken = resultAny.result?.accessToken?.token || resultAny.result?.accessToken || resultAny.accessToken?.token || resultAny.accessToken;
+                const resultAny = result as Record<string, unknown>;
+                const resultObj = resultAny.result as Record<string, unknown> | undefined;
+                const accessTokenObj = resultAny.accessToken as Record<string, unknown> | string | undefined;
+                const resultAccessToken = resultObj?.accessToken as Record<string, unknown> | string | undefined;
+
+                // Extract token string from various possible response formats
+                const getTokenString = (tokenValue: unknown): string | null => {
+                    if (typeof tokenValue === 'string') return tokenValue;
+                    if (typeof tokenValue === 'object' && tokenValue !== null) {
+                        const tokenObj = tokenValue as Record<string, unknown>;
+                        if (typeof tokenObj.token === 'string') return tokenObj.token;
+                    }
+                    return null;
+                };
+
+                const accessToken =
+                    getTokenString(resultAccessToken) ||
+                    getTokenString(resultObj?.accessToken) ||
+                    getTokenString(accessTokenObj) ||
+                    getTokenString(resultAny.accessToken);
 
                 if (accessToken) {
                     await handleLoginSuccess(accessToken);
                 } else {
                     setError("Error: No Access Token received.");
                 }
-            } catch (e: any) {
-                setError(e.message || "Error al iniciar sesión con Google");
+            } catch (e) {
+                const error = e instanceof Error ? e : new Error(String(e));
+                setError(error.message || "Error al iniciar sesión con Google");
             }
         } else {
             webLogin();

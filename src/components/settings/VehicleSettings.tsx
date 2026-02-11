@@ -12,7 +12,6 @@ export const VehicleSettings: React.FC = () => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCar, updateCar, activeCarId } = useCar();
-    // @ts-ignore
     const { stats } = useData();
     const [showMfgModal, setShowMfgModal] = useState(false);
 

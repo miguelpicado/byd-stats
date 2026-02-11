@@ -42,7 +42,7 @@ const ThemeManager = () => {
             // 4. Native StatusBar (for Capacitor apps)
             if (isNative && window.StatusBar) {
                 window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-                    .catch((e: any) => logger.error('StatusBar error:', e));
+                    .catch((e: unknown) => logger.error('StatusBar error:', e));
             }
         };
 

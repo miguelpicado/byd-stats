@@ -9,7 +9,13 @@ import StatItem from '../ui/StatItem';
 import ModalPortal from '../common/ModalPortal';
 import { Charge } from '../../types';
 
-type LucideIcon = React.FC<any>;
+type LucideIcon = React.FC<{ className?: string }>;
+
+interface ChargerTypeInfo {
+    id: string;
+    name: string;
+    efficiency?: number;
+}
 
 interface ChargeInsightsModalProps {
     isOpen: boolean;
@@ -17,13 +23,13 @@ interface ChargeInsightsModalProps {
     type: 'kwh' | 'cost' | 'price' | 'count' | 'fuel';
     charges: Charge[];
     batterySize?: number;
-    chargerTypes?: any[];
+    chargerTypes?: ChargerTypeInfo[];
 }
 
 /**
  * Calculate advanced charge statistics
  */
-const useChargeInsights = (charges: Charge[], batterySize: number, chargerTypes: any[] = []) => {
+const useChargeInsights = (charges: Charge[], batterySize: number, chargerTypes: ChargerTypeInfo[] = []) => {
     return useMemo(() => {
         if (!charges || charges.length === 0) return null;
 

@@ -17,10 +17,16 @@ const LINE_CHART_OPTIONS_BASE = {
   elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
 };
 
+interface TripDistItem {
+  range: string;
+  count: number;
+  color: string;
+}
+
 interface OverviewTabProps {
   summary: Summary | null;
   monthly: MonthlyData[];
-  tripDist: any[];
+  tripDist: TripDistItem[];
   smallChartHeight: number | string;
   overviewSpacing: string;
   trips?: Trip[];

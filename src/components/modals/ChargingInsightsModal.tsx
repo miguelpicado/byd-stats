@@ -8,15 +8,28 @@ import { ProcessedData, Settings, Charge, Trip } from '../../types';
 import { useApp } from '../../context/AppContext';
 
 
+interface SmartChargingWindow {
+    day: string;
+    start: string;
+    end: string;
+}
+
+interface SmartChargingData {
+    windows: SmartChargingWindow[];
+    requiredHours: number;
+    hoursFound: number;
+    weeklyKwh?: number;
+}
+
 interface ChargingInsightsModalProps {
     isOpen: boolean;
     onClose: () => void;
     stats: ProcessedData | null;
     settings: Settings;
     charges?: Charge[];
-    summary?: any;
+    summary?: { drivingKwh?: string; daysActive?: number };
     trips?: Trip[];
-    smartCharging?: any; // Pre-calculated from parent
+    smartCharging?: SmartChargingData | null; // Pre-calculated from parent
     isCalculating?: boolean; // Calculation status from parent
 }
 
@@ -48,7 +61,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     const [editStart, setEditStart] = useState('');
     const [editEnd, setEditEnd] = useState('');
 
-    const startEditing = (w: any) => {
+    const startEditing = (w: SmartChargingWindow) => {
         // If it's an AI window, it won't have an ID. We look for the preference.
         const pref = (settings.smartChargingPreferences || []).find(p => p.day === w.day && p.start === w.start);
 
@@ -210,7 +223,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                 <div className={`text-lg font-bold text-blue-700 dark:text-blue-300 uppercase tracking-wide w-full transition-opacity duration-300 ${isCalculating ? 'opacity-20 pointer-events-none' : 'opacity-100'}`}>
                     {smartCharging && smartCharging.windows.length > 0 ? (
                         <div className="flex flex-col gap-2 w-full">
-                            {smartCharging.windows.map((w: any, i: number) => {
+                            {smartCharging.windows.map((w: SmartChargingWindow, i: number) => {
                                 // Find if this window matches a manual preference
                                 const manualPref = (settings.smartChargingPreferences || []).find(p => p.active && p.day === w.day && p.start === w.start);
                                 const isEditing = editingId !== null && editingId === (manualPref?.id || (editingId === 'new' && editDay === w.day && editStart === w.start ? 'new' : null));
@@ -261,14 +274,18 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
 
                                         {isEditing ? (
                                             <div className="flex items-center gap-2 mt-2">
+                                                <label htmlFor={`edit-start-${i}`} className="sr-only">{t('common.start', 'Inicio')}</label>
                                                 <input
+                                                    id={`edit-start-${i}`}
                                                     type="time"
                                                     value={editStart}
                                                     onChange={(e) => setEditStart(e.target.value)}
                                                     className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-1 text-xs font-bold"
                                                 />
                                                 <span className="text-slate-400">-</span>
+                                                <label htmlFor={`edit-end-${i}`} className="sr-only">{t('common.end', 'Fin')}</label>
                                                 <input
+                                                    id={`edit-end-${i}`}
                                                     type="time"
                                                     value={editEnd}
                                                     onChange={(e) => setEditEnd(e.target.value)}
@@ -295,7 +312,9 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                             ) : (
                                 <div className="bg-white/50 dark:bg-slate-800/50 px-3 py-3 mt-2 rounded-lg border-2 border-emerald-400/50 flex flex-col shadow-sm animate-fadeIn">
                                     <div className="flex items-center justify-between mb-3">
+                                        <label htmlFor="add-window-day" className="sr-only">{t('common.day', 'Día')}</label>
                                         <select
+                                            id="add-window-day"
                                             value={editDay}
                                             onChange={(e) => setEditDay(e.target.value)}
                                             className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded px-2 py-1 text-xs font-black text-blue-800 dark:text-blue-200 uppercase"
@@ -321,8 +340,9 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <div className="flex-1">
-                                            <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1">{t('common.start', 'Inicio')}</label>
+                                            <label htmlFor="add-window-start" className="block text-[10px] uppercase text-slate-400 font-bold mb-1">{t('common.start', 'Inicio')}</label>
                                             <input
+                                                id="add-window-start"
                                                 type="time"
                                                 value={editStart}
                                                 onChange={(e) => setEditStart(e.target.value)}
@@ -330,8 +350,9 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                                             />
                                         </div>
                                         <div className="flex-1">
-                                            <label className="block text-[10px] uppercase text-slate-400 font-bold mb-1">{t('common.end', 'Fin')}</label>
+                                            <label htmlFor="add-window-end" className="block text-[10px] uppercase text-slate-400 font-bold mb-1">{t('common.end', 'Fin')}</label>
                                             <input
+                                                id="add-window-end"
                                                 type="time"
                                                 value={editEnd}
                                                 onChange={(e) => setEditEnd(e.target.value)}

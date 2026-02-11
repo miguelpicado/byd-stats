@@ -172,8 +172,9 @@ export function useDriveSync({
             // Trigger Registry Update
             await updateCloudRegistry(uploadResult.id);
 
-        } catch (e: any) {
-            setError(e.message || "Error de sincronización");
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            setError(error.message || "Error de sincronización");
         } finally {
             setIsSyncing(false);
         }
@@ -198,8 +199,9 @@ export function useDriveSync({
 
             setPendingConflict(null);
             setLastSyncTime(new Date());
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            setError(error.message);
         }
     }, [pendingConflict, setLocalTrips, setSettings, setLocalCharges, getTargetFilename]);
 
@@ -231,8 +233,9 @@ export function useDriveSync({
             const upload = await googleDriveService.uploadFile(merged, null, targetFilename);
             await updateCloudRegistry(upload.id);
             return true;
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            setError(error.message);
             return false;
         } finally {
             setIsSyncing(false);

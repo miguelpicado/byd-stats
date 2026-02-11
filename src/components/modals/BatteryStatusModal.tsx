@@ -57,7 +57,7 @@ const BatteryStatusModal: React.FC = () => {
             const stopCharge = httpsCallable(functions, 'stopCharge');
             await stopCharge({ vehicleId: activeCar.smartcarVehicleId });
             toast.success(t('charges.chargeStopped', 'Carga detenida'));
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[BatteryStatusModal] Error stopping charge:', error);
             toast.error(t('charges.stopError', 'Error al detener la carga'));
         } finally {

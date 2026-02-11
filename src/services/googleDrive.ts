@@ -1,5 +1,5 @@
 import { logger } from '@core/logger';
-import { Trip, Charge, Settings, ChargerType, Car } from '@/types';
+import { Trip, Charge, Settings, ChargerType, Car, RangeScenario, SoHStats } from '@/types';
 
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
@@ -67,8 +67,8 @@ export interface SyncData {
     settings: Settings;
     charges: Charge[];
     aiCache?: {
-        efficiency?: { hash: string; scenarios: any[]; loss: number };
-        soh?: { hash: string; soh: number; stats: { points: any[]; trend: any[] } };
+        efficiency?: { hash: string; scenarios: RangeScenario[]; loss: number };
+        soh?: { hash: string; soh: number; stats: SoHStats };
         parking?: { hash: string; trained: boolean };
     };
 }
@@ -234,7 +234,7 @@ export const googleDriveService = {
     /**
      * Upload (Create or Update) the database file
      */
-    uploadFile: async (data: any, existingFileId: string | null = null, filename: string = DB_FILENAME): Promise<any> => {
+    uploadFile: async (data: SyncData | RegistryData, existingFileId: string | null = null, filename: string = DB_FILENAME): Promise<GoogleDriveFile> => {
         try {
             const fileContent = JSON.stringify(data);
             let fileId = existingFileId;
@@ -385,7 +385,7 @@ export const googleDriveService = {
         const remoteSettings = remoteData.settings || {} as Settings;
 
         // Helper: Is a value a "default" or "empty" value?
-        const isDefault = (key: string, val: any): boolean => {
+        const isDefault = (key: string, val: unknown): boolean => {
             if (val === undefined || val === null) return true;
             // Empty string is only default for specific fields, otherwise it might be user intent
             if (val === '' && (key === 'mfgDate' || key === 'mfgDateDisplay')) return true;
@@ -400,7 +400,7 @@ export const googleDriveService = {
         };
 
         // Merge other settings (non-default wins, then local wins)
-        const mergedSettings: any = { ...remoteSettings, ...localSettings };
+        const mergedSettings: Partial<Settings> = { ...remoteSettings, ...localSettings };
 
         // Explicit merging logic
         const allKeys = new Set([...Object.keys(localSettings), ...Object.keys(remoteSettings)]);
@@ -408,13 +408,14 @@ export const googleDriveService = {
         allKeys.forEach(key => {
             if (key === 'chargerTypes' || key === 'hiddenTabs') return;
 
-            const localVal = (localSettings as any)[key];
-            const remoteVal = (remoteSettings as any)[key]; // Corrected access
+            const settingsKey = key as keyof Settings;
+            const localVal = localSettings[settingsKey];
+            const remoteVal = remoteSettings[settingsKey];
 
             if (isDefault(key, localVal) && !isDefault(key, remoteVal)) {
-                mergedSettings[key] = remoteVal;
+                (mergedSettings as Record<string, unknown>)[key] = remoteVal;
             } else if (!isDefault(key, localVal)) {
-                mergedSettings[key] = localVal;
+                (mergedSettings as Record<string, unknown>)[key] = localVal;
             }
         });
 

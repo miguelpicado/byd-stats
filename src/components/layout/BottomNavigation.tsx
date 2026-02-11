@@ -1,7 +1,13 @@
-import { memo } from 'react';
+import { memo, ReactNode } from 'react';
+
+interface Tab {
+    id: string;
+    label: string;
+    icon?: ReactNode;
+}
 
 interface BottomNavigationProps {
-    tabs: any[];
+    tabs: Tab[];
     activeTab: string;
     handleTabClick: (id: string) => void;
 }

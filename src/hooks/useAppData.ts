@@ -9,6 +9,7 @@ import { useProcessedData } from './useProcessedData';
 import { useLocalStorage } from './useLocalStorage';
 import { subscribeToTrips } from '@/services/firebase';
 import { useState, useEffect } from 'react';
+import { parseNumericSetting } from '@/utils/typeGuards';
 
 export interface UseAppDataReturn {
     rawTrips: Trip[];
@@ -35,7 +36,7 @@ export interface UseAppDataReturn {
     aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
     aiLoss: number | null;
     aiSoH: number | null;
-    aiSoHStats: { points: any[]; trend: any[] } | null;
+    aiSoHStats: { points: Array<{ x: string; y: number; cap?: number }>; trend: Array<{ x: string; y: number }> } | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
     acknowledgedAnomalies: string[];
     setAcknowledgedAnomalies: (ids: string[]) => void;
@@ -98,10 +99,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
 
     // 3.1 Computed: Merged Trips (Local + Remote)
     // Also calculates consumption from SoC if not provided
-    const val = settings?.batterySize as unknown;
-    const batterySize = typeof val === 'string'
-        ? parseFloat(val)
-        : (typeof val === 'number' ? val : 82.56);
+    const batterySize = parseNumericSetting(settings?.batterySize, 82.56);
 
     const allTrips = useMemo(() => {
         // Get deleted trip IDs from localStorage
