@@ -10,8 +10,8 @@ import smartcar from 'smartcar';
 admin.initializeApp();
 const db = admin.firestore();
 
-// Version: 3.0.0 - Complete rewrite (2026-02-06)
-const VERSION = '3.0.0';
+// Version: 3.6.0 - Hybrid: webhook activates polling, polling creates trips (2026-02-12)
+const VERSION = '3.6.0';
 
 // Region: Europe (Belgium) - closest to Spain and matches Firestore eur3 location
 const REGION = 'europe-west1';
@@ -606,96 +606,58 @@ export const smartcarWebhook = regionalFunctions.https.onRequest(async (req, res
         }
 
         // =====================================================================
-        // POLLING TRIGGER: Activate polling when car is unlocked
+        // POLLING ACTIVATION (v3.6.0 - Hybrid approach)
+        // Activate polling when car is unlocked so we can detect movement
         // =====================================================================
         const prevIsLocked = vehicle.isLocked;
         const currentIsLocked = data.isLocked;
 
-        // If isLocked changed from true to false (car unlocked) -> start polling
+        // Car UNLOCKED → activate polling to detect movement
         if (prevIsLocked === true && currentIsLocked === false) {
-            console.log(`${logPrefix} CAR UNLOCKED - Activating polling mode`);
+            console.log(`${logPrefix} CAR UNLOCKED - Activating polling`);
             vehicleUpdate.pollingActive = true;
-            vehicleUpdate.idlePollCount = 0;
-        }
-
-        // Also activate polling if there's movement detected
-        if (hasMovement && !vehicle.pollingActive) {
-            console.log(`${logPrefix} MOVEMENT DETECTED - Activating polling mode`);
-            vehicleUpdate.pollingActive = true;
-            vehicleUpdate.idlePollCount = 0;
-        }
-
-        // FALLBACK: Activate polling if car is awake and online (but we missed unlock)
-        // This handles cases where the car didn't have coverage when unlocking
-        const isAwakeAndOnline = data.isAsleep === false && data.isOnline === true;
-        const wasAsleepOrOffline = vehicle.isAsleep === true || vehicle.isOnline === false;
-        if (isAwakeAndOnline && wasAsleepOrOffline && !vehicle.pollingActive) {
-            console.log(`${logPrefix} CAR WOKE UP (isAsleep=false, isOnline=true) - Activating polling mode`);
-            vehicleUpdate.pollingActive = true;
-            vehicleUpdate.idlePollCount = 0;
+            vehicleUpdate.stationaryPollCount = 0;
         }
 
         // =====================================================================
-        // STEP 3: TRIP LOGIC (Simplified)
-        // - Movement detected + no trip → START trip
-        // - isLocked=true + trip active → CLOSE trip
+        // STEP 3: TRIP LOGIC (v3.6.0 - Hybrid: polling creates trips)
+        // - Movement + LOCKED + no trip → Create RETROACTIVE completed trip
+        // - Movement + UNLOCKED + no trip → START new active trip
         // - Trip active → UPDATE with latest data
+        // - Trip creation/GPS handled by scheduledPoll when pollingActive
         // =====================================================================
 
-        // CASE 1: CLOSE TRIP if car is locked and there's an active trip
-        if (data.isLocked === true && activeTripId) {
-            console.log(`${logPrefix} CAR LOCKED - Closing trip ${activeTripId}`);
+        // CASE 1: RETROACTIVE TRIP - Movement detected but car is LOCKED (no active trip)
+        // This means the car moved between webhook events and is now parked
+        // Create a completed trip directly instead of starting a live one
+        if (data.isLocked === true && hasMovement && !activeTripId && !currentIsCharging) {
+            console.log(`${logPrefix} MOVEMENT WHILE LOCKED - Creating retroactive completed trip`);
 
-            const tripRef = db.collection('trips').doc(activeTripId);
-            const tripDoc = await tripRef.get();
+            const retroTripRef = db.collection('trips').doc();
+            const retroDistance = Math.round(odoDelta * 100) / 100;
 
-            if (tripDoc.exists) {
-                const tripData = tripDoc.data()!;
-                const startOdo = tripData.startOdometer ?? 0;
-                const endOdo = currentOdometer ?? startOdo;
-                const tripDistance = Math.max(0, endOdo - startOdo);
-                const startMs = tripData.startDate?.toMillis() || Date.now();
-                const durationMinutes = Math.round((Date.now() - startMs) / 60000);
+            await retroTripRef.set({
+                vehicleId,
+                startDate: vehicle.lastMoveTime || now,
+                endDate: now,
+                startOdometer: prevOdometer!,
+                endOdometer: currentOdometer!,
+                startSoC: prevSoC ?? 0,
+                endSoC: currentSoC ?? 0,
+                distanceKm: retroDistance,
+                status: 'completed',
+                type: retroDistance >= CONFIG.MIN_TRIP_DISTANCE ? 'trip' : 'idle',
+                source: 'webhook',
+                closedReason: 'retroactive_locked',
+                lastUpdate: now,
+            });
 
-                // Add final GPS point
-                if (data.location) {
-                    await tripRef.collection('points').add({
-                        lat: data.location.lat, lon: data.location.lon,
-                        timestamp: now, source: 'webhook', type: 'end'
-                    });
-                }
+            console.log(`${logPrefix} CREATED retroactive trip: ${retroTripRef.id}, ${retroDistance.toFixed(2)}km`);
+            // Do NOT set activeTripId - trip is already completed
 
-                // Calculate GPS distance
-                let gpsDistanceKm: number | null = null;
-                try {
-                    const pointsSnap = await tripRef.collection('points').orderBy('timestamp').get();
-                    if (pointsSnap.size >= 2) {
-                        const gpsPoints = pointsSnap.docs.map(d => ({ lat: d.data().lat, lon: d.data().lon })).filter(p => p.lat && p.lon);
-                        if (gpsPoints.length >= 2) gpsDistanceKm = await snapToRoadsDistance(gpsPoints);
-                    }
-                } catch (e) { /* ignore */ }
-
-                const tripUpdate: any = {
-                    status: 'completed',
-                    type: tripDistance >= CONFIG.MIN_TRIP_DISTANCE ? 'trip' : 'idle',
-                    endDate: now,
-                    endOdometer: endOdo,
-                    endSoC: currentSoC ?? tripData.endSoC ?? 0,
-                    distanceKm: Math.round(tripDistance * 100) / 100,
-                    durationMinutes,
-                    lastUpdate: now,
-                    closedReason: 'locked_webhook',
-                };
-                if (gpsDistanceKm) tripUpdate.gpsDistanceKm = gpsDistanceKm;
-
-                await tripRef.update(tripUpdate);
-                console.log(`${logPrefix} CLOSED trip: ${activeTripId}, ${tripDistance.toFixed(2)}km`);
-            }
-            vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
-
-            // CASE 2: START TRIP if movement detected and no active trip
-        } else if (hasMovement && !activeTripId && !currentIsCharging) {
-            console.log(`${logPrefix} MOVEMENT DETECTED - Starting new trip`);
+        // CASE 2: START TRIP if movement detected, car is UNLOCKED, and no active trip
+        } else if (hasMovement && !activeTripId && !currentIsCharging && data.isLocked === false) {
+            console.log(`${logPrefix} MOVEMENT + UNLOCKED - Starting new active trip`);
 
             const newTripRef = db.collection('trips').doc();
             await newTripRef.set({
@@ -712,8 +674,8 @@ export const smartcarWebhook = regionalFunctions.https.onRequest(async (req, res
                 lastUpdate: now,
             });
 
-            // Add start GPS point
-            if (data.location) {
+            // Add start GPS point (only if location is available)
+            if (data.location && data.location.lat && data.location.lon) {
                 await newTripRef.collection('points').add({
                     lat: data.location.lat, lon: data.location.lon,
                     timestamp: now, source: 'webhook', type: 'start'
@@ -723,25 +685,35 @@ export const smartcarWebhook = regionalFunctions.https.onRequest(async (req, res
             vehicleUpdate.activeTripId = newTripRef.id;
             console.log(`${logPrefix} STARTED trip: ${newTripRef.id}, initial ${odoDelta.toFixed(2)}km`);
 
-            // CASE 3: UPDATE TRIP if active and has new data
+        // CASE 3: UPDATE TRIP if active and has new data
+        // FIX: Calculate total distance from startOdometer instead of incrementing
         } else if (activeTripId) {
             const tripRef = db.collection('trips').doc(activeTripId);
-            const tripUpdate: any = { lastUpdate: now };
+            const tripDoc = await tripRef.get();
 
-            if (currentOdometer !== null) tripUpdate.endOdometer = currentOdometer;
-            if (currentSoC !== null) tripUpdate.endSoC = currentSoC;
-            if (odoDelta > 0) tripUpdate.distanceKm = admin.firestore.FieldValue.increment(odoDelta);
+            if (tripDoc.exists) {
+                const tripData = tripDoc.data()!;
+                const tripUpdate: any = { lastUpdate: now };
 
-            await tripRef.update(tripUpdate);
+                if (currentOdometer !== null) {
+                    tripUpdate.endOdometer = currentOdometer;
+                    // FIX Bug 3: Calculate total distance from start instead of increment
+                    const totalDistance = currentOdometer - (tripData.startOdometer || 0);
+                    tripUpdate.distanceKm = Math.round(Math.max(0, totalDistance) * 100) / 100;
+                }
+                if (currentSoC !== null) tripUpdate.endSoC = currentSoC;
 
-            // Add GPS waypoint
-            if (data.location) {
-                await tripRef.collection('points').add({
-                    lat: data.location.lat, lon: data.location.lon,
-                    timestamp: now, odometer: currentOdometer, source: 'webhook', type: 'waypoint'
-                });
+                await tripRef.update(tripUpdate);
+
+                // Add GPS waypoint (only if location is available)
+                if (data.location && data.location.lat && data.location.lon) {
+                    await tripRef.collection('points').add({
+                        lat: data.location.lat, lon: data.location.lon,
+                        timestamp: now, odometer: currentOdometer, source: 'webhook', type: 'waypoint'
+                    });
+                }
+                console.log(`${logPrefix} UPDATED trip: ${activeTripId}, total ${tripUpdate.distanceKm?.toFixed(2) || 'N/A'}km`);
             }
-            console.log(`${logPrefix} UPDATED trip: ${activeTripId}, +${odoDelta.toFixed(2)}km`);
 
         } else {
             console.log(`${logPrefix} No trip action needed (locked=${data.isLocked}, movement=${hasMovement}, charging=${currentIsCharging})`);
@@ -2122,11 +2094,11 @@ export const pollVehicle = regionalFunctions.https.onRequest(async (req, res) =>
 });
 
 // =============================================================================
-// SCHEDULED POLLING - Runs every 2 minutes
+// SCHEDULED POLLING - Runs every 1 minute for better GPS tracking
 // =============================================================================
 
 export const scheduledPoll = regionalFunctions.pubsub
-    .schedule('every 2 minutes')
+    .schedule('every 1 minutes')
     .timeZone('Europe/Madrid')
     .onRun(async (context) => {
         console.log('[scheduledPoll] Starting scheduled poll...');
@@ -2212,16 +2184,19 @@ export const scheduledPoll = regionalFunctions.pubsub
             }
 
             // =================================================================
-            // TRIP-ONLY POLLING: Only poll if there's an active trip
-            // Webhooks handle: trip start (unlock), trip end (lock), all data updates
-            // Polling ONLY adds GPS waypoints during active trips
+            // TRIP POLLING v3.6: Hybrid approach
+            // - Poll when pollingActive=true OR activeTripId exists
+            // - Create trips when movement detected
+            // - Close trips: isLocked=true + 5 polls stationary → subtract 5 min
+            // - Stop polling: isLocked=true + no trip + 5 polls idle
             // =================================================================
+            const pollingActive = vehicleData.pollingActive === true;
             const activeTripId = vehicleData.activeTripId || null;
 
-            if (!activeTripId) {
-                // NO ACTIVE TRIP = NO POLLING
-                // Webhooks will start a trip when car unlocks and moves
-                console.log(`[scheduledPoll] Skipping ${vehicleId} - no active trip (webhooks handle trip detection)`);
+            // Poll if: pollingActive (unlocked) OR has active trip
+            const shouldPoll = pollingActive || activeTripId;
+            if (!shouldPoll) {
+                // Car locked and no active trip = no polling needed (saves API costs)
                 continue;
             }
 
@@ -2229,79 +2204,130 @@ export const scheduledPoll = regionalFunctions.pubsub
                 const now = admin.firestore.Timestamp.now();
                 const vehicleRef = db.collection('vehicles').doc(vehicleId);
                 const prevLocation = vehicleData.lastLocation || null;
-                const errorPollCount = vehicleData.errorPollCount || 0;
+                const prevOdometer = vehicleData.lastOdometer || 0;
+                const prevSoC = vehicleData.lastSoC || 0;
                 const isLocked = vehicleData.isLocked ?? null;
+                const stationaryPollCount = vehicleData.stationaryPollCount || 0;
+                const idlePollCount = vehicleData.idlePollCount || 0;
+
+                console.log(`[scheduledPoll] Polling ${vehicleId} - pollingActive: ${pollingActive}, activeTripId: ${activeTripId}, isLocked: ${isLocked}`);
 
                 // ============================================================
-                // TRIP ACTIVE: Only fetch GPS location
-                // All other data (odo, soc, lock) comes from webhooks
+                // FETCH DATA: Odometer + Location + Battery
                 // ============================================================
-                console.log(`[scheduledPoll] Trip ${activeTripId} active - fetching GPS only`);
-
                 const accessToken = await getValidAccessToken(vehicleId);
                 const vehicle = new smartcar.Vehicle(vehicleId, accessToken);
 
+                const [odoResult, locationResult, batteryResult] = await Promise.allSettled([
+                    vehicle.odometer(),
+                    vehicle.location(),
+                    vehicle.battery()
+                ]);
+
+                const currentOdometer = odoResult.status === 'fulfilled' ? odoResult.value.distance : null;
+                const currentSoC = normalizeSoC(batteryResult.status === 'fulfilled' ? batteryResult.value.percentRemaining : null);
                 let location: { lat: number; lon: number } | null = null;
-                const locationResult = await vehicle.location().catch(() => null);
-                if (locationResult) {
-                    location = { lat: locationResult.latitude, lon: locationResult.longitude };
+                if (locationResult.status === 'fulfilled') {
+                    location = { lat: locationResult.value.latitude, lon: locationResult.value.longitude };
                 }
 
-                // Always save GPS points - SmartCar already handles rate limiting
-                // No need to filter by distance, we want all points for accurate route tracking
-                const isFirstLocation = !prevLocation;
+                // Calculate movement
+                const odoDelta = currentOdometer !== null && prevOdometer > 0
+                    ? currentOdometer - prevOdometer
+                    : 0;
+                const hasMovement = odoDelta > CONFIG.MIN_MOVEMENT_DELTA;
 
-                console.log(`[scheduledPoll] Location: ${location ? `${location.lat.toFixed(4)},${location.lon.toFixed(4)}` : 'N/A'}, firstLoc: ${isFirstLocation}, locked: ${isLocked}`);
+                // Calculate if location changed significantly (> 50 meters = 0.05 km)
+                const locationChanged = location && prevLocation
+                    ? haversine(prevLocation.lat, prevLocation.lon, location.lat, location.lon) > 0.05
+                    : true; // If no prev location, consider it changed
 
-                // Update vehicle location if we got it
+                console.log(`[scheduledPoll] Data: odo=${currentOdometer?.toFixed(2)}, soc=${currentSoC}, loc=${location ? `${location.lat.toFixed(4)},${location.lon.toFixed(4)}` : 'N/A'}, odoDelta=${odoDelta.toFixed(3)}, hasMovement=${hasMovement}, locChanged=${locationChanged}`);
+
+                // ============================================================
+                // UPDATE VEHICLE STATE
+                // ============================================================
                 const vehicleUpdate: any = {
                     lastPollTime: now,
                 };
+                if (currentOdometer !== null) vehicleUpdate.lastOdometer = currentOdometer;
+                if (currentSoC !== null) vehicleUpdate.lastSoC = currentSoC;
                 if (location) {
                     vehicleUpdate.lastLocation = location;
-                    vehicleUpdate.errorPollCount = 0;
-                } else {
-                    // No location - increment error count
-                    const newErrorCount = errorPollCount + 1;
-                    vehicleUpdate.errorPollCount = newErrorCount;
-
-                    // After 5 failed location fetches, close trip (car might be in parking garage)
-                    if (newErrorCount >= 5) {
-                        console.log(`[scheduledPoll] 5 failed location polls - closing trip ${activeTripId}`);
-                        vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
-                        vehicleUpdate.errorPollCount = 0;
-
-                        const tripRef = db.collection('trips').doc(activeTripId);
-                        await tripRef.update({
-                            status: 'completed',
-                            endDate: now,
-                            lastUpdate: now,
-                            closedReason: 'no_location_5_polls',
-                        });
-                    }
                 }
 
-                // If car is locked (from webhook), close the trip
-                if (isLocked === true) {
-                    console.log(`[scheduledPoll] Car locked - closing trip ${activeTripId}`);
-                    vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
-                    vehicleUpdate.errorPollCount = 0;
+                if (hasMovement) {
+                    vehicleUpdate.lastMoveTime = now;
+                    vehicleUpdate.stationaryPollCount = 0;
+                    vehicleUpdate.idlePollCount = 0;
+                }
+
+                // ============================================================
+                // TRIP LOGIC (v3.6.0 - Polling creates and tracks trips)
+                // ============================================================
+
+                // STATIONARY DETECTION
+                const odoStationary = !hasMovement;
+                const gpsStationary = location && prevLocation ? !locationChanged : null;
+                const isStationary = odoStationary && (gpsStationary === null || gpsStationary === true);
+
+                // ============================================================
+                // CASE 1: No active trip + movement → CREATE NEW TRIP
+                // ============================================================
+                if (!activeTripId && hasMovement) {
+                    console.log(`[scheduledPoll] MOVEMENT DETECTED - Creating new trip`);
+
+                    const newTripRef = db.collection('trips').doc();
+                    await newTripRef.set({
+                        vehicleId,
+                        startDate: now,
+                        startOdometer: prevOdometer,
+                        startSoC: prevSoC,
+                        endOdometer: currentOdometer,
+                        endSoC: currentSoC ?? prevSoC,
+                        distanceKm: Math.round(odoDelta * 100) / 100,
+                        status: 'in_progress',
+                        type: 'unknown',
+                        source: 'polling',
+                        lastUpdate: now,
+                    });
+
+                    // Add start GPS point
+                    if (location) {
+                        await newTripRef.collection('points').add({
+                            lat: location.lat, lon: location.lon,
+                            timestamp: now, source: 'poll', type: 'start'
+                        });
+                        console.log(`[scheduledPoll] Added GPS start point`);
+                    }
+
+                    vehicleUpdate.activeTripId = newTripRef.id;
+                    vehicleUpdate.idlePollCount = 0;
+                    console.log(`[scheduledPoll] STARTED trip: ${newTripRef.id}`);
+
+                // ============================================================
+                // CASE 2: Active trip + locked + 5 stationary polls → CLOSE TRIP
+                // ============================================================
+                } else if (activeTripId && isLocked === true && isStationary && stationaryPollCount >= 4) {
+                    console.log(`[scheduledPoll] CLOSING TRIP - locked + 5 polls stationary`);
 
                     const tripRef = db.collection('trips').doc(activeTripId);
                     const tripDoc = await tripRef.get();
                     const tripData = tripDoc.data();
 
                     if (tripData) {
-                        const currentOdometer = vehicleData.lastOdometer || 0;
-                        const currentSoC = vehicleData.lastSoC || 0;
-                        const totalDistance = currentOdometer - (tripData.startOdometer || 0);
-                        const durationMinutes = Math.round((Date.now() - (tripData.startDate?.toMillis() || Date.now())) / 60000);
+                        const endOdo = currentOdometer ?? prevOdometer;
+                        const totalDistance = endOdo - (tripData.startOdometer || 0);
 
-                        // Add final GPS point if available
+                        // Subtract 5 minutes from endDate (5 stationary polls were after arrival)
+                        const adjustedEndDate = admin.firestore.Timestamp.fromMillis(now.toMillis() - (5 * 60 * 1000));
+                        const durationMinutes = Math.round((adjustedEndDate.toMillis() - (tripData.startDate?.toMillis() || Date.now())) / 60000);
+
+                        // Add final GPS point
                         if (location) {
                             await tripRef.collection('points').add({
                                 lat: location.lat, lon: location.lon,
-                                timestamp: now, source: 'poll', type: 'end'
+                                timestamp: adjustedEndDate, source: 'poll', type: 'end'
                             });
                         }
 
@@ -2323,13 +2349,13 @@ export const scheduledPoll = regionalFunctions.pubsub
                         const tripUpdate: any = {
                             status: 'completed',
                             type: totalDistance >= CONFIG.MIN_TRIP_DISTANCE ? 'trip' : 'idle',
-                            endDate: now,
-                            endOdometer: currentOdometer,
-                            endSoC: currentSoC,
-                            distanceKm: Math.round(totalDistance * 100) / 100,
-                            durationMinutes,
+                            endDate: adjustedEndDate,
+                            endOdometer: endOdo,
+                            endSoC: currentSoC ?? tripData.endSoC ?? prevSoC,
+                            distanceKm: Math.round(Math.max(0, totalDistance) * 100) / 100,
+                            durationMinutes: Math.max(0, durationMinutes),
                             lastUpdate: now,
-                            closedReason: 'locked_via_poll',
+                            closedReason: 'locked_5_polls_stationary',
                         };
                         if (gpsDistanceKm) tripUpdate.gpsDistanceKm = gpsDistanceKm;
 
@@ -2337,42 +2363,99 @@ export const scheduledPoll = regionalFunctions.pubsub
                         console.log(`[scheduledPoll] CLOSED trip: ${activeTripId}, ${totalDistance.toFixed(2)}km`);
                     }
 
-                    await vehicleRef.set(vehicleUpdate, { merge: true });
-                    continue;
-                }
+                    vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
+                    vehicleUpdate.stationaryPollCount = 0;
+                    vehicleUpdate.pollingActive = false; // Stop polling after trip ends
 
-                // Add GPS waypoint to trip - always save when we have a valid location
-                if (location) {
+                // ============================================================
+                // CASE 3: Active trip + locked + stationary → increment counter
+                // ============================================================
+                } else if (activeTripId && isLocked === true && isStationary) {
+                    const newStationaryCount = stationaryPollCount + 1;
+                    vehicleUpdate.stationaryPollCount = newStationaryCount;
+                    console.log(`[scheduledPoll] Locked + stationary: poll ${newStationaryCount}/5`);
+
+                    // Update trip data
                     const tripRef = db.collection('trips').doc(activeTripId);
-                    await tripRef.collection('points').add({
-                        lat: location.lat,
-                        lon: location.lon,
-                        timestamp: now,
-                        source: 'poll',
-                        type: isFirstLocation ? 'start' : 'waypoint'
-                    });
-                    console.log(`[scheduledPoll] Added GPS ${isFirstLocation ? 'start' : 'waypoint'} to trip ${activeTripId}`);
+                    const tripDoc = await tripRef.get();
+                    if (tripDoc.exists) {
+                        const tripData = tripDoc.data()!;
+                        const tripUpdate: any = { lastUpdate: now };
+                        if (currentOdometer !== null) {
+                            tripUpdate.endOdometer = currentOdometer;
+                            const totalDistance = currentOdometer - (tripData.startOdometer || 0);
+                            tripUpdate.distanceKm = Math.round(Math.max(0, totalDistance) * 100) / 100;
+                        }
+                        if (currentSoC !== null) tripUpdate.endSoC = currentSoC;
+                        await tripRef.update(tripUpdate);
+                    }
+
+                    // Add GPS point
+                    if (location) {
+                        await tripRef.collection('points').add({
+                            lat: location.lat, lon: location.lon,
+                            timestamp: now, source: 'poll', type: 'waypoint'
+                        });
+                    }
+
+                // ============================================================
+                // CASE 4: Active trip + moving → update trip, add GPS
+                // ============================================================
+                } else if (activeTripId) {
+                    vehicleUpdate.stationaryPollCount = 0;
+
+                    const tripRef = db.collection('trips').doc(activeTripId);
+                    const tripDoc = await tripRef.get();
+                    if (tripDoc.exists) {
+                        const tripData = tripDoc.data()!;
+                        const tripUpdate: any = { lastUpdate: now };
+
+                        if (currentOdometer !== null) {
+                            tripUpdate.endOdometer = currentOdometer;
+                            const totalDistance = currentOdometer - (tripData.startOdometer || 0);
+                            tripUpdate.distanceKm = Math.round(Math.max(0, totalDistance) * 100) / 100;
+                        }
+                        if (currentSoC !== null) tripUpdate.endSoC = currentSoC;
+
+                        await tripRef.update(tripUpdate);
+                    }
+
+                    // Add GPS waypoint
+                    if (location) {
+                        await tripRef.collection('points').add({
+                            lat: location.lat, lon: location.lon,
+                            timestamp: now, source: 'poll', type: 'waypoint'
+                        });
+                        console.log(`[scheduledPoll] Added GPS waypoint to trip ${activeTripId}`);
+                    }
+
+                // ============================================================
+                // CASE 5: No trip + locked + 5 idle polls → stop polling
+                // ============================================================
+                } else if (!activeTripId && isLocked === true) {
+                    const newIdleCount = idlePollCount + 1;
+                    vehicleUpdate.idlePollCount = newIdleCount;
+                    console.log(`[scheduledPoll] No trip, locked, idle: poll ${newIdleCount}/5`);
+
+                    if (newIdleCount >= 5) {
+                        console.log(`[scheduledPoll] Stopping polling - locked + no activity for 5 polls`);
+                        vehicleUpdate.pollingActive = false;
+                        vehicleUpdate.idlePollCount = 0;
+                    }
+
+                // ============================================================
+                // CASE 6: No trip + unlocked + no movement → just waiting
+                // ============================================================
+                } else {
+                    vehicleUpdate.idlePollCount = 0;
+                    console.log(`[scheduledPoll] Waiting for movement...`);
                 }
 
                 await vehicleRef.set(vehicleUpdate, { merge: true });
 
             } catch (error: any) {
-                // Track errors at vehicle level too
-                const vehicleRef = db.collection('vehicles').doc(vehicleId);
-                const currentData = (await vehicleRef.get()).data() || {};
-                const newErrorCount = (currentData.errorPollCount || 0) + 1;
-
-                if (newErrorCount >= 3) {
-                    console.log(`[scheduledPoll] 3 consecutive errors for ${vehicleId} - stopping polling`);
-                    await vehicleRef.update({
-                        pollingActive: false,
-                        errorPollCount: 0,
-                        idlePollCount: 0,
-                    });
-                } else {
-                    await vehicleRef.update({ errorPollCount: newErrorCount });
-                }
                 console.error(`[scheduledPoll] Error polling ${vehicleId}: ${error.message}`);
+                // On error, just log - trip will eventually close via webhook when car is unlocked again
             }
         }
 
