@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.updateVehicleSettings = exports.cleanupDuplicateTrips = exports.subscribeVehicleToWebhook = exports.scheduledPoll = exports.pollVehicle = exports.simulateWebhook = exports.calculateTripGpsDistance = exports.diag = exports.getDiagnostics = exports.fullSmartcarDiagnostic = exports.testSmartcarConnection = exports.mergeTrips = exports.setTargetChargeSoC = exports.refreshVehicleData = exports.closeTrunk = exports.openTrunk = exports.stopClimate = exports.startClimate = exports.unlockVehicle = exports.lockVehicle = exports.startCharge = exports.stopCharge = exports.resetPollingState = exports.disconnectSmartcar = exports.exchangeAuthCode = exports.smartcarWebhook = exports.ping = void 0;
+exports.bydDiagnostic = exports.bydPollVehicle = exports.bydFlashLights = exports.bydStopClimate = exports.bydStartClimate = exports.bydUnlock = exports.bydLock = exports.bydGetCharging = exports.bydGetGps = exports.bydGetRealtime = exports.bydDisconnect = exports.bydConnect = exports.updateVehicleSettings = exports.cleanupDuplicateTrips = exports.subscribeVehicleToWebhook = exports.scheduledPoll = exports.pollVehicle = exports.simulateWebhook = exports.calculateTripGpsDistance = exports.diag = exports.getDiagnostics = exports.fullSmartcarDiagnostic = exports.testSmartcarConnection = exports.mergeTrips = exports.setTargetChargeSoC = exports.refreshVehicleData = exports.closeTrunk = exports.openTrunk = exports.stopClimate = exports.startClimate = exports.unlockVehicle = exports.lockVehicle = exports.startCharge = exports.stopCharge = exports.resetPollingState = exports.disconnectSmartcar = exports.exchangeAuthCode = exports.smartcarWebhook = exports.ping = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
@@ -2313,4 +2313,20 @@ exports.updateVehicleSettings = regionalFunctions.https.onCall(async (data, cont
     console.log(`[updateVehicleSettings] Updated vehicle ${vehicleId}`);
     return { success: true, vehicleId, batteryCapacity, targetChargeSoC };
 });
+// =============================================================================
+// BYD DIRECT API FUNCTIONS (Alternative to Smartcar)
+// =============================================================================
+var bydFunctions_1 = require("./bydFunctions");
+Object.defineProperty(exports, "bydConnect", { enumerable: true, get: function () { return bydFunctions_1.bydConnect; } });
+Object.defineProperty(exports, "bydDisconnect", { enumerable: true, get: function () { return bydFunctions_1.bydDisconnect; } });
+Object.defineProperty(exports, "bydGetRealtime", { enumerable: true, get: function () { return bydFunctions_1.bydGetRealtime; } });
+Object.defineProperty(exports, "bydGetGps", { enumerable: true, get: function () { return bydFunctions_1.bydGetGps; } });
+Object.defineProperty(exports, "bydGetCharging", { enumerable: true, get: function () { return bydFunctions_1.bydGetCharging; } });
+Object.defineProperty(exports, "bydLock", { enumerable: true, get: function () { return bydFunctions_1.bydLock; } });
+Object.defineProperty(exports, "bydUnlock", { enumerable: true, get: function () { return bydFunctions_1.bydUnlock; } });
+Object.defineProperty(exports, "bydStartClimate", { enumerable: true, get: function () { return bydFunctions_1.bydStartClimate; } });
+Object.defineProperty(exports, "bydStopClimate", { enumerable: true, get: function () { return bydFunctions_1.bydStopClimate; } });
+Object.defineProperty(exports, "bydFlashLights", { enumerable: true, get: function () { return bydFunctions_1.bydFlashLights; } });
+Object.defineProperty(exports, "bydPollVehicle", { enumerable: true, get: function () { return bydFunctions_1.bydPollVehicle; } });
+Object.defineProperty(exports, "bydDiagnostic", { enumerable: true, get: function () { return bydFunctions_1.bydDiagnostic; } });
 //# sourceMappingURL=index.js.map

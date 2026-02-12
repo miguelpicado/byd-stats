@@ -2649,3 +2649,21 @@ export const updateVehicleSettings = regionalFunctions.https.onCall(async (data,
 
     return { success: true, vehicleId, batteryCapacity, targetChargeSoC };
 });
+
+// =============================================================================
+// BYD DIRECT API FUNCTIONS (Alternative to Smartcar)
+// =============================================================================
+export {
+    bydConnect,
+    bydDisconnect,
+    bydGetRealtime,
+    bydGetGps,
+    bydGetCharging,
+    bydLock,
+    bydUnlock,
+    bydStartClimate,
+    bydStopClimate,
+    bydFlashLights,
+    bydPollVehicle,
+    bydDiagnostic,
+} from './bydFunctions';
