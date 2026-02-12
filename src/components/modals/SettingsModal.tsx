@@ -4,13 +4,13 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '@core/constants';
 import ModalHeader from '../common/ModalHeader';
-// @ts-ignore
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 import { useData } from '../../providers/DataProvider';
 import { VehicleSettings } from '../settings/VehicleSettings';
 import { PriceSettings } from '../settings/PriceSettings';
 import { ChargingSettings } from '../settings/ChargingSettings';
 import { SmartcarSettings } from '../settings/SmartcarSettings';
+import { BydSettings } from '../settings/BydSettings';
 import { AppPreferences } from '../settings/AppPreferences';
 
 interface SettingsModalProps {
@@ -65,6 +65,11 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
                     {/* Smartcar Integration */}
                     <SmartcarSettings />
+
+                    <div className="border-t border-slate-200 dark:border-slate-700 my-4" />
+
+                    {/* BYD Direct API (Alternative to Smartcar) */}
+                    <BydSettings />
 
                 </div>
 
