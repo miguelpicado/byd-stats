@@ -16,8 +16,8 @@ export interface Trip {
     regeneration?: number;
     id?: string;
     startTime?: string;
-    source?: 'local' | 'smartcar' | 'db';
-    vehicleId?: string; // Smartcar vehicle ID for Firebase queries
+    source?: 'local' | 'smartcar' | 'db'; // smartcar kept for legacy data
+    vehicleId?: string; // Vehicle VIN for Firebase queries
     // GPS tracking fields
     gpsDistanceKm?: number;
     startLocation?: { latitude: number; longitude: number };
@@ -59,6 +59,7 @@ export interface Charge {
 export interface Car {
     id: string;
     name: string;
+    connectorType?: 'pybyd'; // Only pybyd supported now
     type: 'ev' | 'phev' | 'hybrid'; // normalized types
     isHybrid: boolean;
     vin?: string;
@@ -66,7 +67,6 @@ export interface Car {
     model?: string;
     lastSync?: string;
     fileId?: string;
-    smartcarVehicleId?: string; // Smartcar vehicle ID when connected
     lastOdometer?: number;
     lastSoC?: number;
     isLocked?: boolean;

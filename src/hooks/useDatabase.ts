@@ -207,7 +207,7 @@ export function useDatabase(): UseDatabaseReturn {
                 const rows = res[0].values.map((r) => {
                     const o: Record<string, unknown> = {};
                     cols.forEach((c, i) => { o[c] = r[i]; });
-                    return o as Trip;
+                    return o as unknown as Trip;
                 });
 
                 db.close();
@@ -275,7 +275,7 @@ export function useDatabase(): UseDatabaseReturn {
             stmt.free();
 
             const data = db.export();
-            const blob = new Blob([data], { type: 'application/x-sqlite3' });
+            const blob = new Blob([data as any], { type: 'application/x-sqlite3' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

@@ -42,15 +42,16 @@ const ChargeNotificationModal: React.FC = () => {
 
     // Subscribe to completed charge sessions for the active vehicle
     useEffect(() => {
-        if (!activeCar?.smartcarVehicleId) return;
+        if (!activeCar?.vin) return;
 
         const db = getFirestore(getApp());
         const sessionsRef = collection(db, 'chargeSessions');
 
         // Query for completed sessions that haven't been confirmed or discarded
+        // Note: Assuming backend now stores sessions with VIN as vehicleId or we migrate
         const q = query(
             sessionsRef,
-            where('vehicleId', '==', activeCar.smartcarVehicleId),
+            where('vehicleId', '==', activeCar.vin),
             where('status', '==', 'completed')
         );
 
@@ -85,7 +86,7 @@ const ChargeNotificationModal: React.FC = () => {
         });
 
         return () => unsubscribe();
-    }, [activeCar?.smartcarVehicleId]);
+    }, [activeCar?.vin]);
 
     // Calculate energy added based on SoC change
     const calculateEnergyAdded = (session: ChargeSession): number => {

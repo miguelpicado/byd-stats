@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useEffect, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Scatter as ScatterJS } from 'react-chartjs-2';
-import type { TooltipItem, ChartOptions, ChartDataset, Chart } from 'chart.js';
+import type { TooltipItem, ChartOptions, ChartDataset } from 'chart.js';
 import { Battery, Zap, MapPin, TrendingUp, Fuel, BYD_RED } from '@components/Icons';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
@@ -52,8 +52,8 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
   const { isCompact, isLargerCard, isVertical } = useLayout();
 
   // Refs for animation control - typed to match react-chartjs-2 ref expectations
-  const lineChartRef = useRef<Chart<'line'>>(null!);
-  const scatterChartRef = useRef<Chart<'scatter'>>(null!);
+  const lineChartRef = useRef<any>(null!);
+  const scatterChartRef = useRef<any>(null!);
 
   // Trigger animation on activation
   useEffect(() => {
@@ -115,7 +115,7 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
           min: efficiencyYAxis.min,
           max: efficiencyYAxis.max,
           border: { dash: [] },
-          grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+          grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } as any,
           ticks: { font: { size: 10 }, color: '#10b981' },
           title: { display: hasHybridData, text: 'kWh/100km', color: '#10b981', font: { size: 10 } }
         },

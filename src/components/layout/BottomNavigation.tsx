@@ -1,9 +1,9 @@
-import { memo, ReactNode } from 'react';
+import { memo } from 'react';
 
 interface Tab {
     id: string;
     label: string;
-    icon?: ReactNode;
+    icon?: React.ElementType;
 }
 
 interface BottomNavigationProps {
@@ -26,7 +26,7 @@ const BottomNavigation = memo(({ tabs, activeTab, handleTabClick }: BottomNaviga
                             onClick={() => handleTabClick(t.id)}
                             className={`flex flex-col items-center justify-center py-2 px-3 rounded-xl transition-all min-w-0 flex-1 ${activeTab === t.id ? 'byd-active-item shadow-lg shadow-red-900/20' : 'text-slate-600 dark:text-slate-400'}`}
                         >
-                            <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : 'text-white'}`} />
+                            {t.icon && <t.icon className={`w-6 h-6 mb-1 ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : 'text-white'}`} />}
                             <span className={`text-[10px] font-medium ${activeTab !== t.id ? 'text-slate-600 dark:text-slate-400' : 'text-white'}`}>{t.label}</span>
                         </button>
                     ))}

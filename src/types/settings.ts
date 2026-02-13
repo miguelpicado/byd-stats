@@ -63,7 +63,7 @@ export const SettingsSchema = z.object({
     // AI / Smart Charging
     smartChargingPreferences: z.array(ChargingPreferenceSchema).optional(),
 
-    // Smartcar Integration
+    // Charging Integration (PyBYD)
     targetChargeSoC: z.number().min(20).max(100).optional(),
     autoImportCharges: z.boolean().default(false).optional(),
 

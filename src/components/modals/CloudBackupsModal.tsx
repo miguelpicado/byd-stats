@@ -38,10 +38,10 @@ const CloudBackupsModal: React.FC = () => {
             }
             const files = await googleSync.checkCloudBackups();
             // Sort by date desc
-            const sorted = (files || []).sort((a: DriveFile, b: DriveFile) =>
+            const sorted = (files || []).sort((a: any, b: any) =>
                 new Date(b.modifiedTime).getTime() - new Date(a.modifiedTime).getTime()
             );
-            setBackups(sorted);
+            setBackups(sorted as any);
         } catch (err) {
             console.error("Error loading backups", err);
             setError(t('errors.generic', 'Error cargando copias'));

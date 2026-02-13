@@ -49,13 +49,13 @@ export const TripMapModal: React.FC<TripMapModalProps> = ({ trip, points, onClos
                     <Marker position={pathCoords[0]}>
                         <Popup>
                             <strong>Inicio</strong><br />
-                            {new Date(trip.startDate?.toDate()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date((trip.start_timestamp || 0) * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </Popup>
                     </Marker>
                     <Marker position={pathCoords[pathCoords.length - 1]}>
                         <Popup>
                             <strong>Fin</strong><br />
-                            {new Date(trip.endDate?.toDate()).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                            {new Date(((trip.start_timestamp || 0) + (trip.duration || 0)) * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
                         </Popup>
                     </Marker>
                 </MapContainer>

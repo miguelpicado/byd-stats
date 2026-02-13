@@ -90,7 +90,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     // --- App State ---
     const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
-    const [isPro, setIsPro] = useState(false); // Default to false, will be updated via Auth/Firebase
+    const [isPro, _setIsPro] = useState(false); // Default to false, will be updated via Auth/Firebase
     const isNative = Capacitor.isNativePlatform();
 
     // Load settings when activeCarId (key) changes
@@ -170,7 +170,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                     ? updated.smartChargingPreferences
                     : (Array.isArray(prev.smartChargingPreferences) ? prev.smartChargingPreferences : []),
 
-                // Smartcar Integration
+                // Charging Integration (PyBYD)
                 targetChargeSoC: updated.targetChargeSoC ?? prev.targetChargeSoC ?? 80,
                 autoImportCharges: updated.autoImportCharges ?? prev.autoImportCharges ?? false
             };

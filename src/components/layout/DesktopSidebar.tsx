@@ -1,9 +1,9 @@
-import { memo, ReactNode } from 'react';
+import { memo } from 'react';
 
 interface Tab {
     id: string;
     label: string;
-    icon?: ReactNode;
+    icon?: React.ElementType;
 }
 
 interface DesktopSidebarProps {
@@ -28,7 +28,7 @@ const DesktopSidebar = memo(({ tabs, activeTab, handleTabClick }: DesktopSidebar
                             : 'text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-800'
                             }`}
                     >
-                        <t.icon className="w-5 h-5 flex-shrink-0" />
+                        {t.icon && <t.icon className={`w-5 h-5 flex-shrink-0 transition-colors duration-200 ${activeTab === t.id ? 'text-white' : 'text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300'}`} />}
                         <span className="font-medium">{t.label}</span>
                     </button>
                 ))}

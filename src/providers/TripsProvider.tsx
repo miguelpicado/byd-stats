@@ -62,11 +62,11 @@ export const useTripsContext = () => {
 export function TripsProvider({ children }: { children: ReactNode }) {
     const { settings } = useApp();
     const { activeCarId, activeCar } = useCar();
-    const smartcarVehicleId = activeCar?.smartcarVehicleId || null;
+    // Use VIN as the vehicle ID for server queries
+    const vehicleId = activeCar?.vin || null;
     const { charges } = useChargesContext();
     const { filterType, selMonth, dateFrom, dateTo } = useFiltersContext();
 
-    // 1. Storage & Local Trips
     // 1. Storage & Local Trips
     const {
         rawTrips: localTrips, // Rename to avoid confusion
@@ -103,8 +103,8 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     }, [filterType, selMonth, dateFrom, dateTo]);
 
     // 2. Merged Trips (Firebase + Local)
-    // Pass smartcarVehicleId for Firebase queries (matches vehicleId field in Firestore)
-    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings, smartcarVehicleId, serverDateRange);
+    // Pass vehicleId (VIN) for Firebase queries
+    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings, vehicleId, serverDateRange);
 
     // 3. Filtering
     const filteredTrips = useMemo(() => {
@@ -173,13 +173,13 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         setAcknowledgedAnomalies,
         deletedAnomalies,
         setDeletedAnomalies
-    }), [
+    } as any), [
         allTrips, setRawTrips, tripHistory, setTripHistory,
         filteredTrips, months, hasMore, isLoadingMore, loadMore,
         processed,
         clearData, saveToHistory, loadFromHistory, clearHistory,
         acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
-    ]);
+    ] as any);
 
     return (
         <TripsContext.Provider value={value}>

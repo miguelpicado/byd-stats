@@ -249,7 +249,7 @@ const TabsManager: FC<TabsManagerProps> = memo(({
                                             <Suspense fallback={<TabFallback />}>
                                                 <RecordsTab
                                                     summary={summary}
-                                                    top={top}
+                                                    top={top || { km: [], kwh: [], dur: [], fuel: [] }}
                                                     recordsItemPadding={String(recordsItemPadding)}
                                                     recordsItemPaddingHorizontal={String(recordsItemPaddingHorizontal)}
                                                     recordsListHeightHorizontal={String(recordsListHeightHorizontal)}
@@ -375,7 +375,7 @@ const TabsManager: FC<TabsManagerProps> = memo(({
                                 <RecordsTab
                                     key={isActive ? 'records-active' : 'records-bg'}
                                     summary={summary}
-                                    top={top}
+                                    top={top || { km: [], kwh: [], dur: [], fuel: [] }}
                                     recordsItemPadding={String(recordsItemPadding)}
                                     recordsItemPaddingHorizontal={String(recordsItemPaddingHorizontal)}
                                     recordsListHeightHorizontal={String(recordsListHeightHorizontal)}

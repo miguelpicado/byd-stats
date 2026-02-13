@@ -6,10 +6,10 @@ import { BYD_RED } from '@core/constants';
 import ModalHeader from '../common/ModalHeader';
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 import { useData } from '../../providers/DataProvider';
+import { useCar } from '../../context/CarContext';
 import { VehicleSettings } from '../settings/VehicleSettings';
 import { PriceSettings } from '../settings/PriceSettings';
 import { ChargingSettings } from '../settings/ChargingSettings';
-import { SmartcarSettings } from '../settings/SmartcarSettings';
 import { BydSettings } from '../settings/BydSettings';
 import { AppPreferences } from '../settings/AppPreferences';
 
@@ -23,6 +23,7 @@ interface SettingsModalProps {
 const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     const { t } = useTranslation();
     const { googleSync, closeModal } = useData();
+    const { updateCar, activeCarId } = useCar();
 
     // Handle close logic - either props or context
     const handleClose = () => {
@@ -63,13 +64,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
                     {/* Google Drive Sync */}
                     <GoogleSyncSettings googleSync={googleSync} />
 
-                    {/* Smartcar Integration */}
-                    <SmartcarSettings />
-
                     <div className="border-t border-slate-200 dark:border-slate-700 my-4" />
 
-                    {/* BYD Direct API (Alternative to Smartcar) */}
-                    <BydSettings />
+                    {/* BYD Direct API (PyBYD) */}
+                    <BydSettings onConnectionChange={(connected, vin) => {
+                        if (connected && vin && activeCarId) {
+                            updateCar(activeCarId, {
+                                vin,
+                                connectorType: 'pybyd'
+                            });
+                        } else if (!connected && activeCarId) {
+                            updateCar(activeCarId, {
+                                vin: undefined,
+                                connectorType: undefined
+                            });
+                        }
+                    }} />
 
                 </div>
 

@@ -52,12 +52,12 @@ interface UseVehicleStatusOptions {
 
 /**
  * Hook to subscribe to vehicle status in Firestore
- * @param smartcarVehicleId - The Smartcar vehicle ID to subscribe to
+ * @param vehicleId - The Vehicle VIN/ID to subscribe to
  * @param options - Configuration options
  * @returns Vehicle status data or null if not available
  */
 export function useVehicleStatus(
-    smartcarVehicleId: string | undefined,
+    vehicleId: string | undefined,
     options: UseVehicleStatusOptions = {}
 ): VehicleStatus | null {
     const { enabled = true } = options;
@@ -65,13 +65,13 @@ export function useVehicleStatus(
 
     useEffect(() => {
         // Don't subscribe if disabled or no vehicle ID
-        if (!enabled || !smartcarVehicleId) {
+        if (!enabled || !vehicleId) {
             setVehicleData(null);
             return;
         }
 
         const db = getFirestore(getApp());
-        const vehicleRef = doc(db, 'vehicles', smartcarVehicleId);
+        const vehicleRef = doc(db, 'vehicles', vehicleId);
 
         const unsubscribe = onSnapshot(
             vehicleRef,
@@ -89,9 +89,16 @@ export function useVehicleStatus(
         );
 
         return () => unsubscribe();
-    }, [smartcarVehicleId, enabled]);
+    }, [vehicleId, enabled]);
 
     return vehicleData;
+}
+
+/**
+ * Helper to determine the correct ID to use for status subscription
+ */
+export function getStatusId(car: any): string | undefined {
+    return car?.vin; // PyBYD uses VIN
 }
 
 export default useVehicleStatus;

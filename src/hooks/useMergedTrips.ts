@@ -9,10 +9,10 @@ import { logger } from '@core/logger';
  * Handles subscription, pagination, and consumption calculation
  */
 export const useMergedTrips = (
-    rawTrips: Trip[],
+    localTrips: Trip[],
     settings: Settings,
-    vehicleId: string | null, // Smartcar vehicleId for Firebase queries
-    dateRange?: { start?: string; end?: string }
+    vehicleId: string | null, // VIN or ID
+    serverDateRange?: { start: string; end: string }
 ) => {
     // Firebase Trips State (Cumulative)
     const [latestTrips, setLatestTrips] = useState<Trip[]>([]); // Real-time updates
@@ -48,7 +48,7 @@ export const useMergedTrips = (
                     loadMore();
                 }
             }, 300);
-        }, vehicleId, 20, dateRange);
+        }, vehicleId, 20, serverDateRange);
 
         return () => {
             clearTimeout(debounceTimer);
@@ -60,7 +60,7 @@ export const useMergedTrips = (
             setHasMore(true);
             isFirstLoad.current = true;
         };
-    }, [vehicleId, dateRange?.start, dateRange?.end]);
+    }, [vehicleId, serverDateRange?.start, serverDateRange?.end]);
 
     // 2. Load More (Pagination)
     const loadMore = useCallback(async () => {
@@ -68,7 +68,7 @@ export const useMergedTrips = (
 
         setIsLoadingMore(true);
         try {
-            const result = await fetchTripsPage(vehicleId, lastDoc, 20, dateRange);
+            const result = await fetchTripsPage(vehicleId, lastDoc, 20, serverDateRange);
 
             if (result.trips.length > 0) {
                 // Determine if we need to replace or append (first historical load vs subsequent)
@@ -123,7 +123,7 @@ export const useMergedTrips = (
         const tripMap = new Map<string, Trip>();
 
         // 1. Add Local Trips
-        rawTrips.forEach(t => {
+        localTrips.forEach(t => {
             if (t.id && deletedTrips.includes(t.id)) return;
             const key = `${t.start_timestamp || t.date}-${t.trip}`;
             tripMap.set(key, withConsumption({ ...t, source: 'local' }));
@@ -148,7 +148,7 @@ export const useMergedTrips = (
         merged.sort((a, b) => (b.start_timestamp || 0) - (a.start_timestamp || 0));
 
         return merged;
-    }, [rawTrips, latestTrips, historicalTrips, batterySize]);
+    }, [localTrips, latestTrips, historicalTrips, batterySize]);
 
     // Computed: Unique Months
     const months = useMemo(() => {

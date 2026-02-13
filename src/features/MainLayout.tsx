@@ -60,7 +60,7 @@ const MainLayout = ({
                     {/* Horizontal Layout: Sidebar */}
                     {layoutMode === 'horizontal' && (
                         <DesktopSidebar
-                            tabs={tabs}
+                            tabs={tabs as any}
                             activeTab={activeTab}
                             handleTabClick={handleTabClick}
                         />

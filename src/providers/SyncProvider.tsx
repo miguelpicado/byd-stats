@@ -123,7 +123,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
                 odometer: number;
                 kwhCharged: number;
                 totalCost: number;
-                chargerTypeId: string | null;
+                chargerTypeId: string | undefined;
                 pricePerKwh: number;
                 finalPercentage: number;
             }> = [];
@@ -185,7 +185,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
                     odometer: parseFloat(kmTotales) || 0,
                     kwhCharged: parseFloat(kwhFacturados) || 0,
                     totalCost: parseFloat(precioTotal) || 0,
-                    chargerTypeId,
+                    chargerTypeId: chargerTypeId || '',
                     pricePerKwh: parseFloat(precioKw) || 0,
                     finalPercentage: parseFloat(porcentajeFinal) || 0
                 });
