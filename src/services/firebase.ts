@@ -66,7 +66,7 @@ const mapDocToTrip = (doc: DocumentSnapshot<DocumentData>): Trip | null => {
         duration: durationSec,
         start_soc: data.startSoC || 0,
         end_soc: data.endSoC || 0,
-        source: 'smartcar',
+        source: 'db',
         gpsDistanceKm: data.gpsDistanceKm
     };
 };
@@ -78,7 +78,7 @@ const mapDocToTrip = (doc: DocumentSnapshot<DocumentData>): Trip | null => {
  */
 export const subscribeToTrips = (
     onUpdate: (trips: Trip[]) => void,
-    vehicleId: string, // Smartcar vehicleId (matches Firestore trips.vehicleId)
+    vehicleId: string, // Vehicle VIN or ID (matches Firestore trips.vehicleId)
     maxTrips = 500,
     dateRange?: { start?: string; end?: string }
 ) => {
@@ -114,8 +114,8 @@ export const subscribeToTrips = (
         constraints.push(where('startDate', '<=', endTimestamp));
     }
 
-    // Determine collection path based on vehicleId format (VIN vs UUID)
-    // BYD VINs are 17 chars, Smartcar IDs are UUIDs (36 chars)
+    // Determine collection path based on vehicleId format
+    // BYD VINs are 17 chars, Legacy IDs are UUIDs (36 chars)
     const tripsCollection = isByd
         ? collection(db, 'bydVehicles', vehicleId, 'trips')
         : collection(db, 'trips');
@@ -149,7 +149,7 @@ export const subscribeToTrips = (
  * Fetch trips with cursor pagination for infinite scroll
  */
 export const fetchTripsPage = async (
-    vehicleId: string, // Smartcar vehicleId (matches Firestore trips.vehicleId)
+    vehicleId: string, // Vehicle VIN or ID (matches Firestore trips.vehicleId)
     cursor: DocumentSnapshot<DocumentData> | null = null,
     pageSize = 50,
     dateRange?: { start?: string; end?: string }

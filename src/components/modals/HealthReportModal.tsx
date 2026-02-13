@@ -48,13 +48,13 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
 
     // Subscribe to vehicle document in Firestore for real-time data
     useEffect(() => {
-        if (!activeCar?.smartcarVehicleId) {
+        if (!activeCar?.vin) {
             setVehicleData(null);
             return;
         }
 
         const db = getFirestore(getApp());
-        const vehicleRef = doc(db, 'vehicles', activeCar.smartcarVehicleId);
+        const vehicleRef = doc(db, 'vehicles', activeCar.vin);
 
         const unsubscribe = onSnapshot(vehicleRef, (docSnapshot) => {
             if (docSnapshot.exists()) {
@@ -67,17 +67,17 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
         });
 
         return () => unsubscribe();
-    }, [activeCar?.smartcarVehicleId]);
+    }, [activeCar?.vin]);
 
     // Auto-refresh vehicle data when modal opens
     useEffect(() => {
-        if (isOpen && activeCar?.smartcarVehicleId) {
+        if (isOpen && activeCar?.vin) {
             const refreshData = async () => {
                 setActionLoading('refreshVehicleData');
                 try {
                     const functions = getFunctions(getApp(), 'europe-west1');
                     const refresh = httpsCallable(functions, 'refreshVehicleData');
-                    const result = await refresh({ vehicleId: activeCar.smartcarVehicleId });
+                    const result = await refresh({ vehicleId: activeCar.vin });
                     console.log('[HealthReportModal] Auto-refresh result:', result.data);
                 } catch (error: unknown) {
                     console.error('[HealthReportModal] Auto-refresh failed:', error instanceof Error ? error.message : error);
@@ -87,7 +87,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
             };
             refreshData();
         }
-    }, [isOpen, activeCar?.smartcarVehicleId]);
+    }, [isOpen, activeCar?.vin]);
 
     // Use Firestore data for live status, fallback to activeCar
     const isLocked = vehicleData?.isLocked ?? activeCar?.isLocked;
@@ -138,7 +138,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
         try {
             const functions = getFunctions(getApp(), 'europe-west1');
             const callAction = httpsCallable(functions, action);
-            const result = await callAction({ vehicleId: activeCar?.smartcarVehicleId || activeCarId });
+            const result = await callAction({ vehicleId: activeCar?.vin || activeCarId });
 
             // Log diagnostic results to console
             if (action === 'fullSmartcarDiagnostic') {

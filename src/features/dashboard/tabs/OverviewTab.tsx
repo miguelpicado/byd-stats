@@ -93,7 +93,7 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         grid: { display: false }
       }
     }
-  }), []);
+  }) as any, []);
 
   // Memoize chart data
   const lineChartData = useMemo(() => ({

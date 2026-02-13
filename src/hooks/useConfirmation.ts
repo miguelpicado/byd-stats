@@ -17,6 +17,9 @@ export interface ConfirmModalState {
     message: string;
     onConfirm: () => void;
     isDangerous: boolean;
+    confirmText?: string;
+    cancelText?: string;
+    isWarning?: boolean; // Legacy support
 }
 
 export const useConfirmation = ({
@@ -33,7 +36,10 @@ export const useConfirmation = ({
         title: '',
         message: '',
         onConfirm: () => { },
-        isDangerous: false
+        isDangerous: false,
+        confirmText: undefined,
+        cancelText: undefined,
+        isWarning: false
     });
 
     const showConfirmation = useCallback((title: string, message: string, onConfirm: () => void, isDangerous: boolean = false) => {

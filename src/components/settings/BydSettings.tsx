@@ -73,6 +73,8 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         if (savedVin) {
             setConnectedVin(savedVin);
             setIsConnected(true);
+            // Sync with parent (CarContext) if callback provided
+            onConnectionChange?.(true, savedVin);
         }
         if (savedVehicles) {
             try {

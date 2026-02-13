@@ -29,7 +29,6 @@
     "@capacitor/status-bar": "^8.0.0",
     "@capgo/capacitor-social-login": "^8.2.11",
     "@react-oauth/google": "^0.13.4",
-    "@smartcar/auth": "^2.12.0",
     "@tanstack/react-virtual": "^3.13.18",
     "@tensorflow/tfjs": "^4.22.0",
     "chart.js": "^4.5.1",

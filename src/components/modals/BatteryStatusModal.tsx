@@ -11,8 +11,6 @@ import { useCar } from '../../context/CarContext';
 import { useData } from '../../providers/DataProvider';
 import { useVehicleStatus } from '../../hooks/useVehicleStatus';
 import { normalizeSoCToDecimal, normalizeSoCToPercent, getNumericBatterySize } from '../../utils/normalize';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getApp } from 'firebase/app';
 import toast from 'react-hot-toast';
 
 const BatteryStatusModal: React.FC = () => {
@@ -26,8 +24,11 @@ const BatteryStatusModal: React.FC = () => {
     const [isEditingTarget, setIsEditingTarget] = useState(false);
     const [editTargetValue, setEditTargetValue] = useState('');
 
+    // PyBYD is the only connector
+    const statusId = activeCar?.vin;
+
     // Use shared hook for vehicle status - only subscribe when modal is open
-    const vehicleData = useVehicleStatus(activeCar?.smartcarVehicleId, { enabled: isOpen });
+    const vehicleData = useVehicleStatus(statusId, { enabled: isOpen });
 
     // Calculate battery values - prioritize AI SoH over manual settings
     const batterySize = getNumericBatterySize(settings?.batterySize) || 82.5;
@@ -41,7 +42,7 @@ const BatteryStatusModal: React.FC = () => {
     const currentKwh = currentSoC !== null ? usableBattery * currentSoC : null;
 
     const isCharging = vehicleData?.chargingActive === true;
-    const isConnected = !!activeCar?.smartcarVehicleId;
+    const isConnected = !!statusId;
 
     // Target SoC calculations
     const targetSoC = settings?.targetChargeSoC || 80;
@@ -49,14 +50,13 @@ const BatteryStatusModal: React.FC = () => {
     const kwhToCharge = currentSoC !== null ? Math.max(0, targetKwh - (usableBattery * currentSoC)) : null;
 
     const handleStopCharge = async () => {
-        if (!activeCar?.smartcarVehicleId) return;
+        if (!statusId) return;
 
         setIsStoppingCharge(true);
         try {
-            const functions = getFunctions(getApp(), 'europe-west1');
-            const stopCharge = httpsCallable(functions, 'stopCharge');
-            await stopCharge({ vehicleId: activeCar.smartcarVehicleId });
-            toast.success(t('charges.chargeStopped', 'Carga detenida'));
+            // Mock PyBYD stop
+            logger.info('[BatteryStatusModal] Stopping charge via PyBYD (Mock)');
+            toast.success(t('charges.chargeStopped', 'Carga detenida (Simulado)'));
         } catch (error: unknown) {
             logger.error('[BatteryStatusModal] Error stopping charge:', error);
             toast.error(t('charges.stopError', 'Error al detener la carga'));
@@ -68,14 +68,10 @@ const BatteryStatusModal: React.FC = () => {
     const handleTargetSoCChange = async (newTarget: number) => {
         updateSettings({ targetChargeSoC: newTarget });
 
-        if (activeCar?.smartcarVehicleId) {
+        if (statusId) {
             try {
-                const functions = getFunctions(getApp(), 'europe-west1');
-                const updateVehicle = httpsCallable(functions, 'updateVehicleSettings');
-                await updateVehicle({
-                    vehicleId: activeCar.smartcarVehicleId,
-                    targetChargeSoC: newTarget / 100
-                });
+                // Start/Update polling (handled in LiveVehicleStatus)
+                logger.info(`[BatteryStatusModal] Updated target SoC to ${newTarget}% for PyBYD`);
             } catch (err) {
                 logger.error('[BatteryStatusModal] Failed to sync targetSoC:', err);
             }
@@ -110,7 +106,7 @@ const BatteryStatusModal: React.FC = () => {
                                     {isCharging ? t('status.charging', 'Cargando') : t('status.battery', 'Batería')}
                                 </h2>
                                 <p className="text-sm text-white/80">
-                                    {isConnected ? t('status.connected', 'Conectado vía Smartcar') : t('status.notConnected', 'Sin conectar')}
+                                    {isConnected ? t('status.connectedVia', 'Conectado (PyBYD)') : t('status.notConnected', 'Sin conectar')}
                                 </p>
                             </div>
                         </div>
@@ -259,8 +255,8 @@ const BatteryStatusModal: React.FC = () => {
                                         key={val}
                                         onClick={() => handleTargetSoCChange(val)}
                                         className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${targetSoC === val
-                                                ? 'bg-emerald-500 text-white'
-                                                : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
+                                            ? 'bg-emerald-500 text-white'
+                                            : 'bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600'
                                             }`}
                                     >
                                         {val}%

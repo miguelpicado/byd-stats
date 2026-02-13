@@ -1,0 +1,308 @@
+
+> byd-stats@2.1.0 test:coverage
+> vitest run --coverage
+
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/migue/Github/BYD-Stats/byd-stats[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32m✓[39m src/core/__tests__/formatters.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 32[2mms[22m[39m
+[90mstderr[2m | src/hooks/__tests__/useLocalStorage.test.ts[2m > [22m[2museLocalStorage[2m > [22m[2mhandles JSON parse errors gracefully
+[22m[39m[ERROR] Error reading localStorage key "test-key": SyntaxError: Unexpected token 'i', "invalid-json" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at C:/Users/migue/Github/BYD-Stats/byd-stats/src/hooks/useLocalStorage.ts:62:32
+    at mountStateImpl [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:8268:24[90m)[39m
+    at mountState [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:8289:22[90m)[39m
+    at Object.useState [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:26243:18[90m)[39m
+    at process.env.NODE_ENV.exports.useState [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact[24m\cjs\react.development.js:1263:34[90m)[39m
+    at useLocalStorage (C:/Users/migue/Github/BYD-Stats/byd-stats/src/hooks/useLocalStorage.ts:59:43)
+    at C:/Users/migue/Github/BYD-Stats/byd-stats/src/hooks/__tests__/useLocalStorage.test.ts:88:45
+    at TestComponent [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4m@testing-library[24m\react\dist\pure.js:330:27[90m)[39m
+    at Object.react_stack_bottom_frame [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:25904:20[90m)[39m
+
+[90mstderr[2m | src/hooks/__tests__/useLocalStorage.test.js[2m > [22m[2museLocalStorage[2m > [22m[2mshould handle parse errors gracefully
+[22m[39m[ERROR] Error reading localStorage key "test_key": SyntaxError: Unexpected token 'i', "invalid json{" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at C:/Users/migue/Github/BYD-Stats/byd-stats/src/hooks/useLocalStorage.ts:62:32
+    at mountStateImpl [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:8268:24[90m)[39m
+    at mountState [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:8289:22[90m)[39m
+    at Object.useState [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:26243:18[90m)[39m
+    at process.env.NODE_ENV.exports.useState [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact[24m\cjs\react.development.js:1263:34[90m)[39m
+    at useLocalStorage (C:/Users/migue/Github/BYD-Stats/byd-stats/src/hooks/useLocalStorage.ts:59:43)
+    at C:/Users/migue/Github/BYD-Stats/byd-stats/src/hooks/__tests__/useLocalStorage.test.js:63:60
+    at TestComponent [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4m@testing-library[24m\react\dist\pure.js:330:27[90m)[39m
+    at Object.react_stack_bottom_frame [90m(C:\Users\migue\Github\BYD-Stats\byd-stats\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom-client.development.js:25904:20[90m)[39m
+
+ [32m✓[39m src/components/ui/__tests__/ChartCard.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useLocalStorage.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 64[2mms[22m[39m
+ [31m❯[39m src/hooks/__tests__/useLocalStorage.test.js [2m([22m[2m7 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 64[2mms[22m[39m
+     [32m✓[39m should return initial value when no stored value exists[32m 25[2mms[22m[39m
+     [32m✓[39m should return stored value if it exists[32m 3[2mms[22m[39m
+[31m     [31m×[31m should update localStorage when value changes[39m[32m 15[2mms[22m[39m
+     [32m✓[39m should handle function updater[32m 3[2mms[22m[39m
+[31m     [31m×[31m should handle objects and arrays[39m[32m 5[2mms[22m[39m
+     [32m✓[39m should handle parse errors gracefully[32m 7[2mms[22m[39m
+     [32m✓[39m should handle null and undefined[32m 5[2mms[22m[39m
+ [31m❯[39m src/features/dashboard/__tests__/DashboardLayout.test.jsx [2m([22m[2m0 test[22m[2m)[22m
+ [32m✓[39m src/context/__tests__/AppContext.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useTabNavigation.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32m✓[39m src/components/ui/__tests__/StatCard.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 124[2mms[22m[39m
+ [32m✓[39m src/core/__tests__/dateUtils.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 46[2mms[22m[39m
+ [32m✓[39m src/hooks/__tests__/useChargeImporter.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 42[2mms[22m[39m
+ [32m✓[39m src/features/navigation/__tests__/Header.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32m✓[39m src/components/cards/__tests__/TripCard.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 240[2mms[22m[39m
+[90mstderr[2m | src/providers/__tests__/DataProvider.test.jsx
+[22m[39m[2026-02-11T21:16:12.913Z]  @firebase/firestore: Firestore (12.8.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+
+[90mstderr[2m | src/features/dashboard/__tests__/ImportDB.integration.test.jsx
+[22m[39m[2026-02-11T21:16:12.972Z]  @firebase/firestore: Firestore (12.8.0): Error using user provided cache. Falling back to memory cache: FirebaseError: [code=unimplemented]: IndexedDB persistence is only available on platforms that support LocalStorage.
+
+ [32m✓[39m src/providers/__tests__/DataProvider.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m✓[39m src/features/dashboard/__tests__/ImportDB.integration.test.jsx [2m([22m[2m1 test[22m[2m)[22m[32m 91[2mms[22m[39m
+ [32m✓[39m src/core/__tests__/logger.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [31m❯[39m src/hooks/__tests__/useAppData.test.js [2m([22m[2m6 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1076[2mms[22m[39m
+     [32m✓[39m should initialize with empty rawTrips[32m 33[2mms[22m[39m
+[31m     [31m×[31m should update rawTrips[39m[33m 1021[2mms[22m[39m
+     [32m✓[39m should filter trips by month[32m 7[2mms[22m[39m
+     [32m✓[39m should filter trips by date range[32m 4[2mms[22m[39m
+     [32m✓[39m should extract unique months[32m 3[2mms[22m[39m
+     [32m✓[39m should clear data[32m 4[2mms[22m[39m
+ [32m✓[39m src/core/__tests__/dataProcessing.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/core/__tests__/batteryCalculations.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m✓[39m src/utils/__tests__/validation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Suites 1 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/features/dashboard/__tests__/DashboardLayout.test.jsx[2m [ src/features/dashboard/__tests__/DashboardLayout.test.jsx ][22m
+[31m[1mError[22m: Failed to resolve import "@utils/constants" from "src/features/dashboard/MobileDashboardView.tsx". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/migue/Github/BYD-Stats/byd-stats/src/features/dashboard/MobileDashboardView.tsx[39m:4:49
+[33m  3  |  import { useTranslation } from "react-i18next";
+  4  |  import { AlertCircle } from "@components/Icons";
+  5  |  import { TAB_PADDING, COMPACT_TAB_PADDING } from "@utils/constants";
+     |                                                    ^
+  6  |  import ErrorBoundary from "@components/common/ErrorBoundary";
+  7  |  import { useData } from "@/providers/DataProvider";[39m
+[90m [2m❯[22m TransformPluginContext._formatLog node_modules/vite/dist/node/chunks/config.js:[2m28999:43[22m[39m
+[90m [2m❯[22m TransformPluginContext.error node_modules/vite/dist/node/chunks/config.js:[2m28996:14[22m[39m
+[90m [2m❯[22m normalizeUrl node_modules/vite/dist/node/chunks/config.js:[2m27119:18[22m[39m
+[90m [2m❯[22m node_modules/vite/dist/node/chunks/config.js:[2m27177:32[22m[39m
+[90m [2m❯[22m TransformPluginContext.transform node_modules/vite/dist/node/chunks/config.js:[2m27145:4[22m[39m
+[90m [2m❯[22m EnvironmentPluginContainer.transform node_modules/vite/dist/node/chunks/config.js:[2m28797:14[22m[39m
+[90m [2m❯[22m loadAndTransform node_modules/vite/dist/node/chunks/config.js:[2m22670:26[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯[22m[39m
+
+
+[31m⎯⎯⎯⎯⎯⎯⎯[39m[1m[41m Failed Tests 3 [49m[22m[31m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[41m[1m FAIL [22m[49m src/hooks/__tests__/useAppData.test.js[2m > [22museAppData[2m > [22mshould update rawTrips
+[31m[1mAssertionError[22m: expected [ { trip: 10, electricity: 1, …(3) } ] to deeply equal [ { trip: 10, electricity: 1, …(2) } ]
+
+Ignored nodes: comments, script, style
+[36m<html>[31m
+  [36m<head />[31m
+  [36m<body>[31m
+    [36m<div />[31m
+  [36m</body>[31m
+[36m</html>[31m[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[2m  [[22m
+[2m    {[22m
+[2m      "date": "20250114",[22m
+[2m      "electricity": 1,[22m
+[2m      "month": "202501",[22m
+[31m+     "source": "local",[39m
+[2m      "trip": 10,[22m
+[2m    },[22m
+[2m  ][22m
+
+[36m [2m❯[22m src/hooks/__tests__/useAppData.test.js:[2m76:45[22m[39m
+    [90m 74| [39m
+    [90m 75| [39m        [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+    [90m 76| [39m            [34mexpect[39m(result[33m.[39mcurrent[33m.[39mrawTrips)[33m.[39m[34mtoEqual[39m(mockTrips)[33m;[39m
+    [90m   | [39m                                            [31m^[39m
+    [90m 77| [39m            [34mexpect[39m(result[33m.[39mcurrent[33m.[39mfiltered)[33m.[39m[34mtoEqual[39m(mockTrips)[33m;[39m
+    [90m 78| [39m        })[33m;[39m
+[90m [2m❯[22m runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:[2m47:12[22m[39m
+[90m [2m❯[22m checkCallback node_modules/@testing-library/dom/dist/wait-for.js:[2m124:77[22m[39m
+[90m [2m❯[22m Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:[2m118:16[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/hooks/__tests__/useLocalStorage.test.js[2m > [22museLocalStorage[2m > [22mshould update localStorage when value changes
+[31m[1mAssertionError[22m: expected null to be '"updated"' // Object.is equality[39m
+
+[32m- Expected:[39m 
+"\"updated\""
+
+[31m+ Received:[39m 
+null
+
+[36m [2m❯[22m src/hooks/__tests__/useLocalStorage.test.js:[2m36:48[22m[39m
+    [90m 34| [39m
+    [90m 35| [39m        [34mexpect[39m(result[33m.[39mcurrent[[34m0[39m])[33m.[39m[34mtoBe[39m([32m'updated'[39m)[33m;[39m
+    [90m 36| [39m        expect(localStorage.getItem(TEST_KEY)).toBe(JSON.stringify('up…
+    [90m   | [39m                                               [31m^[39m
+    [90m 37| [39m    })[33m;[39m
+    [90m 38| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯[22m[39m
+
+[41m[1m FAIL [22m[49m src/hooks/__tests__/useLocalStorage.test.js[2m > [22museLocalStorage[2m > [22mshould handle objects and arrays
+[31m[1mAssertionError[22m: expected null to deeply equal { count: 5 }[39m
+
+[32m- Expected:[39m 
+{
+  "count": 5,
+}
+
+[31m+ Received:[39m 
+null
+
+[36m [2m❯[22m src/hooks/__tests__/useLocalStorage.test.js:[2m57:60[22m[39m
+    [90m 55| [39m
+    [90m 56| [39m        [34mexpect[39m(result[33m.[39mcurrent[[34m0[39m])[33m.[39m[34mtoEqual[39m({ count[33m:[39m [34m5[39m })[33m;[39m
+    [90m 57| [39m        expect(JSON.parse(localStorage.getItem(TEST_KEY))).toEqual({ c…
+    [90m   | [39m                                                           [31m^[39m
+    [90m 58| [39m    })[33m;[39m
+    [90m 59| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[4/4]⎯[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯[39m[1m[41m Unhandled Errors [49m[22m[31m⎯⎯⎯⎯⎯⎯[39m
+[31m[1m
+Vitest caught 5 unhandled errors during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your tests are not affected.[22m[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'odometerOffset')[39m
+[36m [2m❯[22m process src/hooks/useProcessedData.ts:[2m148:79[22m[39m
+    [90m146| [39m
+    [90m147| [39m            const rawSettings = settings as Settings & { priceStrategy…
+    [90m148| [39m            processingSettings.odometerOffset = parseFloat(String(rawS…
+    [90m   | [39m                                                                              [31m^[39m
+    [90m149| [39m
+    [90m150| [39m            if (rawSettings.priceStrategy) processingSettings.electric…
+[90m [2m❯[22m src/hooks/useProcessedData.ts:[2m305:9[22m[39m
+[90m [2m❯[22m Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:[2m25989:20[22m[39m
+[90m [2m❯[22m runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:[2m874:13[22m[39m
+[90m [2m❯[22m commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:[2m13249:29[22m[39m
+[90m [2m❯[22m commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m13336:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15484:13[22m[39m
+[90m [2m❯[22m recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m15439:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15519:11[22m[39m
+[90m [2m❯[22m flushPassiveEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m18432:9[22m[39m
+
+[31mThis error originated in "[1msrc/hooks/__tests__/useAppData.test.js[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould update rawTrips[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'odometerOffset')[39m
+[36m [2m❯[22m process src/hooks/useProcessedData.ts:[2m148:79[22m[39m
+    [90m146| [39m
+    [90m147| [39m            const rawSettings = settings as Settings & { priceStrategy…
+    [90m148| [39m            processingSettings.odometerOffset = parseFloat(String(rawS…
+    [90m   | [39m                                                                              [31m^[39m
+    [90m149| [39m
+    [90m150| [39m            if (rawSettings.priceStrategy) processingSettings.electric…
+[90m [2m❯[22m src/hooks/useProcessedData.ts:[2m305:9[22m[39m
+[90m [2m❯[22m Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:[2m25989:20[22m[39m
+[90m [2m❯[22m runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:[2m874:13[22m[39m
+[90m [2m❯[22m commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:[2m13249:29[22m[39m
+[90m [2m❯[22m commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m13336:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15484:13[22m[39m
+[90m [2m❯[22m recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m15439:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15519:11[22m[39m
+[90m [2m❯[22m flushPassiveEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m18432:9[22m[39m
+
+[31mThis error originated in "[1msrc/hooks/__tests__/useAppData.test.js[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould filter trips by month[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'odometerOffset')[39m
+[36m [2m❯[22m process src/hooks/useProcessedData.ts:[2m148:79[22m[39m
+    [90m146| [39m
+    [90m147| [39m            const rawSettings = settings as Settings & { priceStrategy…
+    [90m148| [39m            processingSettings.odometerOffset = parseFloat(String(rawS…
+    [90m   | [39m                                                                              [31m^[39m
+    [90m149| [39m
+    [90m150| [39m            if (rawSettings.priceStrategy) processingSettings.electric…
+[90m [2m❯[22m src/hooks/useProcessedData.ts:[2m305:9[22m[39m
+[90m [2m❯[22m Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:[2m25989:20[22m[39m
+[90m [2m❯[22m runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:[2m874:13[22m[39m
+[90m [2m❯[22m commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:[2m13249:29[22m[39m
+[90m [2m❯[22m commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m13336:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15484:13[22m[39m
+[90m [2m❯[22m recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m15439:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15519:11[22m[39m
+[90m [2m❯[22m flushPassiveEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m18432:9[22m[39m
+
+[31mThis error originated in "[1msrc/hooks/__tests__/useAppData.test.js[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould filter trips by date range[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'odometerOffset')[39m
+[36m [2m❯[22m process src/hooks/useProcessedData.ts:[2m148:79[22m[39m
+    [90m146| [39m
+    [90m147| [39m            const rawSettings = settings as Settings & { priceStrategy…
+    [90m148| [39m            processingSettings.odometerOffset = parseFloat(String(rawS…
+    [90m   | [39m                                                                              [31m^[39m
+    [90m149| [39m
+    [90m150| [39m            if (rawSettings.priceStrategy) processingSettings.electric…
+[90m [2m❯[22m src/hooks/useProcessedData.ts:[2m305:9[22m[39m
+[90m [2m❯[22m Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:[2m25989:20[22m[39m
+[90m [2m❯[22m runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:[2m874:13[22m[39m
+[90m [2m❯[22m commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:[2m13249:29[22m[39m
+[90m [2m❯[22m commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m13336:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15484:13[22m[39m
+[90m [2m❯[22m recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m15439:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15519:11[22m[39m
+[90m [2m❯[22m flushPassiveEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m18432:9[22m[39m
+
+[31mThis error originated in "[1msrc/hooks/__tests__/useAppData.test.js[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould extract unique months[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+
+[31m⎯⎯⎯⎯[39m[1m[41m Unhandled Rejection [49m[22m[31m⎯⎯⎯⎯⎯[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'odometerOffset')[39m
+[36m [2m❯[22m process src/hooks/useProcessedData.ts:[2m148:79[22m[39m
+    [90m146| [39m
+    [90m147| [39m            const rawSettings = settings as Settings & { priceStrategy…
+    [90m148| [39m            processingSettings.odometerOffset = parseFloat(String(rawS…
+    [90m   | [39m                                                                              [31m^[39m
+    [90m149| [39m
+    [90m150| [39m            if (rawSettings.priceStrategy) processingSettings.electric…
+[90m [2m❯[22m src/hooks/useProcessedData.ts:[2m305:9[22m[39m
+[90m [2m❯[22m Object.react_stack_bottom_frame node_modules/react-dom/cjs/react-dom-client.development.js:[2m25989:20[22m[39m
+[90m [2m❯[22m runWithFiberInDEV node_modules/react-dom/cjs/react-dom-client.development.js:[2m874:13[22m[39m
+[90m [2m❯[22m commitHookEffectListMount node_modules/react-dom/cjs/react-dom-client.development.js:[2m13249:29[22m[39m
+[90m [2m❯[22m commitHookPassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m13336:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15484:13[22m[39m
+[90m [2m❯[22m recursivelyTraversePassiveMountEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m15439:11[22m[39m
+[90m [2m❯[22m commitPassiveMountOnFiber node_modules/react-dom/cjs/react-dom-client.development.js:[2m15519:11[22m[39m
+[90m [2m❯[22m flushPassiveEffects node_modules/react-dom/cjs/react-dom-client.development.js:[2m18432:9[22m[39m
+
+[31mThis error originated in "[1msrc/hooks/__tests__/useAppData.test.js[22m" test file. It doesn't mean the error was thrown inside the file itself, but while it was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould clear data[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last documented test before it was thrown.[39m
+[31m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[39m
+
+
+[2m Test Files [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m16 passed[39m[22m[90m (19)[39m
+[2m      Tests [22m [1m[31m3 failed[39m[22m[2m | [22m[1m[32m159 passed[39m[22m[90m (162)[39m
+[2m     Errors [22m [1m[31m5 errors[39m[22m
+[2m   Start at [22m 22:16:09
+[2m   Duration [22m 4.64s[2m (transform 3.26s, setup 9.55s, import 5.08s, tests 2.24s, environment 26.96s)[22m
+

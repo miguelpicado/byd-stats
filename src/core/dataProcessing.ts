@@ -462,6 +462,7 @@ export function processData(rows: Trip[], priceSettings: Settings = {} as Settin
         tripDist: tripDistribution,
         effScatter: efficiencyScatter,
         top: topRecords,
-        isHybrid: stats.hasAnyFuel
+        isHybrid: stats.hasAnyFuel,
+        sohData: summary.sohData
     };
 }

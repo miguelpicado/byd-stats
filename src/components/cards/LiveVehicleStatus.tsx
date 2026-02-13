@@ -1,7 +1,7 @@
 // BYD Stats - Live Vehicle Status Component (StatCard format)
 // Shows real-time vehicle status from Smartcar (charging state, SoC, etc.)
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Battery, Zap, Car } from '../Icons';
 import { BYD_RED } from '@core/constants';
@@ -10,10 +10,8 @@ import { useCar } from '../../context/CarContext';
 import { useLayout } from '../../context/LayoutContext';
 import { useVehicleStatus } from '../../hooks/useVehicleStatus';
 import { normalizeSoCToPercent } from '../../utils/normalize';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { getApp } from 'firebase/app';
 import toast from 'react-hot-toast';
-import { Skeleton } from '../ui/Skeleton';
+import { useApp } from '@/context/AppContext';
 
 interface LiveVehicleStatusProps {
     onClick?: () => void;
@@ -22,22 +20,52 @@ interface LiveVehicleStatusProps {
 const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
     const { t } = useTranslation();
     const { activeCar } = useCar();
+    const { settings } = useApp();
     const { isCompact, isLargerCard, isVertical } = useLayout();
     const [isStoppingCharge, setIsStoppingCharge] = useState(false);
+    const lastPollTime = useRef<number>(0);
+
+    // PyBYD is the only connector now
+    const statusId = activeCar?.vin;
+    const isPybyd = activeCar?.connectorType === 'pybyd';
 
     // Use shared hook for vehicle status subscription
-    const vehicleData = useVehicleStatus(activeCar?.smartcarVehicleId);
+    const vehicleData = useVehicleStatus(statusId);
+
+    // Polling Logic for Target SoC
+    useEffect(() => {
+        if (!isPybyd || !vehicleData?.chargingActive) return;
+
+        const checkTargetSoC = async () => {
+            const now = Date.now();
+            if (now - lastPollTime.current < 60000) return; // Debounce 1 min
+            lastPollTime.current = now;
+
+            // Normalize: Settings is 0-100, data might be 0-1 or 0-100.
+            const socPercent = normalizeSoCToPercent(vehicleData.lastSoC);
+            const target = settings?.targetChargeSoC || 100;
+
+            if (socPercent !== null && socPercent >= target) {
+                logger.info(`[PyBYD] Target SoC reached (${socPercent}% >= ${target}%). Triggering stop...`);
+                await handleStopCharge({ stopPropagation: () => { } } as React.MouseEvent);
+            }
+        };
+
+        const interval = setInterval(checkTargetSoC, 60000);
+        checkTargetSoC(); // Initial check
+
+        return () => clearInterval(interval);
+    }, [isPybyd, vehicleData?.chargingActive, vehicleData?.lastSoC, settings?.targetChargeSoC]);
 
     const handleStopCharge = async (e: React.MouseEvent) => {
         e.stopPropagation();
-        if (!activeCar?.smartcarVehicleId) return;
+        if (!statusId) return;
 
         setIsStoppingCharge(true);
         try {
-            const functions = getFunctions(getApp(), 'europe-west1');
-            const stopCharge = httpsCallable(functions, 'stopCharge');
-            await stopCharge({ vehicleId: activeCar.smartcarVehicleId });
-            toast.success(t('charges.chargeStopped', 'Carga detenida'));
+            // Mock PyBYD stop
+            logger.info('[LiveVehicleStatus] Stopping charge via PyBYD (Mock)');
+            toast.success(t('charges.chargeStopped', 'Carga detenida (Simulado)'));
         } catch (error) {
             logger.error('[LiveVehicleStatus] Error stopping charge:', error);
             toast.error(t('charges.stopError', 'Error al detener la carga'));
@@ -49,26 +77,12 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
     // Compute display values using normalize utility
     const soc = normalizeSoCToPercent(vehicleData?.lastSoC);
     const isCharging = vehicleData?.chargingActive === true;
-    const isConnected = !!activeCar?.smartcarVehicleId;
+    const isConnected = !!statusId;
     const hasData = vehicleData !== null;
     const isTripping = vehicleData?.activeTripId != null;
 
-    // Loading State (Skeleton)
-    if (isConnected && !hasData) {
-        return (
-            <div className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 flex items-stretch overflow-hidden ${isCompact ? (isLargerCard ? 'h-20' : 'h-16') : (isVertical ? 'h-20' : 'min-h-[80px] sm:min-h-[100px]')}`}>
-                {/* Icon Skeleton */}
-                <div className={`flex items-center justify-center shrink-0 ${isCompact ? (isLargerCard ? 'w-14' : 'w-10') : (isVertical ? 'w-14' : 'w-14 sm:w-16')} bg-slate-100 dark:bg-slate-800`}>
-                    <Skeleton circle width={24} height={24} />
-                </div>
-                {/* Content Skeleton */}
-                <div className="flex-1 flex flex-col items-center justify-center px-2 py-1 gap-2">
-                    <Skeleton width="60%" height={10} />
-                    <Skeleton width="40%" height={24} />
-                </div>
-            </div>
-        );
-    }
+    // Loading State (Skeleton) - REMOVED to allow clicking
+    // if (isConnected && !hasData) { ... }
 
     // Determine what to show
     let Icon = Car;
@@ -80,8 +94,15 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
 
     if (!isConnected) {
         label = t('status.notConnected', 'Sin conectar');
-        subText = t('status.linkSmartcar', 'Vincular en Ajustes');
+        subText = t('status.linkLink', 'Vincular en Ajustes');
         colorClass = 'bg-slate-500/20 text-slate-400';
+    } else if (!hasData) {
+        // Loading state
+        label = t('status.loading', 'Cargando...');
+        subText = t('status.waitingData', 'Esperando datos...');
+        Icon = Zap; // Default icon
+        colorClass = 'bg-slate-100 dark:bg-slate-700 text-slate-400';
+        value = '--';
     } else if (isCharging) {
         Icon = Zap;
         label = t('status.charging', 'Cargando');
