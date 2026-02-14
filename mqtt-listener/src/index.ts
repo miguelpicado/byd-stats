@@ -335,28 +335,183 @@ class BydMqttManager {
                 processed: false,
             });
 
-            // Also update vehicle state directly
+            const vehicleRef = db.collection('bydVehicles').doc(vin);
+
+            // Handle vehicleInfo event
             if (payload.event === 'vehicleInfo') {
                 const data = payload.data?.respondData || payload.data || {};
-                await db.collection('bydVehicles').doc(vin).update({
-                    lastSoC: (data.elecPercent || 0) / 100,
+                const currentSoC = (data.elecPercent || 0) / 100;
+                const isCharging = data.chargeState === 1;
+                const isUnlocked = data.lockState !== '2' && data.doorLockState !== '2';
+
+                // Get previous state for comparison
+                const vehicleDoc = await vehicleRef.get();
+                const prevState = vehicleDoc.data() || {};
+                const wasCharging = prevState.isCharging === true;
+
+                // Update vehicle state
+                await vehicleRef.update({
+                    lastSoC: currentSoC,
                     lastRange: data.evEndurance || 0,
                     lastOdometer: data.odo || data.mileage || 0,
-                    isCharging: data.chargeState === 1,
+                    isCharging,
+                    isLocked: !isUnlocked,
                     isOnline: true,
                     lastMqttUpdate: admin.firestore.Timestamp.now(),
                 });
 
-                // Activate polling when we receive actual vehicle data
-                // This means the car is truly active (not just MQTT connected)
-                console.log(`[${vin}] Vehicle activity detected - activating polling`);
-                await this.activatePolling(vin);
+                // CHARGING SESSION TRACKING
+                if (isCharging && !wasCharging) {
+                    // Started charging - create new session
+                    await this.startChargingSession(vin, currentSoC);
+                } else if (!isCharging && wasCharging) {
+                    // Stopped charging - close session
+                    await this.endChargingSession(vin, currentSoC);
+                } else if (isCharging && wasCharging) {
+                    // Still charging - update session
+                    await this.updateChargingSession(vin, currentSoC);
+                }
+
+                // POLLING ACTIVATION
+                // Activate polling when car is unlocked or engine is on
+                if (isUnlocked) {
+                    console.log(`[${vin}] Car UNLOCKED - activating polling`);
+                    await this.activatePolling(vin);
+                }
+            }
+
+            // Handle remoteControl event (unlock from app, etc.)
+            if (payload.event === 'remoteControl') {
+                const data = payload.data || {};
+                const controlType = data.controlType || data.type || '';
+
+                // Activate polling on unlock commands
+                if (controlType === 'UNLOCK' || controlType === '2' || controlType.toLowerCase().includes('unlock')) {
+                    console.log(`[${vin}] Remote UNLOCK detected - activating polling`);
+                    await this.activatePolling(vin);
+                }
+
+                // Update vehicle state
+                await vehicleRef.update({
+                    lastControlEvent: {
+                        type: controlType,
+                        status: data.controlState || data.status,
+                        timestamp: admin.firestore.Timestamp.now(),
+                    },
+                });
             }
 
             console.log(`[${vin}] Event forwarded to Firestore`);
 
         } catch (error: any) {
             console.error(`[${vin}] Failed to forward event:`, error.message);
+        }
+    }
+
+    // =========================================================================
+    // CHARGING SESSION MANAGEMENT
+    // =========================================================================
+
+    private async startChargingSession(vin: string, startSoC: number): Promise<void> {
+        try {
+            const vehicleRef = db.collection('bydVehicles').doc(vin);
+            const vehicleDoc = await vehicleRef.get();
+            const vehicleData = vehicleDoc.data() || {};
+
+            const sessionRef = db.collection('bydVehicles').doc(vin).collection('chargingSessions').doc();
+            await sessionRef.set({
+                vin,
+                status: 'in_progress',
+                startTime: admin.firestore.Timestamp.now(),
+                startSoC,
+                currentSoC: startSoC,
+                startOdometer: vehicleData.lastOdometer || 0,
+                batteryCapacity: vehicleData.batteryCapacity || 82.56, // BYD SEAL default
+                source: 'mqtt',
+                createdAt: admin.firestore.Timestamp.now(),
+            });
+
+            // Store active session ID in vehicle document
+            await vehicleRef.update({
+                activeChargingSessionId: sessionRef.id,
+            });
+
+            console.log(`[${vin}] CHARGING STARTED - Session ${sessionRef.id}, SoC: ${(startSoC * 100).toFixed(1)}%`);
+        } catch (error: any) {
+            console.error(`[${vin}] Failed to start charging session:`, error.message);
+        }
+    }
+
+    private async updateChargingSession(vin: string, currentSoC: number): Promise<void> {
+        try {
+            const vehicleRef = db.collection('bydVehicles').doc(vin);
+            const vehicleDoc = await vehicleRef.get();
+            const vehicleData = vehicleDoc.data() || {};
+            const sessionId = vehicleData.activeChargingSessionId;
+
+            if (!sessionId) return;
+
+            const sessionRef = db.collection('bydVehicles').doc(vin).collection('chargingSessions').doc(sessionId);
+            await sessionRef.update({
+                currentSoC,
+                lastUpdate: admin.firestore.Timestamp.now(),
+            });
+
+            console.log(`[${vin}] Charging update - SoC: ${(currentSoC * 100).toFixed(1)}%`);
+        } catch (error: any) {
+            console.error(`[${vin}] Failed to update charging session:`, error.message);
+        }
+    }
+
+    private async endChargingSession(vin: string, endSoC: number): Promise<void> {
+        try {
+            const vehicleRef = db.collection('bydVehicles').doc(vin);
+            const vehicleDoc = await vehicleRef.get();
+            const vehicleData = vehicleDoc.data() || {};
+            const sessionId = vehicleData.activeChargingSessionId;
+
+            if (!sessionId) {
+                console.log(`[${vin}] No active charging session to close`);
+                return;
+            }
+
+            const sessionRef = db.collection('bydVehicles').doc(vin).collection('chargingSessions').doc(sessionId);
+            const sessionDoc = await sessionRef.get();
+            const sessionData = sessionDoc.data();
+
+            if (!sessionData) return;
+
+            const startTime = sessionData.startTime?.toMillis() || Date.now();
+            const endTime = Date.now();
+            const durationMinutes = Math.round((endTime - startTime) / 60000);
+            const durationHours = durationMinutes / 60;
+
+            const startSoC = sessionData.startSoC || 0;
+            const socDelta = endSoC - startSoC;
+            const batteryCapacity = sessionData.batteryCapacity || 82.56;
+            const energyAddedKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
+
+            await sessionRef.update({
+                status: 'completed',
+                endTime: admin.firestore.Timestamp.now(),
+                endSoC,
+                energyAddedKwh,
+                durationMinutes,
+                durationHours: Math.round(durationHours * 100) / 100,
+                socGained: Math.round(socDelta * 10000) / 100, // Percentage points gained
+            });
+
+            // Clear active session
+            await vehicleRef.update({
+                activeChargingSessionId: admin.firestore.FieldValue.delete(),
+            });
+
+            console.log(`[${vin}] CHARGING ENDED - Session ${sessionId}`);
+            console.log(`[${vin}]   Duration: ${durationMinutes} min (${durationHours.toFixed(2)} hours)`);
+            console.log(`[${vin}]   SoC: ${(startSoC * 100).toFixed(1)}% → ${(endSoC * 100).toFixed(1)}% (+${(socDelta * 100).toFixed(1)}%)`);
+            console.log(`[${vin}]   Energy added: ${energyAddedKwh} kWh`);
+        } catch (error: any) {
+            console.error(`[${vin}] Failed to end charging session:`, error.message);
         }
     }
 
