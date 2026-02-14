@@ -33,6 +33,29 @@ export function aesDecryptUtf8(ciphertextHex: string, keyHex: string): string {
 }
 
 /**
+ * AES-128-CBC decrypt with IV from first block
+ * Some BYD messages include the IV as the first 16 bytes
+ */
+export function aesDecryptWithIv(ciphertextHex: string, keyHex: string): string {
+    const key = Buffer.from(keyHex, 'hex');
+    const fullData = Buffer.from(ciphertextHex, 'hex');
+
+    // First 16 bytes might be IV
+    const iv = fullData.subarray(0, 16);
+    const ciphertext = fullData.subarray(16);
+
+    const decipher = crypto.createDecipheriv('aes-128-cbc', key, iv);
+    decipher.setAutoPadding(true);
+
+    const decrypted = Buffer.concat([
+        decipher.update(ciphertext),
+        decipher.final()
+    ]);
+
+    return decrypted.toString('utf8');
+}
+
+/**
  * Build MQTT password
  * pyBYD: MD5(timestamp + signToken + clientId + userId)
  */

@@ -9,7 +9,7 @@
 
 import * as mqtt from 'mqtt';
 import * as admin from 'firebase-admin';
-import { md5Hex, aesDecryptUtf8 } from './crypto';
+import { md5Hex, aesDecryptUtf8, aesDecryptWithIv } from './crypto';
 
 // Load environment variables
 require('dotenv').config();
@@ -273,14 +273,24 @@ class BydMqttManager {
             // Polling will be activated when we receive an actual event from the car
             this.markMqttConnected(conn.vin);
 
-            const topic = `oversea/res/${userId}`;
-            client.subscribe(topic, { qos: 0 }, (err) => {
-                if (err) {
-                    console.error(`[${conn.vin}] Subscribe failed:`, err);
-                } else {
-                    console.log(`[${conn.vin}] Subscribed to ${topic}`);
-                }
-            });
+            // Subscribe to multiple topics to catch all messages
+            const topics = [
+                `oversea/res/${userId}`,           // Main response topic
+                `oversea/res/${userId}/#`,         // All subtopics
+                `oversea/push/${userId}`,          // Push notifications
+                `oversea/push/${userId}/#`,        // Push subtopics
+                `oversea/${userId}/#`,             // All user topics
+            ];
+
+            for (const topic of topics) {
+                client.subscribe(topic, { qos: 0 }, (err) => {
+                    if (err) {
+                        console.error(`[${conn.vin}] Subscribe failed for ${topic}:`, err);
+                    } else {
+                        console.log(`[${conn.vin}] Subscribed to ${topic}`);
+                    }
+                });
+            }
         });
 
         client.on('message', (topic, message) => {
@@ -303,18 +313,113 @@ class BydMqttManager {
 
         try {
             let payload: any;
-            const messageStr = message.toString();
 
-            // Decrypt if hex-encoded
-            if (/^[0-9A-Fa-f]+$/.test(messageStr) && messageStr.length > 100) {
-                const decryptKey = md5Hex(conn.session!.encryToken);
-                const decrypted = aesDecryptUtf8(messageStr, decryptKey);
-                payload = JSON.parse(decrypted);
-            } else {
+            // DIAGNOSTIC: Log raw buffer info
+            console.log(`[${conn.vin}] ===== MQTT MESSAGE RECEIVED =====`);
+            console.log(`[${conn.vin}] Topic: ${topic}`);
+            console.log(`[${conn.vin}] Buffer length: ${message.length}`);
+            console.log(`[${conn.vin}] First 32 bytes (hex): ${message.subarray(0, 32).toString('hex')}`);
+            console.log(`[${conn.vin}] First 32 bytes (utf8): ${message.subarray(0, 32).toString('utf8')}`);
+
+            // Check if message is binary or text
+            const isBinary = message.some(b => b < 32 && b !== 9 && b !== 10 && b !== 13);
+            console.log(`[${conn.vin}] Contains binary (non-text) bytes: ${isBinary}`);
+
+            const messageStr = message.toString('utf8').trim();
+            console.log(`[${conn.vin}] Raw message length: ${messageStr.length}, preview: ${messageStr.substring(0, 50)}...`);
+
+            // Try JSON first (like ioBroker.byd does)
+            try {
                 payload = JSON.parse(messageStr);
+                console.log(`[${conn.vin}] Plain JSON message - Event: ${payload.event || 'unknown'}`);
+                console.log(`[${conn.vin}] JSON content: ${JSON.stringify(payload).substring(0, 200)}`);
+            } catch (jsonError) {
+                // Not JSON, continue with hex check
             }
 
-            console.log(`[${conn.vin}] Event: ${payload.event || 'unknown'}`);
+            // If not JSON, check if it looks like hex-encoded encrypted data
+            const isHexEncoded = !payload && /^[0-9A-Fa-f]+$/.test(messageStr) && messageStr.length > 100;
+
+            if (isHexEncoded) {
+                const encryToken = conn.session!.encryToken;
+                const decryptKey = md5Hex(encryToken);
+                const decryptKeyLower = decryptKey.toLowerCase();
+                // Also try using encryToken directly (first 32 hex chars of UTF-8 bytes = 16 bytes for AES key)
+                const encryTokenHex = Buffer.from(encryToken.substring(0, 16), 'utf8').toString('hex');
+
+                console.log(`[${conn.vin}] ===== DECRYPTION DEBUG =====`);
+                console.log(`[${conn.vin}] encryToken length: ${encryToken.length}`);
+                console.log(`[${conn.vin}] encryToken full: ${encryToken}`);
+                console.log(`[${conn.vin}] encryToken bytes: ${Buffer.from(encryToken).toString('hex')}`);
+                console.log(`[${conn.vin}] MD5(encryToken) UPPER: ${decryptKey}`);
+                console.log(`[${conn.vin}] MD5(encryToken) lower: ${decryptKeyLower}`);
+                console.log(`[${conn.vin}] Ciphertext first 64 chars: ${messageStr.substring(0, 64)}`);
+                console.log(`[${conn.vin}] Ciphertext length: ${messageStr.length}`);
+                console.log(`[${conn.vin}] Ciphertext is valid hex: ${/^[0-9A-Fa-f]+$/.test(messageStr)}`);
+                console.log(`[${conn.vin}] Ciphertext hex bytes (first 32): ${Buffer.from(messageStr.substring(0, 64), 'hex').toString('hex')}`);
+
+                // Check if it might be base64 encoded
+                const isBase64Like = /^[A-Za-z0-9+/=]+$/.test(messageStr);
+                console.log(`[${conn.vin}] Message looks like base64: ${isBase64Like}`);
+
+                // Static key found in BYD app reverse engineering (Base64: OlLzwi7W/N5b9pamwCyecw==)
+                const staticKey = '3a52f3c22ed6fcde5bf696a6c02c9e73';
+
+                // Helper to try base64 decode first then AES decrypt
+                const tryBase64ThenDecrypt = (b64: string, key: string): string => {
+                    const decoded = Buffer.from(b64, 'base64');
+                    const hexStr = decoded.toString('hex');
+                    return aesDecryptUtf8(hexStr, key);
+                };
+
+                // Try multiple decryption strategies
+                const strategies = [
+                    // Standard hex input
+                    { name: 'md5-zero-iv-upper', fn: () => aesDecryptUtf8(messageStr, decryptKey) },
+                    { name: 'md5-zero-iv-lower', fn: () => aesDecryptUtf8(messageStr, decryptKeyLower) },
+                    { name: 'md5-first-block-iv-upper', fn: () => aesDecryptWithIv(messageStr, decryptKey) },
+                    { name: 'md5-first-block-iv-lower', fn: () => aesDecryptWithIv(messageStr, decryptKeyLower) },
+                    { name: 'raw-token-zero-iv', fn: () => aesDecryptUtf8(messageStr, encryTokenHex) },
+                    { name: 'raw-token-first-block-iv', fn: () => aesDecryptWithIv(messageStr, encryTokenHex) },
+                    { name: 'static-key-zero-iv', fn: () => aesDecryptUtf8(messageStr, staticKey) },
+                    { name: 'static-key-first-block-iv', fn: () => aesDecryptWithIv(messageStr, staticKey) },
+                    // Base64 input (decode first then decrypt)
+                    { name: 'base64-md5-upper', fn: () => tryBase64ThenDecrypt(messageStr, decryptKey) },
+                    { name: 'base64-md5-lower', fn: () => tryBase64ThenDecrypt(messageStr, decryptKeyLower) },
+                ];
+
+                let decrypted: string | null = null;
+                const errors: string[] = [];
+                for (const strategy of strategies) {
+                    try {
+                        decrypted = strategy.fn();
+                        // Verify it's valid JSON
+                        payload = JSON.parse(decrypted);
+                        console.log(`[${conn.vin}] Decrypt SUCCESS (${strategy.name}) - Event: ${payload.event || 'unknown'}`);
+                        break;
+                    } catch (e: any) {
+                        errors.push(`${strategy.name}: ${e.message}`);
+                        // Try next strategy
+                    }
+                }
+
+                if (!payload) {
+                    console.log(`[${conn.vin}] ===== DECRYPTION ERRORS =====`);
+                    for (const err of errors) {
+                        console.log(`[${conn.vin}]   ${err}`);
+                    }
+                }
+
+                if (!payload) {
+                    console.error(`[${conn.vin}] Decrypt FAILED all ${strategies.length} strategies - see errors above`);
+                    return; // Skip this message
+                }
+            } else if (!payload) {
+                // Not hex and not JSON - log and skip
+                console.log(`[${conn.vin}] Message is neither JSON nor valid hex. Skipping.`);
+                console.log(`[${conn.vin}] Message preview: ${messageStr.substring(0, 100)}`);
+                return;
+            }
 
             // Forward to Firestore
             this.forwardEvent(conn.vin, payload);
