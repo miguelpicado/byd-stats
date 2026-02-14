@@ -267,10 +267,11 @@ class BydMqttManager {
         conn.client = client;
 
         client.on('connect', () => {
-            console.log(`[${conn.vin}] MQTT connected! Activating polling...`);
+            console.log(`[${conn.vin}] MQTT connected! Listening for events...`);
 
-            // Activate polling in Firestore - car is online!
-            this.activatePolling(conn.vin);
+            // Mark MQTT as connected but DON'T activate polling yet
+            // Polling will be activated when we receive an actual event from the car
+            this.markMqttConnected(conn.vin);
 
             const topic = `oversea/res/${userId}`;
             client.subscribe(topic, { qos: 0 }, (err) => {
@@ -345,6 +346,11 @@ class BydMqttManager {
                     isOnline: true,
                     lastMqttUpdate: admin.firestore.Timestamp.now(),
                 });
+
+                // Activate polling when we receive actual vehicle data
+                // This means the car is truly active (not just MQTT connected)
+                console.log(`[${vin}] Vehicle activity detected - activating polling`);
+                await this.activatePolling(vin);
             }
 
             console.log(`[${vin}] Event forwarded to Firestore`);
@@ -355,19 +361,33 @@ class BydMqttManager {
     }
 
     /**
-     * Activate polling for a vehicle when MQTT connects
-     * This signals Firebase that the car is online and should be polled
+     * Mark MQTT as connected (but don't activate polling yet)
+     * Polling will be activated only when we receive actual vehicle events
+     */
+    private async markMqttConnected(vin: string): Promise<void> {
+        try {
+            await db.collection('bydVehicles').doc(vin).update({
+                mqttConnected: true,
+                lastMqttConnect: admin.firestore.Timestamp.now(),
+            });
+            console.log(`[${vin}] MQTT connection marked - waiting for vehicle events`);
+        } catch (error: any) {
+            console.error(`[${vin}] Failed to mark MQTT connected:`, error.message);
+        }
+    }
+
+    /**
+     * Activate polling when we receive actual vehicle activity (events)
+     * This prevents unnecessary API calls when the car is dormant
      */
     private async activatePolling(vin: string): Promise<void> {
         try {
             await db.collection('bydVehicles').doc(vin).update({
                 pollingActive: true,
                 isOnline: true,
-                mqttConnected: true,
-                lastMqttConnect: admin.firestore.Timestamp.now(),
                 stationaryPollCount: 0, // Reset counter
             });
-            console.log(`[${vin}] Polling activated - car is online!`);
+            console.log(`[${vin}] Polling activated - car is active!`);
         } catch (error: any) {
             console.error(`[${vin}] Failed to activate polling:`, error.message);
         }
