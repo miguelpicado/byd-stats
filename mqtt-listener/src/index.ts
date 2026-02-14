@@ -240,11 +240,11 @@ class BydMqttManager {
         const clientId = `oversea_00000000000000000000000000000000`;
         const timestamp = String(Math.floor(Date.now() / 1000)); // pyBYD uses seconds, not milliseconds
 
-        // pyBYD password format:
+        // pyBYD password format (from BYD-re reverse engineering):
         // base = signToken + clientId + userId + timestamp
-        // password = timestamp + md5(base)
+        // password = timestamp + UPPERCASE(md5(base))
         const base = signToken + clientId + userId + timestamp;
-        const password = timestamp + md5Hex(base).toLowerCase();
+        const password = timestamp + md5Hex(base).toUpperCase();
 
         // pyBYD username is just userId
         const username = userId;
