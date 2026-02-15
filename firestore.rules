@@ -21,20 +21,26 @@ service cloud.firestore {
     // BYD Vehicles - documento principal y subcolecciones
     match /bydVehicles/{vehicleId} {
       allow read, write: if request.auth != null
-        && request.auth.uid == resource.data.ownerId;
+        && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null
-        && request.auth.uid == request.resource.data.ownerId;
+        && request.auth.uid == request.resource.data.userId;
 
       // Trips subcolección
       match /trips/{tripId} {
         allow read, write: if request.auth != null
-          && request.auth.uid == get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.ownerId;
+          && request.auth.uid == get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.userId;
       }
 
       // Charges subcolección
       match /charges/{chargeId} {
         allow read, write: if request.auth != null
-          && request.auth.uid == get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.ownerId;
+          && request.auth.uid == get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.userId;
+      }
+
+      // Charging Sessions subcolección
+      match /chargingSessions/{sessionId} {
+        allow read, write: if request.auth != null
+          && request.auth.uid == get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.userId;
       }
     }
 
