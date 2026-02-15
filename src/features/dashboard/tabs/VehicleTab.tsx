@@ -5,13 +5,15 @@ import { useLayout } from '@/context/LayoutContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { useData } from '@/providers/DataProvider';
 import StatCard from '@components/ui/StatCard';
-import { Battery, Zap, Lock, Unlock, Navigation, MapPin } from '@components/Icons';
+import { Battery, Zap, Lock, Unlock, Navigation, MapPin, Activity, AlertTriangle } from '@components/Icons';
 import { bydLock, bydUnlock, bydFlashLights } from '@/services/bydApi';
 import toast from 'react-hot-toast';
 
 // Lazy load modals
 const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
+const TripInsightsModal = React.lazy(() => import('@components/modals/TripInsightsModal'));
+const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 
 interface VehicleTabProps {
   isActive?: boolean;
@@ -24,15 +26,16 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
   const vin = activeCar?.vin;
 
   const vehicleData = useVehicleStatus(vin);
-  const { aiSoH, aiScenarios, aiLoss, isAiTraining } = useData();
+  const { aiSoH, aiScenarios, aiLoss, isAiTraining, acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies, charges, stats } = useData();
 
   const summary = vehicleData?.summary || {};
-  const isLocked = vehicleData?.isLocked;
   const isOnline = vehicleData?.isOnline ?? true;
 
   const [loading, setLoading] = useState<Record<string, boolean>>({});
   const [showOdometerModal, setShowOdometerModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
+  const [insightType, setInsightType] = useState<'efficiency' | 'energy' | 'soh' | null>(null);
+  const [showHealthModal, setShowHealthModal] = useState(false);
 
   const executeAction = async (
     key: string,
@@ -52,10 +55,20 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
     }
   };
 
+  // Calculate system health anomalies
+  const { AnomalyService } = require('@/services/AnomalyService');
+  const allAnomalies = stats && activeCar?.settings
+    ? AnomalyService.checkSystemHealth(stats, activeCar.settings, charges || [], vehicleData?.trips || [])
+    : [];
+  const activeAnomalies = allAnomalies.filter((a: any) => !acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id));
+  const criticalAnomalies = activeAnomalies.filter((a: any) => a.severity === 'critical').length;
+  const warningAnomalies = activeAnomalies.filter((a: any) => a.severity === 'warning').length;
+  const hasAnomalies = activeAnomalies.length > 0;
+
   return (
     <>
       <div className="space-y-4">
-        {/* Row 1: SoC + Range */}
+        {/* Row 1: SoC + Autonomía */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -80,7 +93,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
           />
         </div>
 
-        {/* Row 2: Efficiency + Daily */}
+        {/* Row 2: Eficiencia + Carga Diaria */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -91,6 +104,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             value={summary.avgEff || '--'}
             unit={t('units.kWh100km', 'kWh/100km')}
             color="bg-green-500/20 text-green-400"
+            onClick={() => setInsightType('efficiency')}
           />
           <StatCard
             isVerticalMode={isVertical}
@@ -104,7 +118,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
           />
         </div>
 
-        {/* Row 3: SoH + Distance */}
+        {/* Row 3: Salud Batería + Estado Sistema */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -115,7 +129,26 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             value={aiSoH ? aiSoH.toFixed(1) : summary.soh || '--'}
             unit="%"
             color="bg-emerald-500/20 text-emerald-400"
+            onClick={() => setInsightType('soh')}
           />
+          <StatCard
+            isVerticalMode={isVertical}
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={hasAnomalies ? AlertTriangle : Activity}
+            label={t('stats.systemStatus', 'Estado Sistema')}
+            value={hasAnomalies ? `${activeAnomalies.length} Alerta${activeAnomalies.length > 1 ? 's' : ''}` : t('stats.normal', 'Normal')}
+            unit=""
+            color={criticalAnomalies > 0
+              ? "bg-red-500/20 text-red-500"
+              : (warningAnomalies > 0 ? "bg-amber-500/20 text-amber-500" : "bg-emerald-500/20 text-emerald-500")}
+            sub={hasAnomalies ? t('stats.checkDetails', 'Ver detalles') : t('stats.allSystemsOk', 'Todo correcto')}
+            onClick={() => setShowHealthModal(true)}
+          />
+        </div>
+
+        {/* Row 4: Distancia + Energía */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
             isLarger={isLargerCard}
@@ -128,10 +161,6 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             sub={`${summary.kmDay || 0} ${t('units.km')}/${t('units.day')}`}
             onClick={() => setShowOdometerModal(true)}
           />
-        </div>
-
-        {/* Row 4: Energy */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
             isLarger={isLargerCard}
@@ -142,18 +171,19 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             unit={t('units.kWh')}
             color="bg-cyan-500/20 text-cyan-400"
             sub={`${t('stats.stationary', 'Estacionaria')}: ${summary.stationaryConsumption || 0} kWh`}
+            onClick={() => setInsightType('energy')}
           />
         </div>
 
         {/* Row 5: Action Buttons */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-2">
           <button
-            onClick={isLocked ? () => executeAction('unlock', () => bydUnlock(vin), t('vehicle.unlocked', 'Desbloqueado'), t('vehicle.unlockFailed', 'Error')) : () => executeAction('lock', () => bydLock(vin), t('vehicle.locked', 'Bloqueado'), t('vehicle.lockFailed', 'Error'))}
+            onClick={vehicleData?.isLocked ? () => executeAction('unlock', () => bydUnlock(vin!), t('vehicle.unlocked', 'Desbloqueado'), t('vehicle.unlockFailed', 'Error')) : () => executeAction('lock', () => bydLock(vin!), t('vehicle.locked', 'Bloqueado'), t('vehicle.lockFailed', 'Error'))}
             disabled={!isOnline || loading.lock || loading.unlock}
-            className={`${isLocked ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'} text-white rounded-lg px-3 py-3 font-semibold text-sm flex flex-col items-center gap-1 disabled:opacity-50 transition-all`}
+            className={`${vehicleData?.isLocked ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-red-500 hover:bg-red-600'} text-white rounded-lg px-3 py-3 font-semibold text-sm flex flex-col items-center gap-1 disabled:opacity-50 transition-all`}
           >
-            {isLocked ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
-            <span className="text-xs truncate">{isLocked ? t('vehicle.unlock', 'Abrir') : t('vehicle.lock', 'Cerrar')}</span>
+            {vehicleData?.isLocked ? <Unlock className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+            <span className="text-xs truncate">{vehicleData?.isLocked ? t('vehicle.unlock', 'Abrir') : t('vehicle.lock', 'Cerrar')}</span>
           </button>
 
           <button
@@ -166,7 +196,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
           </button>
 
           <button
-            onClick={() => executeAction('locate', () => bydFlashLights(vin), t('vehicle.lightsFlashed', 'Luces activadas'), t('vehicle.flashFailed', 'Error'))}
+            onClick={() => executeAction('locate', () => bydFlashLights(vin!), t('vehicle.lightsFlashed', 'Luces activadas'), t('vehicle.flashFailed', 'Error'))}
             disabled={!isOnline || loading.locate}
             className="bg-blue-500 hover:bg-blue-600 text-white rounded-lg px-3 py-3 font-semibold text-sm flex flex-col items-center gap-1 disabled:opacity-50 transition-all"
           >
@@ -196,6 +226,10 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
       <React.Suspense fallback={null}>
         {showOdometerModal && <OdometerAdjustmentModal isOpen={showOdometerModal} onClose={() => setShowOdometerModal(false)} />}
         {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={aiScenarios} aiLoss={aiLoss} isTraining={isAiTraining} />}
+        {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" />}
+        {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" />}
+        {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" />}
+        {showHealthModal && <HealthReportModal isOpen={showHealthModal} onClose={() => setShowHealthModal(false)} />}
       </React.Suspense>
     </>
   );
