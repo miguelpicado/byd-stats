@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import StatCard from '@components/ui/StatCard';
 import LiveVehicleStatus from '@components/cards/LiveVehicleStatus';
 import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
-import { Battery, Activity, AlertTriangle, Lock, Zap, MapPin, Navigation, Zap as ZapIcon, Plus } from '@components/Icons';
+import { Battery, Activity, AlertTriangle, Lock, Zap, MapPin, Navigation, Zap as ZapIcon, Plus, MapPin as MapPinIcon } from '@components/Icons';
 // Lazy load modals
 const TripInsightsModal = React.lazy(() => import('@components/modals/TripInsightsModal'));
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
@@ -147,7 +147,35 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
           />
         </div>
 
-        {/* Row 3: Salud Batería + Estado Sistema */}
+        {/* Row 3: Distancia Total + Energía Total Consumida */}
+        <div className={`grid grid-cols-2 gap-3 sm:gap-4`}>
+          <StatCard
+            isVerticalMode={isVertical}
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={MapPinIcon}
+            label="Distancia Total"
+            value={summary.totalKm}
+            unit="km"
+            color="bg-red-500/20 text-red-400"
+            sub={`${summary.kmDay} km/día`}
+            onClick={() => handleCardClick('distance')}
+          />
+          <StatCard
+            isVerticalMode={isVertical}
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Zap}
+            label="Energía Total"
+            value={summary.totalKwh}
+            unit="kWh"
+            color="bg-cyan-500/20 text-cyan-400"
+            sub={`Estacionario: ${summary.stationaryConsumption} kWh`}
+            onClick={() => handleCardClick('energy')}
+          />
+        </div>
+
+        {/* Row 4: Salud Batería + Estado Sistema */}
         <div className={`grid grid-cols-2 gap-3 sm:gap-4`}>
           <StatCard
             isVerticalMode={isVertical}
@@ -176,7 +204,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
           />
         </div>
 
-        {/* Row 4: Action Buttons (Lock, Preheat, Locate) */}
+        {/* Row 5: Action Buttons (Lock, Preheat, Locate) */}
         <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
           <button
             onClick={handleLock}
@@ -204,7 +232,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
           </button>
         </div>
 
-        {/* Row 5: Navigation Buttons (Trips, Charges, New Charge) */}
+        {/* Row 6: Navigation Buttons (Trips, Charges, New Charge) */}
         <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
           <button
             onClick={() => openModal('allTrips')}
