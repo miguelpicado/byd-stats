@@ -32,7 +32,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   isActive = true
 }) => {
   const { updateSettings } = useApp();
-  const { aiLoss, aiSoH, aiSoHStats, charges, stats, openModal } = useData();
+  const { aiScenarios, aiLoss, aiSoH, aiSoHStats, charges, stats, openModal, isAiTraining } = useData();
   const { isCompact, isLargerCard, isVertical } = useLayout();
   const { activeCar } = useCar();
 
@@ -251,7 +251,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
 
       {/* Modals */}
       <React.Suspense fallback={null}>
-        {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={[]} aiLoss={aiLoss} isTraining={false} />}
+        {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={aiScenarios || []} aiLoss={aiLoss} isTraining={isAiTraining} />}
         {insightType === 'distance' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="distance" trips={trips} settings={settings} summary={summary || undefined} />}
         {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" trips={trips} settings={settings} summary={summary || undefined} />}
         {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} />}
