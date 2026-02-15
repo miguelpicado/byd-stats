@@ -1,21 +1,33 @@
-# PowerShell script to detect and count files with 'any' types in the src directory
+$count = 0
+$files = Get-ChildItem -Path "src" -Recurse -Include "*.ts", "*.tsx"
 
-Write-Host "=== Archivos con tipo 'any' ===" -ForegroundColor Cyan
+Write-Host "Checking for 'any' types in src/ directory..." -ForegroundColor Yellow
 
-$srcPath = Join-Path $PSScriptRoot "..\src"
-$anyFiles = Get-ChildItem -Path $srcPath -Include *.ts, *.tsx -Recurse | Select-String -Pattern ": any" -List
+$results = @()
 
-if ($anyFiles) {
-    foreach ($fileMatch in $anyFiles) {
-        $filePath = $fileMatch.Path
-        $relativePath = Resolve-Path $filePath -Relative
-        $count = (Get-Content $filePath | Select-String -Pattern ": any" -AllMatches).Count
-        Write-Host "$($relativePath): $($count) ocurrencias"
+foreach ($file in $files) {
+    if ($file.Name -eq "vite-env.d.ts") { continue }
+    
+    $content = Get-Content $file.FullName
+    $lineNum = 0
+    foreach ($line in $content) {
+        $lineNum++
+        if ($line -match ": any" -and $line -notmatch "eslint-disable") {
+            $count++
+            $results += [PSCustomObject]@{
+                File = $file.Name
+                Line = $lineNum
+            }
+        }
     }
+}
 
-    Write-Host "`n=== Total ===" -ForegroundColor Cyan
-    Write-Host "$($anyFiles.Count) archivos"
+Write-Host "Total explicit 'any' types found: $count" -ForegroundColor Red
+
+if ($count -gt 0) {
+    Write-Host "`nTop files with most 'any' usage:" -ForegroundColor Yellow
+    $results | Group-Object File | Sort-Object Count -Descending | Select-Object -First 10 Name, Count | Format-Table -AutoSize
 }
 else {
-    Write-Host "No se encontraron archivos con ': any'" -ForegroundColor Green
+    Write-Host "No 'any' types found! Great job!" -ForegroundColor Green
 }
