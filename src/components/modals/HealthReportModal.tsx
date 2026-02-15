@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Activity, Battery, Zap, AlertCircle, CheckCircle, Clock, Thermometer, Lock, Unlock, Shield, Trunk, RefreshCw, Wheel } from '../Icons';
+import { X, Activity, Battery, Zap, AlertCircle, CheckCircle, Clock, RefreshCw, Wheel } from '../Icons';
 import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getFirestore, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
@@ -347,60 +347,6 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 )}
                             </div>
 
-                            {/* Remote Controls Section */}
-                            <div className="mt-4 pt-6 border-t border-slate-100 dark:border-slate-800">
-                                <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4 flex items-center gap-2">
-                                    <Shield className="w-5 h-5 text-emerald-500" />
-                                    {t('health.remoteControls', 'Controles Remotos')}
-                                </h3>
-
-                                <div className="grid grid-cols-3 gap-3">
-                                    {/* Security Controls */}
-                                    <button
-                                        onClick={() => handleAction(isLocked ? 'unlockVehicle' : 'lockVehicle')}
-                                        disabled={!!actionLoading}
-                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${isLocked
-                                            ? 'bg-amber-50 border-amber-100 text-amber-700 dark:bg-amber-900/20 dark:border-amber-900/50 dark:text-amber-400'
-                                            : 'bg-emerald-50 border-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:border-emerald-900/50 dark:text-emerald-400'
-                                            } hover:scale-[1.02] active:scale-95 disabled:opacity-50`}
-                                    >
-                                        {isLocked ? <Unlock className="w-5 h-5 mb-1" /> : <Lock className="w-5 h-5 mb-1" />}
-                                        <span className="text-[10px] font-bold uppercase tracking-tight">
-                                            {isLocked ? t('health.unlock', 'Desbloquear') : t('health.lock', 'Bloquear')}
-                                        </span>
-                                    </button>
-
-                                    {/* Climate Controls */}
-                                    <button
-                                        onClick={() => handleAction(climateActive ? 'stopClimate' : 'startClimate')}
-                                        disabled={!!actionLoading}
-                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${climateActive
-                                            ? 'bg-blue-50 border-blue-100 text-blue-700 dark:bg-blue-900/20 dark:border-blue-900/50 dark:text-blue-400'
-                                            : 'bg-slate-50 border-slate-100 text-slate-700 dark:bg-slate-900/20 dark:border-slate-800 dark:text-slate-400'
-                                            } hover:scale-[1.02] active:scale-95 disabled:opacity-50`}
-                                    >
-                                        <Thermometer className={`w-5 h-5 mb-1 ${climateActive ? 'animate-pulse text-blue-500' : ''}`} />
-                                        <span className="text-[10px] font-bold uppercase tracking-tight">
-                                            {climateActive ? t('health.stopClimate', 'Parar Clima') : t('health.startClimate', 'Iniciar Clima')}
-                                        </span>
-                                    </button>
-
-                                    {/* Trunk Controls */}
-                                    <button
-                                        onClick={() => handleAction(trunkOpen ? 'closeTrunk' : 'openTrunk')}
-                                        disabled={!!actionLoading}
-                                        className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${trunkOpen
-                                            ? 'bg-purple-50 border-purple-100 text-purple-700 dark:bg-purple-900/20 dark:border-purple-900/50 dark:text-purple-400'
-                                            : 'bg-slate-50 border-slate-100 text-slate-700 dark:bg-slate-900/20 dark:border-slate-800 dark:text-slate-400'
-                                            } hover:scale-[1.02] active:scale-95 disabled:opacity-50`}
-                                    >
-                                        <Trunk className={`w-5 h-5 mb-1 ${trunkOpen ? 'text-purple-500' : ''}`} />
-                                        <span className="text-[10px] font-bold uppercase tracking-tight">
-                                            {trunkOpen ? t('health.closeTrunk', 'Cerrar') : t('health.openTrunk', 'Maletero')}
-                                        </span>
-                                    </button>
-                                </div>
-                            </div>
                         </div>
 
                         {/* Footer - History Button */}
