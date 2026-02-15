@@ -42,8 +42,8 @@ const DEFAULT_DEVICE = {
     osType: '15',  // This is different from ostype!
     osVersion: '35',
     // Config fields
-    appVersion: '3.2.2',
-    appInnerVersion: '322',
+    appVersion: '3.2.3',
+    appInnerVersion: '323',
     timeZone: 'Europe/Madrid',
     softType: '0',
     tboxVersion: '3',
@@ -365,9 +365,24 @@ export class BydClient {
      */
     async getRealtime(vin: string): Promise<BydRealtime> {
         // Stage 1: Trigger request - wakes the car and returns cached data + requestSerial
+        // MUST send full inner payload (matching BYD-re) - sending only { vin } returns zeros
+        const nowMs = Date.now();
+        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const inner = {
+            deviceType: this.device.deviceType,
+            energyType: '0',
+            imeiMD5: this.device.imeiMD5,
+            networkType: this.device.networkType,
+            random: randomHex,
+            tboxVersion: this.device.tboxVersion,
+            timeStamp: String(nowMs),
+            version: this.device.appInnerVersion,
+            vin,
+        };
         const triggerResponse = await this.postAuthenticatedJson(
             '/vehicleInfo/vehicle/vehicleRealTimeRequest',
-            { vin }
+            inner,
+            true  // rawInner - payload already has timeStamp and all required fields
         );
 
         if (String(triggerResponse.code) !== '0') {
@@ -487,10 +502,22 @@ export class BydClient {
      * Get GPS location
      */
     async getGps(vin: string): Promise<BydGps> {
-        // Stage 1: Trigger GPS request
+        // Stage 1: Trigger GPS request - send full inner payload like BYD-re
+        const nowMs = Date.now();
+        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const inner = {
+            deviceType: this.device.deviceType,
+            imeiMD5: this.device.imeiMD5,
+            networkType: this.device.networkType,
+            random: randomHex,
+            timeStamp: String(nowMs),
+            version: this.device.appInnerVersion,
+            vin,
+        };
         const triggerResponse = await this.postAuthenticatedJson(
             '/control/getGpsInfo',
-            { vin }
+            inner,
+            true  // rawInner
         );
 
         if (String(triggerResponse.code) !== '0') {
@@ -535,9 +562,21 @@ export class BydClient {
      * Get charging status
      */
     async getChargingStatus(vin: string): Promise<BydCharging> {
+        const nowMs = Date.now();
+        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const inner = {
+            deviceType: this.device.deviceType,
+            imeiMD5: this.device.imeiMD5,
+            networkType: this.device.networkType,
+            random: randomHex,
+            timeStamp: String(nowMs),
+            version: this.device.appInnerVersion,
+            vin,
+        };
         const response = await this.postAuthenticatedJson(
             '/control/smartCharge/homePage',
-            { vin }
+            inner,
+            true  // rawInner
         );
 
         if (response.code !== '0') {
