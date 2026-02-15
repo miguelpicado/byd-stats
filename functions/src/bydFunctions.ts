@@ -948,40 +948,23 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
     try {
         const client = await getBydClientWithSession(vin);
 
-        // Helper to check if car is awake (has real data)
-        const isCarAwake = (rt: any) => rt && (rt.soc > 0 || rt.odometer > 0 || rt.isOnline);
+        // Fetch all data - charging endpoint is most reliable for SOC on BYD Seal
+        console.log(`[bydWakeVehicle] ${vin}: Fetching data...`);
+        const [realtimeResult, gpsResult, chargingResult] = await Promise.allSettled([
+            client.getRealtime(vin),
+            client.getGps(vin),
+            client.getChargingStatus(vin),
+        ]);
 
-        // Helper to fetch all data
-        const fetchData = async () => {
-            const [realtimeResult, gpsResult] = await Promise.allSettled([
-                client.getRealtime(vin),
-                client.getGps(vin),
-            ]);
-            return {
-                realtime: realtimeResult.status === 'fulfilled' ? realtimeResult.value : null,
-                gps: gpsResult.status === 'fulfilled' ? gpsResult.value : null,
-            };
-        };
+        const realtime = realtimeResult.status === 'fulfilled' ? realtimeResult.value : null;
+        const gps = gpsResult.status === 'fulfilled' ? gpsResult.value : null;
+        const charging = chargingResult.status === 'fulfilled' ? chargingResult.value : null;
 
-        // First attempt - this also wakes the car
-        console.log(`[bydWakeVehicle] ${vin}: First request (wake)...`);
-        let { realtime, gps } = await fetchData();
-        let attempt = 1;
+        // Use charging SOC as fallback when realtime returns zeros
+        const effectiveSoc = (realtime?.soc || 0) > 0 ? realtime!.soc : (charging?.soc || 0);
+        const isAwake = effectiveSoc > 0 || (realtime?.odometer || 0) > 0 || (realtime?.isOnline || false);
 
-        // If car is sleeping, wait and retry up to 2 more times
-        while (!isCarAwake(realtime) && attempt < 3) {
-            const waitTime = attempt === 1 ? 3000 : 2000; // 3s first retry, 2s second
-            console.log(`[bydWakeVehicle] ${vin}: Car sleeping, waiting ${waitTime}ms before retry ${attempt + 1}...`);
-            await new Promise(resolve => setTimeout(resolve, waitTime));
-
-            const freshData = await fetchData();
-            realtime = freshData.realtime;
-            gps = freshData.gps;
-            attempt++;
-        }
-
-        const isAwake = isCarAwake(realtime);
-        console.log(`[bydWakeVehicle] ${vin}: After ${attempt} attempt(s): SOC=${realtime?.soc || 0}%, awake=${isAwake}`);
+        console.log(`[bydWakeVehicle] ${vin}: realtime.soc=${realtime?.soc}, charging.soc=${charging?.soc}, effectiveSoc=${effectiveSoc}, awake=${isAwake}`);
 
         // Prepare Firestore update
         const vehicleRef = db.collection('bydVehicles').doc(vin);
@@ -989,35 +972,34 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
             lastWake: admin.firestore.Timestamp.now(),
         };
 
-        if (realtime) {
-            // Primary metrics - only update if we have real values (car is awake)
-            // This preserves the last known good values when car is sleeping
-            if (realtime.soc > 0) {
-                updateData.lastSoC = realtime.soc / 100;
+        if (realtime || charging) {
+            // Primary metrics - use effectiveSoc (charging fallback) for SOC
+            if (effectiveSoc > 0) {
+                updateData.lastSoC = effectiveSoc / 100;
             }
-            if (realtime.range > 0) {
+            if (realtime && realtime.range > 0) {
                 updateData.lastRange = realtime.range;
             }
-            if (realtime.odometer > 0) {
+            if (realtime && realtime.odometer > 0) {
                 updateData.lastOdometer = realtime.odometer;
             }
-            updateData.lastSpeed = realtime.speed || 0;
+            updateData.lastSpeed = realtime?.speed || 0;
 
             // State indicators
-            updateData.isCharging = realtime.isCharging;
-            updateData.isLocked = realtime.isLocked;
-            updateData.isOnline = realtime.isOnline;
+            updateData.isCharging = realtime?.isCharging || charging?.isCharging || false;
+            updateData.isLocked = realtime?.isLocked || false;
+            updateData.isOnline = isAwake;
 
             // Temperatures (may be undefined when car is asleep)
-            if (realtime.exteriorTemp !== undefined) updateData.exteriorTemp = realtime.exteriorTemp;
-            if (realtime.interiorTemp !== undefined) updateData.interiorTemp = realtime.interiorTemp;
+            if (realtime?.exteriorTemp !== undefined) updateData.exteriorTemp = realtime.exteriorTemp;
+            if (realtime?.interiorTemp !== undefined) updateData.interiorTemp = realtime.interiorTemp;
 
             // Door and window status (may be undefined when car is asleep)
-            if (realtime.doors !== undefined) updateData.doors = realtime.doors;
-            if (realtime.windows !== undefined) updateData.windows = realtime.windows;
+            if (realtime?.doors !== undefined) updateData.doors = realtime.doors;
+            if (realtime?.windows !== undefined) updateData.windows = realtime.windows;
 
             // Tire pressure (may be undefined when car is asleep)
-            if (realtime.tirePressure !== undefined) updateData.tirePressure = realtime.tirePressure;
+            if (realtime?.tirePressure !== undefined) updateData.tirePressure = realtime.tirePressure;
 
             updateData.lastUpdate = admin.firestore.Timestamp.now();
         }
@@ -1045,16 +1027,15 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
         return {
             success: true,
             isAwake,
-            attempts: attempt,
             pollingActivated: activatePolling,
             data: {
-                soc: realtime?.soc || 0,
-                socPercent: realtime ? realtime.soc / 100 : 0,
+                soc: effectiveSoc,
+                socPercent: effectiveSoc / 100,
                 range: realtime?.range || 0,
                 odometer: realtime?.odometer || 0,
-                isCharging: realtime?.isCharging || false,
+                isCharging: realtime?.isCharging || charging?.isCharging || false,
                 isLocked: realtime?.isLocked || false,
-                isOnline: realtime?.isOnline || false,
+                isOnline: isAwake,
                 location: gps ? { lat: gps.latitude, lon: gps.longitude, heading: gps.heading } : null,
             },
             message: isAwake
@@ -1445,6 +1426,9 @@ async function pollVehicleInternal(vin: string): Promise<void> {
     const realtime = await client.getRealtime(vin);
     const gps = await client.getGps(vin).catch(() => null); // GPS might fail
 
+    // Always get charging status - it's more reliable than realtime for SOC on some models (e.g. BYD Seal)
+    const charging = await client.getChargingStatus(vin).catch(() => null);
+
     // After successful API calls, save the session back in case it was refreshed
     // (e.g. auto-relogin after 1002 "another device" error)
     const currentSession = client.getSession();
@@ -1463,6 +1447,12 @@ async function pollVehicleInternal(vin: string): Promise<void> {
     const vehicleDoc = await vehicleRef.get();
     const vehicleData = vehicleDoc.data() || {};
 
+    // Use charging SOC as fallback when realtime returns zeros
+    const effectiveSoc = realtime.soc > 0 ? realtime.soc : (charging?.soc || 0);
+    const effectiveIsCharging = realtime.isCharging || charging?.isCharging || false;
+
+    console.log(`[pollVehicleInternal] ${vin}: realtime.soc=${realtime.soc}, charging.soc=${charging?.soc}, effectiveSoc=${effectiveSoc}`);
+
     const prevOdometer = vehicleData.lastOdometer || 0;
     const activeTripId = vehicleData.activeTripId || null;
     const stationaryPollCount = vehicleData.stationaryPollCount || 0;
@@ -1476,10 +1466,9 @@ async function pollVehicleInternal(vin: string): Promise<void> {
 
     // GPS-based detection if available
     let hasGpsMovement = false;
-    if (gps) {
+    if (gps && gps.latitude > 0) {
         const prevLat = vehicleData.lastLocation?.lat || gps.latitude;
         const prevLon = vehicleData.lastLocation?.lon || gps.longitude;
-        // Simple distance check (Haversine would be more accurate but this is sufficient)
         const latDelta = Math.abs(gps.latitude - prevLat);
         const lonDelta = Math.abs(gps.longitude - prevLon);
         hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
@@ -1488,14 +1477,14 @@ async function pollVehicleInternal(vin: string): Promise<void> {
     const hasMovement = hasOdoMovement || hasGpsMovement;
     const isStationary = !hasMovement;
 
-    // Detect if car is sleeping (all zeros response)
-    const isCarSleeping = realtime.soc === 0 && realtime.range === 0 && realtime.odometer === 0;
+    // Detect if car is sleeping: realtime returns zeros AND charging also has no data
+    const isCarSleeping = realtime.soc === 0 && realtime.range === 0 && realtime.odometer === 0 && effectiveSoc === 0;
 
     console.log(`[pollVehicleInternal] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}, sleeping=${isCarSleeping}`);
 
-    // If car is sleeping, don't overwrite good data with zeros
+    // If truly sleeping (no data from any source), preserve last known values
     if (isCarSleeping) {
-        console.log(`[pollVehicleInternal] ${vin}: Car sleeping (all zeros), preserving last known values`);
+        console.log(`[pollVehicleInternal] ${vin}: Car sleeping (all sources zero), preserving last known values`);
         await vehicleRef.update({
             lastPollTime: now,
             isOnline: false,
@@ -1507,16 +1496,17 @@ async function pollVehicleInternal(vin: string): Promise<void> {
         lastPollTime: now,
         lastUpdate: now,
 
-        // State indicators
-        isCharging: realtime.isCharging,
+        // State indicators - use effective values that combine realtime + charging
+        isCharging: effectiveIsCharging,
         isLocked: realtime.isLocked,
-        isOnline: realtime.isOnline,
+        isOnline: effectiveSoc > 0 || realtime.isOnline, // If we have SOC from charging, car is online
 
         lastSpeed: realtime.speed || 0,
     };
 
     // Only update metrics if they have real values (preserve last known good values)
-    if (realtime.soc > 0) vehicleUpdate.lastSoC = realtime.soc / 100;
+    // Use effectiveSoc which falls back to charging endpoint when realtime returns zeros
+    if (effectiveSoc > 0) vehicleUpdate.lastSoC = effectiveSoc / 100;
     if (realtime.range > 0) vehicleUpdate.lastRange = realtime.range;
     if (realtime.odometer > 0) vehicleUpdate.lastOdometer = realtime.odometer;
 
@@ -1546,9 +1536,9 @@ async function pollVehicleInternal(vin: string): Promise<void> {
             vin,
             startDate: now,
             startOdometer: prevOdometer,
-            startSoC: vehicleData.lastSoC || realtime.soc / 100,
+            startSoC: vehicleData.lastSoC || effectiveSoc / 100,
             endOdometer: realtime.odometer,
-            endSoC: realtime.soc / 100,
+            endSoC: effectiveSoc / 100,
             distanceKm: Math.round(odoDelta * 100) / 100,
             status: 'in_progress',
             type: 'unknown',
@@ -1585,7 +1575,7 @@ async function pollVehicleInternal(vin: string): Promise<void> {
             // Calculate electricity (kWh) from SoC delta
             // Default BYD SEAL battery: 82.56 kWh (can be customized per vehicle)
             const batteryCapacity = vehicleData.batteryCapacity || 82.56;
-            const socDelta = (tripData.startSoC || 0) - (realtime.soc / 100);
+            const socDelta = (tripData.startSoC || 0) - (effectiveSoc / 100);
             const electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
 
             const updateData: any = {
@@ -1593,7 +1583,7 @@ async function pollVehicleInternal(vin: string): Promise<void> {
                 type: totalDistance >= 0.5 ? 'trip' : 'idle',
                 endDate: adjustedEndDate,
                 endOdometer: realtime.odometer,
-                endSoC: realtime.soc / 100,
+                endSoC: effectiveSoc / 100,
                 distanceKm: Math.round(Math.max(0, totalDistance) * 100) / 100,
                 durationMinutes,
                 electricity: electricityKwh,
@@ -1636,7 +1626,7 @@ async function pollVehicleInternal(vin: string): Promise<void> {
             const tripData = tripDoc.data()!;
             const updateData: any = {
                 endOdometer: realtime.odometer,
-                endSoC: realtime.soc / 100,
+                endSoC: effectiveSoc / 100,
                 distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
                 lastUpdate: now,
             };
@@ -1664,7 +1654,7 @@ async function pollVehicleInternal(vin: string): Promise<void> {
             const tripData = tripDoc.data()!;
             const updateData: any = {
                 endOdometer: realtime.odometer,
-                endSoC: realtime.soc / 100,
+                endSoC: effectiveSoc / 100,
                 distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
                 lastUpdate: now,
             };
