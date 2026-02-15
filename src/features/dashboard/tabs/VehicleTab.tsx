@@ -2,16 +2,19 @@ import React, { useMemo, useState } from 'react';
 import StatCard from '@components/ui/StatCard';
 import LiveVehicleStatus from '@components/cards/LiveVehicleStatus';
 import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
-import { Battery, Activity, AlertTriangle } from '@components/Icons';
+import { Battery, Activity, AlertTriangle, Lock, Zap, MapPin, Navigation, Zap as ZapIcon, Plus } from '@components/Icons';
 // Lazy load modals
 const TripInsightsModal = React.lazy(() => import('@components/modals/TripInsightsModal'));
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
 const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
+import { useCar } from '@/context/CarContext';
 import { Summary, Settings, Trip, TripInsightType } from '@/types';
 import { AnomalyService } from '@/services/AnomalyService';
 import { useLayout } from '@/context/LayoutContext';
+import { bydLock, bydUnlock, bydStartClimate, bydFlashLights } from '@/services/bydApi';
+import toast from 'react-hot-toast';
 
 interface VehicleTabProps {
   summary: Summary | null;
@@ -36,6 +39,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   const { updateSettings } = useApp();
   const { aiLoss, aiSoH, aiSoHStats, charges: chargesContext, stats: statsContext, openModal } = useData();
   const { isCompact, isLargerCard, isVertical } = useLayout();
+  const { activeCar } = useCar();
 
   // Use provided props or fallback to context
   const charges = chargesParam ?? chargesContext;
@@ -44,10 +48,41 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   const [insightType, setInsightType] = useState<TripInsightType | null>(null);
   const [showRangeModal, setShowRangeModal] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
+  const [loadingButton, setLoadingButton] = useState<string | null>(null);
 
   const handleCardClick = (type: TripInsightType) => {
     setInsightType(type);
   };
+
+  const handleCommand = async (
+    command: string,
+    fn: (vin: string, ...args: any[]) => Promise<any>,
+    ...args: any[]
+  ) => {
+    if (!activeCar?.vin) {
+      toast.error('No vehicle selected');
+      return;
+    }
+
+    setLoadingButton(command);
+    try {
+      const result = await fn(activeCar.vin, ...args);
+      if (result.success) {
+        toast.success(`${command} executed successfully`);
+      } else {
+        toast.error(`${command} failed`);
+      }
+    } catch (error: any) {
+      toast.error(`Error: ${error.message || 'Unknown error'}`);
+    } finally {
+      setLoadingButton(null);
+    }
+  };
+
+  const handleLock = () => handleCommand('Lock', bydLock);
+  const handleUnlock = () => handleCommand('Unlock', bydUnlock);
+  const handlePreheat = () => handleCommand('Preheat', bydStartClimate, 22);
+  const handleLocate = () => handleCommand('Locate', bydFlashLights);
 
   // Calculate system health anomalies
   const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies } = useData();
@@ -139,6 +174,59 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
             sub={hasAnomalies ? 'Ver detalles' : 'Todo correcto'}
             onClick={() => setShowHealthModal(true)}
           />
+        </div>
+
+        {/* Row 4: Action Buttons (Lock, Preheat, Locate) */}
+        <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
+          <button
+            onClick={handleLock}
+            disabled={loadingButton === 'Lock'}
+            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
+          >
+            <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-xs sm:text-sm font-medium">Bloquear</span>
+          </button>
+          <button
+            onClick={handlePreheat}
+            disabled={loadingButton === 'Preheat'}
+            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
+          >
+            <ZapIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-xs sm:text-sm font-medium">Precalentar</span>
+          </button>
+          <button
+            onClick={handleLocate}
+            disabled={loadingButton === 'Locate'}
+            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
+          >
+            <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-xs sm:text-sm font-medium">Localizar</span>
+          </button>
+        </div>
+
+        {/* Row 5: Navigation Buttons (Trips, Charges, New Charge) */}
+        <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
+          <button
+            onClick={() => openModal('allTrips')}
+            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
+          >
+            <Navigation className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-xs sm:text-sm font-medium">Viajes</span>
+          </button>
+          <button
+            onClick={() => openModal('allCharges')}
+            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
+          >
+            <Battery className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-xs sm:text-sm font-medium">Cargas</span>
+          </button>
+          <button
+            onClick={() => openModal('addCharge')}
+            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
+          >
+            <Plus className="w-5 h-5 sm:w-6 sm:h-6" />
+            <span className="text-xs sm:text-sm font-medium">Nueva Carga</span>
+          </button>
         </div>
       </div>
 
