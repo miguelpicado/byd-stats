@@ -1,5 +1,5 @@
 // BYD Stats - Live Vehicle Status Component (StatCard format)
-// Shows real-time vehicle status from Smartcar (charging state, SoC, etc.)
+// Shows real-time vehicle status (charging state, SoC, etc.)
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';

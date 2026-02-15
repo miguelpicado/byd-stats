@@ -102,10 +102,10 @@ const TripDetailModal: React.FC = () => {
                 localStorage.setItem('byd_deleted_trips', JSON.stringify(deletedTrips));
             }
 
-            // Delete from Firestore if it's a Smartcar trip
-            if (trip.source === 'smartcar') {
+            // Delete from Firestore if it's a BYD trip
+            if (trip.source === 'byd' && trip.vehicleId) {
                 const { deleteDoc, doc } = await import('firebase/firestore');
-                await deleteDoc(doc(db, 'trips', trip.id));
+                await deleteDoc(doc(db, 'bydVehicles', trip.vehicleId, 'trips', trip.id));
             }
 
             // Close modal and notify parent to refresh

@@ -1,5 +1,5 @@
 // BYD Stats - Battery Status Modal
-// Shows live battery status and Smartcar charging settings
+// Shows live battery status and charging settings
 
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -186,7 +186,7 @@ const BatteryStatusModal: React.FC = () => {
                         <div className="text-center py-6">
                             <Battery className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-600 mb-3" />
                             <p className="text-slate-500 dark:text-slate-400">
-                                {t('status.connectSmartcar', 'Vincula tu coche en Ajustes para ver el estado de la batería')}
+                                {t('status.connectVehicle', 'Vincula tu coche en Ajustes para ver el estado de la batería')}
                             </p>
                         </div>
                     ) : (

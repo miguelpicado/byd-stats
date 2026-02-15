@@ -16,7 +16,7 @@ export interface Trip {
     regeneration?: number;
     id?: string;
     startTime?: string;
-    source?: 'local' | 'smartcar' | 'db'; // smartcar kept for legacy data
+    source?: 'local' | 'byd' | 'db';
     vehicleId?: string; // Vehicle VIN for Firebase queries
     // GPS tracking fields
     gpsDistanceKm?: number;

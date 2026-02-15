@@ -45,19 +45,9 @@ const ChargeNotificationModal: React.FC = () => {
         if (!activeCar?.vin) return;
 
         const db = getFirestore(getApp());
-        // BYD VINs are 17 chars, use bydVehicles subcollection
-        const isByd = activeCar.vin.length === 17;
-        const sessionsRef = isByd
-            ? collection(db, 'bydVehicles', activeCar.vin, 'chargingSessions')
-            : collection(db, 'chargeSessions');
+        const sessionsRef = collection(db, 'bydVehicles', activeCar.vin, 'chargingSessions');
 
-        // Query for completed sessions that haven't been confirmed or discarded
-        const constraints = [where('status', '==', 'completed')];
-        // Only add vehicleId filter for top-level collection (legacy)
-        if (!isByd) {
-            constraints.push(where('vehicleId', '==', activeCar.vin));
-        }
-        const q = query(sessionsRef, ...constraints);
+        const q = query(sessionsRef, where('status', '==', 'completed'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const sessions: ChargeSession[] = [];
@@ -106,7 +96,7 @@ const ChargeNotificationModal: React.FC = () => {
     };
 
     const handleSave = async () => {
-        if (!currentSession) return;
+        if (!currentSession || !activeCar?.vin) return;
 
         setIsSaving(true);
         try {
@@ -129,18 +119,14 @@ const ChargeNotificationModal: React.FC = () => {
                 finalPercentage: Math.round((currentSession.endSoC || currentSession.currentSoC || 0) * 100),
                 type: 'electric' as const,
                 isSOCEstimated: false,
-                source: 'smartcar' as const,
+                source: 'byd' as const,
             };
 
             // Add charge to local data
             addCharge(chargeData);
 
             // Mark session as confirmed in Firestore
-            // BYD VINs are 17 chars, use bydVehicles subcollection
-            const isByd = activeCar?.vin?.length === 17;
-            const sessionRef = isByd && activeCar?.vin
-                ? doc(db, 'bydVehicles', activeCar.vin, 'chargingSessions', currentSession.id)
-                : doc(db, 'chargeSessions', currentSession.id);
+            const sessionRef = doc(db, 'bydVehicles', activeCar.vin, 'chargingSessions', currentSession.id);
             await updateDoc(sessionRef, {
                 userConfirmed: true,
                 confirmedAt: Timestamp.now()
@@ -164,15 +150,11 @@ const ChargeNotificationModal: React.FC = () => {
     };
 
     const handleDiscard = async () => {
-        if (!currentSession) return;
+        if (!currentSession || !activeCar?.vin) return;
 
         try {
             const db = getFirestore(getApp());
-            // BYD VINs are 17 chars, use bydVehicles subcollection
-            const isByd = activeCar?.vin?.length === 17;
-            const sessionRef = isByd && activeCar?.vin
-                ? doc(db, 'bydVehicles', activeCar.vin, 'chargingSessions', currentSession.id)
-                : doc(db, 'chargeSessions', currentSession.id);
+            const sessionRef = doc(db, 'bydVehicles', activeCar.vin, 'chargingSessions', currentSession.id);
             await updateDoc(sessionRef, {
                 userDiscarded: true,
                 discardedAt: Timestamp.now()

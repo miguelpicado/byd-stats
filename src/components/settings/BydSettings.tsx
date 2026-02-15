@@ -1,6 +1,6 @@
 /**
  * BYD Direct API Settings Component
- * Connect and manage BYD account (alternative to Smartcar)
+ * Connect and manage BYD account
  */
 
 import React, { useState, useEffect } from 'react';
