@@ -252,12 +252,12 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
       {/* Modals */}
       <React.Suspense fallback={null}>
         {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={[]} aiLoss={aiLoss} isTraining={false} />}
-        {insightType === 'distance' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="distance" />}
-        {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" />}
-        {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" />}
-        {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" />}
+        {insightType === 'distance' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="distance" trips={trips} settings={settings} summary={summary || undefined} />}
+        {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" trips={trips} settings={settings} summary={summary || undefined} />}
+        {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} />}
+        {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} aiSoHStats={aiSoHStats} onMfgDateClick={() => {}} onThermalStressClick={() => {}} />}
         {showOdometerModal && <OdometerAdjustmentModal isOpen={showOdometerModal} onClose={() => setShowOdometerModal(false)} />}
-        {showHealthModal && <HealthReportModal isOpen={showHealthModal} onClose={() => setShowHealthModal(false)} />}
+        {showHealthModal && <HealthReportModal isOpen={showHealthModal} onClose={() => setShowHealthModal(false)} anomalies={activeAnomalies} onAcknowledge={(id) => setAcknowledgedAnomalies([...acknowledgedAnomalies, id])} onDelete={(id) => setDeletedAnomalies([...deletedAnomalies, id])} />}
       </React.Suspense>
     </>
   );
