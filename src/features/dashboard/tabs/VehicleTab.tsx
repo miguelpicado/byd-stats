@@ -1,14 +1,16 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useCar } from '@/context/CarContext';
-import { useLayout } from '@/context/LayoutContext';
-import { useVehicleStatus } from '@/hooks/useVehicleStatus';
-import { useData } from '@/providers/DataProvider';
 import StatCard from '@components/ui/StatCard';
 import { Battery, Zap, Lock, Unlock, Navigation, MapPin, Activity, AlertTriangle } from '@components/Icons';
 import { bydLock, bydUnlock, bydFlashLights } from '@/services/bydApi';
-import { AnomalyService } from '@/services/AnomalyService';
 import toast from 'react-hot-toast';
+import { useApp } from '@/context/AppContext';
+import { useData } from '@/providers/DataProvider';
+import { Summary, Settings, TripInsightType } from '@/types';
+import { AnomalyService } from '@/services/AnomalyService';
+import { useLayout } from '@/context/LayoutContext';
+import { useVehicleStatus } from '@/hooks/useVehicleStatus';
+import { useCar } from '@/context/CarContext';
 
 // Lazy load modals
 const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
@@ -20,23 +22,34 @@ interface VehicleTabProps {
   isActive?: boolean;
 }
 
+/**
+ * Vehicle tab showing main statistics (mobile/vertical layout only)
+ */
 const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
   const { t } = useTranslation();
-  const { activeCar } = useCar();
+  const { updateSettings } = useApp();
+  const { aiScenarios, aiLoss, aiSoH, aiSoHStats, charges, stats, isAiTraining } = useData();
   const { isCompact, isLargerCard, isVertical } = useLayout();
+  const { activeCar } = useCar();
   const vin = activeCar?.vin;
 
   const vehicleData = useVehicleStatus(vin);
-  const { aiSoH, aiScenarios, aiLoss, isAiTraining, acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies, charges, stats } = useData();
-
   const summary = vehicleData?.summary || {};
   const isOnline = vehicleData?.isOnline ?? true;
 
-  const [loading, setLoading] = useState<Record<string, boolean>>({});
+  const [insightType, setInsightType] = useState<TripInsightType | null>(null);
   const [showOdometerModal, setShowOdometerModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
-  const [insightType, setInsightType] = useState<'efficiency' | 'energy' | 'soh' | null>(null);
   const [showHealthModal, setShowHealthModal] = useState(false);
+  const [loading, setLoading] = useState<Record<string, boolean>>({});
+
+  const handleCardClick = (type: TripInsightType) => {
+    if (type === 'distance') {
+      setShowOdometerModal(true);
+    } else {
+      setInsightType(type);
+    }
+  };
 
   const executeAction = async (
     key: string,
@@ -56,19 +69,28 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
     }
   };
 
-  // Calculate system health anomalies
-  const allAnomalies = stats && activeCar?.settings
-    ? AnomalyService.checkSystemHealth(stats, activeCar.settings, charges || [], vehicleData?.trips || [])
-    : [];
-  const activeAnomalies = allAnomalies.filter((a: any) => !acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id));
-  const criticalAnomalies = activeAnomalies.filter((a: any) => a.severity === 'critical').length;
-  const warningAnomalies = activeAnomalies.filter((a: any) => a.severity === 'warning').length;
+  // Calculate system health anomalies (exact copy from OverviewContent)
+  const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies } = useData();
+
+  const allAnomalies = useMemo(() => {
+    if (!stats || !activeCar?.settings) return [];
+    return AnomalyService.checkSystemHealth(stats, activeCar.settings, charges || [], vehicleData?.trips || []);
+  }, [stats, activeCar?.settings, charges, vehicleData?.trips]);
+
+  const activeAnomalies = useMemo(() =>
+    allAnomalies.filter(a => !acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id)),
+    [allAnomalies, acknowledgedAnomalies, deletedAnomalies]);
+
+  const criticalAnomalies = activeAnomalies.filter(a => a.severity === 'critical').length;
+  const warningAnomalies = activeAnomalies.filter(a => a.severity === 'warning').length;
   const hasAnomalies = activeAnomalies.length > 0;
+
+  const isAiReady = aiLoss !== null && aiLoss < 0.5;
 
   return (
     <>
       <div className="space-y-4">
-        {/* Row 1: SoC + Autonomía */}
+        {/* Row 1: SoC Actual + Autonomía */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -85,10 +107,10 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             isLarger={isLargerCard}
             isCompact={isCompact}
             icon={Battery}
-            label={t('stats.estimatedRange', 'Autonomía')}
+            label={isAiReady ? t('stats.aiRange', 'AI Range') : t('stats.estimatedRange', 'Autonomía')}
             value={summary.estimatedRange || '--'}
             unit={t('units.km')}
-            color="bg-blue-500/20 text-blue-400"
+            color={isAiReady ? "bg-indigo-500/20 text-indigo-400" : "bg-blue-500/20 text-blue-400"}
             onClick={() => setShowRangeModal(true)}
           />
         </div>
@@ -104,7 +126,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             value={summary.avgEff || '--'}
             unit={t('units.kWh100km', 'kWh/100km')}
             color="bg-green-500/20 text-green-400"
-            onClick={() => setInsightType('efficiency')}
+            onClick={() => handleCardClick('efficiency')}
           />
           <StatCard
             isVerticalMode={isVertical}
@@ -129,7 +151,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             value={aiSoH ? aiSoH.toFixed(1) : summary.soh || '--'}
             unit="%"
             color="bg-emerald-500/20 text-emerald-400"
-            onClick={() => setInsightType('soh')}
+            onClick={() => handleCardClick('soh')}
           />
           <StatCard
             isVerticalMode={isVertical}
@@ -147,7 +169,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
           />
         </div>
 
-        {/* Row 4: Distancia + Energía */}
+        {/* Row 4: Distancia + Energía Consumida */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -159,7 +181,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             unit={t('units.km')}
             color="bg-red-500/20 text-red-400"
             sub={`${summary.kmDay || 0} ${t('units.km')}/${t('units.day')}`}
-            onClick={() => setShowOdometerModal(true)}
+            onClick={() => handleCardClick('distance')}
           />
           <StatCard
             isVerticalMode={isVertical}
@@ -171,7 +193,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
             unit={t('units.kWh')}
             color="bg-cyan-500/20 text-cyan-400"
             sub={`${t('stats.stationary', 'Estacionaria')}: ${summary.stationaryConsumption || 0} kWh`}
-            onClick={() => setInsightType('energy')}
+            onClick={() => handleCardClick('energy')}
           />
         </div>
 
@@ -229,6 +251,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
         {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" />}
         {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" />}
         {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" />}
+        {insightType === 'distance' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="distance" />}
         {showHealthModal && <HealthReportModal isOpen={showHealthModal} onClose={() => setShowHealthModal(false)} />}
       </React.Suspense>
     </>
