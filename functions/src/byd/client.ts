@@ -515,12 +515,15 @@ export class BydClient {
     }
 
     private parseGpsData(data: any): BydGps {
+        // GPS data can be nested: { res: 2, data: { latitude, longitude, ... } }
+        // or flat: { latitude, longitude, ... }
+        const gpsInfo = data.data || data;
         return {
-            latitude: this.parseNumber(data.latitude, 0)!,
-            longitude: this.parseNumber(data.longitude, 0)!,
-            heading: this.parseNumber(data.heading),
-            speed: this.parseNumber(data.speed),
-            timestamp: data.timestamp ? parseInt(data.timestamp, 10) : undefined,
+            latitude: this.parseNumber(gpsInfo.latitude, 0)!,
+            longitude: this.parseNumber(gpsInfo.longitude, 0)!,
+            heading: this.parseNumber(gpsInfo.direction ?? gpsInfo.heading),
+            speed: this.parseNumber(gpsInfo.speed),
+            timestamp: gpsInfo.gpsTimeStamp ? Number(gpsInfo.gpsTimeStamp) : (gpsInfo.timestamp ? parseInt(gpsInfo.timestamp, 10) : undefined),
             raw: data,
         };
     }
