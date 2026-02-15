@@ -7,7 +7,6 @@ import * as crypto from 'crypto';
 import fetch from 'node-fetch';
 import {
     md5Hex,
-    md5HexLower,
     sha1Mixed,
     pwdLoginKey,
     computeCheckcode,
