@@ -379,9 +379,15 @@ export class BydClient {
         const triggerData = triggerResponse.data || {};
         // BYD-re: requestSerial is at the same level as vehicleInfo in the decrypted response
         const requestSerial = triggerResponse.requestSerial || triggerData.requestSerial || null;
+        // Check for vehicleInfo nesting (BYD-re format)
+        const vehicleInfo = triggerData.vehicleInfo || triggerData.vehicleStatus || null;
         console.log(`[getRealtime] Trigger: requestSerial=${requestSerial}, onlineState=${triggerData.onlineState}`);
         console.log(`[getRealtime] Trigger response keys: ${Object.keys(triggerResponse).join(',')}`);
-        console.log(`[getRealtime] Trigger data keys: ${Object.keys(triggerData).join(',').substring(0, 200)}`);
+        console.log(`[getRealtime] Trigger data keys: ${Object.keys(triggerData).join(',').substring(0, 300)}`);
+        console.log(`[getRealtime] Has vehicleInfo: ${!!vehicleInfo}, Has vehicleStatus: ${!!triggerData.vehicleStatus}`);
+        // Log key fields for debugging
+        const debugInfo = vehicleInfo || triggerData;
+        console.log(`[getRealtime] Key fields: elecPercent=${debugInfo.elecPercent}, enduranceMileage=${debugInfo.enduranceMileage}, totalMileageV2=${debugInfo.totalMileageV2}, onlineState=${debugInfo.onlineState}`);
 
         // Check if trigger already has valid data (sometimes it comes back immediately)
         if (this.isRealtimeDataReady(triggerData)) {
@@ -413,7 +419,7 @@ export class BydClient {
      * Based on BYD-re's isRealtimeDataReady check
      */
     private isRealtimeDataReady(data: any): boolean {
-        const info = data?.vehicleStatus || data || {};
+        const info = data?.vehicleInfo || data?.vehicleStatus || data || {};
 
         // If onlineState is 2, car is offline
         if (Number(info.onlineState) === 2) return false;
@@ -436,7 +442,7 @@ export class BydClient {
     }
 
     private parseRealtimeData(data: any): BydRealtime {
-        const info = data.vehicleStatus || data;
+        const info = data.vehicleInfo || data.vehicleStatus || data;
 
         // Field names based on BYD-re reverse engineering
         const soc = this.parseNumber(info.elecPercent || info.powerBattery || info.soc, 0)!;
@@ -771,8 +777,9 @@ export class BydClient {
      * @param endpoint API endpoint
      * @param payload Inner payload data
      * @param rawInner If true, use payload as-is without adding reqTimestamp
+     * @param skipAutoRelogin If true, don't intercept session-expired codes (used by pollForResult where 1002 means "still processing")
      */
-    private async postAuthenticatedJson(endpoint: string, payload: any, rawInner: boolean = false, _isRetry: boolean = false): Promise<any> {
+    private async postAuthenticatedJson(endpoint: string, payload: any, rawInner: boolean = false, _isRetry: boolean = false, skipAutoRelogin: boolean = false): Promise<any> {
         const session = await this.ensureSession();
         const nowMs = Date.now();
 
@@ -840,7 +847,8 @@ export class BydClient {
         console.log(`[postAuthenticatedJson] response code: ${responseCode}, msg: ${response.msg || response.message || ''}`);
 
         // Check for session expiration (1002=another device login, 1005/1010=expired)
-        if (SESSION_EXPIRED_CODES.includes(responseCode)) {
+        // IMPORTANT: Skip this for poll endpoints where 1002 means "still processing", not session expired
+        if (!skipAutoRelogin && SESSION_EXPIRED_CODES.includes(responseCode)) {
             this.session = null;
 
             // Auto-retry once with a fresh login (serialized to prevent concurrent relogins)
@@ -961,11 +969,15 @@ export class BydClient {
             console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}/${maxAttempts}, waiting ${delayMs}ms...`);
             await this.sleep(delayMs);
 
-            const response = await this.postAuthenticatedJson(endpoint, payload);
+            // skipAutoRelogin=true: in poll contexts, 1002 means "still processing", not session expired
+            const response = await this.postAuthenticatedJson(endpoint, payload, false, false, true);
             const code = String(response.code || '');
             console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}: code=${code}`);
 
             if (code === '0' && response.data) {
+                // Log key fields for debugging
+                const d = response.data.vehicleInfo || response.data.vehicleStatus || response.data;
+                console.log(`[pollForResult] ${endpoint} data: elecPercent=${d.elecPercent}, enduranceMileage=${d.enduranceMileage}, onlineState=${d.onlineState}, time=${d.time}`);
                 // If validator provided, check if data is actually valid
                 if (validator && !validator(response.data)) {
                     lastData = response.data; // Keep as fallback
