@@ -480,29 +480,39 @@ export class BydClient {
         // Detect offline state: if all key values are 0, car is likely asleep
         const isOffline = soc === 0 && range === 0 && odometer === 0;
 
+        // Lock state: check individual door locks (2 = locked) or global lockState
+        const isLocked = Number(info.leftFrontDoorLock) === 2 ||
+            info.lockState === '2' || info.doorLockState === '2';
+
         return {
             soc,
             range,
             odometer,
             speed: this.parseNumber(info.speed),
             isCharging: info.chargingState === 1 || info.chargeState === 1 || info.chargeStatus === '1',
-            isLocked: info.lockState === '2' || info.doorLockState === '2',
+            isLocked,
             isOnline: !isOffline && (Number(info.onlineState) !== 2),
             exteriorTemp: this.parseNumber(info.tempOutCar || info.exteriorTemperature),
             interiorTemp: this.parseNumber(info.tempInCar || info.interiorTemperature),
             doors: {
-                frontLeft: info.driverDoorState === '2',
-                frontRight: info.passengerDoorState === '2',
-                rearLeft: info.rearLeftDoorState === '2',
-                rearRight: info.rearRightDoorState === '2',
-                trunk: info.trunkState === '2',
-                hood: info.hoodState === '2',
+                frontLeft: Number(info.leftFrontDoor) === 2,
+                frontRight: Number(info.rightFrontDoor) === 2,
+                rearLeft: Number(info.leftRearDoor) === 2,
+                rearRight: Number(info.rightRearDoor) === 2,
+                trunk: Number(info.trunkLid) === 2,
+                hood: Number(info.forehold) === 2,
             },
             windows: {
-                frontLeft: info.driverWindowState === '1',
-                frontRight: info.passengerWindowState === '1',
-                rearLeft: info.rearLeftWindowState === '1',
-                rearRight: info.rearRightWindowState === '1',
+                frontLeft: Number(info.leftFrontWindow) === 2,
+                frontRight: Number(info.rightFrontWindow) === 2,
+                rearLeft: Number(info.leftRearWindow) === 2,
+                rearRight: Number(info.rightRearWindow) === 2,
+            },
+            tirePressure: {
+                frontLeft: this.parseNumber(info.leftFrontTirepressure, 0)!,
+                frontRight: this.parseNumber(info.rightFrontTirepressure, 0)!,
+                rearLeft: this.parseNumber(info.leftRearTirepressure, 0)!,
+                rearRight: this.parseNumber(info.rightRearTirepressure, 0)!,
             },
             raw: data,
         };
