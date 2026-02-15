@@ -7,6 +7,7 @@ import { useData } from '@/providers/DataProvider';
 import StatCard from '@components/ui/StatCard';
 import { Battery, Zap, Lock, Unlock, Navigation, MapPin, Activity, AlertTriangle } from '@components/Icons';
 import { bydLock, bydUnlock, bydFlashLights } from '@/services/bydApi';
+import { AnomalyService } from '@/services/AnomalyService';
 import toast from 'react-hot-toast';
 
 // Lazy load modals
@@ -56,7 +57,6 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
   };
 
   // Calculate system health anomalies
-  const { AnomalyService } = require('@/services/AnomalyService');
   const allAnomalies = stats && activeCar?.settings
     ? AnomalyService.checkSystemHealth(stats, activeCar.settings, charges || [], vehicleData?.trips || [])
     : [];
