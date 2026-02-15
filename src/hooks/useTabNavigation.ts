@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Activity, TrendingUp, Clock, Zap, BarChart3, List, Battery, Calendar } from '../components/Icons';
+import { Activity, TrendingUp, Clock, Zap, BarChart3, List, Battery, Calendar, Car } from '../components/Icons';
 import { Settings } from '@/types';
 
 import type { FC } from 'react';
@@ -22,7 +22,7 @@ export const useTabNavigation = ({ settings }: UseTabNavigationProps) => {
     // Initial tab from URL hash or default 'overview'
     const getInitialTab = (): string => {
         const hash = window.location.hash.replace('#', '');
-        const validTabs = ['overview', 'calendar', 'trends', 'patterns', 'efficiency', 'records', 'history', 'charges'];
+        const validTabs = ['vehicle', 'overview', 'calendar', 'trends', 'patterns', 'efficiency', 'records', 'history', 'charges'];
         return validTabs.includes(hash) ? hash : 'overview';
     };
 
@@ -34,6 +34,7 @@ export const useTabNavigation = ({ settings }: UseTabNavigationProps) => {
     const transitionDuration = 500;
 
     const tabs: Tab[] = useMemo(() => [
+        { id: 'vehicle', label: t('tabs.vehicle', 'Mi Coche'), icon: Car },
         { id: 'overview', label: t('tabs.overview'), icon: Activity },
         { id: 'calendar', label: t('tabs.calendar'), icon: Calendar },
         { id: 'trends', label: t('tabs.trends'), icon: TrendingUp },
