@@ -416,13 +416,27 @@ export class BydClient {
         }
 
         // Stage 2: Poll for fresh result using requestSerial
+        // BYD-re/pyBYD send the FULL inner payload for poll too (same as trigger + requestSerial)
         // 10 attempts x 2s = ~20s (matching pyBYD/BYD-re approach)
+        const pollInner = {
+            deviceType: this.device.deviceType,
+            energyType: '0',
+            imeiMD5: this.device.imeiMD5,
+            networkType: this.device.networkType,
+            random: crypto.randomBytes(16).toString('hex').toUpperCase(),
+            requestSerial,
+            tboxVersion: this.device.tboxVersion,
+            timeStamp: String(Date.now()),
+            version: this.device.appInnerVersion,
+            vin,
+        };
         const result = await this.pollForResult(
             '/vehicleInfo/vehicle/vehicleRealTimeResult',
-            { vin, requestSerial },
+            pollInner,
             10,
             2000,
-            (data: any) => this.isRealtimeDataReady(data)
+            (data: any) => this.isRealtimeDataReady(data),
+            true  // rawInner
         );
 
         return this.parseRealtimeData(result);
@@ -502,22 +516,10 @@ export class BydClient {
      * Get GPS location
      */
     async getGps(vin: string): Promise<BydGps> {
-        // Stage 1: Trigger GPS request - send full inner payload like BYD-re
-        const nowMs = Date.now();
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
-        const inner = {
-            deviceType: this.device.deviceType,
-            imeiMD5: this.device.imeiMD5,
-            networkType: this.device.networkType,
-            random: randomHex,
-            timeStamp: String(nowMs),
-            version: this.device.appInnerVersion,
-            vin,
-        };
+        // Stage 1: Trigger GPS request
         const triggerResponse = await this.postAuthenticatedJson(
             '/control/getGpsInfo',
-            inner,
-            true  // rawInner
+            { vin }
         );
 
         if (String(triggerResponse.code) !== '0') {
@@ -562,21 +564,9 @@ export class BydClient {
      * Get charging status
      */
     async getChargingStatus(vin: string): Promise<BydCharging> {
-        const nowMs = Date.now();
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
-        const inner = {
-            deviceType: this.device.deviceType,
-            imeiMD5: this.device.imeiMD5,
-            networkType: this.device.networkType,
-            random: randomHex,
-            timeStamp: String(nowMs),
-            version: this.device.appInnerVersion,
-            vin,
-        };
         const response = await this.postAuthenticatedJson(
             '/control/smartCharge/homePage',
-            inner,
-            true  // rawInner
+            { vin }
         );
 
         if (response.code !== '0') {
@@ -1046,7 +1036,8 @@ export class BydClient {
         payload: any,
         maxAttempts: number,
         delayMs: number,
-        validator?: (data: any) => boolean
+        validator?: (data: any) => boolean,
+        rawInner: boolean = false
     ): Promise<any> {
         let lastData: any = null;
 
@@ -1055,8 +1046,14 @@ export class BydClient {
             console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}/${maxAttempts}, waiting ${delayMs}ms...`);
             await this.sleep(delayMs);
 
+            // Refresh random and timeStamp on each poll attempt (as BYD-re does)
+            if (rawInner && payload.timeStamp) {
+                payload.timeStamp = String(Date.now());
+                payload.random = crypto.randomBytes(16).toString('hex').toUpperCase();
+            }
+
             // skipAutoRelogin=true: in poll contexts, 1002 means "still processing", not session expired
-            const response = await this.postAuthenticatedJson(endpoint, payload, false, false, true);
+            const response = await this.postAuthenticatedJson(endpoint, payload, rawInner, false, true);
             const code = String(response.code || '');
             console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}: code=${code}`);
 
