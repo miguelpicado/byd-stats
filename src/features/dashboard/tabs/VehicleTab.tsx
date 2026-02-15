@@ -36,9 +36,9 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   const vehicleData = useVehicleStatus(vin);
   const { stats, charges = [], trips = [], aiSoH, aiScenarios, aiLoss, isAiTraining } = useData();
 
-  const summary = vehicleData?.summary;
+  const summary = vehicleData?.summary || {};
   const isLocked = vehicleData?.isLocked;
-  const isOnline = vehicleData?.isOnline;
+  const isOnline = vehicleData?.isOnline ?? true;
 
   const [loading, setLoading] = useState<Record<string, boolean>>({});
 
@@ -47,7 +47,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   const [showMfgModal, setShowMfgModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
 
-  if (!vin || !summary || !activeCar?.settings) {
+  if (!vin) {
     return (
       <div className="text-center py-12">
         <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
