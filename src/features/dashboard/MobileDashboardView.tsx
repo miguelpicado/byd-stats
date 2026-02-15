@@ -147,6 +147,8 @@ const MobileDashboardView = memo(({
                                                         trips={rawTrips}
                                                         settings={settings}
                                                         isActive={isActive}
+                                                        charges={charges}
+                                                        stats={stats}
                                                     />
                                                 </ErrorBoundary>
                                             )}

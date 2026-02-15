@@ -1,11 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import StatCard from '@components/ui/StatCard';
-import { MapPin, Zap, Battery, Activity, AlertTriangle } from '@components/Icons';
+import LiveVehicleStatus from '@components/cards/LiveVehicleStatus';
+import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
+import { Battery, Activity, AlertTriangle } from '@components/Icons';
 // Lazy load modals
 const TripInsightsModal = React.lazy(() => import('@components/modals/TripInsightsModal'));
-const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
-const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
+const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
 import { Summary, Settings, Trip, TripInsightType } from '@/types';
@@ -17,6 +18,8 @@ interface VehicleTabProps {
   trips?: Trip[];
   settings: Settings;
   isActive?: boolean;
+  charges?: any[];
+  stats?: any;
 }
 
 /**
@@ -26,23 +29,24 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   summary,
   trips = [],
   settings,
-  isActive = true
+  isActive = true,
+  charges: chargesParam,
+  stats: statsParam
 }) => {
   const { updateSettings } = useApp();
-  const { aiLoss, aiSoH, aiSoHStats, charges, stats } = useData();
+  const { aiLoss, aiSoH, aiSoHStats, charges: chargesContext, stats: statsContext, openModal } = useData();
   const { isCompact, isLargerCard, isVertical } = useLayout();
 
+  // Use provided props or fallback to context
+  const charges = chargesParam ?? chargesContext;
+  const stats = statsParam ?? statsContext;
+
   const [insightType, setInsightType] = useState<TripInsightType | null>(null);
-  const [showOdometerModal, setShowOdometerModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
   const [showHealthModal, setShowHealthModal] = useState(false);
 
   const handleCardClick = (type: TripInsightType) => {
-    if (type === 'distance') {
-      setShowOdometerModal(true);
-    } else {
-      setInsightType(type);
-    }
+    setInsightType(type);
   };
 
   // Calculate system health anomalies
@@ -70,66 +74,52 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   return (
     <>
       <div className="space-y-4">
-        {/* Stats Grid */}
+        {/* Row 1: SoC Actual + Autonomía */}
         <div className={`grid grid-cols-2 gap-3 sm:gap-4`}>
-          <StatCard
-            isVerticalMode={isVertical}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={MapPin}
-            label="Distance"
-            value={summary.totalKm}
-            unit="km"
-            color="bg-red-500/20 text-red-400"
-            sub={`${summary.kmDay} km/day`}
-            onClick={() => handleCardClick('distance')}
-          />
-          <StatCard
-            isVerticalMode={isVertical}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Zap}
-            label="Energy"
-            value={summary.totalKwh}
-            unit="kWh"
-            color="bg-cyan-500/20 text-cyan-400"
-            sub={`Stationary: ${summary.stationaryConsumption} kWh`}
-            onClick={() => handleCardClick('energy')}
-          />
-        </div>
-
-        <div className={`grid grid-cols-2 gap-3 sm:gap-4`}>
+          <LiveVehicleStatus onClick={() => openModal('batteryStatus')} />
           <StatCard
             isVerticalMode={isVertical}
             isLarger={isLargerCard}
             isCompact={isCompact}
             icon={Battery}
-            label="Estimated Range"
+            label="Autonomía"
             value={summary.estimatedRange}
             unit="km"
             color={isAiReady ? "bg-indigo-500/20 text-indigo-400" : "bg-amber-500/20 text-amber-400"}
             onClick={() => setShowRangeModal(true)}
           />
-          <StatCard
-            isVerticalMode={isVertical}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
-            icon={Battery}
-            label="Efficiency"
-            value={summary.avgEff}
-            unit="kWh/100km"
-            color="bg-green-500/20 text-green-400"
-            onClick={() => handleCardClick('efficiency')}
-          />
         </div>
 
+        {/* Row 2: Eficiencia + Carga Diaria Estimada */}
         <div className={`grid grid-cols-2 gap-3 sm:gap-4`}>
           <StatCard
             isVerticalMode={isVertical}
             isLarger={isLargerCard}
             isCompact={isCompact}
             icon={Battery}
-            label="SoH"
+            label="Eficiencia"
+            value={summary.avgEff}
+            unit="kWh/100km"
+            color="bg-green-500/20 text-green-400"
+            onClick={() => handleCardClick('efficiency')}
+          />
+          <EstimatedChargeCard
+            summary={summary}
+            settings={settings}
+            stats={stats || null}
+            charges={charges}
+            trips={trips}
+          />
+        </div>
+
+        {/* Row 3: Salud Batería + Estado Sistema */}
+        <div className={`grid grid-cols-2 gap-3 sm:gap-4`}>
+          <StatCard
+            isVerticalMode={isVertical}
+            isLarger={isLargerCard}
+            isCompact={isCompact}
+            icon={Battery}
+            label="Salud Batería"
             value={aiSoH ? aiSoH.toFixed(1) : summary.soh}
             unit="%"
             color="bg-emerald-500/20 text-emerald-400"
@@ -140,13 +130,13 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
             isLarger={isLargerCard}
             isCompact={isCompact}
             icon={hasAnomalies ? AlertTriangle : Activity}
-            label="System Status"
-            value={hasAnomalies ? `${activeAnomalies.length} Alert${activeAnomalies.length > 1 ? 's' : ''}` : 'Normal'}
+            label="Estado Sistema"
+            value={hasAnomalies ? `${activeAnomalies.length} Alerta${activeAnomalies.length > 1 ? 's' : ''}` : 'Normal'}
             unit=""
             color={criticalAnomalies > 0
               ? "bg-red-500/20 text-red-500"
               : (warningAnomalies > 0 ? "bg-amber-500/20 text-amber-500" : "bg-emerald-500/20 text-emerald-500")}
-            sub={hasAnomalies ? 'Check details' : 'All systems ok'}
+            sub={hasAnomalies ? 'Ver detalles' : 'Todo correcto'}
             onClick={() => setShowHealthModal(true)}
           />
         </div>
@@ -154,12 +144,9 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
 
       {/* Modals */}
       <React.Suspense fallback={null}>
-        {showOdometerModal && <OdometerAdjustmentModal isOpen={showOdometerModal} onClose={() => setShowOdometerModal(false)} />}
         {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={[]} aiLoss={aiLoss} isTraining={false} />}
         {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" />}
-        {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" />}
         {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" />}
-        {insightType === 'distance' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="distance" />}
         {showHealthModal && <HealthReportModal isOpen={showHealthModal} onClose={() => setShowHealthModal(false)} />}
       </React.Suspense>
     </>
