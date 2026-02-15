@@ -37,7 +37,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   stats: statsParam
 }) => {
   const { updateSettings } = useApp();
-  const { aiLoss, aiSoH, aiSoHStats, charges: chargesContext, stats: statsContext, openModal } = useData();
+  const { aiLoss, aiSoH, aiSoHStats, charges: chargesContext, stats: statsContext, openModal, filtered } = useData();
   const { isCompact, isLargerCard, isVertical } = useLayout();
   const { activeCar } = useCar();
 
