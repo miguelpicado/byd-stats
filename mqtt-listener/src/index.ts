@@ -591,39 +591,34 @@ class BydMqttManager {
                 const wasCharging = prevState.isCharging === true;
 
                 // Extract static data from vehicleInfo
-                const exteriorTemp = data.outsideTempValue || data.exteriorTemp;
-                const interiorTemp = data.tempInCar || data.interiorTemp;
-                const tirePressure = data.tirePressure ? {
-                    frontLeft: data.tirePressure.frontLeft || data.leftFrontTirepressure,
-                    frontRight: data.tirePressure.frontRight || data.rightFrontTirepressure,
-                    rearLeft: data.tirePressure.rearLeft || data.leftRearTirepressure,
-                    rearRight: data.tirePressure.rearRight || data.rightRearTirepressure,
+                const exteriorTemp = data.outsideTempValue ?? data.exteriorTemp ?? data.tempOutCar;
+                const interiorTemp = data.tempInCar ?? data.interiorTemp;
+                const tirePressure = (data.leftFrontTirepressure || data.tirePressure) ? {
+                    frontLeft: data.leftFrontTirepressure || data.tirePressure?.frontLeft || 0,
+                    frontRight: data.rightFrontTirepressure || data.tirePressure?.frontRight || 0,
+                    rearLeft: data.leftRearTirepressure || data.tirePressure?.rearLeft || 0,
+                    rearRight: data.rightRearTirepressure || data.tirePressure?.rearRight || 0,
                 } : null;
 
                 // Update vehicle state - capture ALL available data
+                // Only include fields that have defined values (Firestore rejects undefined)
                 const updateData: any = {
                     lastSoC: currentSoC,
-                    lastRange: data.evEndurance || 0,
-                    lastOdometer: data.odo || data.mileage || 0,
+                    lastRange: data.evEndurance || data.enduranceMileage || 0,
+                    lastOdometer: data.odo || data.mileage || data.totalMileageV2 || data.totalMileage || 0,
                     lastSpeed: data.speed || 0,
                     isCharging,
                     isLocked: !isUnlocked,
                     isOnline: true,
-
-                    // Temperatures
-                    exteriorTemp,
-                    interiorTemp,
-
-                    // Tire pressure
-                    tirePressure,
-
-                    // Door and window status would be in the raw data
-                    // Extract if available
-                    ...(data.doors && { doors: data.doors }),
-                    ...(data.windows && { windows: data.windows }),
-
                     lastMqttUpdate: admin.firestore.Timestamp.now(),
                 };
+
+                // Only add optional fields if they have actual values
+                if (exteriorTemp !== undefined && exteriorTemp !== null) updateData.exteriorTemp = exteriorTemp;
+                if (interiorTemp !== undefined && interiorTemp !== null) updateData.interiorTemp = interiorTemp;
+                if (tirePressure) updateData.tirePressure = tirePressure;
+                if (data.doors) updateData.doors = data.doors;
+                if (data.windows) updateData.windows = data.windows;
 
                 await vehicleRef.update(updateData);
 
