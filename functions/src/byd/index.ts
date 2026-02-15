@@ -1,6 +1,6 @@
 /**
  * BYD API Module
- * Direct access to BYD vehicle API without Smartcar
+ * Direct access to BYD vehicle API
  */
 
 export { BydClient } from './client';

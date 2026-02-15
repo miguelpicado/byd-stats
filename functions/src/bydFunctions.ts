@@ -1,6 +1,6 @@
 /**
  * BYD Direct API Functions
- * Alternative to Smartcar - uses BYD API directly
+ * BYD vehicle API integration via Firebase Cloud Functions
  *
  * Version: 1.0.0 - Initial BYD direct API integration
  */
@@ -665,12 +665,12 @@ export const bydBatteryHeat = regionalFunctions.https.onCall(async (data, contex
 });
 
 // =============================================================================
-// POLLING FOR TRIPS (Similar to Smartcar but using BYD API)
+// POLLING FOR TRIPS
 // =============================================================================
 
 /**
  * Poll vehicle for trip tracking (called by scheduler)
- * This is the BYD equivalent of the Smartcar scheduledPoll
+ * Polls vehicle status and detects trip start/end
  */
 export const bydPollVehicle = regionalFunctions.https.onCall(async (data, context) => {
     const { vin } = data;
@@ -758,7 +758,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
             vehicleUpdate.stationaryPollCount = 0;
         }
 
-        // Trip logic (same as Smartcar v3.6.0)
+        // Trip detection logic
         if (!activeTripId && hasMovement) {
             // Start new trip
             const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc();
