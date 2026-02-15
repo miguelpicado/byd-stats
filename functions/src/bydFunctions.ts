@@ -204,6 +204,60 @@ async function getBydClientForVehicle(vin: string): Promise<BydClient> {
     return new BydClient(config);
 }
 
+/**
+ * Get BYD client with RESTORED session (doesn't create new tokens)
+ * This is crucial for MQTT decryption - all functions must use the SAME session
+ *
+ * If no stored session exists, falls back to login() and stores the new session
+ */
+async function getBydClientWithSession(vin: string): Promise<BydClient> {
+    const client = await getBydClientForVehicle(vin);
+
+    // Try to restore existing session from Firestore
+    const sessionDoc = await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').get();
+
+    if (sessionDoc.exists) {
+        const sessionData = sessionDoc.data()!;
+
+        // Check if session is recent (less than 12 hours old)
+        const updatedAt = sessionData.updatedAt?.toDate?.() || new Date(0);
+        const ageHours = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60);
+
+        if (ageHours < 12) {
+            // Restore existing session - NO new tokens created!
+            client.restoreSession({
+                userId: sessionData.userId,
+                signToken: sessionData.signToken,
+                encryToken: sessionData.encryToken,
+                cookies: sessionData.cookies ? JSON.parse(sessionData.cookies) : {},
+            });
+            console.log(`[getBydClientWithSession] Restored session for ${vin} (age: ${ageHours.toFixed(1)}h)`);
+            return client;
+        }
+
+        console.log(`[getBydClientWithSession] Session expired for ${vin} (age: ${ageHours.toFixed(1)}h), creating new one...`);
+    } else {
+        console.log(`[getBydClientWithSession] No stored session for ${vin}, creating new one...`);
+    }
+
+    // No valid session - create new one and store it
+    await client.login();
+    const session = client.getSession();
+
+    if (session) {
+        await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').set({
+            userId: session.token.userId,
+            signToken: session.token.signToken,
+            encryToken: session.token.encryToken,
+            cookies: JSON.stringify(session.cookies || {}),
+            updatedAt: admin.firestore.Timestamp.now(),
+        });
+        console.log(`[getBydClientWithSession] Created and stored new session for ${vin}`);
+    }
+
+    return client;
+}
+
 // =============================================================================
 // VEHICLE DATA
 // =============================================================================
@@ -219,19 +273,34 @@ export const bydGetRealtime = regionalFunctions.https.onCall(async (data, contex
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const realtime = await client.getRealtime(vin);
 
-        // Update vehicle state in Firestore
+        // Update vehicle state in Firestore - capture ALL available data
         const vehicleRef = db.collection('bydVehicles').doc(vin);
         await vehicleRef.update({
-            lastSoC: realtime.soc / 100, // Normalize to 0-1
+            // Primary metrics
+            lastSoC: realtime.soc / 100,
             lastRange: realtime.range,
             lastOdometer: realtime.odometer,
+            lastSpeed: realtime.speed || 0,
+
+            // State indicators
             isCharging: realtime.isCharging,
             isLocked: realtime.isLocked,
             isOnline: realtime.isOnline,
+
+            // Temperatures
+            exteriorTemp: realtime.exteriorTemp,
+            interiorTemp: realtime.interiorTemp,
+
+            // Door and window status
+            doors: realtime.doors,
+            windows: realtime.windows,
+
+            // Tire pressure
+            tirePressure: realtime.tirePressure,
+
             lastUpdate: admin.firestore.Timestamp.now(),
         });
 
@@ -265,8 +334,7 @@ export const bydGetGps = regionalFunctions.https.onCall(async (data, context) =>
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const gps = await client.getGps(vin);
 
         // Update vehicle location in Firestore
@@ -304,8 +372,7 @@ export const bydGetCharging = regionalFunctions.https.onCall(async (data, contex
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const charging = await client.getChargingStatus(vin);
 
         console.log(`[bydGetCharging] ${vin}: SOC=${charging.soc}%, charging=${charging.isCharging}`);
@@ -336,8 +403,7 @@ export const bydLock = regionalFunctions.https.onCall(async (data, context) => {
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const success = await client.lock(vin, pin);
 
         if (success) {
@@ -368,8 +434,7 @@ export const bydUnlock = regionalFunctions.https.onCall(async (data, context) =>
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const success = await client.unlock(vin, pin);
 
         if (success) {
@@ -400,8 +465,7 @@ export const bydStartClimate = regionalFunctions.https.onCall(async (data, conte
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const success = await client.startClimate(vin, temperature || 22, pin);
 
         console.log(`[bydStartClimate] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
@@ -425,8 +489,7 @@ export const bydStopClimate = regionalFunctions.https.onCall(async (data, contex
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const success = await client.stopClimate(vin, pin);
 
         console.log(`[bydStopClimate] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
@@ -450,8 +513,7 @@ export const bydFlashLights = regionalFunctions.https.onCall(async (data, contex
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
         const success = await client.flashLights(vin, pin);
 
         console.log(`[bydFlashLights] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
@@ -460,6 +522,80 @@ export const bydFlashLights = regionalFunctions.https.onCall(async (data, contex
 
     } catch (error: any) {
         console.error('[bydFlashLights] Error:', error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+/**
+ * Close windows
+ */
+export const bydCloseWindows = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin, pin } = data;
+
+    if (!vin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+    }
+
+    try {
+        const client = await getBydClientWithSession(vin);
+        const success = await client.closeWindows(vin, pin);
+
+        console.log(`[bydCloseWindows] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
+
+        return { success };
+
+    } catch (error: any) {
+        console.error('[bydCloseWindows] Error:', error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+/**
+ * Control seat climate/heating
+ * @param seat 0=driver, 1=passenger
+ * @param mode 0=off, 1=low, 2=medium, 3=high
+ */
+export const bydSeatClimate = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin, seat, mode, pin } = data;
+
+    if (!vin || seat === undefined || mode === undefined) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: vin, seat, mode');
+    }
+
+    try {
+        const client = await getBydClientWithSession(vin);
+        const success = await client.seatClimate(vin, seat, mode, pin);
+
+        console.log(`[bydSeatClimate] ${vin}: seat=${seat}, mode=${mode}, ${success ? 'SUCCESS' : 'FAILED'}`);
+
+        return { success };
+
+    } catch (error: any) {
+        console.error('[bydSeatClimate] Error:', error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+/**
+ * Control battery heating
+ */
+export const bydBatteryHeat = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin, pin } = data;
+
+    if (!vin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+    }
+
+    try {
+        const client = await getBydClientWithSession(vin);
+        const success = await client.batteryHeat(vin, pin);
+
+        console.log(`[bydBatteryHeat] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
+
+        return { success };
+
+    } catch (error: any) {
+        console.error('[bydBatteryHeat] Error:', error.message);
         throw new functions.https.HttpsError('internal', error.message);
     }
 });
@@ -480,8 +616,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
 
         // Get all data in parallel
         const [realtime, gps] = await Promise.all([
@@ -498,26 +633,58 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
         const activeTripId = vehicleData.activeTripId || null;
         const stationaryPollCount = vehicleData.stationaryPollCount || 0;
 
-        // Calculate movement
+        // Calculate movement using odometer
+        // GPS changes < 1km, Odometer reports in 1km increments
+        // Use odometer as primary: > 1km = definite movement
+        // Also check GPS if available for smaller movements
         const odoDelta = realtime.odometer - prevOdometer;
-        const hasMovement = odoDelta > 0.03; // 30 meters
+        const hasOdoMovement = odoDelta >= 1; // 1km or more (odometer increments)
+
+        // GPS-based detection if available
+        let hasGpsMovement = false;
+        if (gps) {
+            const prevLat = vehicleData.lastLocation?.lat || gps.latitude;
+            const prevLon = vehicleData.lastLocation?.lon || gps.longitude;
+            // Simple distance check (Haversine would be more accurate but this is sufficient)
+            const latDelta = Math.abs(gps.latitude - prevLat);
+            const lonDelta = Math.abs(gps.longitude - prevLon);
+            hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
+        }
+
+        const hasMovement = hasOdoMovement || hasGpsMovement;
         const isStationary = !hasMovement;
 
-        console.log(`[bydPollVehicle] ${vin}: odo=${realtime.odometer}, delta=${odoDelta.toFixed(3)}, movement=${hasMovement}, locked=${realtime.isLocked}`);
+        console.log(`[bydPollVehicle] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}`);
 
         const vehicleUpdate: any = {
+            // Primary metrics
             lastSoC: realtime.soc / 100,
             lastRange: realtime.range,
             lastOdometer: realtime.odometer,
+            lastSpeed: realtime.speed || 0,
+
+            // State indicators
             isCharging: realtime.isCharging,
             isLocked: realtime.isLocked,
             isOnline: realtime.isOnline,
+
+            // Temperatures
+            exteriorTemp: realtime.exteriorTemp,
+            interiorTemp: realtime.interiorTemp,
+
+            // Door and window status
+            doors: realtime.doors,
+            windows: realtime.windows,
+
+            // Tire pressure
+            tirePressure: realtime.tirePressure,
+
             lastPollTime: now,
             lastUpdate: now,
         };
 
         if (gps) {
-            vehicleUpdate.lastLocation = { lat: gps.latitude, lon: gps.longitude };
+            vehicleUpdate.lastLocation = { lat: gps.latitude, lon: gps.longitude, heading: gps.heading };
         }
 
         if (hasMovement) {
@@ -687,6 +854,144 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
 });
 
 // =============================================================================
+// WAKE VEHICLE (called when user opens BYD Stats app)
+// =============================================================================
+
+/**
+ * Wake vehicle and get current data
+ * Called when user opens the BYD Stats app to refresh vehicle state
+ * Also activates polling temporarily in case the user is about to drive
+ *
+ * Flow:
+ * 1. First request: Try to get data (this also wakes the car)
+ * 2. If car is sleeping (all zeros), wait 3 seconds and retry
+ * 3. Return fresh data
+ */
+export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin, activatePolling = true } = data;
+
+    if (!vin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+    }
+
+    console.log(`[bydWakeVehicle] Waking vehicle ${vin}...`);
+
+    try {
+        const client = await getBydClientWithSession(vin);
+
+        // Helper to check if car is awake (has real data)
+        const isCarAwake = (rt: any) => rt && (rt.soc > 0 || rt.odometer > 0 || rt.isOnline);
+
+        // Helper to fetch all data
+        const fetchData = async () => {
+            const [realtimeResult, gpsResult] = await Promise.allSettled([
+                client.getRealtime(vin),
+                client.getGps(vin),
+            ]);
+            return {
+                realtime: realtimeResult.status === 'fulfilled' ? realtimeResult.value : null,
+                gps: gpsResult.status === 'fulfilled' ? gpsResult.value : null,
+            };
+        };
+
+        // First attempt - this also wakes the car
+        console.log(`[bydWakeVehicle] ${vin}: First request (wake)...`);
+        let { realtime, gps } = await fetchData();
+        let attempt = 1;
+
+        // If car is sleeping, wait and retry up to 2 more times
+        while (!isCarAwake(realtime) && attempt < 3) {
+            const waitTime = attempt === 1 ? 3000 : 2000; // 3s first retry, 2s second
+            console.log(`[bydWakeVehicle] ${vin}: Car sleeping, waiting ${waitTime}ms before retry ${attempt + 1}...`);
+            await new Promise(resolve => setTimeout(resolve, waitTime));
+
+            const freshData = await fetchData();
+            realtime = freshData.realtime;
+            gps = freshData.gps;
+            attempt++;
+        }
+
+        const isAwake = isCarAwake(realtime);
+        console.log(`[bydWakeVehicle] ${vin}: After ${attempt} attempt(s): SOC=${realtime?.soc || 0}%, awake=${isAwake}`);
+
+        // Prepare Firestore update
+        const vehicleRef = db.collection('bydVehicles').doc(vin);
+        const updateData: any = {
+            lastWake: admin.firestore.Timestamp.now(),
+        };
+
+        if (realtime) {
+            // Primary metrics
+            updateData.lastSoC = realtime.soc / 100;
+            updateData.lastRange = realtime.range;
+            updateData.lastOdometer = realtime.odometer;
+            updateData.lastSpeed = realtime.speed || 0;
+
+            // State indicators
+            updateData.isCharging = realtime.isCharging;
+            updateData.isLocked = realtime.isLocked;
+            updateData.isOnline = realtime.isOnline;
+
+            // Temperatures
+            updateData.exteriorTemp = realtime.exteriorTemp;
+            updateData.interiorTemp = realtime.interiorTemp;
+
+            // Door and window status
+            updateData.doors = realtime.doors;
+            updateData.windows = realtime.windows;
+
+            // Tire pressure
+            updateData.tirePressure = realtime.tirePressure;
+
+            updateData.lastUpdate = admin.firestore.Timestamp.now();
+        }
+
+        if (gps) {
+            updateData.lastLocation = {
+                lat: gps.latitude,
+                lon: gps.longitude,
+                heading: gps.heading,
+            };
+        }
+
+        // Activate polling if requested (default: yes)
+        // This ensures we catch trips that start after the user checks their car
+        if (activatePolling) {
+            updateData.pollingActive = true;
+            updateData.pollingActivatedAt = admin.firestore.Timestamp.now();
+            updateData.pollingReason = 'app_wake';
+            console.log(`[bydWakeVehicle] Polling activated for ${vin}`);
+        }
+
+        await vehicleRef.update(updateData);
+
+        return {
+            success: true,
+            isAwake,
+            attempts: attempt,
+            pollingActivated: activatePolling,
+            data: {
+                soc: realtime?.soc || 0,
+                socPercent: realtime ? realtime.soc / 100 : 0,
+                range: realtime?.range || 0,
+                odometer: realtime?.odometer || 0,
+                isCharging: realtime?.isCharging || false,
+                isLocked: realtime?.isLocked || false,
+                isOnline: realtime?.isOnline || false,
+                location: gps ? { lat: gps.latitude, lon: gps.longitude, heading: gps.heading } : null,
+            },
+            message: isAwake
+                ? 'Vehicle is awake - data is current'
+                : 'Vehicle is in deep sleep - polling activated, data will update when car wakes.',
+        };
+
+    } catch (error: any) {
+        console.error('[bydWakeVehicle] Error:', error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+// =============================================================================
 // DIAGNOSTIC
 // =============================================================================
 
@@ -701,8 +1006,7 @@ export const bydDiagnostic = regionalFunctions.https.onCall(async (data, context
     }
 
     try {
-        const client = await getBydClientForVehicle(vin);
-        await client.login();
+        const client = await getBydClientWithSession(vin);
 
         const [realtime, gps, charging] = await Promise.allSettled([
             client.getRealtime(vin),
@@ -876,6 +1180,7 @@ async function createTripFromMqtt(
 /**
  * Get MQTT credentials for a vehicle
  * Used by Raspberry Pi to get the tokens needed for MQTT connection
+ * Also triggers a data refresh to "activate" the session for push notifications
  */
 export const bydGetMqttCredentials = regionalFunctions.https.onCall(async (data, context) => {
     const { vin } = data;
@@ -910,6 +1215,16 @@ export const bydGetMqttCredentials = regionalFunctions.https.onCall(async (data,
         };
         console.log('[bydGetMqttCredentials] Returning broker:', credentials.brokerHost, credentials.brokerPort);
 
+        // Store session in Firestore so we can reuse it for triggerMqttRefresh
+        // This allows the MQTT listener to trigger a refresh AFTER connecting
+        await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').set({
+            userId: session.token.userId,
+            signToken: session.token.signToken,
+            encryToken: session.token.encryToken,
+            cookies: JSON.stringify(session.cookies || {}),
+            updatedAt: admin.firestore.Timestamp.now(),
+        });
+
         return {
             success: true,
             credentials,
@@ -917,6 +1232,72 @@ export const bydGetMqttCredentials = regionalFunctions.https.onCall(async (data,
 
     } catch (error: any) {
         console.error('[bydGetMqttCredentials] Error:', error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+/**
+ * Trigger a data refresh using stored MQTT session
+ * Called by Raspberry Pi AFTER it connects to MQTT
+ * This should generate a response that arrives via MQTT
+ */
+export const bydTriggerMqttRefresh = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin } = data;
+
+    if (!vin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+    }
+
+    ensureBydInit();
+
+    try {
+        // Get stored MQTT session (created by bydGetMqttCredentials)
+        const sessionDoc = await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').get();
+
+        if (!sessionDoc.exists) {
+            throw new Error('No MQTT session found. Call bydGetMqttCredentials first.');
+        }
+
+        const sessionData = sessionDoc.data()!;
+        console.log('[bydTriggerMqttRefresh] Using stored session for userId:', sessionData.userId);
+
+        // Create a client using the stored session
+        const client = await getBydClientForVehicle(vin);
+
+        // Override the session with the stored one to use same credentials as MQTT
+        (client as any).session = {
+            token: {
+                userId: sessionData.userId,
+                signToken: sessionData.signToken,
+                encryToken: sessionData.encryToken,
+            },
+            cookies: JSON.parse(sessionData.cookies || '{}'),
+        };
+
+        let result: any;
+        const command = data.command || 'refresh';
+        const pin = data.pin;
+
+        // Execute command using the MQTT session
+        if (command === 'flashLights') {
+            console.log('[bydTriggerMqttRefresh] Sending flashLights command...');
+            result = await client.flashLights(vin, pin);
+            console.log('[bydTriggerMqttRefresh] flashLights result:', result);
+        } else {
+            // Default: trigger refresh
+            console.log('[bydTriggerMqttRefresh] Triggering realtime refresh...');
+            result = await client.getRealtime(vin);
+            console.log('[bydTriggerMqttRefresh] Got realtime data:', JSON.stringify(result).substring(0, 200));
+        }
+
+        return {
+            success: true,
+            message: `Command '${command}' triggered, check MQTT for response`,
+            result,
+        };
+
+    } catch (error: any) {
+        console.error('[bydTriggerMqttRefresh] Error:', error.message);
         throw new functions.https.HttpsError('internal', error.message);
     }
 });
@@ -974,8 +1355,7 @@ export const bydScheduledPoll = regionalFunctions.pubsub
  * Internal polling function - used by both scheduler and manual calls
  */
 async function pollVehicleInternal(vin: string): Promise<void> {
-    const client = await getBydClientForVehicle(vin);
-    await client.login();
+    const client = await getBydClientWithSession(vin);
 
     // Get all data in parallel
     const [realtime, gps] = await Promise.all([
@@ -992,26 +1372,58 @@ async function pollVehicleInternal(vin: string): Promise<void> {
     const activeTripId = vehicleData.activeTripId || null;
     const stationaryPollCount = vehicleData.stationaryPollCount || 0;
 
-    // Calculate movement
+    // Calculate movement using odometer
+    // GPS changes < 1km, Odometer reports in 1km increments
+    // Use odometer as primary: >= 1km = definite movement
+    // Also check GPS if available for smaller movements
     const odoDelta = realtime.odometer - prevOdometer;
-    const hasMovement = odoDelta > 0.03; // 30 meters
+    const hasOdoMovement = odoDelta >= 1; // 1km or more (odometer increments)
+
+    // GPS-based detection if available
+    let hasGpsMovement = false;
+    if (gps) {
+        const prevLat = vehicleData.lastLocation?.lat || gps.latitude;
+        const prevLon = vehicleData.lastLocation?.lon || gps.longitude;
+        // Simple distance check (Haversine would be more accurate but this is sufficient)
+        const latDelta = Math.abs(gps.latitude - prevLat);
+        const lonDelta = Math.abs(gps.longitude - prevLon);
+        hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
+    }
+
+    const hasMovement = hasOdoMovement || hasGpsMovement;
     const isStationary = !hasMovement;
 
-    console.log(`[pollVehicleInternal] ${vin}: odo=${realtime.odometer}, delta=${odoDelta.toFixed(3)}, movement=${hasMovement}, locked=${realtime.isLocked}`);
+    console.log(`[pollVehicleInternal] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}`);
 
     const vehicleUpdate: any = {
+        // Primary metrics
         lastSoC: realtime.soc / 100,
         lastRange: realtime.range,
         lastOdometer: realtime.odometer,
+        lastSpeed: realtime.speed || 0,
+
+        // State indicators
         isCharging: realtime.isCharging,
         isLocked: realtime.isLocked,
         isOnline: realtime.isOnline,
+
+        // Temperatures
+        exteriorTemp: realtime.exteriorTemp,
+        interiorTemp: realtime.interiorTemp,
+
+        // Door and window status
+        doors: realtime.doors,
+        windows: realtime.windows,
+
+        // Tire pressure
+        tirePressure: realtime.tirePressure,
+
         lastPollTime: now,
         lastUpdate: now,
     };
 
     if (gps) {
-        vehicleUpdate.lastLocation = { lat: gps.latitude, lon: gps.longitude };
+        vehicleUpdate.lastLocation = { lat: gps.latitude, lon: gps.longitude, heading: gps.heading };
     }
 
     if (hasMovement) {

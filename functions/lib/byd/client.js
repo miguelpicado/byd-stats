@@ -86,6 +86,33 @@ class BydClient {
         this.config = config;
         this.device = Object.assign(Object.assign({}, DEFAULT_DEVICE), config.device);
     }
+    /**
+     * Restore session from stored data (avoids calling login which creates new tokens)
+     * Use this to share session between MQTT listener and Firebase functions
+     */
+    restoreSession(sessionData) {
+        this.session = {
+            token: {
+                userId: sessionData.userId,
+                signToken: sessionData.signToken,
+                encryToken: sessionData.encryToken,
+            },
+            cookies: sessionData.cookies || {},
+        };
+        this.cookies = sessionData.cookies || {};
+    }
+    /**
+     * Get current session (for storing/sharing)
+     */
+    getSession() {
+        return this.session;
+    }
+    /**
+     * Check if we have a valid session
+     */
+    hasSession() {
+        return this.session !== null;
+    }
     // =========================================================================
     // AUTHENTICATION
     // =========================================================================
@@ -417,6 +444,32 @@ class BydClient {
      */
     async stopClimate(vin, pin) {
         return this.remoteControl(vin, 'STOP_CLIMATE', pin);
+    }
+    /**
+     * Close windows
+     */
+    async closeWindows(vin, pin) {
+        return this.remoteControl(vin, 'CLOSE_WINDOWS', pin);
+    }
+    /**
+     * Control seat climate/heating
+     * @param vin Vehicle VIN
+     * @param seat Seat position (0=driver, 1=passenger)
+     * @param mode Heat level (0=off, 1=low, 2=medium, 3=high)
+     * @param pin Control PIN
+     */
+    async seatClimate(vin, seat, mode, pin) {
+        const params = {
+            seatNum: String(seat), // 0=driver, 1=passenger
+            level: String(mode), // 0=off, 1=low, 2=medium, 3=high
+        };
+        return this.remoteControl(vin, 'SEAT_CLIMATE', pin, params);
+    }
+    /**
+     * Control battery heating
+     */
+    async batteryHeat(vin, pin) {
+        return this.remoteControl(vin, 'BATTERY_HEAT', pin);
     }
     async remoteControl(vin, command, pin, params) {
         const controlPin = pin || this.config.controlPin;

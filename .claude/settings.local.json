@@ -49,7 +49,9 @@
       "Bash(powershell -Command:*)",
       "Bash(openssl rand:*)",
       "Bash(ssh:*)",
-      "Bash(scp:*)"
+      "Bash(scp:*)",
+      "Bash(gh api:*)",
+      "Bash(tailscale status:*)"
     ]
   }
 }
