@@ -346,7 +346,7 @@ export const bydGetRealtime = regionalFunctions.https.onCall(async (data, contex
             isOnline: realtime.isOnline,
 
             // Temperatures (may be undefined when car is asleep)
-            exteriorTemp: realtime.exteriorTemp,
+
             interiorTemp: realtime.interiorTemp,
 
             // Door and window status
@@ -698,21 +698,20 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
         const stationaryPollCount = vehicleData.stationaryPollCount || 0;
 
         // Calculate movement using odometer
-        // GPS changes < 1km, Odometer reports in 1km increments
-        // Use odometer as primary: > 1km = definite movement
-        // Also check GPS if available for smaller movements
-        const odoDelta = realtime.odometer - prevOdometer;
+        // IMPORTANT: When prevOdometer is 0 (first poll, no prior data), skip detection
+        const odoDelta = prevOdometer > 0 ? (realtime.odometer - prevOdometer) : 0;
         const hasOdoMovement = odoDelta >= 1; // 1km or more (odometer increments)
 
         // GPS-based detection if available
         let hasGpsMovement = false;
         if (gps) {
-            const prevLat = vehicleData.lastLocation?.lat || gps.latitude;
-            const prevLon = vehicleData.lastLocation?.lon || gps.longitude;
-            // Simple distance check (Haversine would be more accurate but this is sufficient)
-            const latDelta = Math.abs(gps.latitude - prevLat);
-            const lonDelta = Math.abs(gps.longitude - prevLon);
-            hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
+            const prevLat = vehicleData.lastLocation?.lat;
+            const prevLon = vehicleData.lastLocation?.lon;
+            if (prevLat !== undefined && prevLon !== undefined) {
+                const latDelta = Math.abs(gps.latitude - prevLat);
+                const lonDelta = Math.abs(gps.longitude - prevLon);
+                hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
+            }
         }
 
         const hasMovement = hasOdoMovement || hasGpsMovement;
@@ -738,7 +737,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
         if (realtime.odometer > 0) vehicleUpdate.lastOdometer = realtime.odometer;
 
         // Temperatures (may be undefined when car is asleep)
-        if (realtime.exteriorTemp !== undefined) vehicleUpdate.exteriorTemp = realtime.exteriorTemp;
+
         if (realtime.interiorTemp !== undefined) vehicleUpdate.interiorTemp = realtime.interiorTemp;
 
         // Door and window status (may be undefined)
@@ -989,7 +988,7 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
             updateData.isOnline = isAwake;
 
             // Temperatures (may be undefined when car is asleep)
-            if (realtime?.exteriorTemp !== undefined) updateData.exteriorTemp = realtime.exteriorTemp;
+
             if (realtime?.interiorTemp !== undefined) updateData.interiorTemp = realtime.interiorTemp;
 
             // Door and window status (may be undefined when car is asleep)
@@ -1166,8 +1165,8 @@ async function processVehicleInfoEvent(event: any): Promise<void> {
 
     // Only update primary metrics if we have real values
     const soc = data.elecPercent || 0;
-    const range = data.evEndurance || 0;
-    const odometer = data.odo || data.mileage || 0;
+    const range = data.evEndurance || data.enduranceMileage || 0;
+    const odometer = data.totalMileageV2 || data.totalMileage || data.odo || data.mileage || 0;
 
     if (soc > 0) newState.lastSoC = soc / 100;
     if (range > 0) newState.lastRange = range;
@@ -1456,20 +1455,22 @@ async function pollVehicleInternal(vin: string): Promise<void> {
     const stationaryPollCount = vehicleData.stationaryPollCount || 0;
 
     // Calculate movement using odometer
-    // GPS changes < 1km, Odometer reports in 1km increments
-    // Use odometer as primary: >= 1km = definite movement
-    // Also check GPS if available for smaller movements
-    const odoDelta = realtime.odometer - prevOdometer;
+    // IMPORTANT: When prevOdometer is 0 (first poll, no prior data), skip odometer-based detection
+    // to avoid false trip starts (e.g., 12214 - 0 = 12214km "movement")
+    const odoDelta = prevOdometer > 0 ? (realtime.odometer - prevOdometer) : 0;
     const hasOdoMovement = odoDelta >= 1; // 1km or more (odometer increments)
 
     // GPS-based detection if available
     let hasGpsMovement = false;
     if (gps && gps.latitude > 0) {
-        const prevLat = vehicleData.lastLocation?.lat || gps.latitude;
-        const prevLon = vehicleData.lastLocation?.lon || gps.longitude;
-        const latDelta = Math.abs(gps.latitude - prevLat);
-        const lonDelta = Math.abs(gps.longitude - prevLon);
-        hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
+        const prevLat = vehicleData.lastLocation?.lat;
+        const prevLon = vehicleData.lastLocation?.lon;
+        // Only compare GPS if we have a previous location (avoid first-poll false positive)
+        if (prevLat !== undefined && prevLon !== undefined) {
+            const latDelta = Math.abs(gps.latitude - prevLat);
+            const lonDelta = Math.abs(gps.longitude - prevLon);
+            hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
+        }
     }
 
     const hasMovement = hasOdoMovement || hasGpsMovement;
@@ -1509,7 +1510,6 @@ async function pollVehicleInternal(vin: string): Promise<void> {
     if (realtime.odometer > 0) vehicleUpdate.lastOdometer = realtime.odometer;
 
     // Only update optional fields if defined (avoid Firestore undefined error)
-    if (realtime.exteriorTemp !== undefined) vehicleUpdate.exteriorTemp = realtime.exteriorTemp;
     if (realtime.interiorTemp !== undefined) vehicleUpdate.interiorTemp = realtime.interiorTemp;
     if (realtime.doors !== undefined) vehicleUpdate.doors = realtime.doors;
     if (realtime.windows !== undefined) vehicleUpdate.windows = realtime.windows;
