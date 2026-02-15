@@ -74,8 +74,8 @@ const DEFAULT_DEVICE = {
     isAuto: '1',
     language: 'en',
 };
-// Session expired codes
-const SESSION_EXPIRED_CODES = ['1005', '1010'];
+// Session expired codes - includes 1002 (logged in from another device)
+const SESSION_EXPIRED_CODES = ['1002', '1005', '1010'];
 // =============================================================================
 // BYD CLIENT
 // =============================================================================
@@ -83,6 +83,7 @@ class BydClient {
     constructor(config) {
         this.session = null;
         this.cookies = {};
+        this.reloginPromise = null;
         this.config = config;
         this.device = Object.assign(Object.assign({}, DEFAULT_DEVICE), config.device);
     }
@@ -476,8 +477,8 @@ class BydClient {
         if (!controlPin) {
             throw new Error('Control PIN required for remote commands');
         }
-        // Hash PIN if not already hashed
-        const pinHash = controlPin.length === 32 ? controlPin : (0, crypto_1.md5Hex)(controlPin);
+        // Hash PIN if not already hashed - BYD expects lowercase MD5 for control PIN
+        const pinHash = controlPin.length === 32 ? controlPin.toLowerCase() : (0, crypto_1.md5HexLower)(controlPin);
         // Verify PIN first
         await this.verifyControlPin(vin, pinHash);
         // Command codes
@@ -531,7 +532,7 @@ class BydClient {
      * @param payload Inner payload data
      * @param rawInner If true, use payload as-is without adding reqTimestamp
      */
-    async postAuthenticatedJson(endpoint, payload, rawInner = false) {
+    async postAuthenticatedJson(endpoint, payload, rawInner = false, _isRetry = false) {
         const session = await this.ensureSession();
         const nowMs = Date.now();
         // Build inner payload
@@ -580,9 +581,23 @@ class BydClient {
         // Make request
         const response = await this.postSecure(endpoint, outer);
         console.log(`[postAuthenticatedJson] response code: ${response.code}, msg: ${response.msg || response.message || ''}`);
-        // Check for session expiration
+        // Check for session expiration (1002=another device login, 1005/1010=expired)
         if (SESSION_EXPIRED_CODES.includes(response.code)) {
             this.session = null;
+            // Auto-retry once with a fresh login (serialized to prevent concurrent relogins)
+            if (!_isRetry) {
+                console.log(`[postAuthenticatedJson] Session expired (code ${response.code}), re-logging in and retrying...`);
+                if (!this.reloginPromise) {
+                    this.reloginPromise = this.login().then(() => {
+                        this.reloginPromise = null;
+                    }).catch((err) => {
+                        this.reloginPromise = null;
+                        throw err;
+                    });
+                }
+                await this.reloginPromise;
+                return this.postAuthenticatedJson(endpoint, payload, rawInner, true);
+            }
             throw new Error('Session expired');
         }
         // Decrypt response if present (field is 'respondData', not 'encryData')

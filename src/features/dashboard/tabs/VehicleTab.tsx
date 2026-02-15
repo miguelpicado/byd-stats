@@ -226,14 +226,20 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
         {/* Row 6: Navigation Buttons (Trips, Charges, New Charge) */}
         <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
           <button
-            onClick={() => openModal('allTrips')}
+            onClick={() => {
+              window.location.hash = 'history';
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
             className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
           >
             <Navigation className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="text-xs sm:text-sm font-medium">Viajes</span>
           </button>
           <button
-            onClick={() => openModal('allCharges')}
+            onClick={() => {
+              window.location.hash = 'charges';
+              window.dispatchEvent(new PopStateEvent('popstate'));
+            }}
             className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
           >
             <Battery className="w-5 h-5 sm:w-6 sm:h-6" />

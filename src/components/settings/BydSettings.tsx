@@ -15,6 +15,7 @@ import {
     BydGps,
     BydDiagnostic,
 } from '../../services/bydApi';
+import { waitForAuth } from '../../services/firebase';
 
 // Country codes for BYD API
 const COUNTRY_CODES = [
@@ -97,12 +98,15 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         setSuccess(null);
 
         try {
+            // Get Firebase Auth UID for proper Firestore security (optional for dev)
+            const userId = await waitForAuth() || 'dev-user';
+
             const result = await bydConnect(
                 username,
                 password,
                 countryCode,
                 controlPin || undefined,
-                'default-user'
+                userId
             );
 
             if (result.success && result.vehicles.length > 0) {
@@ -236,9 +240,11 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 </h3>
 
                 <p className="settings-description">
-                    Conecta directamente con la API de BYD usando tus credenciales de la app BYD.
-                    <br />
-                    <strong>Ventajas:</strong> Sin costes, GPS fiable, más datos disponibles.
+                    Integración con la API de BYD basada en{' '}
+                    <a href="https://github.com/trihoangvo/pybyd" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">pyBYD</a>
+                    {' '}y{' '}
+                    <a href="https://github.com/LukeEff/byd-re" target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline">BYD-Re</a>
+                    {' '}- proyectos open source de ingeniería inversa.
                 </p>
 
                 {/* Status */}
@@ -475,10 +481,15 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 }
 
                 .settings-section {
-                    background: var(--card-background, #fff);
+                    background: #ffffff;
                     border-radius: 12px;
                     padding: 1.5rem;
                     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+                }
+
+                .dark .settings-section {
+                    background: #1e293b;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
                 }
 
                 .settings-title {
@@ -487,6 +498,11 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                     gap: 0.5rem;
                     margin: 0 0 0.5rem 0;
                     font-size: 1.25rem;
+                    color: #1f2937;
+                }
+
+                .dark .settings-title {
+                    color: #f1f5f9;
                 }
 
                 .settings-title .icon {
@@ -503,9 +519,13 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 }
 
                 .settings-description {
-                    color: var(--text-secondary, #666);
+                    color: #6b7280;
                     font-size: 0.9rem;
                     margin-bottom: 1.5rem;
+                }
+
+                .dark .settings-description {
+                    color: #94a3b8;
                 }
 
                 .connection-status {
@@ -518,13 +538,18 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 }
 
                 .connection-status.connected {
-                    background: #e8f5e9;
-                    border: 1px solid #4caf50;
+                    background: #dcfce7;
+                    border: 1px solid #4ade80;
+                }
+
+                .dark .connection-status.connected {
+                    background: rgba(34, 197, 94, 0.15);
+                    border: 1px solid #22c55e;
                 }
 
                 .status-icon {
                     font-size: 1.5rem;
-                    color: #4caf50;
+                    color: #22c55e;
                 }
 
                 .status-info {
@@ -534,15 +559,31 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                     gap: 0.25rem;
                 }
 
+                .status-info strong {
+                    color: #166534;
+                }
+
+                .dark .status-info strong {
+                    color: #4ade80;
+                }
+
                 .status-info .vin {
                     font-family: monospace;
                     font-size: 0.8rem;
-                    color: var(--text-secondary, #666);
+                    color: #6b7280;
+                }
+
+                .dark .status-info .vin {
+                    color: #94a3b8;
                 }
 
                 .status-info .vehicle-name {
                     font-size: 0.9rem;
-                    color: var(--text-secondary, #666);
+                    color: #6b7280;
+                }
+
+                .dark .status-info .vehicle-name {
+                    color: #94a3b8;
                 }
 
                 .message {
@@ -556,15 +597,27 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 }
 
                 .message.error {
-                    background: #ffebee;
-                    color: #c62828;
-                    border: 1px solid #ef5350;
+                    background: #fee2e2;
+                    color: #dc2626;
+                    border: 1px solid #f87171;
+                }
+
+                .dark .message.error {
+                    background: rgba(220, 38, 38, 0.15);
+                    color: #f87171;
+                    border: 1px solid rgba(248, 113, 113, 0.3);
                 }
 
                 .message.success {
-                    background: #e8f5e9;
-                    color: #2e7d32;
-                    border: 1px solid #66bb6a;
+                    background: #dcfce7;
+                    color: #16a34a;
+                    border: 1px solid #4ade80;
+                }
+
+                .dark .message.success {
+                    background: rgba(34, 197, 94, 0.15);
+                    color: #4ade80;
+                    border: 1px solid rgba(74, 222, 128, 0.3);
                 }
 
                 .connection-form {
@@ -582,29 +635,52 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 .form-group label {
                     font-size: 0.9rem;
                     font-weight: 500;
-                    color: var(--text-primary, #333);
+                    color: #374151;
+                }
+
+                .dark .form-group label {
+                    color: #e2e8f0;
                 }
 
                 .form-group input,
                 .form-group select {
                     padding: 0.75rem;
-                    border: 1px solid var(--border-color, #ddd);
+                    border: 1px solid #d1d5db;
                     border-radius: 8px;
                     font-size: 1rem;
-                    background: var(--input-background, #fff);
-                    color: var(--text-primary, #333);
+                    background: #ffffff;
+                    color: #1f2937;
+                }
+
+                .dark .form-group input,
+                .dark .form-group select {
+                    background: #0f172a;
+                    border-color: #334155;
+                    color: #f1f5f9;
                 }
 
                 .form-group input:focus,
                 .form-group select:focus {
                     outline: none;
-                    border-color: #1976d2;
-                    box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.2);
+                    border-color: #3b82f6;
+                    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+                }
+
+                .form-group input::placeholder {
+                    color: #9ca3af;
+                }
+
+                .dark .form-group input::placeholder {
+                    color: #64748b;
                 }
 
                 .form-hint {
                     font-size: 0.75rem;
-                    color: var(--text-secondary, #666);
+                    color: #6b7280;
+                }
+
+                .dark .form-hint {
+                    color: #94a3b8;
                 }
 
                 .btn-connect,
@@ -619,26 +695,30 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 }
 
                 .btn-connect {
-                    background: #1976d2;
+                    background: #3b82f6;
                     color: white;
                 }
 
                 .btn-connect:hover:not(:disabled) {
-                    background: #1565c0;
+                    background: #2563eb;
                 }
 
                 .btn-connect:disabled {
-                    background: #bdbdbd;
+                    background: #9ca3af;
                     cursor: not-allowed;
                 }
 
+                .dark .btn-connect:disabled {
+                    background: #475569;
+                }
+
                 .btn-disconnect {
-                    background: #f44336;
+                    background: #ef4444;
                     color: white;
                 }
 
                 .btn-disconnect:hover:not(:disabled) {
-                    background: #d32f2f;
+                    background: #dc2626;
                 }
 
                 .connected-actions {
@@ -648,6 +728,11 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 .connected-actions h4 {
                     margin: 0 0 1rem 0;
                     font-size: 1rem;
+                    color: #374151;
+                }
+
+                .dark .connected-actions h4 {
+                    color: #e2e8f0;
                 }
 
                 .action-buttons {
@@ -659,16 +744,27 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
 
                 .btn-action {
                     padding: 0.5rem 1rem;
-                    background: var(--card-background, #f5f5f5);
-                    border: 1px solid var(--border-color, #ddd);
+                    background: #f3f4f6;
+                    border: 1px solid #d1d5db;
                     border-radius: 8px;
                     font-size: 0.9rem;
                     cursor: pointer;
                     transition: all 0.2s;
+                    color: #374151;
+                }
+
+                .dark .btn-action {
+                    background: #334155;
+                    border-color: #475569;
+                    color: #e2e8f0;
                 }
 
                 .btn-action:hover:not(:disabled) {
-                    background: var(--hover-background, #e0e0e0);
+                    background: #e5e7eb;
+                }
+
+                .dark .btn-action:hover:not(:disabled) {
+                    background: #475569;
                 }
 
                 .btn-action:disabled {
@@ -677,17 +773,26 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 }
 
                 .data-display {
-                    background: var(--card-background, #f9f9f9);
-                    border: 1px solid var(--border-color, #eee);
+                    background: #f9fafb;
+                    border: 1px solid #e5e7eb;
                     border-radius: 8px;
                     padding: 1rem;
                     margin-bottom: 1rem;
                 }
 
+                .dark .data-display {
+                    background: #0f172a;
+                    border-color: #334155;
+                }
+
                 .data-display h5 {
                     margin: 0 0 0.75rem 0;
                     font-size: 0.9rem;
-                    color: var(--text-secondary, #666);
+                    color: #6b7280;
+                }
+
+                .dark .data-display h5 {
+                    color: #94a3b8;
                 }
 
                 .data-grid {
@@ -704,19 +809,28 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
 
                 .data-item .label {
                     font-size: 0.75rem;
-                    color: var(--text-secondary, #666);
+                    color: #6b7280;
+                }
+
+                .dark .data-item .label {
+                    color: #94a3b8;
                 }
 
                 .data-item .value {
                     font-size: 1rem;
                     font-weight: 500;
+                    color: #1f2937;
+                }
+
+                .dark .data-item .value {
+                    color: #f1f5f9;
                 }
 
                 .btn-map {
                     display: inline-block;
                     margin-top: 0.75rem;
                     padding: 0.5rem 1rem;
-                    background: #4285f4;
+                    background: #3b82f6;
                     color: white;
                     text-decoration: none;
                     border-radius: 8px;
@@ -724,7 +838,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 }
 
                 .btn-map:hover {
-                    background: #3367d6;
+                    background: #2563eb;
                 }
 
                 .diagnostic-display {
@@ -736,6 +850,11 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                     justify-content: space-between;
                     align-items: center;
                     margin: 0 0 0.5rem 0;
+                    color: #374151;
+                }
+
+                .dark .diagnostic-display h5 {
+                    color: #e2e8f0;
                 }
 
                 .btn-close {
@@ -743,31 +862,29 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                     border: none;
                     font-size: 1.25rem;
                     cursor: pointer;
-                    color: var(--text-secondary, #666);
+                    color: #6b7280;
+                }
+
+                .dark .btn-close {
+                    color: #94a3b8;
+                }
+
+                .btn-close:hover {
+                    color: #374151;
+                }
+
+                .dark .btn-close:hover {
+                    color: #e2e8f0;
                 }
 
                 .diagnostic-json {
-                    background: #263238;
-                    color: #aed581;
+                    background: #1e293b;
+                    color: #a3e635;
                     padding: 1rem;
                     border-radius: 8px;
                     font-size: 0.75rem;
                     overflow-x: auto;
                     max-height: 400px;
-                }
-
-                @media (prefers-color-scheme: dark) {
-                    .connection-status.connected {
-                        background: rgba(76, 175, 80, 0.1);
-                    }
-
-                    .message.error {
-                        background: rgba(198, 40, 40, 0.1);
-                    }
-
-                    .message.success {
-                        background: rgba(46, 125, 50, 0.1);
-                    }
                 }
             `}</style>
         </div>

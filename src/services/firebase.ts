@@ -15,6 +15,7 @@ import {
     persistentMultipleTabManager,
     QueryConstraint
 } from 'firebase/firestore';
+import { getAuth, signInAnonymously, onAuthStateChanged, User } from 'firebase/auth';
 import { Trip } from '../types';
 import { logger } from '@core/logger';
 
@@ -29,6 +30,47 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+// Initialize Firebase Auth (optional - graceful degradation for development)
+const auth = getAuth(app);
+let currentUser: User | null = null;
+
+// Try to sign in anonymously, but don't block if it fails
+signInAnonymously(auth)
+    .then((userCredential) => {
+        logger.info('[Firebase] Signed in anonymously, UID:', userCredential.user.uid);
+        currentUser = userCredential.user;
+    })
+    .catch((error) => {
+        logger.warn('[Firebase] Anonymous auth failed (development mode?):', error.code);
+        // Continue without auth - rules should allow this for development
+    });
+
+// Track auth state changes
+onAuthStateChanged(auth, (user) => {
+    currentUser = user;
+    if (user) {
+        logger.info('[Firebase] Auth state changed, UID:', user.uid);
+    }
+});
+
+/**
+ * Get current Firebase Auth user UID
+ * Returns the anonymous user UID or null if not authenticated
+ */
+export const getCurrentUserId = (): string | null => {
+    return currentUser?.uid || null;
+};
+
+/**
+ * Wait for authentication to be ready (optional)
+ * Returns user UID or null if auth is not available
+ */
+export const waitForAuth = async (): Promise<string | null> => {
+    // Give auth a moment to complete
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return currentUser?.uid || null;
+};
 
 // Initialize Firestore with modern persistence configuration
 const db = initializeFirestore(app, {

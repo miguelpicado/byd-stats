@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useCallback, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useMemo, useCallback, ReactNode, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 import { logger } from '@core/logger';
@@ -10,6 +10,7 @@ import { useModalContext } from './ModalProvider';
 import { useDatabase, UseDatabaseReturn } from '@hooks/useDatabase';
 import { useGoogleSync, UseGoogleSyncReturn } from '@hooks/useGoogleSync';
 import { useFileHandling, UseFileHandlingReturn } from '@hooks/useFileHandling';
+import { bydWakeVehicle } from '@/services/bydApi';
 
 interface SyncContextType {
     googleSync: UseGoogleSyncReturn;
@@ -57,6 +58,30 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         updateCar,
         carName: activeCar?.name || ''
     });
+
+    // BYD Wake on App Load - wake vehicle when app starts if BYD is connected
+    const hasWokenVehicle = useRef<string | null>(null);
+    useEffect(() => {
+        const vin = activeCar?.vin;
+        // Only wake BYD vehicles (17-char VIN) once per session
+        if (!vin || vin.length !== 17 || hasWokenVehicle.current === vin) return;
+
+        hasWokenVehicle.current = vin;
+        logger.info(`[SyncProvider] App loaded with BYD vehicle ${vin}, waking...`);
+
+        bydWakeVehicle(vin, true)
+            .then((result) => {
+                logger.info(`[SyncProvider] BYD wake result: isAwake=${result.isAwake}, SOC=${result.data.soc}%`);
+                if (result.isAwake && result.data.soc > 0) {
+                    toast.success(`Vehículo conectado: ${result.data.soc}% batería`);
+                } else {
+                    logger.warn(`[SyncProvider] Vehicle in deep sleep: ${result.message}`);
+                }
+            })
+            .catch((error) => {
+                logger.error('[SyncProvider] Failed to wake BYD vehicle:', error);
+            });
+    }, [activeCar?.vin]);
 
     // Auto-Sync Effect
     useEffect(() => {

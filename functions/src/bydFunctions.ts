@@ -121,6 +121,22 @@ export const bydConnect = regionalFunctions.https.onCall(async (data, context) =
 
         await batch.commit();
 
+        // Save session to mqttSession for ALL vehicles so subsequent API calls use the fresh session
+        // This is critical: when user reconnects, the old session becomes invalid on BYD's server
+        const session = client.getSession();
+        if (session) {
+            for (const vehicle of vehicles) {
+                await db.collection('bydVehicles').doc(vehicle.vin).collection('private').doc('mqttSession').set({
+                    userId: session.token.userId,
+                    signToken: session.token.signToken,
+                    encryToken: session.token.encryToken,
+                    cookies: JSON.stringify(session.cookies || {}),
+                    updatedAt: admin.firestore.Timestamp.now(),
+                });
+                console.log(`[bydConnect] Saved fresh session to mqttSession for ${vehicle.vin}`);
+            }
+        }
+
         console.log(`[bydConnect] Connected ${vehicles.length} vehicles for user ${userId}`);
 
         return {
@@ -167,6 +183,48 @@ export const bydDisconnect = regionalFunctions.https.onCall(async (data, context
 // HELPER: Get BYD Client for a vehicle
 // =============================================================================
 
+/**
+ * Decrypt helper for credentials
+ */
+function getDecryptor() {
+    const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
+    if (!ENCRYPTION_KEY) {
+        throw new Error('Encryption key not configured');
+    }
+
+    const crypto = require('crypto');
+    return (encrypted: string) => {
+        const [ivHex, authTagHex, dataHex] = encrypted.split(':');
+        const iv = Buffer.from(ivHex, 'hex');
+        const authTag = Buffer.from(authTagHex, 'hex');
+        const data = Buffer.from(dataHex, 'hex');
+        const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+        decipher.setAuthTag(authTag);
+        return decipher.update(data, undefined, 'utf8') + decipher.final('utf8');
+    };
+}
+
+/**
+ * Get the stored control PIN for a vehicle
+ * Used by control functions (lock, unlock, climate, etc.)
+ */
+async function getStoredControlPin(vin: string): Promise<string | undefined> {
+    const credentialsRef = db.collection('bydVehicles').doc(vin).collection('private').doc('credentials');
+    const credentialsDoc = await credentialsRef.get();
+
+    if (!credentialsDoc.exists) {
+        return undefined;
+    }
+
+    const creds = credentialsDoc.data()!;
+    if (!creds.controlPin) {
+        return undefined;
+    }
+
+    const decrypt = getDecryptor();
+    return decrypt(creds.controlPin);
+}
+
 async function getBydClientForVehicle(vin: string): Promise<BydClient> {
     ensureBydInit();
 
@@ -178,21 +236,7 @@ async function getBydClientForVehicle(vin: string): Promise<BydClient> {
     }
 
     const creds = credentialsDoc.data()!;
-    const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
-    if (!ENCRYPTION_KEY) {
-        throw new Error('Encryption key not configured');
-    }
-
-    const crypto = require('crypto');
-    const decrypt = (encrypted: string) => {
-        const [ivHex, authTagHex, dataHex] = encrypted.split(':');
-        const iv = Buffer.from(ivHex, 'hex');
-        const authTag = Buffer.from(authTagHex, 'hex');
-        const data = Buffer.from(dataHex, 'hex');
-        const decipher = crypto.createDecipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
-        decipher.setAuthTag(authTag);
-        return decipher.update(data, undefined, 'utf8') + decipher.final('utf8');
-    };
+    const decrypt = getDecryptor();
 
     const config: BydConfig = {
         username: decrypt(creds.username),
@@ -263,6 +307,15 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
 // =============================================================================
 
 /**
+ * Helper to filter out undefined values from an object (Firestore rejects undefined)
+ */
+function removeUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+    return Object.fromEntries(
+        Object.entries(obj).filter(([_, v]) => v !== undefined)
+    ) as Partial<T>;
+}
+
+/**
  * Get realtime vehicle data (battery, range, odometer, etc.)
  */
 export const bydGetRealtime = regionalFunctions.https.onCall(async (data, context) => {
@@ -276,21 +329,23 @@ export const bydGetRealtime = regionalFunctions.https.onCall(async (data, contex
         const client = await getBydClientWithSession(vin);
         const realtime = await client.getRealtime(vin);
 
-        // Update vehicle state in Firestore - capture ALL available data
+        // Build update object, filtering out undefined values (Firestore rejects them)
+        // Only update primary metrics if we have real values (car is awake)
+        // This preserves the last known good values when car is sleeping
         const vehicleRef = db.collection('bydVehicles').doc(vin);
-        await vehicleRef.update({
-            // Primary metrics
-            lastSoC: realtime.soc / 100,
-            lastRange: realtime.range,
-            lastOdometer: realtime.odometer,
-            lastSpeed: realtime.speed || 0,
+        const updateData = removeUndefined({
+            // Primary metrics - only update if > 0 to preserve last known values
+            lastSoC: realtime.soc > 0 ? realtime.soc / 100 : undefined,
+            lastRange: realtime.range > 0 ? realtime.range : undefined,
+            lastOdometer: realtime.odometer > 0 ? realtime.odometer : undefined,
+            lastSpeed: realtime.speed ?? 0,
 
             // State indicators
             isCharging: realtime.isCharging,
             isLocked: realtime.isLocked,
             isOnline: realtime.isOnline,
 
-            // Temperatures
+            // Temperatures (may be undefined when car is asleep)
             exteriorTemp: realtime.exteriorTemp,
             interiorTemp: realtime.interiorTemp,
 
@@ -303,6 +358,8 @@ export const bydGetRealtime = regionalFunctions.https.onCall(async (data, contex
 
             lastUpdate: admin.firestore.Timestamp.now(),
         });
+
+        await vehicleRef.update(updateData);
 
         console.log(`[bydGetRealtime] ${vin}: SOC=${realtime.soc}%, range=${realtime.range}km, odo=${realtime.odometer}km, online=${realtime.isOnline}`);
 
@@ -404,7 +461,8 @@ export const bydLock = regionalFunctions.https.onCall(async (data, context) => {
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.lock(vin, pin);
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.lock(vin, controlPin);
 
         if (success) {
             await db.collection('bydVehicles').doc(vin).update({
@@ -435,7 +493,8 @@ export const bydUnlock = regionalFunctions.https.onCall(async (data, context) =>
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.unlock(vin, pin);
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.unlock(vin, controlPin);
 
         if (success) {
             await db.collection('bydVehicles').doc(vin).update({
@@ -466,7 +525,9 @@ export const bydStartClimate = regionalFunctions.https.onCall(async (data, conte
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.startClimate(vin, temperature || 22, pin);
+        // Use stored PIN if not provided in request
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.startClimate(vin, temperature || 22, controlPin);
 
         console.log(`[bydStartClimate] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
@@ -490,7 +551,8 @@ export const bydStopClimate = regionalFunctions.https.onCall(async (data, contex
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.stopClimate(vin, pin);
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.stopClimate(vin, controlPin);
 
         console.log(`[bydStopClimate] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
@@ -514,7 +576,8 @@ export const bydFlashLights = regionalFunctions.https.onCall(async (data, contex
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.flashLights(vin, pin);
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.flashLights(vin, controlPin);
 
         console.log(`[bydFlashLights] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
@@ -538,7 +601,8 @@ export const bydCloseWindows = regionalFunctions.https.onCall(async (data, conte
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.closeWindows(vin, pin);
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.closeWindows(vin, controlPin);
 
         console.log(`[bydCloseWindows] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
@@ -564,7 +628,8 @@ export const bydSeatClimate = regionalFunctions.https.onCall(async (data, contex
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.seatClimate(vin, seat, mode, pin);
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.seatClimate(vin, seat, mode, controlPin);
 
         console.log(`[bydSeatClimate] ${vin}: seat=${seat}, mode=${mode}, ${success ? 'SUCCESS' : 'FAILED'}`);
 
@@ -588,7 +653,8 @@ export const bydBatteryHeat = regionalFunctions.https.onCall(async (data, contex
 
     try {
         const client = await getBydClientWithSession(vin);
-        const success = await client.batteryHeat(vin, pin);
+        const controlPin = pin || await getStoredControlPin(vin);
+        const success = await client.batteryHeat(vin, controlPin);
 
         console.log(`[bydBatteryHeat] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
@@ -657,10 +723,6 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
         console.log(`[bydPollVehicle] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}`);
 
         const vehicleUpdate: any = {
-            // Primary metrics
-            lastSoC: realtime.soc / 100,
-            lastRange: realtime.range,
-            lastOdometer: realtime.odometer,
             lastSpeed: realtime.speed || 0,
 
             // State indicators
@@ -668,23 +730,30 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
             isLocked: realtime.isLocked,
             isOnline: realtime.isOnline,
 
-            // Temperatures
-            exteriorTemp: realtime.exteriorTemp,
-            interiorTemp: realtime.interiorTemp,
-
-            // Door and window status
-            doors: realtime.doors,
-            windows: realtime.windows,
-
-            // Tire pressure
-            tirePressure: realtime.tirePressure,
-
             lastPollTime: now,
             lastUpdate: now,
         };
 
+        // Primary metrics - only update if > 0 to preserve last known values
+        if (realtime.soc > 0) vehicleUpdate.lastSoC = realtime.soc / 100;
+        if (realtime.range > 0) vehicleUpdate.lastRange = realtime.range;
+        if (realtime.odometer > 0) vehicleUpdate.lastOdometer = realtime.odometer;
+
+        // Temperatures (may be undefined when car is asleep)
+        if (realtime.exteriorTemp !== undefined) vehicleUpdate.exteriorTemp = realtime.exteriorTemp;
+        if (realtime.interiorTemp !== undefined) vehicleUpdate.interiorTemp = realtime.interiorTemp;
+
+        // Door and window status (may be undefined)
+        if (realtime.doors !== undefined) vehicleUpdate.doors = realtime.doors;
+        if (realtime.windows !== undefined) vehicleUpdate.windows = realtime.windows;
+
+        // Tire pressure (may be undefined)
+        if (realtime.tirePressure !== undefined) vehicleUpdate.tirePressure = realtime.tirePressure;
+
         if (gps) {
-            vehicleUpdate.lastLocation = { lat: gps.latitude, lon: gps.longitude, heading: gps.heading };
+            const location: any = { lat: gps.latitude, lon: gps.longitude };
+            if (gps.heading !== undefined) location.heading = gps.heading;
+            vehicleUpdate.lastLocation = location;
         }
 
         if (hasMovement) {
@@ -921,10 +990,17 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
         };
 
         if (realtime) {
-            // Primary metrics
-            updateData.lastSoC = realtime.soc / 100;
-            updateData.lastRange = realtime.range;
-            updateData.lastOdometer = realtime.odometer;
+            // Primary metrics - only update if we have real values (car is awake)
+            // This preserves the last known good values when car is sleeping
+            if (realtime.soc > 0) {
+                updateData.lastSoC = realtime.soc / 100;
+            }
+            if (realtime.range > 0) {
+                updateData.lastRange = realtime.range;
+            }
+            if (realtime.odometer > 0) {
+                updateData.lastOdometer = realtime.odometer;
+            }
             updateData.lastSpeed = realtime.speed || 0;
 
             // State indicators
@@ -932,26 +1008,27 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
             updateData.isLocked = realtime.isLocked;
             updateData.isOnline = realtime.isOnline;
 
-            // Temperatures
-            updateData.exteriorTemp = realtime.exteriorTemp;
-            updateData.interiorTemp = realtime.interiorTemp;
+            // Temperatures (may be undefined when car is asleep)
+            if (realtime.exteriorTemp !== undefined) updateData.exteriorTemp = realtime.exteriorTemp;
+            if (realtime.interiorTemp !== undefined) updateData.interiorTemp = realtime.interiorTemp;
 
-            // Door and window status
-            updateData.doors = realtime.doors;
-            updateData.windows = realtime.windows;
+            // Door and window status (may be undefined when car is asleep)
+            if (realtime.doors !== undefined) updateData.doors = realtime.doors;
+            if (realtime.windows !== undefined) updateData.windows = realtime.windows;
 
-            // Tire pressure
-            updateData.tirePressure = realtime.tirePressure;
+            // Tire pressure (may be undefined when car is asleep)
+            if (realtime.tirePressure !== undefined) updateData.tirePressure = realtime.tirePressure;
 
             updateData.lastUpdate = admin.firestore.Timestamp.now();
         }
 
         if (gps) {
-            updateData.lastLocation = {
+            const location: any = {
                 lat: gps.latitude,
                 lon: gps.longitude,
-                heading: gps.heading,
             };
+            if (gps.heading !== undefined) location.heading = gps.heading;
+            updateData.lastLocation = location;
         }
 
         // Activate polling if requested (default: yes)
@@ -1101,22 +1178,28 @@ async function processVehicleInfoEvent(event: any): Promise<void> {
     const prevDoc = await vehicleRef.get();
     const prevState = prevDoc.exists ? prevDoc.data() : null;
 
-    // Parse new state
-    const newState = {
-        lastSoC: (data.elecPercent || 0) / 100,
-        lastRange: data.evEndurance || 0,
-        lastOdometer: data.odo || data.mileage || 0,
+    // Parse new state - only include values > 0 to preserve last known values
+    const newState: any = {
         isCharging: data.chargeState === 1,
         isOnline: true, // If we received MQTT event, car is online
         lastMqttUpdate: admin.firestore.Timestamp.now(),
     };
 
+    // Only update primary metrics if we have real values
+    const soc = data.elecPercent || 0;
+    const range = data.evEndurance || 0;
+    const odometer = data.odo || data.mileage || 0;
+
+    if (soc > 0) newState.lastSoC = soc / 100;
+    if (range > 0) newState.lastRange = range;
+    if (odometer > 0) newState.lastOdometer = odometer;
+
     // Update vehicle state
     await vehicleRef.update(newState);
 
     // Trip detection: check if odometer increased
-    if (prevState && prevState.lastOdometer && newState.lastOdometer > prevState.lastOdometer) {
-        const distance = newState.lastOdometer - prevState.lastOdometer;
+    if (prevState && prevState.lastOdometer && odometer > prevState.lastOdometer) {
+        const distance = odometer - prevState.lastOdometer;
 
         // Only create trip if distance > 0.5 km (avoid noise)
         if (distance > 0.5) {
@@ -1124,7 +1207,7 @@ async function processVehicleInfoEvent(event: any): Promise<void> {
         }
     }
 
-    console.log(`[processVehicleInfoEvent] Updated ${vin}: SOC=${newState.lastSoC * 100}%, odo=${newState.lastOdometer}km`);
+    console.log(`[processVehicleInfoEvent] Updated ${vin}: SOC=${soc}%, odo=${odometer}km`);
 }
 
 /**
@@ -1357,11 +1440,23 @@ export const bydScheduledPoll = regionalFunctions.pubsub
 async function pollVehicleInternal(vin: string): Promise<void> {
     const client = await getBydClientWithSession(vin);
 
-    // Get all data in parallel
-    const [realtime, gps] = await Promise.all([
-        client.getRealtime(vin),
-        client.getGps(vin).catch(() => null), // GPS might fail
-    ]);
+    // Get data sequentially - if session expired (1002), the first call
+    // will auto-relogin and subsequent calls will use the new session
+    const realtime = await client.getRealtime(vin);
+    const gps = await client.getGps(vin).catch(() => null); // GPS might fail
+
+    // After successful API calls, save the session back in case it was refreshed
+    // (e.g. auto-relogin after 1002 "another device" error)
+    const currentSession = client.getSession();
+    if (currentSession) {
+        await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').set({
+            userId: currentSession.token.userId,
+            signToken: currentSession.token.signToken,
+            encryToken: currentSession.token.encryToken,
+            cookies: JSON.stringify(currentSession.cookies || {}),
+            updatedAt: admin.firestore.Timestamp.now(),
+        });
+    }
 
     const now = admin.firestore.Timestamp.now();
     const vehicleRef = db.collection('bydVehicles').doc(vin);

@@ -45,15 +45,19 @@ const ChargeNotificationModal: React.FC = () => {
         if (!activeCar?.vin) return;
 
         const db = getFirestore(getApp());
-        const sessionsRef = collection(db, 'chargeSessions');
+        // BYD VINs are 17 chars, use bydVehicles subcollection
+        const isByd = activeCar.vin.length === 17;
+        const sessionsRef = isByd
+            ? collection(db, 'bydVehicles', activeCar.vin, 'chargingSessions')
+            : collection(db, 'chargeSessions');
 
         // Query for completed sessions that haven't been confirmed or discarded
-        // Note: Assuming backend now stores sessions with VIN as vehicleId or we migrate
-        const q = query(
-            sessionsRef,
-            where('vehicleId', '==', activeCar.vin),
-            where('status', '==', 'completed')
-        );
+        const constraints = [where('status', '==', 'completed')];
+        // Only add vehicleId filter for top-level collection (legacy)
+        if (!isByd) {
+            constraints.push(where('vehicleId', '==', activeCar.vin));
+        }
+        const q = query(sessionsRef, ...constraints);
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const sessions: ChargeSession[] = [];
@@ -132,7 +136,11 @@ const ChargeNotificationModal: React.FC = () => {
             addCharge(chargeData);
 
             // Mark session as confirmed in Firestore
-            const sessionRef = doc(db, 'chargeSessions', currentSession.id);
+            // BYD VINs are 17 chars, use bydVehicles subcollection
+            const isByd = activeCar?.vin?.length === 17;
+            const sessionRef = isByd && activeCar?.vin
+                ? doc(db, 'bydVehicles', activeCar.vin, 'chargingSessions', currentSession.id)
+                : doc(db, 'chargeSessions', currentSession.id);
             await updateDoc(sessionRef, {
                 userConfirmed: true,
                 confirmedAt: Timestamp.now()
@@ -160,7 +168,11 @@ const ChargeNotificationModal: React.FC = () => {
 
         try {
             const db = getFirestore(getApp());
-            const sessionRef = doc(db, 'chargeSessions', currentSession.id);
+            // BYD VINs are 17 chars, use bydVehicles subcollection
+            const isByd = activeCar?.vin?.length === 17;
+            const sessionRef = isByd && activeCar?.vin
+                ? doc(db, 'bydVehicles', activeCar.vin, 'chargingSessions', currentSession.id)
+                : doc(db, 'chargeSessions', currentSession.id);
             await updateDoc(sessionRef, {
                 userDiscarded: true,
                 discardedAt: Timestamp.now()
