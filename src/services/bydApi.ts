@@ -95,7 +95,7 @@ export async function bydConnect(
         password,
         countryCode,
         controlPin,
-        userId: userId || 'default-user',
+        userId: userId || 'anonymous',
     });
     return result.data;
 }
@@ -246,5 +246,34 @@ export async function bydPollVehicle(vin: string): Promise<{
 export async function bydDiagnostic(vin: string): Promise<BydDiagnostic> {
     const callable = httpsCallable<any, BydDiagnostic>(functions, 'bydDiagnostic');
     const result = await callable({ vin });
+    return result.data;
+}
+
+export interface BydWakeResult {
+    success: boolean;
+    isAwake: boolean;
+    attempts: number;
+    pollingActivated: boolean;
+    data: {
+        soc: number;
+        socPercent: number;
+        range: number;
+        odometer: number;
+        isCharging: boolean;
+        isLocked: boolean;
+        isOnline: boolean;
+        location: { lat: number; lon: number; heading?: number } | null;
+    };
+    message: string;
+}
+
+/**
+ * Wake vehicle and get current data
+ * Called when user opens the app to refresh vehicle state
+ * Retries up to 3 times if car is sleeping
+ */
+export async function bydWakeVehicle(vin: string, activatePolling = true): Promise<BydWakeResult> {
+    const callable = httpsCallable<any, BydWakeResult>(functions, 'bydWakeVehicle');
+    const result = await callable({ vin, activatePolling });
     return result.data;
 }

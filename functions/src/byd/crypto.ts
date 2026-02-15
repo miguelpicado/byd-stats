@@ -20,6 +20,14 @@ export function md5Hex(input: string): string {
 }
 
 /**
+ * Compute MD5 hash of a string, returns lowercase hex
+ * Used for control PIN which BYD expects in lowercase
+ */
+export function md5HexLower(input: string): string {
+    return crypto.createHash('md5').update(input, 'utf8').digest('hex').toLowerCase();
+}
+
+/**
  * Compute SHA1 with special mixed-case formatting
  * Port of pyBYD sha1_mixed:
  * 1. For each byte at index i, format as 2-char hex

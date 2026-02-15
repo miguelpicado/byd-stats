@@ -41,6 +41,7 @@ var __importStar = (this && this.__importStar) || (function () {
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.md5Hex = md5Hex;
+exports.md5HexLower = md5HexLower;
 exports.sha1Mixed = sha1Mixed;
 exports.pwdLoginKey = pwdLoginKey;
 exports.computeCheckcode = computeCheckcode;
@@ -60,6 +61,13 @@ const crypto = __importStar(require("crypto"));
  */
 function md5Hex(input) {
     return crypto.createHash('md5').update(input, 'utf8').digest('hex').toUpperCase();
+}
+/**
+ * Compute MD5 hash of a string, returns lowercase hex
+ * Used for control PIN which BYD expects in lowercase
+ */
+function md5HexLower(input) {
+    return crypto.createHash('md5').update(input, 'utf8').digest('hex').toLowerCase();
 }
 /**
  * Compute SHA1 with special mixed-case formatting

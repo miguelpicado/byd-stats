@@ -17,7 +17,8 @@ export type {
 export {
     loadBangcleTables,
     areBangcleTablesLoaded,
-    md5Hex
+    md5Hex,
+    md5HexLower
 } from './crypto';
 
 import * as fs from 'fs';

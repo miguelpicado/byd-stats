@@ -37,7 +37,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.md5Hex = exports.areBangcleTablesLoaded = exports.loadBangcleTables = exports.BydClient = void 0;
+exports.md5HexLower = exports.md5Hex = exports.areBangcleTablesLoaded = exports.loadBangcleTables = exports.BydClient = void 0;
 exports.initBydModule = initBydModule;
 var client_1 = require("./client");
 Object.defineProperty(exports, "BydClient", { enumerable: true, get: function () { return client_1.BydClient; } });
@@ -45,6 +45,7 @@ var crypto_1 = require("./crypto");
 Object.defineProperty(exports, "loadBangcleTables", { enumerable: true, get: function () { return crypto_1.loadBangcleTables; } });
 Object.defineProperty(exports, "areBangcleTablesLoaded", { enumerable: true, get: function () { return crypto_1.areBangcleTablesLoaded; } });
 Object.defineProperty(exports, "md5Hex", { enumerable: true, get: function () { return crypto_1.md5Hex; } });
+Object.defineProperty(exports, "md5HexLower", { enumerable: true, get: function () { return crypto_1.md5HexLower; } });
 const fs = __importStar(require("fs"));
 const path = __importStar(require("path"));
 const crypto_2 = require("./crypto");

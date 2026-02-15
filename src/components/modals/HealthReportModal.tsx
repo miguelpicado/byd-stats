@@ -9,6 +9,7 @@ import toast from 'react-hot-toast';
 import { Anomaly } from '@/services/AnomalyService';
 import AlertHistoryModal from './AlertHistoryModal';
 import ModalPortal from '../common/ModalPortal';
+import { bydWakeVehicle, bydLock, bydUnlock, bydStartClimate, bydStopClimate, bydDiagnostic } from '@/services/bydApi';
 
 interface VehicleFirestoreData {
     isLocked?: boolean;
@@ -54,7 +55,11 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
         }
 
         const db = getFirestore(getApp());
-        const vehicleRef = doc(db, 'vehicles', activeCar.vin);
+        // BYD VINs are 17 chars, use bydVehicles collection
+        const isByd = activeCar.vin.length === 17;
+        const vehicleRef = isByd
+            ? doc(db, 'bydVehicles', activeCar.vin)
+            : doc(db, 'vehicles', activeCar.vin);
 
         const unsubscribe = onSnapshot(vehicleRef, (docSnapshot) => {
             if (docSnapshot.exists()) {
@@ -75,10 +80,18 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
             const refreshData = async () => {
                 setActionLoading('refreshVehicleData');
                 try {
-                    const functions = getFunctions(getApp(), 'europe-west1');
-                    const refresh = httpsCallable(functions, 'refreshVehicleData');
-                    const result = await refresh({ vehicleId: activeCar.vin });
-                    console.log('[HealthReportModal] Auto-refresh result:', result.data);
+                    // BYD VINs are 17 chars - use bydWakeVehicle
+                    const isByd = activeCar.vin.length === 17;
+                    if (isByd) {
+                        const result = await bydWakeVehicle(activeCar.vin, false);
+                        console.log('[HealthReportModal] BYD wake result:', result.isAwake, result.data.soc);
+                    } else {
+                        // Legacy Smartcar (if ever needed)
+                        const functions = getFunctions(getApp(), 'europe-west1');
+                        const refresh = httpsCallable(functions, 'refreshVehicleData');
+                        const result = await refresh({ vehicleId: activeCar.vin });
+                        console.log('[HealthReportModal] Auto-refresh result:', result.data);
+                    }
                 } catch (error: unknown) {
                     console.error('[HealthReportModal] Auto-refresh failed:', error instanceof Error ? error.message : error);
                 } finally {
@@ -130,30 +143,66 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
     };
 
     const handleAction = async (action: string) => {
-        if (!activeCarId) return;
+        if (!activeCarId || !activeCar?.vin) return;
 
         setActionLoading(action);
         const toastId = toast.loading(`${t('common.processing', 'Procesando...')} ${action}`);
 
         try {
-            const functions = getFunctions(getApp(), 'europe-west1');
-            const callAction = httpsCallable(functions, action);
-            const result = await callAction({ vehicleId: activeCar?.vin || activeCarId });
+            const vin = activeCar.vin;
+            const isByd = vin.length === 17;
 
-            // Log diagnostic results to console
-            if (action === 'fullSmartcarDiagnostic') {
-                console.log('=== SMARTCAR DIAGNOSTIC RESULTS ===');
-                console.log(JSON.stringify(result.data, null, 2));
-                const data = result.data as { summary?: { available?: unknown[]; unavailable?: unknown[] } };
-                toast.success(`Diagnóstico completo. Disponibles: ${data.summary?.available?.length || 0}, No disponibles: ${data.summary?.unavailable?.length || 0}. Ver consola (F12)`, { id: toastId, duration: 8000 });
-                return;
+            if (isByd) {
+                // BYD vehicle - use BYD API
+                switch (action) {
+                    case 'refreshVehicleData':
+                        await bydWakeVehicle(vin, false);
+                        break;
+                    case 'lockVehicle':
+                        await bydLock(vin);
+                        updateCar(activeCarId, { isLocked: true });
+                        break;
+                    case 'unlockVehicle':
+                        await bydUnlock(vin);
+                        updateCar(activeCarId, { isLocked: false });
+                        break;
+                    case 'startClimate':
+                        await bydStartClimate(vin);
+                        updateCar(activeCarId, { climateActive: true });
+                        break;
+                    case 'stopClimate':
+                        await bydStopClimate(vin);
+                        updateCar(activeCarId, { climateActive: false });
+                        break;
+                    case 'fullSmartcarDiagnostic':
+                        const diagResult = await bydDiagnostic(vin);
+                        console.log('=== BYD DIAGNOSTIC RESULTS ===');
+                        console.log(JSON.stringify(diagResult, null, 2));
+                        toast.success(`Diagnóstico BYD completo. Ver consola (F12)`, { id: toastId, duration: 8000 });
+                        return;
+                    default:
+                        console.warn(`Unknown action for BYD: ${action}`);
+                }
+            } else {
+                // Legacy Smartcar - use Firebase functions
+                const functions = getFunctions(getApp(), 'europe-west1');
+                const callAction = httpsCallable(functions, action);
+                const result = await callAction({ vehicleId: vin });
+
+                if (action === 'fullSmartcarDiagnostic') {
+                    console.log('=== SMARTCAR DIAGNOSTIC RESULTS ===');
+                    console.log(JSON.stringify(result.data, null, 2));
+                    const data = result.data as { summary?: { available?: unknown[]; unavailable?: unknown[] } };
+                    toast.success(`Diagnóstico completo. Disponibles: ${data.summary?.available?.length || 0}, No disponibles: ${data.summary?.unavailable?.length || 0}. Ver consola (F12)`, { id: toastId, duration: 8000 });
+                    return;
+                }
+
+                // Update local state if needed
+                if (action === 'lockVehicle') updateCar(activeCarId, { isLocked: true });
+                if (action === 'unlockVehicle') updateCar(activeCarId, { isLocked: false });
+                if (action === 'startClimate') updateCar(activeCarId, { climateActive: true });
+                if (action === 'stopClimate') updateCar(activeCarId, { climateActive: false });
             }
-
-            // Update local state if needed
-            if (action === 'lockVehicle') updateCar(activeCarId, { isLocked: true });
-            if (action === 'unlockVehicle') updateCar(activeCarId, { isLocked: false });
-            if (action === 'startClimate') updateCar(activeCarId, { climateActive: true });
-            if (action === 'stopClimate') updateCar(activeCarId, { climateActive: false });
 
             toast.success(`${t('common.success', '¡Éxito!')}`, { id: toastId });
         } catch (error: unknown) {

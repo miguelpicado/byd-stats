@@ -71,7 +71,13 @@ export function useVehicleStatus(
         }
 
         const db = getFirestore(getApp());
-        const vehicleRef = doc(db, 'vehicles', vehicleId);
+        // BYD VINs are 17 chars, use bydVehicles collection
+        const isByd = vehicleId.length === 17;
+        const vehicleRef = isByd
+            ? doc(db, 'bydVehicles', vehicleId)
+            : doc(db, 'vehicles', vehicleId);
+
+        // Note: BYD vehicle wake is handled in SyncProvider on app load
 
         const unsubscribe = onSnapshot(
             vehicleRef,
