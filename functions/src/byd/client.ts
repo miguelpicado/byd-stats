@@ -96,7 +96,6 @@ export interface BydRealtime {
     isCharging: boolean;
     isLocked: boolean;
     isOnline: boolean;
-    exteriorTemp?: number;
     interiorTemp?: number;
     doors?: {
         frontLeft: boolean;
@@ -492,7 +491,6 @@ export class BydClient {
             isCharging: info.chargingState === 1 || info.chargeState === 1 || info.chargeStatus === '1',
             isLocked,
             isOnline: !isOffline && (Number(info.onlineState) !== 2),
-            exteriorTemp: this.parseNumber(info.tempOutCar || info.exteriorTemperature),
             interiorTemp: this.parseNumber(info.tempInCar || info.interiorTemperature),
             doors: {
                 frontLeft: Number(info.leftFrontDoor) === 2,
