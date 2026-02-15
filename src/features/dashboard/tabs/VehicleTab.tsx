@@ -47,15 +47,6 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   const [showMfgModal, setShowMfgModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
 
-  if (!vin) {
-    return (
-      <div className="text-center py-12">
-        <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-        <p className="text-slate-400">{t('common.noVehicleConnected', 'No hay vehículo conectado')}</p>
-      </div>
-    );
-  }
-
   const handleSettingsSave = (isoDate: string, displayDate: string) => {
     updateSettings({
       mfgDate: isoDate,
