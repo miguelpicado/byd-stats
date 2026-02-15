@@ -3,11 +3,14 @@ import { useTranslation } from 'react-i18next';
 import { useCar } from '@/context/CarContext';
 import { useLayout } from '@/context/LayoutContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
+import { useData } from '@/providers/DataProvider';
 import { normalizeSoCToPercent } from '@/utils/normalize';
+import StatCard from '@components/ui/StatCard';
 import {
   Battery, Zap, Car, AlertCircle, TrendingUp,
-  BarChart3, Lock, Unlock, Navigation
+  BarChart3, Lock, Unlock, Navigation, MapPin, Activity, AlertTriangle
 } from '@components/Icons';
+import { AnomalyService, Anomaly } from '@/services/AnomalyService';
 import { BYD_RED } from '@core/constants';
 import { logger } from '@core/logger';
 import { bydLock, bydUnlock, bydFlashLights, bydCloseWindows, bydSeatClimate, bydBatteryHeat } from '@/services/bydApi';
@@ -16,54 +19,6 @@ import toast from 'react-hot-toast';
 interface VehicleTabProps {
   isActive?: boolean;
 }
-
-interface StatCardProps {
-  icon: React.ComponentType<{ className: string }>;
-  label: string;
-  value: string | number;
-  unit?: string;
-  colorClass?: string;
-  onClick?: () => void;
-}
-
-/**
- * StatCard Component - Reusable statistic display card
- */
-const StatCard: React.FC<StatCardProps> = ({
-  icon: Icon,
-  label,
-  value,
-  unit = '',
-  colorClass = 'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300',
-  onClick
-}) => {
-  const { isCompact, isLargerCard, isVertical } = useLayout();
-
-  return (
-    <div
-      className={`bg-white dark:bg-slate-800/50 rounded-xl sm:rounded-2xl border border-slate-200 dark:border-slate-700/50 flex items-stretch overflow-hidden h-24 sm:h-28 ${
-        onClick ? 'cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800' : ''
-      } transition-colors`}
-      onClick={onClick}
-    >
-      {/* Icon section */}
-      <div className={`flex items-center justify-center shrink-0 w-20 sm:w-24 ${colorClass}`}>
-        <Icon className="w-8 h-8 sm:w-10 sm:h-10" />
-      </div>
-
-      {/* Content section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-3 sm:px-4 py-2 text-center">
-        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 font-semibold uppercase tracking-wider truncate w-full">
-          {label}
-        </p>
-        <p className="font-bold text-lg sm:text-2xl text-slate-900 dark:text-white leading-tight mt-1">
-          {value}
-          {unit && <span className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 ml-1 font-semibold">{unit}</span>}
-        </p>
-      </div>
-    </div>
-  );
-};
 
 /**
  * Action Button Component - For vehicle control actions
@@ -105,17 +60,67 @@ const ActionButton: React.FC<ActionButtonProps> = ({
 };
 
 /**
+ * Navigation Button Component - For secondary actions
+ */
+interface NavButtonProps {
+  icon: string;
+  label: string;
+  onClick: () => void;
+}
+
+const NavButton: React.FC<NavButtonProps> = ({ icon, label, onClick }) => {
+  return (
+    <button
+      onClick={onClick}
+      className="bg-slate-600/20 hover:bg-slate-600/30 text-slate-700 dark:text-slate-300 dark:bg-slate-700/30 dark:hover:bg-slate-700/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-3 sm:py-4 font-semibold text-sm sm:text-base flex flex-col items-center justify-center gap-1 transition-all active:scale-95"
+    >
+      <span className="text-lg">{icon}</span>
+      <span className="text-xs sm:text-sm truncate">{label}</span>
+    </button>
+  );
+};
+
+/**
  * Vehicle Tab Component - Main vehicle control dashboard
  */
 const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
   const { t } = useTranslation();
   const { activeCar } = useCar();
-  const { isCompact } = useLayout();
+  const { isCompact, isLargerCard, isVertical } = useLayout();
   const vin = activeCar?.vin;
   const vehicleData = useVehicleStatus(vin);
 
+  // Get app data (summary, stats, charges, aiSoH, etc.)
+  const { stats, charges = [], trips = [], aiSoH, acknowledgedAnomalies = [], deletedAnomalies = [], setAcknowledgedAnomalies } = useData();
+
+  // Get summary from vehicleData or stats - prefer vehicleData for real-time updates
+  const summary = vehicleData?.summary || {
+    totalKm: 0,
+    kmDay: 0,
+    totalKwh: 0,
+    estimatedRange: 0,
+    avgEff: 0,
+    soh: 0,
+    stationaryConsumption: 0,
+    isHybrid: false
+  };
+
   // Loading states for actions
   const [loading, setLoading] = useState<Record<string, boolean>>({});
+
+  // Calculate system health anomalies
+  const allAnomalies: Anomaly[] = React.useMemo(() => {
+    if (!stats || !activeCar?.settings) return [];
+    return AnomalyService.checkSystemHealth(stats, activeCar.settings, charges || [], trips || []);
+  }, [stats, activeCar?.settings, charges, trips]);
+
+  const activeAnomalies = React.useMemo(() =>
+    allAnomalies.filter(a => !acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id)),
+    [allAnomalies, acknowledgedAnomalies, deletedAnomalies]);
+
+  const criticalAnomalies = activeAnomalies.filter(a => a.severity === 'critical').length;
+  const warningAnomalies = activeAnomalies.filter(a => a.severity === 'warning').length;
+  const hasAnomalies = activeAnomalies.length > 0;
 
   // Helper to execute actions with loading state
   const executeAction = async (
@@ -210,9 +215,9 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
     );
   };
 
-  // Format values
+  // Format values from real data
   const soc = vehicleData?.lastSoC !== undefined ? Math.round(normalizeSoCToPercent(vehicleData.lastSoC) || 0) : '--';
-  const range = vehicleData?.lastRange || '--';
+  const range = vehicleData?.lastRange !== undefined ? vehicleData.lastRange : summary.estimatedRange || '--';
   const isLocked = vehicleData?.isLocked;
   const isOnline = vehicleData?.isOnline;
 
@@ -227,80 +232,111 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
 
   return (
     <div className="w-full space-y-3 sm:space-y-4">
-      {/* Row 1: SoC + Autonomía */}
+      {/* Row 1: SoC Actual + Autonomía */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
           icon={Battery}
-          label={t('vehicle.socLabel', 'SoC Actual')}
+          label={t('stats.soc', 'SoC Actual')}
           value={soc}
           unit="%"
-          colorClass={
+          color={
             soc > 50
-              ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+              ? 'bg-emerald-500/20 text-emerald-400'
               : soc > 20
-                ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400'
-                : 'bg-red-500/20 text-red-600 dark:text-red-400'
+                ? 'bg-amber-500/20 text-amber-400'
+                : 'bg-red-500/20 text-red-400'
           }
         />
         <StatCard
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
           icon={TrendingUp}
-          label={t('vehicle.autonomyLabel', 'Autonomía')}
+          label={t('stats.estimatedRange', 'Autonomía')}
           value={range}
-          unit="km"
-          colorClass="bg-blue-500/20 text-blue-600 dark:text-blue-400"
+          unit={t('units.km')}
+          color="bg-blue-500/20 text-blue-400"
         />
       </div>
 
       {/* Row 2: Eficiencia + Carga Diaria */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard
-          icon={BarChart3}
-          label={t('vehicle.efficiencyLabel', 'Eficiencia')}
-          value="6.2"
-          unit="km/kWh"
-          colorClass="bg-slate-500/20 text-slate-600 dark:text-slate-400"
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
+          icon={Battery}
+          label={t('stats.efficiency', 'Eficiencia')}
+          value={summary.avgEff || '--'}
+          unit={t('units.kWh100km', 'kWh/100km')}
+          color="bg-green-500/20 text-green-400"
         />
         <StatCard
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
           icon={Zap}
           label={t('vehicle.dailyChargeLabel', 'Carga Diaria')}
-          value="8.5"
-          unit="kWh"
-          colorClass="bg-purple-500/20 text-purple-600 dark:text-purple-400"
+          value={summary.kmDay || '--'}
+          unit={t('units.km')}
+          color="bg-purple-500/20 text-purple-400"
+          sub={`${t('units.day')}`}
         />
       </div>
 
-      {/* Row 3: Estado Salud Batería + Estado Sistema */}
+      {/* Row 3: Salud Batería + Estado Sistema */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard
-          icon={Zap}
-          label={t('vehicle.sohLabel', 'Salud Batería')}
-          value="92.3"
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
+          icon={Battery}
+          label={t('settings.soh', 'Salud Batería')}
+          value={aiSoH ? aiSoH.toFixed(1) : summary.soh || '--'}
           unit="%"
-          colorClass="bg-green-500/20 text-green-600 dark:text-green-400"
+          color="bg-emerald-500/20 text-emerald-400"
         />
         <StatCard
-          icon={Car}
-          label={t('vehicle.systemStatusLabel', 'Estado Sistema')}
-          value={isOnline ? '🟢 Online' : '🔴 Offline'}
-          colorClass={isOnline ? 'bg-green-500/20 text-green-600 dark:text-green-400' : 'bg-red-500/20 text-red-600 dark:text-red-400'}
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
+          icon={hasAnomalies ? AlertTriangle : Activity}
+          label={t('stats.systemStatus', 'Estado Sistema')}
+          value={hasAnomalies ? `${activeAnomalies.length} Alerta${activeAnomalies.length > 1 ? 's' : ''}` : t('stats.normal', 'Normal')}
+          unit=""
+          color={criticalAnomalies > 0
+            ? "bg-red-500/20 text-red-400"
+            : (warningAnomalies > 0 ? "bg-amber-500/20 text-amber-400" : "bg-emerald-500/20 text-emerald-400")
+          }
         />
       </div>
 
       {/* Row 4: Distancia + Energía Consumida */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4">
         <StatCard
-          icon={Car}
-          label={t('vehicle.distanceLabel', 'Distancia')}
-          value="1,245"
-          unit="km"
-          colorClass="bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
+          icon={MapPin}
+          label={t('stats.distance', 'Distancia')}
+          value={summary.totalKm || '--'}
+          unit={t('units.km')}
+          color="bg-red-500/20 text-red-400"
+          sub={`${summary.kmDay || 0} ${t('units.km')}/${t('units.day')}`}
         />
         <StatCard
+          isVerticalMode={isVertical}
+          isLarger={isLargerCard}
+          isCompact={isCompact}
           icon={Zap}
-          label={t('vehicle.energyConsumedLabel', 'Energía Consumida')}
-          value="4,892"
-          unit="kWh"
-          colorClass="bg-orange-500/20 text-orange-600 dark:text-orange-400"
+          label={t('stats.energy', 'Energía Consumida')}
+          value={summary.totalKwh || '--'}
+          unit={t('units.kWh')}
+          color="bg-cyan-500/20 text-cyan-400"
+          sub={`${t('stats.stationary', 'Estacionaria')}: ${summary.stationaryConsumption || 0} kWh`}
         />
       </div>
 
@@ -334,18 +370,21 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
 
       {/* Row 6: Navigation Buttons - Trips, Charges, Add Charge */}
       <div className="grid grid-cols-3 gap-2 sm:gap-3">
-        <button className="bg-slate-600/20 hover:bg-slate-600/30 text-slate-700 dark:text-slate-300 dark:bg-slate-700/30 dark:hover:bg-slate-700/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-3 sm:py-4 font-semibold text-sm sm:text-base flex flex-col items-center justify-center gap-1 transition-all active:scale-95">
-          <span className="text-lg">📍</span>
-          <span className="text-xs sm:text-sm truncate">{t('vehicle.tripsHistory', 'Viajes')}</span>
-        </button>
-        <button className="bg-slate-600/20 hover:bg-slate-600/30 text-slate-700 dark:text-slate-300 dark:bg-slate-700/30 dark:hover:bg-slate-700/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-3 sm:py-4 font-semibold text-sm sm:text-base flex flex-col items-center justify-center gap-1 transition-all active:scale-95">
-          <span className="text-lg">🔌</span>
-          <span className="text-xs sm:text-sm truncate">{t('vehicle.chargesHistory', 'Cargas')}</span>
-        </button>
-        <button className="bg-slate-600/20 hover:bg-slate-600/30 text-slate-700 dark:text-slate-300 dark:bg-slate-700/30 dark:hover:bg-slate-700/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-3 sm:py-4 font-semibold text-sm sm:text-base flex flex-col items-center justify-center gap-1 transition-all active:scale-95">
-          <span className="text-lg">➕</span>
-          <span className="text-xs sm:text-sm truncate">{t('vehicle.newCharge', 'Nueva Carga')}</span>
-        </button>
+        <NavButton
+          icon="📍"
+          label={t('vehicle.tripsHistory', 'Viajes')}
+          onClick={() => logger.info('[VehicleTab] Trips history clicked')}
+        />
+        <NavButton
+          icon="🔌"
+          label={t('vehicle.chargesHistory', 'Cargas')}
+          onClick={() => logger.info('[VehicleTab] Charges history clicked')}
+        />
+        <NavButton
+          icon="➕"
+          label={t('vehicle.newCharge', 'Nueva Carga')}
+          onClick={() => logger.info('[VehicleTab] New charge clicked')}
+        />
       </div>
     </div>
   );
