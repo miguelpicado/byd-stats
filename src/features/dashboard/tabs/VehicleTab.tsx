@@ -4,55 +4,35 @@ import { useCar } from '@/context/CarContext';
 import { useLayout } from '@/context/LayoutContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { useData } from '@/providers/DataProvider';
-import { useApp } from '@/context/AppContext';
 import StatCard from '@components/ui/StatCard';
-import { Battery, Zap, Lock, Unlock, Navigation, MapPin, AlertCircle, Activity } from '@components/Icons';
+import { Battery, Zap, Lock, Unlock, Navigation, MapPin } from '@components/Icons';
 import { bydLock, bydUnlock, bydFlashLights } from '@/services/bydApi';
 import toast from 'react-hot-toast';
 
 // Lazy load modals
 const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
-const MfgDateModal = React.lazy(() => import('@components/modals/MfgDateModal'));
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
 
 interface VehicleTabProps {
   isActive?: boolean;
-  tripDist?: { range: string; count: number; color: string }[];
-  overviewSpacing?: string;
 }
 
-const VehicleTab: React.FC<VehicleTabProps> = ({
-  isActive = true,
-  tripDist = [],
-  overviewSpacing = 'space-y-4'
-}) => {
+const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
   const { t } = useTranslation();
   const { activeCar } = useCar();
   const { isCompact, isLargerCard, isVertical } = useLayout();
-  const { updateSettings } = useApp();
   const vin = activeCar?.vin;
 
-  // Get data from existing sources
   const vehicleData = useVehicleStatus(vin);
-  const { stats, charges = [], trips = [], aiSoH, aiScenarios, aiLoss, isAiTraining } = useData();
+  const { aiSoH, aiScenarios, aiLoss, isAiTraining } = useData();
 
   const summary = vehicleData?.summary || {};
   const isLocked = vehicleData?.isLocked;
   const isOnline = vehicleData?.isOnline ?? true;
 
   const [loading, setLoading] = useState<Record<string, boolean>>({});
-
-  // Modal states
   const [showOdometerModal, setShowOdometerModal] = useState(false);
-  const [showMfgModal, setShowMfgModal] = useState(false);
   const [showRangeModal, setShowRangeModal] = useState(false);
-
-  const handleSettingsSave = (isoDate: string, displayDate: string) => {
-    updateSettings({
-      mfgDate: isoDate,
-      mfgDateDisplay: displayDate
-    });
-  };
 
   const executeAction = async (
     key: string,
@@ -74,8 +54,8 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
 
   return (
     <>
-      <div className={`${overviewSpacing}`}>
-        {/* Row 1: SoC Actual + Autonomía */}
+      <div className="space-y-4">
+        {/* Row 1: SoC + Range */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -85,13 +65,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
             label={t('stats.soc', 'SoC Actual')}
             value={vehicleData?.lastSoC ?? '--'}
             unit="%"
-            color={
-              vehicleData && vehicleData.lastSoC > 50
-                ? 'bg-emerald-500/20 text-emerald-400'
-                : vehicleData && vehicleData.lastSoC > 20
-                  ? 'bg-amber-500/20 text-amber-400'
-                  : 'bg-red-500/20 text-red-400'
-            }
+            color={vehicleData && vehicleData.lastSoC > 50 ? 'bg-emerald-500/20 text-emerald-400' : vehicleData && vehicleData.lastSoC > 20 ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400'}
           />
           <StatCard
             isVerticalMode={isVertical}
@@ -106,7 +80,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
           />
         </div>
 
-        {/* Row 2: Eficiencia + Carga Diaria */}
+        {/* Row 2: Efficiency + Daily */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -130,7 +104,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
           />
         </div>
 
-        {/* Row 3: Salud Batería + Estado Sistema */}
+        {/* Row 3: SoH + Distance */}
         <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
@@ -146,20 +120,6 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
             isVerticalMode={isVertical}
             isLarger={isLargerCard}
             isCompact={isCompact}
-            icon={Activity}
-            label={t('stats.systemStatus', 'Estado Sistema')}
-            value={t('stats.normal', 'Normal')}
-            unit=""
-            color="bg-emerald-500/20 text-emerald-400"
-          />
-        </div>
-
-        {/* Row 4: Distancia + Energía Consumida */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4">
-          <StatCard
-            isVerticalMode={isVertical}
-            isLarger={isLargerCard}
-            isCompact={isCompact}
             icon={MapPin}
             label={t('stats.distance', 'Distancia')}
             value={summary.totalKm || '--'}
@@ -168,6 +128,10 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
             sub={`${summary.kmDay || 0} ${t('units.km')}/${t('units.day')}`}
             onClick={() => setShowOdometerModal(true)}
           />
+        </div>
+
+        {/* Row 4: Energy */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4">
           <StatCard
             isVerticalMode={isVertical}
             isLarger={isLargerCard}
@@ -230,29 +194,8 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
 
       {/* Modals */}
       <React.Suspense fallback={null}>
-        {showOdometerModal && (
-          <OdometerAdjustmentModal
-            isOpen={showOdometerModal}
-            onClose={() => setShowOdometerModal(false)}
-          />
-        )}
-        {showMfgModal && (
-          <MfgDateModal
-            isOpen={showMfgModal}
-            onClose={() => setShowMfgModal(false)}
-            onSave={handleSettingsSave}
-            initialValue={activeCar.settings.mfgDateDisplay}
-          />
-        )}
-        {showRangeModal && (
-          <RangeInsightsModal
-            isOpen={showRangeModal}
-            onClose={() => setShowRangeModal(false)}
-            aiScenarios={aiScenarios}
-            aiLoss={aiLoss}
-            isTraining={isAiTraining}
-          />
-        )}
+        {showOdometerModal && <OdometerAdjustmentModal isOpen={showOdometerModal} onClose={() => setShowOdometerModal(false)} />}
+        {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={aiScenarios} aiLoss={aiLoss} isTraining={isAiTraining} />}
       </React.Suspense>
     </>
   );
