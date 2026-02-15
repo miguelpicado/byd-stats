@@ -186,6 +186,40 @@ export async function bydFlashLights(vin: string, pin?: string): Promise<{ succe
 }
 
 /**
+ * Close windows
+ */
+export async function bydCloseWindows(vin: string, pin?: string): Promise<{ success: boolean }> {
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydCloseWindows');
+    const result = await callable({ vin, pin });
+    return result.data;
+}
+
+/**
+ * Control seat climate/heating
+ * @param seat 0=driver, 1=passenger
+ * @param mode 0=off, 1=low, 2=medium, 3=high
+ */
+export async function bydSeatClimate(
+    vin: string,
+    seat: number,
+    mode: number,
+    pin?: string
+): Promise<{ success: boolean }> {
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydSeatClimate');
+    const result = await callable({ vin, seat, mode, pin });
+    return result.data;
+}
+
+/**
+ * Control battery heating
+ */
+export async function bydBatteryHeat(vin: string, pin?: string): Promise<{ success: boolean }> {
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydBatteryHeat');
+    const result = await callable({ vin, pin });
+    return result.data;
+}
+
+/**
  * Poll vehicle for trip data
  */
 export async function bydPollVehicle(vin: string): Promise<{

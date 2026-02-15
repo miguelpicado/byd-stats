@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.bydScheduledPoll = exports.bydGetMqttCredentials = exports.bydMqttWebhook = exports.bydDiagnostic = exports.bydPollVehicle = exports.bydFlashLights = exports.bydStopClimate = exports.bydStartClimate = exports.bydUnlock = exports.bydLock = exports.bydGetCharging = exports.bydGetGps = exports.bydGetRealtime = exports.bydDisconnect = exports.bydConnect = exports.updateVehicleSettings = exports.cleanupDuplicateTrips = exports.subscribeVehicleToWebhook = exports.scheduledPoll = exports.pollVehicle = exports.simulateWebhook = exports.calculateTripGpsDistance = exports.diag = exports.getDiagnostics = exports.fullSmartcarDiagnostic = exports.testSmartcarConnection = exports.mergeTrips = exports.setTargetChargeSoC = exports.refreshVehicleData = exports.closeTrunk = exports.openTrunk = exports.stopClimate = exports.startClimate = exports.unlockVehicle = exports.lockVehicle = exports.startCharge = exports.stopCharge = exports.resetPollingState = exports.disconnectSmartcar = exports.exchangeAuthCode = exports.smartcarWebhook = exports.ping = void 0;
+exports.bydScheduledPoll = exports.bydTriggerMqttRefresh = exports.bydGetMqttCredentials = exports.bydMqttWebhook = exports.bydDiagnostic = exports.bydWakeVehicle = exports.bydPollVehicle = exports.bydBatteryHeat = exports.bydSeatClimate = exports.bydCloseWindows = exports.bydFlashLights = exports.bydStopClimate = exports.bydStartClimate = exports.bydUnlock = exports.bydLock = exports.bydGetCharging = exports.bydGetGps = exports.bydGetRealtime = exports.bydDisconnect = exports.bydConnect = exports.updateVehicleSettings = exports.cleanupDuplicateTrips = exports.subscribeVehicleToWebhook = exports.scheduledPoll = exports.pollVehicle = exports.simulateWebhook = exports.calculateTripGpsDistance = exports.diag = exports.getDiagnostics = exports.fullSmartcarDiagnostic = exports.testSmartcarConnection = exports.mergeTrips = exports.setTargetChargeSoC = exports.refreshVehicleData = exports.closeTrunk = exports.openTrunk = exports.stopClimate = exports.startClimate = exports.unlockVehicle = exports.lockVehicle = exports.startCharge = exports.stopCharge = exports.resetPollingState = exports.disconnectSmartcar = exports.exchangeAuthCode = exports.smartcarWebhook = exports.ping = void 0;
 const functions = __importStar(require("firebase-functions"));
 const admin = __importStar(require("firebase-admin"));
 const crypto = __importStar(require("crypto"));
@@ -2327,9 +2327,14 @@ Object.defineProperty(exports, "bydUnlock", { enumerable: true, get: function ()
 Object.defineProperty(exports, "bydStartClimate", { enumerable: true, get: function () { return bydFunctions_1.bydStartClimate; } });
 Object.defineProperty(exports, "bydStopClimate", { enumerable: true, get: function () { return bydFunctions_1.bydStopClimate; } });
 Object.defineProperty(exports, "bydFlashLights", { enumerable: true, get: function () { return bydFunctions_1.bydFlashLights; } });
+Object.defineProperty(exports, "bydCloseWindows", { enumerable: true, get: function () { return bydFunctions_1.bydCloseWindows; } });
+Object.defineProperty(exports, "bydSeatClimate", { enumerable: true, get: function () { return bydFunctions_1.bydSeatClimate; } });
+Object.defineProperty(exports, "bydBatteryHeat", { enumerable: true, get: function () { return bydFunctions_1.bydBatteryHeat; } });
 Object.defineProperty(exports, "bydPollVehicle", { enumerable: true, get: function () { return bydFunctions_1.bydPollVehicle; } });
+Object.defineProperty(exports, "bydWakeVehicle", { enumerable: true, get: function () { return bydFunctions_1.bydWakeVehicle; } });
 Object.defineProperty(exports, "bydDiagnostic", { enumerable: true, get: function () { return bydFunctions_1.bydDiagnostic; } });
 Object.defineProperty(exports, "bydMqttWebhook", { enumerable: true, get: function () { return bydFunctions_1.bydMqttWebhook; } });
 Object.defineProperty(exports, "bydGetMqttCredentials", { enumerable: true, get: function () { return bydFunctions_1.bydGetMqttCredentials; } });
+Object.defineProperty(exports, "bydTriggerMqttRefresh", { enumerable: true, get: function () { return bydFunctions_1.bydTriggerMqttRefresh; } });
 Object.defineProperty(exports, "bydScheduledPoll", { enumerable: true, get: function () { return bydFunctions_1.bydScheduledPoll; } });
 //# sourceMappingURL=index.js.map

@@ -155,6 +155,36 @@ export class BydClient {
         this.device = { ...DEFAULT_DEVICE, ...config.device };
     }
 
+    /**
+     * Restore session from stored data (avoids calling login which creates new tokens)
+     * Use this to share session between MQTT listener and Firebase functions
+     */
+    restoreSession(sessionData: { userId: string; signToken: string; encryToken: string; cookies?: Record<string, string> }): void {
+        this.session = {
+            token: {
+                userId: sessionData.userId,
+                signToken: sessionData.signToken,
+                encryToken: sessionData.encryToken,
+            },
+            cookies: sessionData.cookies || {},
+        };
+        this.cookies = sessionData.cookies || {};
+    }
+
+    /**
+     * Get current session (for storing/sharing)
+     */
+    getSession(): BydSession | null {
+        return this.session;
+    }
+
+    /**
+     * Check if we have a valid session
+     */
+    hasSession(): boolean {
+        return this.session !== null;
+    }
+
     // =========================================================================
     // AUTHENTICATION
     // =========================================================================
@@ -568,6 +598,35 @@ export class BydClient {
      */
     async stopClimate(vin: string, pin?: string): Promise<boolean> {
         return this.remoteControl(vin, 'STOP_CLIMATE', pin);
+    }
+
+    /**
+     * Close windows
+     */
+    async closeWindows(vin: string, pin?: string): Promise<boolean> {
+        return this.remoteControl(vin, 'CLOSE_WINDOWS', pin);
+    }
+
+    /**
+     * Control seat climate/heating
+     * @param vin Vehicle VIN
+     * @param seat Seat position (0=driver, 1=passenger)
+     * @param mode Heat level (0=off, 1=low, 2=medium, 3=high)
+     * @param pin Control PIN
+     */
+    async seatClimate(vin: string, seat: number, mode: number, pin?: string): Promise<boolean> {
+        const params = {
+            seatNum: String(seat),  // 0=driver, 1=passenger
+            level: String(mode),    // 0=off, 1=low, 2=medium, 3=high
+        };
+        return this.remoteControl(vin, 'SEAT_CLIMATE', pin, params);
+    }
+
+    /**
+     * Control battery heating
+     */
+    async batteryHeat(vin: string, pin?: string): Promise<boolean> {
+        return this.remoteControl(vin, 'BATTERY_HEAT', pin);
     }
 
     private async remoteControl(
