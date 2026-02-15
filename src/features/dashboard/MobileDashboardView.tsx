@@ -144,11 +144,6 @@ const MobileDashboardView = memo(({
                                                 <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                                     <VehicleTab
                                                         summary={summary || null}
-                                                        monthly={monthly || []}
-                                                        tripDist={tripDist || []}
-                                                        smallChartHeight={smallChartHeight}
-                                                        overviewSpacing={overviewSpacingVertical}
-                                                        onAddCharge={handleAddCharge}
                                                         trips={rawTrips}
                                                         settings={settings}
                                                         isActive={isActive}
