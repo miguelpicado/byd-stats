@@ -396,16 +396,14 @@ export const bydGetGps = regionalFunctions.https.onCall(async (data, context) =>
 
         // Update vehicle location in Firestore
         const vehicleRef = db.collection('bydVehicles').doc(vin);
+        const location: any = { lat: gps.latitude, lon: gps.longitude };
+        if (gps.heading !== undefined) location.heading = gps.heading;
         await vehicleRef.update({
-            lastLocation: {
-                lat: gps.latitude,
-                lon: gps.longitude,
-                heading: gps.heading,
-            },
+            lastLocation: location,
             lastLocationUpdate: admin.firestore.Timestamp.now(),
         });
 
-        console.log(`[bydGetGps] ${vin}: ${gps.latitude}, ${gps.longitude}`);
+        console.log(`[bydGetGps] ${vin}: lat=${gps.latitude}, lon=${gps.longitude}, heading=${gps.heading}`);
 
         return {
             success: true,
