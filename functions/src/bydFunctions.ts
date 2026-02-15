@@ -1488,37 +1488,49 @@ async function pollVehicleInternal(vin: string): Promise<void> {
     const hasMovement = hasOdoMovement || hasGpsMovement;
     const isStationary = !hasMovement;
 
-    console.log(`[pollVehicleInternal] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}`);
+    // Detect if car is sleeping (all zeros response)
+    const isCarSleeping = realtime.soc === 0 && realtime.range === 0 && realtime.odometer === 0;
+
+    console.log(`[pollVehicleInternal] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}, sleeping=${isCarSleeping}`);
+
+    // If car is sleeping, don't overwrite good data with zeros
+    if (isCarSleeping) {
+        console.log(`[pollVehicleInternal] ${vin}: Car sleeping (all zeros), preserving last known values`);
+        await vehicleRef.update({
+            lastPollTime: now,
+            isOnline: false,
+        });
+        return;
+    }
 
     const vehicleUpdate: any = {
-        // Primary metrics
-        lastSoC: realtime.soc / 100,
-        lastRange: realtime.range,
-        lastOdometer: realtime.odometer,
-        lastSpeed: realtime.speed || 0,
+        lastPollTime: now,
+        lastUpdate: now,
 
         // State indicators
         isCharging: realtime.isCharging,
         isLocked: realtime.isLocked,
         isOnline: realtime.isOnline,
 
-        // Temperatures
-        exteriorTemp: realtime.exteriorTemp,
-        interiorTemp: realtime.interiorTemp,
-
-        // Door and window status
-        doors: realtime.doors,
-        windows: realtime.windows,
-
-        // Tire pressure
-        tirePressure: realtime.tirePressure,
-
-        lastPollTime: now,
-        lastUpdate: now,
+        lastSpeed: realtime.speed || 0,
     };
 
+    // Only update metrics if they have real values (preserve last known good values)
+    if (realtime.soc > 0) vehicleUpdate.lastSoC = realtime.soc / 100;
+    if (realtime.range > 0) vehicleUpdate.lastRange = realtime.range;
+    if (realtime.odometer > 0) vehicleUpdate.lastOdometer = realtime.odometer;
+
+    // Only update optional fields if defined (avoid Firestore undefined error)
+    if (realtime.exteriorTemp !== undefined) vehicleUpdate.exteriorTemp = realtime.exteriorTemp;
+    if (realtime.interiorTemp !== undefined) vehicleUpdate.interiorTemp = realtime.interiorTemp;
+    if (realtime.doors !== undefined) vehicleUpdate.doors = realtime.doors;
+    if (realtime.windows !== undefined) vehicleUpdate.windows = realtime.windows;
+    if (realtime.tirePressure !== undefined) vehicleUpdate.tirePressure = realtime.tirePressure;
+
     if (gps) {
-        vehicleUpdate.lastLocation = { lat: gps.latitude, lon: gps.longitude, heading: gps.heading };
+        const location: any = { lat: gps.latitude, lon: gps.longitude };
+        if (gps.heading !== undefined) location.heading = gps.heading;
+        vehicleUpdate.lastLocation = location;
     }
 
     if (hasMovement) {

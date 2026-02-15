@@ -264,21 +264,65 @@ class BydClient {
      * Get realtime vehicle data
      */
     async getRealtime(vin) {
-        // Trigger request
+        // Stage 1: Trigger request - wakes the car and returns cached data + requestSerial
         const triggerResponse = await this.postAuthenticatedJson('/vehicleInfo/vehicle/vehicleRealTimeRequest', { vin });
-        if (triggerResponse.code !== '0') {
-            throw new Error(`Failed to trigger realtime: ${triggerResponse.msg}`);
+        if (String(triggerResponse.code) !== '0') {
+            throw new Error(`Failed to trigger realtime: code=${triggerResponse.code} msg=${triggerResponse.msg}`);
         }
-        // Poll for result
-        const result = await this.pollForResult('/vehicleInfo/vehicle/vehicleRealTimeResult', { vin }, 5, 2000);
+        // Extract requestSerial - could be at response level or inside data
+        const triggerData = triggerResponse.data || {};
+        // BYD-re: requestSerial is at the same level as vehicleInfo in the decrypted response
+        const requestSerial = triggerResponse.requestSerial || triggerData.requestSerial || null;
+        console.log(`[getRealtime] Trigger: requestSerial=${requestSerial}, onlineState=${triggerData.onlineState}`);
+        console.log(`[getRealtime] Trigger response keys: ${Object.keys(triggerResponse).join(',')}`);
+        console.log(`[getRealtime] Trigger data keys: ${Object.keys(triggerData).join(',').substring(0, 200)}`);
+        // Check if trigger already has valid data (sometimes it comes back immediately)
+        if (this.isRealtimeDataReady(triggerData)) {
+            console.log('[getRealtime] Trigger returned ready data, using immediately');
+            return this.parseRealtimeData(triggerData);
+        }
+        // If no serial, can't poll - return trigger data as-is
+        if (!requestSerial) {
+            console.log('[getRealtime] No requestSerial, returning trigger data');
+            return this.parseRealtimeData(triggerData);
+        }
+        // Stage 2: Poll for fresh result using requestSerial
+        // 10 attempts x 2s = ~20s (matching pyBYD/BYD-re approach)
+        const result = await this.pollForResult('/vehicleInfo/vehicle/vehicleRealTimeResult', { vin, requestSerial }, 10, 2000, (data) => this.isRealtimeDataReady(data));
         return this.parseRealtimeData(result);
+    }
+    /**
+     * Check if realtime data has actual values (not stale/cached zeros)
+     * Based on BYD-re's isRealtimeDataReady check
+     */
+    isRealtimeDataReady(data) {
+        const info = (data === null || data === void 0 ? void 0 : data.vehicleStatus) || data || {};
+        // If onlineState is 2, car is offline
+        if (Number(info.onlineState) === 2)
+            return false;
+        // Check for any non-zero tire pressure (indicates real data)
+        const tireFields = ['leftFrontTirepressure', 'rightFrontTirepressure', 'leftRearTirepressure', 'rightRearTirepressure'];
+        if (tireFields.some(f => Number(info[f]) > 0))
+            return true;
+        // Check for timestamp
+        if (Number(info.time) > 0)
+            return true;
+        // Check for endurance/range data
+        if (Number(info.enduranceMileage || info.evEndurance) > 0)
+            return true;
+        // Check for SOC or odometer
+        if (Number(info.elecPercent) > 0)
+            return true;
+        if (Number(info.totalMileageV2 || info.totalMileage || info.odo) > 0)
+            return true;
+        return false;
     }
     parseRealtimeData(data) {
         const info = data.vehicleStatus || data;
-        // Try multiple field names - BYD uses different names in different regions/versions
-        const soc = this.parseNumber(info.elecPercent || info.fuelTankCurrentSOC || info.soc, 0);
-        const range = this.parseNumber(info.evEndurance || info.EVTravelableRangeKm || info.range, 0);
-        const odometer = this.parseNumber(info.odo || info.mileage || info.odometerMileage, 0);
+        // Field names based on BYD-re reverse engineering
+        const soc = this.parseNumber(info.elecPercent || info.powerBattery || info.soc, 0);
+        const range = this.parseNumber(info.enduranceMileage || info.evEndurance || info.range, 0);
+        const odometer = this.parseNumber(info.totalMileageV2 || info.totalMileage || info.odo || info.mileage, 0);
         // Detect offline state: if all key values are 0, car is likely asleep
         const isOffline = soc === 0 && range === 0 && odometer === 0;
         return {
@@ -286,11 +330,11 @@ class BydClient {
             range,
             odometer,
             speed: this.parseNumber(info.speed),
-            isCharging: info.chargeState === 1 || info.chargeStatus === '1' || info.isCharging === true,
+            isCharging: info.chargingState === 1 || info.chargeState === 1 || info.chargeStatus === '1',
             isLocked: info.lockState === '2' || info.doorLockState === '2',
-            isOnline: !isOffline && (info.onlineStatus === '1' || info.isOnline === true),
-            exteriorTemp: this.parseNumber(info.exteriorTemperature),
-            interiorTemp: this.parseNumber(info.interiorTemperature),
+            isOnline: !isOffline && (Number(info.onlineState) !== 2),
+            exteriorTemp: this.parseNumber(info.tempOutCar || info.exteriorTemperature),
+            interiorTemp: this.parseNumber(info.tempInCar || info.interiorTemperature),
             doors: {
                 frontLeft: info.driverDoorState === '2',
                 frontRight: info.passengerDoorState === '2',
@@ -315,13 +359,17 @@ class BydClient {
      * Get GPS location
      */
     async getGps(vin) {
-        // Trigger request
+        // Stage 1: Trigger GPS request
         const triggerResponse = await this.postAuthenticatedJson('/control/getGpsInfo', { vin });
-        if (triggerResponse.code !== '0') {
-            throw new Error(`Failed to trigger GPS: ${triggerResponse.msg}`);
+        if (String(triggerResponse.code) !== '0') {
+            throw new Error(`Failed to trigger GPS: code=${triggerResponse.code} msg=${triggerResponse.msg}`);
         }
-        // Poll for result
-        const result = await this.pollForResult('/control/getGpsInfoResult', { vin }, 5, 2000);
+        // Extract requestSerial from trigger
+        const triggerData = triggerResponse.data || {};
+        const requestSerial = triggerData.requestSerial || null;
+        console.log(`[getGps] Trigger returned requestSerial: ${requestSerial}`);
+        // Stage 2: Poll for result with requestSerial - 8 attempts x 2s = ~16s
+        const result = await this.pollForResult('/control/getGpsInfoResult', Object.assign({ vin }, (requestSerial ? { requestSerial } : {})), 8, 2000);
         return this.parseGpsData(result);
     }
     parseGpsData(data) {
@@ -507,8 +555,8 @@ class BydClient {
             payload.controlParamsMap = params;
         }
         const triggerResponse = await this.postAuthenticatedJson('/control/remoteControl', payload);
-        if (triggerResponse.code !== '0') {
-            throw new Error(`Remote control failed: ${triggerResponse.msg}`);
+        if (String(triggerResponse.code) !== '0') {
+            throw new Error(`Remote control failed: code=${triggerResponse.code} msg=${triggerResponse.msg}`);
         }
         // Poll for result
         const result = await this.pollForResult('/control/remoteControlResult', { vin, controlType }, 10, 3000);
@@ -580,9 +628,10 @@ class BydClient {
         console.log(`[postAuthenticatedJson] outer (no encryData): ${JSON.stringify(Object.assign(Object.assign({}, outer), { encryData: '...' }))}`);
         // Make request
         const response = await this.postSecure(endpoint, outer);
-        console.log(`[postAuthenticatedJson] response code: ${response.code}, msg: ${response.msg || response.message || ''}`);
+        const responseCode = String(response.code || '');
+        console.log(`[postAuthenticatedJson] response code: ${responseCode}, msg: ${response.msg || response.message || ''}`);
         // Check for session expiration (1002=another device login, 1005/1010=expired)
-        if (SESSION_EXPIRED_CODES.includes(response.code)) {
+        if (SESSION_EXPIRED_CODES.includes(responseCode)) {
             this.session = null;
             // Auto-retry once with a fresh login (serialized to prevent concurrent relogins)
             if (!_isRetry) {
@@ -661,7 +710,12 @@ class BydClient {
         }
         const decoded = (0, crypto_1.decodeEnvelope)(body.response);
         try {
-            return JSON.parse(decoded);
+            const parsed = JSON.parse(decoded);
+            // Normalize code to string for consistent comparisons across the codebase
+            if (parsed.code !== undefined) {
+                parsed.code = String(parsed.code);
+            }
+            return parsed;
         }
         catch (e) {
             throw new Error(`Failed to parse decoded response as JSON. Decoded: ${decoded.substring(0, 500)}`);
@@ -669,28 +723,47 @@ class BydClient {
     }
     /**
      * Poll for async result
+     * @param validator Optional function to validate the data - return false to keep polling
      */
-    async pollForResult(endpoint, payload, maxAttempts, delayMs) {
+    async pollForResult(endpoint, payload, maxAttempts, delayMs, validator) {
+        let lastData = null;
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            if (attempt > 0) {
-                await this.sleep(delayMs);
-            }
+            // Always wait before polling (give the car time to respond to trigger)
+            console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}/${maxAttempts}, waiting ${delayMs}ms...`);
+            await this.sleep(delayMs);
             const response = await this.postAuthenticatedJson(endpoint, payload);
-            if (response.code === '0' && response.data) {
+            const code = String(response.code || '');
+            console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}: code=${code}`);
+            if (code === '0' && response.data) {
+                // If validator provided, check if data is actually valid
+                if (validator && !validator(response.data)) {
+                    lastData = response.data; // Keep as fallback
+                    continue; // Keep polling for valid data
+                }
                 return response.data;
             }
-            // Still processing
-            if (response.code === '1002' || response.code === '1003') {
+            // Still processing (note: 1002 in pollForResult means "still processing", NOT session expired)
+            if (code === '1002' || code === '1003') {
                 continue;
             }
             // Vehicle offline/not responding
-            if (response.code === '1009') {
+            if (code === '1009') {
+                // If we had some data (even zeros), return it rather than throwing
+                if (lastData) {
+                    console.log('[pollForResult] Vehicle went offline, returning last data');
+                    return lastData;
+                }
                 throw new Error('Vehicle offline - car may be asleep. Try again when the car is awake (driving, charging, or recently used).');
             }
             // Error
-            if (response.code !== '0') {
-                throw new Error(`Poll failed: ${response.msg || response.code}`);
+            if (code !== '0') {
+                throw new Error(`Poll failed: ${response.msg || code}`);
             }
+        }
+        // If we got data but it never passed validation, return it anyway (best effort)
+        if (lastData) {
+            console.log('[pollForResult] Polling timeout, returning best available data');
+            return lastData;
         }
         throw new Error('Polling timeout');
     }
