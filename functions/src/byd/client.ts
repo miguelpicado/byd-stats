@@ -705,13 +705,13 @@ export class BydClient {
             throw new Error('Control PIN required for remote commands');
         }
 
-        // Hash PIN if not already hashed - BYD expects lowercase MD5 for control PIN
-        const pinHash = controlPin.length === 32 ? controlPin.toLowerCase() : md5HexLower(controlPin);
+        // Hash PIN if not already hashed - BYD-re/pyBYD both use UPPERCASE MD5 for control PIN
+        const commandPwd = controlPin.length === 32 ? controlPin.toUpperCase() : md5Hex(controlPin);
 
         // Verify PIN first
-        await this.verifyControlPin(vin, pinHash);
+        await this.verifyControlPin(vin, commandPwd);
 
-        // Command codes
+        // Command codes (pyBYD: RemoteCommand enum values)
         const commandCodes: Record<string, string> = {
             'LOCK': '1',
             'UNLOCK': '2',
@@ -724,22 +724,30 @@ export class BydClient {
             'BATTERY_HEAT': '9',
         };
 
-        const controlType = commandCodes[command];
-        if (!controlType) {
+        const commandType = commandCodes[command];
+        if (!commandType) {
             throw new Error(`Unknown command: ${command}`);
         }
 
-        // Trigger command
+        // Trigger command - field names must match pyBYD/BYD-re exactly
+        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
         const payload: any = {
+            commandPwd,
+            commandType,
+            deviceType: this.device.deviceType,
+            imeiMD5: this.device.imeiMD5,
+            networkType: this.device.networkType,
+            random: randomHex,
+            timeStamp: String(Date.now()),
+            version: this.device.appInnerVersion,
             vin,
-            controlType,
-            controlPassword: pinHash,
         };
         if (params) {
-            payload.controlParamsMap = params;
+            payload.controlParamsMap = JSON.stringify(params);
         }
 
-        const triggerResponse = await this.postAuthenticatedJson('/control/remoteControl', payload);
+        console.log(`[remoteControl] Sending ${command} (type=${commandType}) for ${vin}`);
+        const triggerResponse = await this.postAuthenticatedJson('/control/remoteControl', payload, true);
 
         if (String(triggerResponse.code) !== '0') {
             throw new Error(`Remote control failed: code=${triggerResponse.code} msg=${triggerResponse.msg}`);
@@ -748,7 +756,7 @@ export class BydClient {
         // Poll for result
         const result = await this.pollForResult(
             '/control/remoteControlResult',
-            { vin, controlType },
+            { vin, commandType },
             10,
             3000
         );
@@ -756,18 +764,55 @@ export class BydClient {
         return result.controlState === '1';
     }
 
-    private async verifyControlPin(vin: string, pinHash: string): Promise<void> {
-        const response = await this.postAuthenticatedJson(
-            '/vehicle/vehicleswitch/verifyControlPassword',
-            { vin, controlPassword: pinHash }
-        );
+    private async verifyControlPin(vin: string, commandPwd: string): Promise<void> {
+        // Build inner payload matching pyBYD/BYD-re exactly
+        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const inner = {
+            commandPwd,
+            deviceType: this.device.deviceType,
+            functionType: 'remoteControl',
+            imeiMD5: this.device.imeiMD5,
+            networkType: this.device.networkType,
+            random: randomHex,
+            timeStamp: String(Date.now()),
+            version: this.device.appInnerVersion,
+            vin,
+        };
 
-        if (response.code === '6024') {
-            throw new Error('Rate limited - please wait before retrying');
-        }
+        // Retry on rate limit (6024) up to 3 times with 5s delay
+        for (let attempt = 0; attempt < 3; attempt++) {
+            const response = await this.postAuthenticatedJson(
+                '/vehicle/vehicleswitch/verifyControlPassword',
+                inner,
+                true  // rawInner - payload already has timeStamp
+            );
 
-        if (response.code !== '0') {
-            throw new Error(`PIN verification failed: ${response.msg}`);
+            if (response.code === '0') {
+                console.log(`[verifyControlPin] PIN verified for ${inner.vin}`);
+                return;
+            }
+
+            if (response.code === '6024') {
+                if (attempt < 2) {
+                    console.log(`[verifyControlPin] Rate limited (6024), waiting 5s before retry ${attempt + 2}/3...`);
+                    await this.sleep(5000);
+                    // Refresh timestamp and random for retry
+                    inner.timeStamp = String(Date.now());
+                    inner.random = crypto.randomBytes(16).toString('hex').toUpperCase();
+                    continue;
+                }
+                throw new Error('Rate limited (6024) - too many attempts, please wait before retrying');
+            }
+
+            if (response.code === '5005') {
+                throw new Error('Wrong PIN - please check your control password');
+            }
+
+            if (response.code === '5006') {
+                throw new Error('Cloud control locked for the day - too many wrong PIN attempts');
+            }
+
+            throw new Error(`PIN verification failed: code=${response.code} msg=${response.msg}`);
         }
     }
 
