@@ -261,7 +261,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
           colorClass="bg-slate-500/20 text-slate-600 dark:text-slate-400"
         />
         <StatCard
-          icon={ZapIcon}
+          icon={Zap}
           label={t('vehicle.dailyChargeLabel', 'Carga Diaria')}
           value="8.5"
           unit="kWh"
@@ -296,7 +296,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({ isActive = true }) => {
           colorClass="bg-indigo-500/20 text-indigo-600 dark:text-indigo-400"
         />
         <StatCard
-          icon={ZapIcon}
+          icon={Zap}
           label={t('vehicle.energyConsumedLabel', 'Energía Consumida')}
           value="4,892"
           unit="kWh"
