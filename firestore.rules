@@ -2,7 +2,7 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Trips - solo el propietario puede leer/escribir
+    // Trips (legacy) - solo el propietario puede leer/escribir
     match /trips/{tripId} {
       allow read, write: if request.auth != null
         && request.auth.uid == resource.data.userId;
@@ -10,7 +10,7 @@ service cloud.firestore {
         && request.auth.uid == request.resource.data.userId;
     }
 
-    // Vehicles - solo el propietario
+    // Vehicles (legacy Smartcar) - solo el propietario
     match /vehicles/{vehicleId} {
       allow read, write: if request.auth != null
         && request.auth.uid == resource.data.ownerId;
@@ -18,8 +18,36 @@ service cloud.firestore {
         && request.auth.uid == request.resource.data.ownerId;
     }
 
+    // BYD Vehicles - documento principal y subcolecciones
+    match /bydVehicles/{vehicleId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.ownerId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.ownerId;
+
+      // Trips subcolección
+      match /trips/{tripId} {
+        allow read, write: if request.auth != null
+          && request.auth.uid == get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.ownerId;
+      }
+
+      // Charges subcolección
+      match /charges/{chargeId} {
+        allow read, write: if request.auth != null
+          && request.auth.uid == get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.ownerId;
+      }
+    }
+
     // Charge Sessions - solo el propietario
     match /chargeSessions/{sessionId} {
+      allow read, write: if request.auth != null
+        && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null
+        && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Charge Notifications - solo el propietario
+    match /chargeNotifications/{notificationId} {
       allow read, write: if request.auth != null
         && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null
