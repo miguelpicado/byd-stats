@@ -14,6 +14,7 @@ import {
     BydRealtime,
     BydGps,
     BydDiagnostic,
+    bydDebugDump,
 } from '../../services/bydApi';
 import { waitForAuth } from '../../services/firebase';
 
@@ -65,6 +66,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
     const [diagnosticData, setDiagnosticData] = useState<BydDiagnostic | null>(null);
     const [realtimeData, setRealtimeData] = useState<BydRealtime | null>(null);
     const [gpsData, setGpsData] = useState<BydGps | null>(null);
+    const [debugDump, setDebugDump] = useState<any | null>(null);
 
     // Load saved connection on mount
     useEffect(() => {
@@ -230,6 +232,30 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         }
     };
 
+    // Handle debug dump
+    const handleDebugDump = async () => {
+        if (!connectedVin) return;
+
+        setIsLoading(true);
+        setError(null);
+        setDebugDump(null);
+
+        try {
+            const result = await bydDebugDump(connectedVin);
+            if (result.success) {
+                setDebugDump(result.dump);
+                setSuccess('API Dump obtenido correctamente');
+            } else {
+                setError('Error al obtener dump');
+            }
+        } catch (err: any) {
+            console.error('BYD dump error:', err);
+            setError(err.message || 'Error al obtener dump');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="byd-settings">
             <div className="settings-section">
@@ -378,7 +404,15 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                                 onClick={handleDiagnostic}
                                 disabled={isLoading}
                             >
-                                🔍 Diagnóstico completo
+                                🔍 Diagnóstico
+                            </button>
+                            <button
+                                className="btn-action"
+                                onClick={handleDebugDump}
+                                disabled={isLoading}
+                                style={{ borderColor: '#8b5cf6', color: '#7c3aed', background: '#f5f3ff' }}
+                            >
+                                🐞 API Dump
                             </button>
                         </div>
 
@@ -468,6 +502,38 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                                 </h5>
                                 <pre className="diagnostic-json">
                                     {JSON.stringify(diagnosticData, null, 2)}
+                                </pre>
+                            </div>
+                        )}
+
+                        {/* API Dump Display */}
+                        {debugDump && (
+                            <div className="diagnostic-display">
+                                <h5>
+                                    API Dump (Raw)
+                                    <div className="dump-actions">
+                                        <button
+                                            className="btn-copy"
+                                            onClick={() => {
+                                                navigator.clipboard.writeText(JSON.stringify(debugDump, null, 2));
+                                                setSuccess('Dump copiado al portapapeles');
+                                            }}
+                                        >
+                                            📋 Copiar
+                                        </button>
+                                        <button
+                                            className="btn-close"
+                                            onClick={() => setDebugDump(null)}
+                                        >
+                                            ✕
+                                        </button>
+                                    </div>
+                                </h5>
+                                <div className="dump-info">
+                                    <small>Guardado en Firestore: <code>bydVehicles/{connectedVin}/debug</code></small>
+                                </div>
+                                <pre className="diagnostic-json">
+                                    {JSON.stringify(debugDump, null, 2)}
                                 </pre>
                             </div>
                         )}

@@ -243,8 +243,20 @@ export async function bydPollVehicle(vin: string): Promise<{
 /**
  * Get full diagnostic
  */
+/**
+ * Get full diagnostic
+ */
 export async function bydDiagnostic(vin: string): Promise<BydDiagnostic> {
     const callable = httpsCallable<any, BydDiagnostic>(functions, 'bydDiagnostic');
+    const result = await callable({ vin });
+    return result.data;
+}
+
+/**
+ * Get API Mapping Dump (Raw)
+ */
+export async function bydDebugDump(vin: string): Promise<{ success: boolean; dump: any }> {
+    const callable = httpsCallable<any, { success: boolean; dump: any }>(functions, 'bydDebug');
     const result = await callable({ vin });
     return result.data;
 }
@@ -272,7 +284,7 @@ export interface BydWakeResult {
  * Called when user opens the app to refresh vehicle state
  * Retries up to 3 times if car is sleeping
  */
-export async function bydWakeVehicle(vin: string, activatePolling = true): Promise<BydWakeResult> {
+export async function bydWakeVehicle(vin: string, activatePolling = false): Promise<BydWakeResult> {
     const callable = httpsCallable<any, BydWakeResult>(functions, 'bydWakeVehicle');
     const result = await callable({ vin, activatePolling });
     return result.data;

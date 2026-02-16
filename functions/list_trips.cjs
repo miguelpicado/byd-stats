@@ -11,14 +11,14 @@ if (!admin.apps.length) {
 const db = admin.firestore();
 
 async function listTrips() {
-  const trips = await db.collection('trips').orderBy('startDate', 'desc').limit(30).get();
+  const trips = await db.collectionGroup('trips').orderBy('startDate', 'desc').limit(30).get();
 
   console.log('ID | Start | Status | Distance | Source | Type');
   console.log('---'.repeat(30));
 
   trips.forEach(doc => {
     const d = doc.data();
-    const start = d.startDate?.toDate?.().toISOString().slice(0,16) || 'N/A';
+    const start = d.startDate?.toDate?.().toISOString().slice(0, 16) || 'N/A';
     const status = d.status || 'unknown';
     const dist = (d.distanceKm || 0).toFixed(2);
     const source = d.source || d.detectionMethod || 'unknown';

@@ -104,12 +104,13 @@ const mapDocToTrip = (doc: DocumentSnapshot<DocumentData>): Trip | null => {
         start_timestamp: startTsSec,
         end_timestamp: endTsSec,
         trip: data.distanceKm || (data.endOdometer - data.startOdometer) || 0,
-        electricity: data.consumptionKwh || 0, // Raw value, calculated later if 0
+        electricity: data.electricity || data.consumptionKwh || 0, // Prefer 'electricity' field
         duration: durationSec,
         start_soc: data.startSoC || 0,
         end_soc: data.endSoC || 0,
-        source: 'db',
-        gpsDistanceKm: data.gpsDistanceKm
+        source: data.source || 'db',
+        gpsDistanceKm: data.gpsDistanceKm,
+        vehicleId: data.vehicleId || data.vin
     };
 };
 

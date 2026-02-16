@@ -6,7 +6,7 @@ const db = admin.firestore();
 
 async function check() {
     console.log('Checking trips...');
-    const snapshot = await db.collection('trips').orderBy('startDate', 'desc').limit(5).get();
+    const snapshot = await db.collectionGroup('trips').orderBy('startDate', 'desc').limit(5).get();
     if (snapshot.empty) {
         console.log('No trips found in Firestore.');
         return;

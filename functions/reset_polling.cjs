@@ -13,7 +13,7 @@ const db = admin.firestore();
 
 async function resetPolling() {
   // Get all vehicles
-  const vehiclesSnap = await db.collection('vehicles').get();
+  const vehiclesSnap = await db.collection('bydVehicles').get();
 
   for (const doc of vehiclesSnap.docs) {
     const data = doc.data();

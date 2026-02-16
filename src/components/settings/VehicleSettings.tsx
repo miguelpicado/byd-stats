@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/services/firebase';
 import { Calendar } from '../Icons';
 import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
@@ -18,6 +20,19 @@ export const VehicleSettings: React.FC = () => {
     // Get SoH data from summary
     const sohData = stats?.summary?.sohData;
     const currentSohMode = settings?.sohMode || 'manual';
+
+    const handleBatterySave = async () => {
+        if (!activeCar?.vin) return;
+        try {
+            console.log(`Syncing battery capacity for ${activeCar.vin}: ${settings.batterySize}`);
+            const vehicleRef = doc(db, 'bydVehicles', activeCar.vin);
+            await updateDoc(vehicleRef, {
+                batteryCapacity: settings.batterySize
+            });
+        } catch (error) {
+            console.error('Error syncing battery capacity:', error);
+        }
+    };
 
     return (
         <div className="space-y-4">
@@ -73,6 +88,7 @@ export const VehicleSettings: React.FC = () => {
                     step="0.01"
                     value={settings?.batterySize || 0}
                     onChange={(e) => updateSettings({ ...settings, batterySize: parseFloat(e.target.value) || 0 })}
+                    onBlur={handleBatterySave}
                     className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                 />
             </div>

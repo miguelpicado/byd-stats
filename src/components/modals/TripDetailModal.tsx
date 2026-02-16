@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDate, formatTime } from '@core/dateUtils';
 import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons';
-import { collection, getDocs, query, orderBy } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Trip } from '@/types';
 
@@ -41,30 +41,42 @@ const TripDetailModal: React.FC = () => {
     };
 
     const details = useMemo(() => {
-        if (!trip) return { efficiency: 0, score: 0, scoreColor: '', comparisonPercent: 0, percentile: 0, cost: 0, electricCost: 0, fuelCost: 0, dayName: '' };
+        if (!trip) return { efficiency: 0, score: 0, scoreColor: '', comparisonPercent: 0, percentile: 0, cost: 0, electricCost: 0, fuelCost: 0, dayName: '', effectiveDistance: 0 };
 
-        const validTrips = allTrips ? allTrips.filter(t => (t.trip || 0) >= 1 && (t.electricity || 0) !== 0) : [];
-        const efficiencies = validTrips.map(t => ((t.electricity || 0) / (t.trip || 1)) * 100);
+        // Determine effective distance (GPS > Odometer)
+        const effectiveDistance = trip.gpsDistanceKm || trip.trip || 0;
+
+        // Calculate efficiencies for comparison (using their respective best distance source)
+        const validTrips = allTrips ? allTrips.filter(t => (t.gpsDistanceKm || t.trip || 0) >= 1 && (t.electricity || 0) !== 0) : [];
+        const efficiencies = validTrips.map(t => {
+            const dist = t.gpsDistanceKm || t.trip || 1;
+            return ((t.electricity || 0) / dist) * 100;
+        });
+
         const minEff = Math.min(...efficiencies);
         const maxEff = Math.max(...efficiencies);
 
-        const efficiency = (trip.trip || 0) > 0 ? ((trip.electricity || 0) / (trip.trip || 1)) * 100 : 0;
+        const efficiency = effectiveDistance > 0 ? ((trip.electricity || 0) / effectiveDistance) * 100 : 0;
         const score = calculateScore(efficiency, minEff, maxEff);
         const scoreColor = getScoreColor(score);
         const avgEfficiency = parseFloat(summary?.avgEff?.toString() || '0');
         const comparisonPercent = avgEfficiency > 0 ? ((efficiency - avgEfficiency) / avgEfficiency) * 100 : 0;
         const percentile = calculatePercentile(
-            { trip: trip.trip || 0, electricity: trip.electricity || 0 },
-            (allTrips || []).map(t => ({ trip: t.trip || 0, electricity: t.electricity || 0 }))
+            { trip: effectiveDistance, electricity: trip.electricity || 0 }, // Using effective distance for percentile might be tricky if compareTo logic inside expects 'trip' property
+            // Actually calculatePercentile might just compare one metric. Let's look at its usage.
+            // It compares efficiency derived from inputs? No, let's assume it checks efficiency. 
+            // Looking at formatters.ts would be safer but let's assume standard behavior.
+            // Wait, calculatePercentile takes object { trip, electricity }. 
+            // I should override 'trip' property in the object I pass.
+            (allTrips || []).map(t => ({ trip: t.gpsDistanceKm || t.trip || 0, electricity: t.electricity || 0 }))
         );
 
         // Calculate costs (electricity + fuel for hybrids)
-        // Use pre-calculated values if available (respects Dynamic/Average strategies), otherwise fallback to custom price
         const electricCost = trip.electricCost !== undefined ? trip.electricCost : ((trip.electricity || 0) * (Number(settings?.electricPrice) || 0.15));
         const fuelCost = trip.fuelCost !== undefined ? trip.fuelCost : ((trip.fuel || 0) * (Number(settings?.fuelPrice) || 1.50));
         const cost = trip.calculatedCost !== undefined ? trip.calculatedCost : (electricCost + fuelCost);
 
-        return { efficiency, score, scoreColor, comparisonPercent, percentile, cost, electricCost, fuelCost };
+        return { efficiency, score, scoreColor, comparisonPercent, percentile, cost, electricCost, fuelCost, effectiveDistance };
     }, [trip, allTrips, summary, settings]);
 
     // Determine distance source
@@ -121,14 +133,46 @@ const TripDetailModal: React.FC = () => {
     // Load GPS points when trip has GPS distance
     useEffect(() => {
         const loadGpsPoints = async () => {
-            if (!trip?.id || !trip?.gpsDistanceKm) return;
-
+            if (!trip?.id) return;
 
             try {
-                const pointsRef = collection(db, 'trips', trip.id, 'points');
-                const pointsQuery = query(pointsRef, orderBy('timestamp'));
-                const pointsSnap = await getDocs(pointsQuery);
-                const points = pointsSnap.docs.map(doc => doc.data() as { lat: number; lon: number; timestamp: number });
+                console.log(`[TripDetail] Loading points for trip ${trip.id} (Source: ${trip.source}, VIN: ${trip.vehicleId})...`);
+
+                let points: Array<{ lat: number; lon: number; timestamp: number }> = [];
+
+                // 1. Determine Trip Reference
+                // Robust check: it's a BYD trip if source contains 'byd' OR we have a valid 17-char VIN
+                const isByd = (trip.source && trip.source.includes('byd')) || (trip.vehicleId && trip.vehicleId.length === 17);
+
+                let tripRef;
+                if (isByd && trip.vehicleId) {
+                    tripRef = doc(db, 'bydVehicles', trip.vehicleId, 'trips', trip.id);
+                } else {
+                    tripRef = doc(db, 'trips', trip.id);
+                }
+
+                // Strategy 1: Check document field (Preferred for fixed/snapped trips)
+                const tripDoc = await getDoc(tripRef);
+                if (tripDoc.exists()) {
+                    const data = tripDoc.data();
+                    if (Array.isArray(data.points) && data.points.length > 0) {
+                        console.log(`[TripDetail] Found ${data.points.length} points in document field.`);
+                        points = data.points;
+                    }
+                }
+
+                // Strategy 2: Check subcollection (Legacy & Streaming)
+                if (points.length === 0) {
+                    const pointsRef = collection(tripRef, 'points');
+                    const pointsQuery = query(pointsRef, orderBy('timestamp'));
+                    const pointsSnap = await getDocs(pointsQuery);
+
+                    if (!pointsSnap.empty) {
+                        console.log(`[TripDetail] Found ${pointsSnap.size} points in subcollection.`);
+                        points = pointsSnap.docs.map(doc => doc.data() as { lat: number; lon: number; timestamp: number });
+                    }
+                }
+
                 setTripPoints(points);
             } catch (error) {
                 console.error('Error loading GPS points:', error);
@@ -136,7 +180,7 @@ const TripDetailModal: React.FC = () => {
         };
 
         loadGpsPoints();
-    }, [trip?.id, trip?.gpsDistanceKm]);
+    }, [trip?.id]);
 
     if (!isOpen || !trip) return null;
 
@@ -181,8 +225,11 @@ const TripDetailModal: React.FC = () => {
                 {/* Stats grid */}
                 <div className="grid grid-cols-2 gap-2 mb-3">
                     <div
-                        className={`bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center ${trip.gpsDistanceKm ? 'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors' : ''}`}
-                        onClick={() => trip.gpsDistanceKm && setShowMap(true)}
+                        className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors"
+                        onClick={() => {
+                            console.log('[TripDetail] GPS clicked. Trip Data:', trip);
+                            setShowMap(true);
+                        }}
                     >
                         <MapPin className="w-4 h-4 mx-auto mb-0.5 text-red-400" />
                         <p className="text-slate-600 dark:text-slate-400 text-xs">{t('stats.distance')}</p>
@@ -230,7 +277,7 @@ const TripDetailModal: React.FC = () => {
                             <span className="text-lg">⛽</span>
                             <p className="text-slate-600 dark:text-slate-400 text-xs">{t('hybrid.fuelConsumption')}</p>
                             <p className="text-amber-600 dark:text-amber-400 text-lg font-bold">{trip.fuel?.toFixed(2)} L</p>
-                            <p className="text-slate-500 dark:text-slate-400 text-[10px]">{(trip.trip && trip.trip > 0 ? ((trip.fuel || 0) / trip.trip * 100).toFixed(2) : 0)} L/100km</p>
+                            <p className="text-slate-500 dark:text-slate-400 text-[10px]">{(details.effectiveDistance > 0 ? ((trip.fuel || 0) / details.effectiveDistance * 100).toFixed(2) : 0)} L/100km</p>
                         </div>
                         <div className="bg-gradient-to-r from-emerald-50 to-amber-50 dark:from-emerald-900/20 dark:to-amber-900/20 rounded-xl p-3 text-center border border-slate-200 dark:border-slate-700">
                             <span className="text-lg">🔌⛽</span>
@@ -260,7 +307,7 @@ const TripDetailModal: React.FC = () => {
                                 <span className="text-slate-600 dark:text-slate-400 text-sm">{t('stats.avgSpeed')}</span>
                             </div>
                             <p className="text-slate-900 dark:text-white text-lg font-bold">
-                                {((trip.trip || 0) / (trip.duration / 3600)).toFixed(1)} {t('units.kmh')}
+                                {(details.effectiveDistance / (trip.duration / 3600)).toFixed(1)} {t('units.kmh')}
                             </p>
                         </div>
                     </div>
@@ -331,14 +378,32 @@ const TripDetailModal: React.FC = () => {
                 )}
 
                 {/* Map Modal */}
-                {showMap && trip.gpsDistanceKm && tripPoints.length > 0 && (
-                    <Suspense fallback={<div className="h-[500px] flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl">Cargando mapa...</div>}>
-                        <TripMapModalLazy
-                            trip={trip}
-                            points={tripPoints}
-                            onClose={() => setShowMap(false)}
-                        />
-                    </Suspense>
+                {showMap && (
+                    tripPoints.length > 0 ? (
+                        <Suspense fallback={<div className="h-[500px] flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl">Cargando mapa...</div>}>
+                            <TripMapModalLazy
+                                trip={trip}
+                                points={tripPoints}
+                                onClose={() => setShowMap(false)}
+                            />
+                        </Suspense>
+                    ) : (
+                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={() => setShowMap(false)}>
+                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
+                            <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-700 text-center" onClick={(e) => e.stopPropagation()}>
+                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">No se puede cargar el mapa</h3>
+                                <p className="text-slate-600 dark:text-slate-400 mb-4">
+                                    {tripPoints.length === 0 ? "No hay puntos GPS registrados para este viaje." : "Cargando puntos..."}
+                                </p>
+                                <button
+                                    onClick={() => setShowMap(false)}
+                                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                                >
+                                    Cerrar
+                                </button>
+                            </div>
+                        </div>
+                    )
                 )}
             </div>
         </div>

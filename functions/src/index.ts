@@ -43,5 +43,8 @@ export {
     bydMqttWebhook,
     bydGetMqttCredentials,
     bydTriggerMqttRefresh,
-    bydScheduledPoll,
+    bydActiveTripMonitor,
+    bydIdleHeartbeat,
+    bydFixTrip,
+    bydDebug,
 } from './bydFunctions';

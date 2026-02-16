@@ -10,6 +10,10 @@ service cloud.firestore {
       // Trips subcolección
       match /trips/{tripId} {
         allow read, write: if true;
+        
+        match /points/{pointId} {
+          allow read, write: if true;
+        }
       }
 
       // Charges subcolección
@@ -26,6 +30,10 @@ service cloud.firestore {
     // Legacy collections
     match /trips/{tripId} {
       allow read, write: if true;
+      
+      match /points/{pointId} {
+        allow read, write: if true;
+      }
     }
 
     match /vehicles/{vehicleId} {

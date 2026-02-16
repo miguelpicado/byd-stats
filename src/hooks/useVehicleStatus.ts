@@ -25,6 +25,24 @@ export interface VehicleStatus {
 
     // Climate
     climateActive?: boolean;
+    interiorTemp?: number;
+    exteriorTemp?: number;
+
+    // Windows & Doors
+    doors?: {
+        frontLeft: boolean;
+        frontRight: boolean;
+        rearLeft: boolean;
+        rearRight: boolean;
+        trunk: boolean;
+        hood: boolean;
+    };
+    windows?: {
+        frontLeft: boolean;
+        frontRight: boolean;
+        rearLeft: boolean;
+        rearRight: boolean;
+    };
 
     // Trunk
     trunkOpen?: boolean;

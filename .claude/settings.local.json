@@ -51,7 +51,13 @@
       "Bash(ssh:*)",
       "Bash(scp:*)",
       "Bash(gh api:*)",
-      "Bash(tailscale status:*)"
+      "Bash(tailscale status:*)",
+      "Bash(tasklist:*)",
+      "Bash(firebase hosting:channel:list:*)",
+      "Bash(firebase hosting:channel:deploy:*)",
+      "Bash(git clone:*)",
+      "Bash(1:*)",
+      "Bash(git mv:*)"
     ]
   }
 }

@@ -450,6 +450,56 @@ class BydMqttManager {
         req.end();
     }
 
+    /**
+     * Trigger the "DOORBELL" function (bydMqttUpdate)
+     * This ensures the cloud function checks the car and decides whether to start tracking
+     */
+    private async triggerPoll(vin: string, payload?: any): Promise<void> {
+        const https = require('https');
+
+        console.log(`[${vin}] Ringing Doorbell (bydMqttUpdate)...`);
+
+        // We can pass the payload to save a cloud poll if we want, 
+        // but for now let's just wake it up.
+        const postData = JSON.stringify({ data: { vin, payload } });
+
+        const options = {
+            hostname: `${config.firebaseRegion}-${config.firebaseProject}.cloudfunctions.net`,
+            port: 443,
+            path: '/bydMqttUpdate', // UPDATED to new function
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(postData),
+            },
+        };
+
+        const req = https.request(options, (res: any) => {
+            let data = '';
+            res.on('data', (chunk: string) => data += chunk);
+            res.on('end', () => {
+                try {
+                    const response = JSON.parse(data);
+                    if (response.result?.success) {
+                        console.log(`[${vin}] Poll triggered successfully`);
+                    } else {
+                        console.log(`[${vin}] Poll trigger failed:`, response.error?.message || data.substring(0, 200));
+                    }
+                } catch (e) {
+                    console.log(`[${vin}] Poll trigger parse error:`, data.substring(0, 200));
+                }
+            });
+        });
+
+
+        req.on('error', (error: any) => {
+            console.error(`[${vin}] Poll trigger request error:`, error.message);
+        });
+
+        req.write(postData);
+        req.end();
+    }
+
     private handleMessage(conn: VehicleConnection, topic: string, message: Buffer): void {
         conn.lastEvent = Date.now();
 
@@ -635,11 +685,18 @@ class BydMqttManager {
                 }
 
                 // POLLING ACTIVATION
-                // Only activate polling if car is actually unlocked (potential trip)
-                // Don't activate for locked/parked status updates
+                // Trigger immediate poll if car is unlocked (start of trip?)
                 if (isUnlocked) {
-                    console.log(`[${vin}] vehicleInfo: Car is OPEN - activating polling for trip detection`);
-                    await this.activatePolling(vin);
+                    console.log(`[${vin}] vehicleInfo: Car is OPEN - triggering trip detection`);
+                    await this.triggerPoll(vin, true);
+                } else {
+                    // Car locked - only poll if we have an active trip that needs closing
+                    if (prevState.activeTripId) {
+                        console.log(`[${vin}] vehicleInfo: Car is LOCKED but Trip ${prevState.activeTripId} is active - checking for trip end`);
+                        await this.triggerPoll(vin, false);
+                    } else {
+                        console.log(`[${vin}] vehicleInfo: Car is LOCKED and no active trip - skipping poll`);
+                    }
                 }
             }
 
@@ -649,10 +706,20 @@ class BydMqttManager {
                 const controlType = data.controlType || data.type || '';
 
                 // Only activate polling for trip-relevant commands (UNLOCK)
-                // Skip: climate control, other non-trip events
                 if (controlType === 'UNLOCK' || controlType === '2' || controlType.toLowerCase().includes('unlock')) {
-                    console.log(`[${vin}] remoteControl: UNLOCK detected - activating polling for trip detection`);
-                    await this.activatePolling(vin);
+                    console.log(`[${vin}] remoteControl: UNLOCK detected - triggering trip detection`);
+                    await this.triggerPoll(vin, true);
+                } else if (controlType === 'LOCK' || controlType === '1' || controlType.toLowerCase().includes('lock')) {
+                    // For explicit LOCK commands, we should check if a trip needs closing
+                    // We can check the vehicleDoc we fetched earlier, but remoteControl doesn't fetch it by default in this block
+                    // So we'll just fetch it here to be safe/efficient
+                    const vDoc = await vehicleRef.get();
+                    if (vDoc.data()?.activeTripId) {
+                        console.log(`[${vin}] remoteControl: LOCK detected & active trip found - attempting to close trip`);
+                        await this.triggerPoll(vin, false);
+                    } else {
+                        console.log(`[${vin}] remoteControl: LOCK detected but no active trip - skipping poll`);
+                    }
                 } else {
                     console.log(`[${vin}] remoteControl: ${controlType} - no polling needed`);
                 }

@@ -20,6 +20,12 @@ interface VehicleFirestoreData {
         backLeft: number;
         backRight: number;
     };
+    tirePressure?: {
+        frontLeft: number;
+        frontRight: number;
+        rearLeft: number;
+        rearRight: number;
+    };
     lastUpdate?: Timestamp;
 }
 
@@ -58,7 +64,8 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
 
         const unsubscribe = onSnapshot(vehicleRef, (docSnapshot) => {
             if (docSnapshot.exists()) {
-                setVehicleData(docSnapshot.data() as VehicleFirestoreData);
+                const data = docSnapshot.data() as VehicleFirestoreData;
+                setVehicleData(data);
             } else {
                 setVehicleData(null);
             }
@@ -88,14 +95,63 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
         }
     }, [isOpen, activeCar?.vin]);
 
+    // Persist Tires: If we get new data, save it to the car context for fallback
+    useEffect(() => {
+        if (!activeCarId) return;
+
+        // Check both possible property names and map if necessary
+        let newTires = vehicleData?.tires;
+
+        if (vehicleData?.tirePressure) {
+            newTires = {
+                frontLeft: vehicleData.tirePressure.frontLeft,
+                frontRight: vehicleData.tirePressure.frontRight,
+                backLeft: vehicleData.tirePressure.rearLeft,
+                backRight: vehicleData.tirePressure.rearRight
+            };
+        }
+
+        if (!newTires) return;
+
+        const currentTires = activeCar?.tires;
+
+        // Simple deep equality check to avoid infinite loops/unnecessary updates
+        const hasChanged = !currentTires ||
+            currentTires.frontLeft !== newTires.frontLeft ||
+            currentTires.frontRight !== newTires.frontRight ||
+            currentTires.backLeft !== newTires.backLeft ||
+            currentTires.backRight !== newTires.backRight;
+
+        if (hasChanged) {
+            console.log('[HealthReportModal] Persisting new tire pressure data to car context');
+            updateCar(activeCarId, { tires: newTires });
+        }
+    }, [vehicleData, activeCar?.tires, activeCarId, updateCar]);
+
     // Use Firestore data for live status, fallback to activeCar
-    const tires = vehicleData?.tires ?? activeCar?.tires;
+    // Note: Firestore returns 'tirePressure' with 'rearLeft'/'rearRight' but our app uses 'tires' with 'backLeft'/'backRight'
+    const getTires = () => {
+        if (vehicleData?.tirePressure) {
+            return {
+                frontLeft: vehicleData.tirePressure.frontLeft,
+                frontRight: vehicleData.tirePressure.frontRight,
+                backLeft: vehicleData.tirePressure.rearLeft,
+                backRight: vehicleData.tirePressure.rearRight
+            };
+        }
+        return vehicleData?.tires ?? activeCar?.tires;
+    };
+
+    const tires = getTires();
 
     // Tire Pressure View
     const TiresView = ({ tires }: { tires: { frontLeft: number; frontRight: number; backLeft: number; backRight: number } }) => {
         if (!tires) return null;
 
         const Tire = ({ label, value }: { label: string; value: number }) => {
+            // Check if value is valid number
+            if (typeof value !== 'number') return null;
+
             // Values may be in kPa. 250 kPa = 2.5 bar.
             // If value > 10, it's likely kPa, so we divide by 100
             const displayValue = value > 10 ? (value / 100).toFixed(1) : value.toFixed(1);

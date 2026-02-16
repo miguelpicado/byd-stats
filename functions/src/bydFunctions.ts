@@ -8,6 +8,7 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
 import { BydClient, BydConfig, initBydModule } from './byd';
+import { snapToRoads, calculatePathDistanceKm } from './googleMaps';
 
 // Initialize Firestore (may already be initialized by main index.ts)
 try {
@@ -306,13 +307,18 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
 // VEHICLE DATA
 // =============================================================================
 
+
+
 /**
- * Helper to filter out undefined values from an object (Firestore rejects undefined)
+ * Helper to normalize SoC to decimal (0.0 - 1.0)
+ * Handles both percentage inputs (e.g. 75 -> 0.75) and decimal inputs (e.g. 0.75 -> 0.75)
  */
-function removeUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
-    return Object.fromEntries(
-        Object.entries(obj).filter(([_, v]) => v !== undefined)
-    ) as Partial<T>;
+function normalizeSoC(val: number | undefined): number {
+    if (val === undefined || val === null) return 0;
+    // If value is > 1, assume it's a percentage (e.g. 75%)
+    if (val > 1) return val / 100;
+    // If value is <= 1, assume it's already a decimal (e.g. 0.75)
+    return val;
 }
 
 /**
@@ -326,52 +332,29 @@ export const bydGetRealtime = regionalFunctions.https.onCall(async (data, contex
     }
 
     try {
-        const client = await getBydClientWithSession(vin);
-        const realtime = await client.getRealtime(vin);
+        // Use common polling logic to handle timeouts/sleep gracefully
+        // This prevents the 500 error when car is in deep sleep (Code 1008)
+        const result = await pollVehicleInternal(vin, 'polling');
 
-        // Build update object, filtering out undefined values (Firestore rejects them)
-        // Only update primary metrics if we have real values (car is awake)
-        // This preserves the last known good values when car is sleeping
-        const vehicleRef = db.collection('bydVehicles').doc(vin);
-        const updateData = removeUndefined({
-            // Primary metrics - only update if > 0 to preserve last known values
-            lastSoC: realtime.soc > 0 ? realtime.soc / 100 : undefined,
-            lastRange: realtime.range > 0 ? realtime.range : undefined,
-            lastOdometer: realtime.odometer > 0 ? realtime.odometer : undefined,
-            lastSpeed: realtime.speed ?? 0,
+        if (result.isSleeping) {
+            console.log(`[bydGetRealtime] Vehicle ${vin} is sleeping/unreachable. Returning last known state.`);
 
-            // State indicators
-            isCharging: realtime.isCharging,
-            isLocked: realtime.isLocked,
-            isOnline: realtime.isOnline,
+            // Fetch last known state from DB to return something useful instead of error
+            const vehicleDoc = await db.collection('bydVehicles').doc(vin).get();
+            const vehicleData = vehicleDoc.data() || {};
 
-            // Temperatures (may be undefined when car is asleep)
-
-            interiorTemp: realtime.interiorTemp,
-
-            // Door and window status
-            doors: realtime.doors,
-            windows: realtime.windows,
-
-            // Tire pressure
-            tirePressure: realtime.tirePressure,
-
-            lastUpdate: admin.firestore.Timestamp.now(),
-        });
-
-        await vehicleRef.update(updateData);
-
-        console.log(`[bydGetRealtime] ${vin}: SOC=${realtime.soc}%, range=${realtime.range}km, odo=${realtime.odometer}km, online=${realtime.isOnline}`);
-
-        // Warn if car appears offline (all zeros)
-        const warning = !realtime.isOnline
-            ? 'Vehicle appears offline - data may be stale. Try again when the car is awake (driving, charging, or recently used).'
-            : undefined;
+            return {
+                success: true,
+                isSleeping: true,
+                data: vehicleData, // Return cached data structure (client handling required)
+                warning: 'Vehicle is sleeping. Showing last known data.'
+            };
+        }
 
         return {
             success: true,
-            data: realtime,
-            warning,
+            data: result.data,
+            warning: !result.data.isOnline ? 'Vehicle appears offline' : undefined
         };
 
     } catch (error: any) {
@@ -417,8 +400,60 @@ export const bydGetGps = regionalFunctions.https.onCall(async (data, context) =>
 });
 
 /**
- * Get charging status
+ * Helper to execute control commands with retry logic for sleeping vehicles
  */
+async function executeControlCommand(
+    vin: string,
+    commandName: string,
+    action: (client: any, pin: string | undefined) => Promise<boolean>,
+    pin?: string
+): Promise<{ success: boolean; message?: string }> {
+    try {
+        const client = await getBydClientWithSession(vin);
+        const controlPin = pin || await getStoredControlPin(vin);
+
+        // Try action
+        try {
+            const success = await action(client, controlPin);
+            console.log(`[${commandName}] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
+            if (!success) {
+                // If explicit failure from API (not exception), return valid failure
+                return { success: false, message: 'Command failed execution' };
+            }
+            return { success: true };
+
+        } catch (innerError: any) {
+            // Check for timeout/unreachable
+            if (innerError.message && (innerError.message.includes('1008') || innerError.message.includes('timeout'))) {
+                console.log(`[${commandName}] Vehicle unreachable. Attempting wake-up and retry...`);
+
+                // Try to wake up by fetching realtime data (ignoring result)
+                try { await client.getRealtime(vin); } catch (e) { }
+
+                // Wait 6 seconds (give modem time to wake up)
+                await new Promise(resolve => setTimeout(resolve, 6000));
+
+                // Retry action
+                const retrySuccess = await action(client, controlPin);
+                console.log(`[${commandName}] Retry ${vin}: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
+                return {
+                    success: retrySuccess,
+                    message: retrySuccess ? undefined : 'Retry failed: Vehicle unreachable'
+                };
+            }
+            throw innerError;
+        }
+
+    } catch (error: any) {
+        console.error(`[${commandName}] Error:`, error.message);
+        // Return descriptive error to UI instead of generic 500 if possible
+        const msg = error.message.includes('1008')
+            ? 'Vehicle did not wake up (Timeout)'
+            : error.message;
+
+        throw new functions.https.HttpsError('internal', msg);
+    }
+}
 export const bydGetCharging = regionalFunctions.https.onCall(async (data, context) => {
     const { vin } = data;
 
@@ -450,6 +485,9 @@ export const bydGetCharging = regionalFunctions.https.onCall(async (data, contex
 /**
  * Lock vehicle
  */
+/**
+ * Lock vehicle
+ */
 export const bydLock = regionalFunctions.https.onCall(async (data, context) => {
     const { vin, pin } = data;
 
@@ -457,26 +495,16 @@ export const bydLock = regionalFunctions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
+    return await executeControlCommand(vin, 'bydLock', async (client, controlPin) => {
         const success = await client.lock(vin, controlPin);
-
         if (success) {
             await db.collection('bydVehicles').doc(vin).update({
                 isLocked: true,
                 lastUpdate: admin.firestore.Timestamp.now(),
             });
         }
-
-        console.log(`[bydLock] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydLock] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+        return success;
+    }, pin);
 });
 
 /**
@@ -489,28 +517,21 @@ export const bydUnlock = regionalFunctions.https.onCall(async (data, context) =>
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
+    return await executeControlCommand(vin, 'bydUnlock', async (client, controlPin) => {
         const success = await client.unlock(vin, controlPin);
-
         if (success) {
             await db.collection('bydVehicles').doc(vin).update({
                 isLocked: false,
                 lastUpdate: admin.firestore.Timestamp.now(),
             });
         }
-
-        console.log(`[bydUnlock] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydUnlock] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+        return success;
+    }, pin);
 });
 
+/**
+ * Start climate
+ */
 /**
  * Start climate
  */
@@ -521,20 +542,9 @@ export const bydStartClimate = regionalFunctions.https.onCall(async (data, conte
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        // Use stored PIN if not provided in request
-        const controlPin = pin || await getStoredControlPin(vin);
-        const success = await client.startClimate(vin, temperature || 22, controlPin);
-
-        console.log(`[bydStartClimate] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydStartClimate] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+    return await executeControlCommand(vin, 'bydStartClimate', async (client, controlPin) => {
+        return await client.startClimate(vin, temperature || 22, controlPin);
+    }, pin);
 });
 
 /**
@@ -547,19 +557,9 @@ export const bydStopClimate = regionalFunctions.https.onCall(async (data, contex
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
-        const success = await client.stopClimate(vin, controlPin);
-
-        console.log(`[bydStopClimate] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydStopClimate] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+    return await executeControlCommand(vin, 'bydStopClimate', async (client, controlPin) => {
+        return await client.stopClimate(vin, controlPin);
+    }, pin);
 });
 
 /**
@@ -572,19 +572,9 @@ export const bydFlashLights = regionalFunctions.https.onCall(async (data, contex
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
-        const success = await client.flashLights(vin, controlPin);
-
-        console.log(`[bydFlashLights] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydFlashLights] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+    return await executeControlCommand(vin, 'bydFlashLights', async (client, controlPin) => {
+        return await client.flashLights(vin, controlPin);
+    }, pin);
 });
 
 /**
@@ -597,19 +587,9 @@ export const bydCloseWindows = regionalFunctions.https.onCall(async (data, conte
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
-        const success = await client.closeWindows(vin, controlPin);
-
-        console.log(`[bydCloseWindows] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydCloseWindows] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+    return await executeControlCommand(vin, 'bydCloseWindows', async (client, controlPin) => {
+        return await client.closeWindows(vin, controlPin);
+    }, pin);
 });
 
 /**
@@ -732,7 +712,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
         };
 
         // Primary metrics - only update if > 0 to preserve last known values
-        if (realtime.soc > 0) vehicleUpdate.lastSoC = realtime.soc / 100;
+        if (realtime.soc > 0) vehicleUpdate.lastSoC = normalizeSoC(realtime.soc);
         if (realtime.range > 0) vehicleUpdate.lastRange = realtime.range;
         if (realtime.odometer > 0) vehicleUpdate.lastOdometer = realtime.odometer;
 
@@ -766,9 +746,9 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
                 vin,
                 startDate: now,
                 startOdometer: prevOdometer,
-                startSoC: vehicleData.lastSoC || realtime.soc / 100,
+                startSoC: vehicleData.lastSoC || normalizeSoC(realtime.soc),
                 endOdometer: realtime.odometer,
-                endSoC: realtime.soc / 100,
+                endSoC: normalizeSoC(realtime.soc),
                 distanceKm: Math.round(odoDelta * 100) / 100,
                 status: 'in_progress',
                 type: 'unknown',
@@ -806,7 +786,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
                 // Calculate electricity (kWh) from SoC delta
                 // Default BYD SEAL battery: 82.56 kWh (can be customized per vehicle)
                 const batteryCapacity = vehicleData.batteryCapacity || 82.56;
-                const socDelta = (tripData.startSoC || 0) - (realtime.soc / 100);
+                const socDelta = (tripData.startSoC || 0) - normalizeSoC(realtime.soc);
                 const electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
 
                 if (gps) {
@@ -823,7 +803,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
                     type: totalDistance >= 0.5 ? 'trip' : 'idle',
                     endDate: adjustedEndDate,
                     endOdometer: realtime.odometer,
-                    endSoC: realtime.soc / 100,
+                    endSoC: normalizeSoC(realtime.soc),
                     distanceKm: Math.round(Math.max(0, totalDistance) * 100) / 100,
                     durationMinutes,
                     electricity: electricityKwh,
@@ -855,7 +835,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
                 const tripData = tripDoc.data()!;
                 await tripRef.update({
                     endOdometer: realtime.odometer,
-                    endSoC: realtime.soc / 100,
+                    endSoC: normalizeSoC(realtime.soc),
                     distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
                     lastUpdate: now,
                 });
@@ -880,7 +860,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
                 const tripData = tripDoc.data()!;
                 await tripRef.update({
                     endOdometer: realtime.odometer,
-                    endSoC: realtime.soc / 100,
+                    endSoC: normalizeSoC(realtime.soc),
                     distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
                     lastUpdate: now,
                 });
@@ -919,132 +899,6 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
     }
 });
 
-// =============================================================================
-// WAKE VEHICLE (called when user opens BYD Stats app)
-// =============================================================================
-
-/**
- * Wake vehicle and get current data
- * Called when user opens the BYD Stats app to refresh vehicle state
- * Also activates polling temporarily in case the user is about to drive
- *
- * Flow:
- * 1. First request: Try to get data (this also wakes the car)
- * 2. If car is sleeping (all zeros), wait 3 seconds and retry
- * 3. Return fresh data
- */
-export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, activatePolling = true } = data;
-
-    if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
-    }
-
-    console.log(`[bydWakeVehicle] Waking vehicle ${vin}...`);
-
-    try {
-        const client = await getBydClientWithSession(vin);
-
-        // Fetch all data - charging endpoint is most reliable for SOC on BYD Seal
-        console.log(`[bydWakeVehicle] ${vin}: Fetching data...`);
-        const [realtimeResult, gpsResult, chargingResult] = await Promise.allSettled([
-            client.getRealtime(vin),
-            client.getGps(vin),
-            client.getChargingStatus(vin),
-        ]);
-
-        const realtime = realtimeResult.status === 'fulfilled' ? realtimeResult.value : null;
-        const gps = gpsResult.status === 'fulfilled' ? gpsResult.value : null;
-        const charging = chargingResult.status === 'fulfilled' ? chargingResult.value : null;
-
-        // Use charging SOC as fallback when realtime returns zeros
-        const effectiveSoc = (realtime?.soc || 0) > 0 ? realtime!.soc : (charging?.soc || 0);
-        const isAwake = effectiveSoc > 0 || (realtime?.odometer || 0) > 0 || (realtime?.isOnline || false);
-
-        console.log(`[bydWakeVehicle] ${vin}: realtime.soc=${realtime?.soc}, charging.soc=${charging?.soc}, effectiveSoc=${effectiveSoc}, awake=${isAwake}`);
-
-        // Prepare Firestore update
-        const vehicleRef = db.collection('bydVehicles').doc(vin);
-        const updateData: any = {
-            lastWake: admin.firestore.Timestamp.now(),
-        };
-
-        if (realtime || charging) {
-            // Primary metrics - use effectiveSoc (charging fallback) for SOC
-            if (effectiveSoc > 0) {
-                updateData.lastSoC = effectiveSoc / 100;
-            }
-            if (realtime && realtime.range > 0) {
-                updateData.lastRange = realtime.range;
-            }
-            if (realtime && realtime.odometer > 0) {
-                updateData.lastOdometer = realtime.odometer;
-            }
-            updateData.lastSpeed = realtime?.speed || 0;
-
-            // State indicators
-            updateData.isCharging = realtime?.isCharging || charging?.isCharging || false;
-            updateData.isLocked = realtime?.isLocked || false;
-            updateData.isOnline = isAwake;
-
-            // Temperatures (may be undefined when car is asleep)
-
-            if (realtime?.interiorTemp !== undefined) updateData.interiorTemp = realtime.interiorTemp;
-
-            // Door and window status (may be undefined when car is asleep)
-            if (realtime?.doors !== undefined) updateData.doors = realtime.doors;
-            if (realtime?.windows !== undefined) updateData.windows = realtime.windows;
-
-            // Tire pressure (may be undefined when car is asleep)
-            if (realtime?.tirePressure !== undefined) updateData.tirePressure = realtime.tirePressure;
-
-            updateData.lastUpdate = admin.firestore.Timestamp.now();
-        }
-
-        if (gps) {
-            const location: any = {
-                lat: gps.latitude,
-                lon: gps.longitude,
-            };
-            if (gps.heading !== undefined) location.heading = gps.heading;
-            updateData.lastLocation = location;
-        }
-
-        // Activate polling if requested (default: yes)
-        // This ensures we catch trips that start after the user checks their car
-        if (activatePolling) {
-            updateData.pollingActive = true;
-            updateData.pollingActivatedAt = admin.firestore.Timestamp.now();
-            updateData.pollingReason = 'app_wake';
-            console.log(`[bydWakeVehicle] Polling activated for ${vin}`);
-        }
-
-        await vehicleRef.update(updateData);
-
-        return {
-            success: true,
-            isAwake,
-            pollingActivated: activatePolling,
-            data: {
-                soc: effectiveSoc,
-                socPercent: effectiveSoc / 100,
-                range: realtime?.range || 0,
-                odometer: realtime?.odometer || 0,
-                isCharging: realtime?.isCharging || charging?.isCharging || false,
-                isLocked: realtime?.isLocked || false,
-                isOnline: isAwake,
-                location: gps ? { lat: gps.latitude, lon: gps.longitude, heading: gps.heading } : null,
-            },
-            message: isAwake
-                ? 'Vehicle is awake - data is current'
-                : 'Vehicle is in deep sleep - polling activated, data will update when car wakes.',
-        };
-
-    } catch (error: any) {
-        console.error('[bydWakeVehicle] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
-});
 
 // =============================================================================
 // DIAGNOSTIC
@@ -1168,24 +1022,36 @@ async function processVehicleInfoEvent(event: any): Promise<void> {
     const range = data.evEndurance || data.enduranceMileage || 0;
     const odometer = data.totalMileageV2 || data.totalMileage || data.odo || data.mileage || 0;
 
-    if (soc > 0) newState.lastSoC = soc / 100;
+    if (soc > 0) newState.lastSoC = normalizeSoC(soc);
     if (range > 0) newState.lastRange = range;
     if (odometer > 0) newState.lastOdometer = odometer;
 
     // Update vehicle state
     await vehicleRef.update(newState);
 
-    // Trip detection: check if odometer increased
-    if (prevState && prevState.lastOdometer && odometer > prevState.lastOdometer) {
-        const distance = odometer - prevState.lastOdometer;
+    // Trip detection: check if odometer increased OR if vehicle is unlocked (new trip start condition)
+    // User wants to capture stationary trips (consumption while parked with AC, etc.)
+    const isUnlocked = newState.isLocked === false;
+    // Odometer movement
+    const distDelta = (prevState && prevState.lastOdometer < odometer) ? (odometer - prevState.lastOdometer) : 0;
 
-        // Only create trip if distance > 0.5 km (avoid noise)
-        if (distance > 0.5) {
-            await createTripFromMqtt(vin, prevState, newState, distance);
+    // Condition 1: Odometer increased (moving)
+    // Condition 2: Car is unlocked AND no active trip yet (stationary start)
+    // Note: We use a small threshold for odometer to avoid noise, but 0 is fine if unlocked
+    const shouldStartTrip = distDelta >= 0.1 || (isUnlocked && !prevState?.activeTripId);
+
+    if (shouldStartTrip) {
+        // If we already have an active trip, we just update it (managed effectively by polling)
+        // But if NO active trip, we create one
+        if (!prevState?.activeTripId) {
+            await createTripFromMqtt(vin, prevState || {}, newState, distDelta);
+        } else if (distDelta > 0) {
+            // Update existing trip distance if moving
+            // This is mostly handled by polling, but good to update if we get MQTT push
         }
     }
 
-    console.log(`[processVehicleInfoEvent] Updated ${vin}: SOC=${soc}%, odo=${odometer}km`);
+    console.log(`[processVehicleInfoEvent] Updated ${vin}: SOC=${soc}%, odo=${odometer}km, unlocked=${isUnlocked}`);
 }
 
 /**
@@ -1235,7 +1101,16 @@ async function createTripFromMqtt(
     // Store in trips subcollection
     const tripRef = await db.collection('bydVehicles').doc(vin).collection('trips').add(tripData);
 
-    console.log(`[createTripFromMqtt] Created trip ${tripRef.id}: ${distance.toFixed(1)}km, SOC ${(prevState.lastSoC * 100).toFixed(0)}% → ${(newState.lastSoC * 100).toFixed(0)}%`);
+    // Update parent vehicle doc to track this active trip
+    await db.collection('bydVehicles').doc(vin).update({
+        activeTripId: tripRef.id,
+        pollingActive: true, // Ensure scheduler tracks it
+        pollingActivatedAt: admin.firestore.Timestamp.now(),
+        lastUpdate: admin.firestore.Timestamp.now(),
+        stationaryPollCount: 0
+    });
+
+    console.log(`[createTripFromMqtt] Created trip ${tripRef.id} and activated polling: ${distance.toFixed(1)}km`);
 }
 
 /**
@@ -1364,152 +1239,127 @@ export const bydTriggerMqttRefresh = regionalFunctions.https.onCall(async (data,
 });
 
 // =============================================================================
-// SCHEDULED POLLING (runs every minute)
+// SHARED VEHICLE STATE PROCESSING
 // =============================================================================
 
 /**
- * Scheduled function that runs every minute
- * Polls all BYD vehicles that have pollingActive = true
+ * Process vehicle state updates and handle trip detection
+ * centralized logic used by both scheduled polling and manual wake
  */
-export const bydScheduledPoll = regionalFunctions.pubsub
-    .schedule('every 1 minutes')
-    .onRun(async (context) => {
-        console.log('[bydScheduledPoll] Starting scheduled poll...');
-
-        ensureBydInit();
-
-        try {
-            // Find all vehicles with active polling
-            const activeVehicles = await db.collection('bydVehicles')
-                .where('pollingActive', '==', true)
-                .get();
-
-            if (activeVehicles.empty) {
-                console.log('[bydScheduledPoll] No vehicles with active polling');
-                return null;
-            }
-
-            console.log(`[bydScheduledPoll] Polling ${activeVehicles.size} active vehicle(s)`);
-
-            // Poll each vehicle
-            const promises = activeVehicles.docs.map(async (doc) => {
-                const vin = doc.id;
-                try {
-                    await pollVehicleInternal(vin);
-                } catch (error: any) {
-                    console.error(`[bydScheduledPoll] Error polling ${vin}:`, error.message);
-                }
-            });
-
-            await Promise.all(promises);
-
-            console.log('[bydScheduledPoll] Scheduled poll complete');
-            return null;
-
-        } catch (error: any) {
-            console.error('[bydScheduledPoll] Error:', error.message);
-            return null;
-        }
-    });
-
-/**
- * Internal polling function - used by both scheduler and manual calls
- */
-async function pollVehicleInternal(vin: string): Promise<void> {
-    const client = await getBydClientWithSession(vin);
-
-    // Get data sequentially - if session expired (1002), the first call
-    // will auto-relogin and subsequent calls will use the new session
-    const realtime = await client.getRealtime(vin);
-    const gps = await client.getGps(vin).catch(() => null); // GPS might fail
-
-    // Always get charging status - it's more reliable than realtime for SOC on some models (e.g. BYD Seal)
-    const charging = await client.getChargingStatus(vin).catch(() => null);
-
-    // After successful API calls, save the session back in case it was refreshed
-    // (e.g. auto-relogin after 1002 "another device" error)
-    const currentSession = client.getSession();
-    if (currentSession) {
-        await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').set({
-            userId: currentSession.token.userId,
-            signToken: currentSession.token.signToken,
-            encryToken: currentSession.token.encryToken,
-            cookies: JSON.stringify(currentSession.cookies || {}),
-            updatedAt: admin.firestore.Timestamp.now(),
-        });
-    }
-
+async function processVehicleState(
+    vin: string,
+    realtime: any,
+    gps: any,
+    charging: any,
+    source: 'polling' | 'wake' | 'mqtt'
+): Promise<any> {
     const now = admin.firestore.Timestamp.now();
     const vehicleRef = db.collection('bydVehicles').doc(vin);
     const vehicleDoc = await vehicleRef.get();
     const vehicleData = vehicleDoc.data() || {};
 
     // Use charging SOC as fallback when realtime returns zeros
+    // LOGGING: Check raw values for debugging consumption 100x error
+    const rawRealtimeSoC = realtime.soc;
+    const rawChargingSoC = charging?.soc;
+    console.log(`[SoC Debug] ${vin} - Realtime: ${rawRealtimeSoC} (${typeof rawRealtimeSoC}), Charging: ${rawChargingSoC} (${typeof rawChargingSoC})`);
+
     const effectiveSoc = realtime.soc > 0 ? realtime.soc : (charging?.soc || 0);
     const effectiveIsCharging = realtime.isCharging || charging?.isCharging || false;
 
-    console.log(`[pollVehicleInternal] ${vin}: realtime.soc=${realtime.soc}, charging.soc=${charging?.soc}, effectiveSoc=${effectiveSoc}`);
+    // effectiveSoc should be an integer percentage (e.g. 75)
+    // We store it as a decimal (0.75) for consistency with other parts of the app
+    const socDecimal = normalizeSoC(effectiveSoc);
+
+    console.log(`[processVehicleState] ${vin} (${source}): effectiveSoc=${effectiveSoc}, socDecimal=${socDecimal}`);
 
     const prevOdometer = vehicleData.lastOdometer || 0;
     const activeTripId = vehicleData.activeTripId || null;
-    const stationaryPollCount = vehicleData.stationaryPollCount || 0;
 
     // Calculate movement using odometer
     // IMPORTANT: When prevOdometer is 0 (first poll, no prior data), skip odometer-based detection
-    // to avoid false trip starts (e.g., 12214 - 0 = 12214km "movement")
     const odoDelta = prevOdometer > 0 ? (realtime.odometer - prevOdometer) : 0;
-    const hasOdoMovement = odoDelta >= 1; // 1km or more (odometer increments)
+    const hasOdoMovement = odoDelta > 0; // Any increase is movement
+
+    // Check climate FIRST so we can use it in GPS detection
+    // Some models report airConditioningActive, others use remoteClimateStatus
+    const isClimateActive = realtime.airConditioningActive || realtime.remoteClimateStatus === 1 || false;
 
     // GPS-based detection if available
     let hasGpsMovement = false;
     if (gps && gps.latitude > 0) {
         const prevLat = vehicleData.lastLocation?.lat;
         const prevLon = vehicleData.lastLocation?.lon;
-        // Only compare GPS if we have a previous location (avoid first-poll false positive)
         if (prevLat !== undefined && prevLon !== undefined) {
             const latDelta = Math.abs(gps.latitude - prevLat);
             const lonDelta = Math.abs(gps.longitude - prevLon);
-            hasGpsMovement = (latDelta + lonDelta) > 0.0005; // ~50 meters at equator
+            // Increased threshold to ~100m (0.001 deg) to avoid drift
+            // Reduced strictness: Don't require climateActive, just significant position change
+            hasGpsMovement = (latDelta + lonDelta) > 0.002; // ~200m change
         }
     }
 
-    const hasMovement = hasOdoMovement || hasGpsMovement;
+    // SPEED-based detection (The most reliable indicator if available)
+    const hasSpeedMovement = (realtime.speed || 0) > 0;
+
+    const hasMovement = hasOdoMovement || hasGpsMovement || hasSpeedMovement;
     const isStationary = !hasMovement;
 
     // Detect if car is sleeping: realtime returns zeros AND charging also has no data
     const isCarSleeping = realtime.soc === 0 && realtime.range === 0 && realtime.odometer === 0 && effectiveSoc === 0;
 
-    console.log(`[pollVehicleInternal] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}, sleeping=${isCarSleeping}`);
+    console.log(`[processVehicleState] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km), move=${hasMovement}, locked=${realtime.isLocked}, climate=${isClimateActive}, sleep=${isCarSleeping}`);
 
     // If truly sleeping (no data from any source), preserve last known values
     if (isCarSleeping) {
-        console.log(`[pollVehicleInternal] ${vin}: Car sleeping (all sources zero), preserving last known values`);
-        await vehicleRef.update({
+        console.log(`[processVehicleState] ${vin}: Car offline/sleeping.`);
+
+        // IDLE SLEEP TRACKING: Only deactivate after 10 consecutive offline polls
+        const newOfflineCount = (vehicleData.offlinePollCount || 0) + 1;
+        const offlineUpdate: any = {
             lastPollTime: now,
             isOnline: false,
-        });
-        return;
+            offlinePollCount: newOfflineCount
+        };
+
+        if (activeTripId && newOfflineCount >= 10) {
+            console.log(`[processVehicleState] Car offline for 10 polls with active trip ${activeTripId} - Force Ending.`);
+            const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
+            await tripRef.update({
+                status: 'completed',
+                endOdometer: prevOdometer,
+                endSoC: vehicleData.lastSoC || 0,
+                lastUpdate: now,
+                forcedEndReason: 'vehicle_offline_timeout'
+            });
+            offlineUpdate.activeTripId = admin.firestore.FieldValue.delete();
+            offlineUpdate.pollingActive = false;
+            offlineUpdate.stationaryPollCount = 0;
+            offlineUpdate.offlinePollCount = 0;
+        }
+
+        await vehicleRef.update(offlineUpdate);
+        return { isSleeping: true };
     }
 
     const vehicleUpdate: any = {
         lastPollTime: now,
         lastUpdate: now,
+        offlinePollCount: 0, // Reset when we get real data
 
-        // State indicators - use effective values that combine realtime + charging
+        // State indicators
         isCharging: effectiveIsCharging,
         isLocked: realtime.isLocked,
-        isOnline: effectiveSoc > 0 || realtime.isOnline, // If we have SOC from charging, car is online
-
+        isOnline: effectiveSoc > 0 || realtime.isOnline,
         lastSpeed: realtime.speed || 0,
     };
 
-    // Only update metrics if they have real values (preserve last known good values)
-    // Use effectiveSoc which falls back to charging endpoint when realtime returns zeros
-    if (effectiveSoc > 0) vehicleUpdate.lastSoC = effectiveSoc / 100;
+    // Update metrics if they have real values
+    if (effectiveSoc > 0) vehicleUpdate.lastSoC = socDecimal;
     if (realtime.range > 0) vehicleUpdate.lastRange = realtime.range;
     if (realtime.odometer > 0) vehicleUpdate.lastOdometer = realtime.odometer;
 
-    // Only update optional fields if defined (avoid Firestore undefined error)
+    // Optional fields
     if (realtime.interiorTemp !== undefined) vehicleUpdate.interiorTemp = realtime.interiorTemp;
     if (realtime.doors !== undefined) vehicleUpdate.doors = realtime.doors;
     if (realtime.windows !== undefined) vehicleUpdate.windows = realtime.windows;
@@ -1526,138 +1376,131 @@ async function pollVehicleInternal(vin: string): Promise<void> {
         vehicleUpdate.stationaryPollCount = 0;
     }
 
-    // Trip logic
+    // =========================================================================
+    // TRIP LOGIC
+    // =========================================================================
+
     if (!activeTripId && hasMovement) {
-        // Start new trip
-        const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc();
-        await tripRef.set({
-            vin,
-            startDate: now,
-            startOdometer: prevOdometer,
-            startSoC: vehicleData.lastSoC || effectiveSoc / 100,
-            endOdometer: realtime.odometer,
-            endSoC: effectiveSoc / 100,
-            distanceKm: Math.round(odoDelta * 100) / 100,
-            status: 'in_progress',
-            type: 'unknown',
-            source: 'byd_polling',
-            vehicleId: vin,
-            lastUpdate: now,
-            points: gps ? [{
-                lat: gps.latitude,
-                lon: gps.longitude,
-                timestamp: now.toMillis(),
-                type: 'start',
-            }] : [],
-            startLocation: gps ? { lat: gps.latitude, lon: gps.longitude } : null,
-        });
+        // --- START NEW TRIP ---
+        // Allow trip start even if locked (auto-lock while driving)
+        // Prevent trip start only if source is 'wake' (opening app) to avoid ghost trips
+        const canStartTrip = source !== 'wake';
 
-        vehicleUpdate.activeTripId = tripRef.id;
-        console.log(`[pollVehicleInternal] STARTED trip: ${tripRef.id}`);
-
-    } else if (activeTripId && realtime.isLocked && isStationary && stationaryPollCount >= 4) {
-        // Close trip after 5 stationary polls while locked
-        const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
-        const tripDoc = await tripRef.get();
-        const tripData = tripDoc.data();
-
-        if (tripData) {
-            const totalDistance = realtime.odometer - (tripData.startOdometer || 0);
-            // Adjust end time backwards by 5 minutes (since we've been stationary)
-            const adjustedEndDate = admin.firestore.Timestamp.fromMillis(now.toMillis() - 5 * 60 * 1000);
-
-            // Calculate duration in minutes
-            const startTimestamp = tripData.startDate?.toMillis?.() || tripData.startDate || 0;
-            const durationMinutes = Math.round((adjustedEndDate.toMillis() - startTimestamp) / 60000);
-
-            // Calculate electricity (kWh) from SoC delta
-            // Default BYD SEAL battery: 82.56 kWh (can be customized per vehicle)
-            const batteryCapacity = vehicleData.batteryCapacity || 82.56;
-            const socDelta = (tripData.startSoC || 0) - (effectiveSoc / 100);
-            const electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
-
-            const updateData: any = {
-                status: 'completed',
-                type: totalDistance >= 0.5 ? 'trip' : 'idle',
-                endDate: adjustedEndDate,
-                endOdometer: realtime.odometer,
-                endSoC: effectiveSoc / 100,
-                distanceKm: Math.round(Math.max(0, totalDistance) * 100) / 100,
-                durationMinutes,
-                electricity: electricityKwh,
-                lastUpdate: now,
-            };
-
-            // Add end point and location if we have GPS
-            if (gps) {
-                updateData.endLocation = { lat: gps.latitude, lon: gps.longitude };
-                if (tripData.points) {
-                    updateData.points = [...tripData.points, {
+        if (canStartTrip) {
+            if (odoDelta > 0 || hasGpsMovement || hasSpeedMovement) {
+                const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc();
+                await tripRef.set({
+                    vin,
+                    startDate: now,
+                    startOdometer: prevOdometer,
+                    startSoC: vehicleData.lastSoC || socDecimal,
+                    endOdometer: realtime.odometer,
+                    endSoC: socDecimal,
+                    distanceKm: Math.round(odoDelta * 100) / 100,
+                    status: 'in_progress',
+                    type: 'unknown',
+                    source: `byd_${source}`,
+                    vehicleId: vin,
+                    lastUpdate: now,
+                    points: gps ? [{
                         lat: gps.latitude,
                         lon: gps.longitude,
-                        timestamp: adjustedEndDate.toMillis(),
-                        type: 'end',
-                    }];
-                }
-            }
+                        timestamp: now.toMillis(),
+                        type: 'start',
+                    }] : [],
+                    startLocation: gps ? { lat: gps.latitude, lon: gps.longitude } : null,
+                });
 
-            await tripRef.update(updateData);
-            console.log(`[pollVehicleInternal] CLOSED trip: ${activeTripId}, ${totalDistance.toFixed(2)}km, ${electricityKwh}kWh, ${durationMinutes}min`);
+                vehicleUpdate.activeTripId = tripRef.id;
+                vehicleUpdate.pollingActive = true;
+                vehicleUpdate.pollingActivatedAt = now;
+                console.log(`[processVehicleState] STARTED trip: ${tripRef.id}`);
+            }
+        }
+    } else if (activeTripId && isStationary) {
+        // --- STATIONARY / TRIP END LOGIC ---
+
+        // 1. Immediate End: Plugged In
+        if (effectiveIsCharging) {
+            console.log(`[processVehicleState] Trip End: Vehicle plugged in.`);
+            await closeTrip(vin, activeTripId, realtime, vehicleData, 0, 'plugged_in');
+            vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
+            vehicleUpdate.pollingActive = false; // Stop trip polling
+            // Note: charging polling will be handled by a separate process or we can enable it here if you like
+            vehicleUpdate.pollingReason = 'charging'; // Optional marker
+            await vehicleRef.update(vehicleUpdate);
+            return { success: true };
         }
 
-        // Deactivate polling - trip is done
-        vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
-        vehicleUpdate.stationaryPollCount = 0;
-        vehicleUpdate.pollingActive = false; // STOP POLLING!
+        // 2. Timeout Counters
+        // We need robust counters stored in vehicleData. 
+        // Note: To avoid indefinite growth of fields, we can use a single object 'tripStopCounters'
 
-        console.log(`[pollVehicleInternal] Polling DEACTIVATED for ${vin} - trip complete`);
+        // Check conditions
+        const isClimateOn = realtime.airConditioningActive || realtime.remoteClimateStatus === 1 || false;
+        const isLocked = realtime.isLocked;
 
-    } else if (activeTripId && realtime.isLocked && isStationary) {
-        // Increment stationary counter
-        vehicleUpdate.stationaryPollCount = stationaryPollCount + 1;
-        console.log(`[pollVehicleInternal] Locked + stationary: ${stationaryPollCount + 1}/5`);
+        // Increment counters based on state
+        const prevCounters = vehicleData.tripStopCounters || { gps: 0, climateOff: 0, lockedOff: 0 };
 
-        // Update trip with current data
-        const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
-        const tripDoc = await tripRef.get();
-        if (tripDoc.exists) {
-            const tripData = tripDoc.data()!;
-            const updateData: any = {
+        const newCounters = {
+            gps: prevCounters.gps + 1, // GPS is stationary (we are in this block because !hasMovement)
+            climateOff: isClimateOn ? 0 : (prevCounters.climateOff + 1),
+            lockedOff: (isLocked && !isClimateOn) ? (prevCounters.lockedOff + 1) : 0
+        };
+
+        // Save counters for next poll
+        vehicleUpdate.tripStopCounters = newCounters;
+        // Also keep legacy stationaryPollCount for backward compatibility/logging
+        vehicleUpdate.stationaryPollCount = (vehicleData.stationaryPollCount || 0) + 1;
+
+        console.log(`[processVehicleState] Stationary Counters: GPS=${newCounters.gps}/15, ClimOFF=${newCounters.climateOff}/9, LockOFF=${newCounters.lockedOff}/6`);
+
+        // Check Stop Thresholds
+        let stopReason = null;
+        let trimMinutes = 0;
+
+        if (newCounters.gps >= 15) {
+            stopReason = 'timeout_gps_5m';
+            trimMinutes = 5;
+        } else if (newCounters.climateOff >= 9) {
+            stopReason = 'timeout_climate_3m';
+            trimMinutes = 3;
+        } else if (newCounters.lockedOff >= 6) {
+            stopReason = 'timeout_locked_2m';
+            trimMinutes = 2;
+        }
+
+        if (stopReason) {
+            console.log(`[processVehicleState] Trip End Triggered: ${stopReason}. Trimming ${trimMinutes} min.`);
+            await closeTrip(vin, activeTripId, realtime, vehicleData, trimMinutes, stopReason);
+
+            vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
+            vehicleUpdate.pollingActive = false;
+            vehicleUpdate.tripStopCounters = { gps: 0, climateOff: 0, lockedOff: 0 };
+            vehicleUpdate.stationaryPollCount = 0;
+        } else {
+            // Update trip end values while stationary (without closing)
+            const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
+            await tripRef.update({
                 endOdometer: realtime.odometer,
-                endSoC: effectiveSoc / 100,
-                distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
-                lastUpdate: now,
-            };
-
-            // Add tracking point if GPS available
-            if (gps && tripData.points) {
-                updateData.points = [...tripData.points, {
-                    lat: gps.latitude,
-                    lon: gps.longitude,
-                    timestamp: now.toMillis(),
-                    type: 'tracking',
-                }];
-            }
-
-            await tripRef.update(updateData);
+                endSoC: socDecimal,
+                lastUpdate: now
+            });
         }
-
     } else if (activeTripId && hasMovement) {
-        // Trip ongoing with movement - add tracking point
+        // --- MOVING ---
         vehicleUpdate.stationaryPollCount = 0;
-
         const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
         const tripDoc = await tripRef.get();
         if (tripDoc.exists) {
             const tripData = tripDoc.data()!;
             const updateData: any = {
                 endOdometer: realtime.odometer,
-                endSoC: effectiveSoc / 100,
+                endSoC: socDecimal,
                 distanceKm: Math.round(Math.max(0, realtime.odometer - (tripData.startOdometer || 0)) * 100) / 100,
                 lastUpdate: now,
             };
-
-            // Add tracking point
             if (gps && tripData.points) {
                 updateData.points = [...tripData.points, {
                     lat: gps.latitude,
@@ -1666,11 +1509,593 @@ async function pollVehicleInternal(vin: string): Promise<void> {
                     type: 'tracking',
                 }];
             }
-
             await tripRef.update(updateData);
+        }
+    } else {
+        // --- IDLE ---
+        const newStationaryCount = (vehicleData.stationaryPollCount || 0) + 1;
+        vehicleUpdate.stationaryPollCount = newStationaryCount;
+        if (vehicleData.pollingActive && newStationaryCount >= 5 && realtime.isLocked) {
+            vehicleUpdate.pollingActive = false;
+            vehicleUpdate.stationaryPollCount = 0;
         }
     }
 
-    // Update vehicle state
     await vehicleRef.update(vehicleUpdate);
+
+    return {
+        success: true,
+        data: {
+            ...realtime,
+            soc: effectiveSoc,
+            isCharging: effectiveIsCharging,
+            location: gps ? { lat: gps.latitude, lon: gps.longitude } : null,
+            activeTripId: vehicleUpdate.activeTripId || activeTripId
+        }
+    };
 }
+
+// =============================================================================
+// SCHEDULER & POLLING
+// =============================================================================
+
+/**
+ * Scheduled function that runs every minute
+ * Polls all BYD vehicles that have pollingActive = true
+ */
+/**
+ * Scheduled function that runs every minute
+ * Polls all BYD vehicles that have pollingActive = true
+ * 
+ * UPDATED: Runs a loop to poll active trips every 20 seconds
+ */
+/**
+ * MONITOR ACTIVE TRIPS (Every 1 minute)
+ * Queries ONLY vehicles with activeTripId or pollingActive=true
+ * Loops 3 times (0s, 20s, 40s) to provide high-res tracking
+ */
+export const bydActiveTripMonitor = regionalFunctions.runWith({ timeoutSeconds: 300 }).pubsub
+    .schedule('every 1 minutes')
+    .onRun(async (context) => {
+        console.log('[bydActiveTripMonitor] Checking for active trips...');
+        ensureBydInit();
+        const startTime = Date.now();
+
+        // POLL 1: T=0
+        await pollActiveVehicles();
+
+        // POLL 2: T+20s
+        const elapsed1 = Date.now() - startTime;
+        if (elapsed1 < 20000) await delay(20000 - elapsed1);
+        await pollActiveVehicles();
+
+        // POLL 3: T+40s
+        const elapsed2 = Date.now() - startTime;
+        if (elapsed2 < 40000) await delay(40000 - elapsed2);
+        await pollActiveVehicles();
+
+        return null;
+    });
+
+/**
+ * IDLE HEARTBEAT (Every 2 hours)
+ * Checks all vehicles to ensure status is up to date
+ * Ignores those already handled by Active Monitor
+ */
+export const bydIdleHeartbeat = regionalFunctions.runWith({ timeoutSeconds: 300 }).pubsub
+    .schedule('every 2 hours')
+    .onRun(async (context) => {
+        console.log('[bydIdleHeartbeat] Starting idle check...');
+        ensureBydInit();
+        // Poll ALL vehicles once. 
+        // The processVehicleState logic prevents new trips from starting unless conditions are met.
+        await pollVehicles(false);
+        return null;
+    });
+
+// =============================================================================
+// HELPER: Close Trip Logic
+// =============================================================================
+
+async function closeTrip(
+    vin: string,
+    tripId: string,
+    realtime: any,
+    vehicleData: any,
+    trimMinutes: number,
+    stopReason: string
+) {
+    const now = admin.firestore.Timestamp.now();
+    const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(tripId);
+    const tripDoc = await tripRef.get();
+    const tripData = tripDoc.data();
+
+    if (!tripData) return;
+
+    const totalDistance = realtime.odometer - (tripData.startOdometer || 0);
+
+    // Calculate adjusted end date (trimming the stationary time)
+    const adjustedEndDate = admin.firestore.Timestamp.fromMillis(now.toMillis() - (trimMinutes * 60 * 1000));
+    const startTimestamp = tripData.startDate?.toMillis?.() || tripData.startDate || 0;
+
+    // Ensure duration is at least 0
+    const durationMinutes = Math.max(0, Math.round((adjustedEndDate.toMillis() - startTimestamp) / 60000));
+
+    // Electricity Calculation
+    const batteryCapacity = vehicleData.batteryCapacity || 82.56;
+    const socDecimal = normalizeSoC(realtime.soc);
+    const startSoC = tripData.startSoC || 0;
+    const socDelta = startSoC - socDecimal;
+    const electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
+
+    const updateData: any = {
+        status: 'completed',
+        type: totalDistance >= 0.5 ? 'trip' : 'idle',
+        endDate: adjustedEndDate,
+        endOdometer: realtime.odometer,
+        endSoC: socDecimal,
+        distanceKm: Math.round(Math.max(0, totalDistance) * 100) / 100,
+        durationMinutes,
+        electricity: electricityKwh,
+        lastUpdate: now,
+        stopReason,
+        trimMinutes
+    };
+
+    // Access GPS from where? Typically passed or scraped from trip points usually. 
+    // In this flow, we don't have the final GPS point passed explicitly in the args easily 
+    // unless we grab it from vehicleData or last known point.
+    // Let's assume the last known location in vehicleData is the end location.
+    if (vehicleData.lastLocation) {
+        updateData.endLocation = vehicleData.lastLocation;
+
+        // Try to snap if we have points
+        const pointsSnap = await tripRef.collection('points').orderBy('timestamp').get();
+        if (!pointsSnap.empty) {
+            let rawPoints = pointsSnap.docs.map(doc => doc.data());
+
+            // Add final point (adjusted time)
+            rawPoints.push({
+                lat: vehicleData.lastLocation.lat,
+                lon: vehicleData.lastLocation.lon,
+                timestamp: adjustedEndDate.toMillis(),
+                type: 'end',
+            });
+
+            // Sort and snap
+            rawPoints.sort((a, b) => a.timestamp - b.timestamp);
+            try {
+                // Remove duplicates and snap
+                const uniquePoints = rawPoints.filter((p, i, arr) => i === 0 || p.timestamp > arr[i - 1].timestamp);
+                if (uniquePoints.length > 2) {
+                    const snappedPoints = await snapToRoads(uniquePoints as any[]);
+                    updateData.points = snappedPoints;
+
+                    const gpsDistance = calculatePathDistanceKm(snappedPoints);
+                    if (gpsDistance > 0 && Math.abs(gpsDistance - totalDistance) < 50) {
+                        updateData.gpsDistanceKm = gpsDistance;
+                    }
+                }
+            } catch (e) {
+                console.error(`Error snapping points for trip ${tripId}:`, e);
+            }
+        }
+    }
+
+    await tripRef.update(updateData);
+    console.log(`[closeTrip] CLOSED trip: ${tripId}. Duration: ${durationMinutes}m (trimmed ${trimMinutes}m). Reason: ${stopReason}`);
+}
+
+
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Helper to poll ONLY active vehicles (efficient)
+async function pollActiveVehicles() {
+    try {
+        const activeVehicles = await db.collection('bydVehicles')
+            .where('pollingActive', '==', true)
+            .get();
+
+        if (activeVehicles.empty) return;
+
+        console.log(`[bydActiveTripMonitor] Polling ${activeVehicles.size} active vehicle(s)`);
+
+        const promises = activeVehicles.docs.map(async (doc) => {
+            try {
+                await pollVehicleInternal(doc.id, 'polling');
+            } catch (e: any) {
+                console.error(`Error polling ${doc.id}: ${e.message}`);
+            }
+        });
+        await Promise.all(promises);
+    } catch (e) {
+        console.error('[bydActiveTripMonitor] Error:', e);
+    }
+}
+
+
+
+async function pollVehicles(onlyTrips: boolean) {
+    try {
+        // Find all vehicles with active polling
+        const activeVehicles = await db.collection('bydVehicles')
+            .where('pollingActive', '==', true)
+            .get();
+
+        if (activeVehicles.empty) {
+            console.log('[pollVehicles] No vehicles with active polling');
+            return;
+        }
+
+        // Filter vehicles
+        const targetDocs = activeVehicles.docs.filter(doc => {
+            const data = doc.data();
+
+            // 1. If looking for ONLY active trips, check activeTripId
+            if (onlyTrips) {
+                return !!data.activeTripId;
+            }
+
+            // 2. If looking for ANY vehicle (Cycle 1):
+            //    - ALWAYS poll if activeTripId exists (Tracking trip)
+            //    - ALWAYS poll if pollingReason is 'app_wake_activity' (User opened app)
+            //    - OTHERWISE, only poll if lastPollTime > 2 hours (Standard idle poll)
+
+            if (data.activeTripId) return true;
+
+            // If user just opened the app, we want to poll
+            // We can use a timestamp check on pollingActivatedAt if needed, or rely on pollingReason
+            // But simplified: If no trip, check time since last poll
+
+            const lastPoll = data.lastPollTime?.toMillis() || 0;
+            const twoHoursMs = 2 * 60 * 60 * 1000;
+            const timeSinceLastPoll = Date.now() - lastPoll;
+
+            if (timeSinceLastPoll >= twoHoursMs) {
+                console.log(`[pollVehicles] Polling ${doc.id} (Idle > 2h)`);
+                return true;
+            }
+
+            // Also poll if we specifically requested polling recently (e.g. app wake)
+            // We'll rely on the logic that 'bydWakeVehicle' sets 'pollingActive=true'.
+            // If we want to support "poll for 5 mins after app open", we need a timestamp check.
+            // For now, let's respect the user's wish: "Idle check every 2h".
+            // If the user OPENS the app, 'bydWakeVehicle' runs ONCE.
+            // Does the user want continuous polling while app is open? 
+            // "cuando abro la app BYD Stats hará una consulta pero esa consulta nunca puede iniciar un viaje"
+            // The wake function handles the "one-time" query.
+            // The scheduler should NOT poll just because app is open, UNLESS a trip starts.
+
+            // So strict 2h rule for idle cars seems correct.
+
+            return false;
+        });
+
+        if (targetDocs.length === 0) {
+            if (onlyTrips) console.log('[pollVehicles] No active trips to poll this cycle');
+            else console.log('[pollVehicles] No vehicles due for 2h poll');
+            return;
+        }
+
+        console.log(`[pollVehicles] Polling ${targetDocs.length} vehicle(s) (onlyTrips=${onlyTrips})`);
+
+        // Poll each vehicle
+        const promises = targetDocs.map(async (doc) => {
+            const vin = doc.id;
+            try {
+                await pollVehicleInternal(vin, 'polling');
+            } catch (error: any) {
+                console.error(`[pollVehicles] Error polling ${vin}:`, error.message);
+            }
+        });
+
+        await Promise.all(promises);
+
+    } catch (error: any) {
+        console.error('[pollVehicles] Error:', error.message);
+    }
+}
+
+/**
+ * Internal polling function - used by scheduler, manual wake, and mqtt trigger
+ */
+async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mqtt'): Promise<any> {
+    const client = await getBydClientWithSession(vin);
+
+    // Get data sequentially
+    let realtime;
+    try {
+        realtime = await client.getRealtime(vin);
+    } catch (error: any) {
+        // Handle "Vehicle Unreachable" (Deep Sleep / Network Issue)
+        if (error.message && (error.message.includes('1008') || error.message.includes('timeout'))) {
+            console.log(`[pollVehicleInternal] Vehicle ${vin} unreachable (Code 1008/Timeout). Assuming sleep.`);
+            return { isSleeping: true, data: null };
+        }
+        throw error; // Re-throw other errors
+    }
+
+    const gps = await client.getGps(vin).catch(() => null);
+    const charging = await client.getChargingStatus(vin).catch(() => null);
+
+    // Save session if refreshed
+    const currentSession = client.getSession();
+    if (currentSession) {
+        await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').set({
+            userId: currentSession.token.userId,
+            signToken: currentSession.token.signToken,
+            encryToken: currentSession.token.encryToken,
+            cookies: JSON.stringify(currentSession.cookies || {}),
+            updatedAt: admin.firestore.Timestamp.now(),
+        });
+    }
+
+    // Process state and handle trips
+    return await processVehicleState(vin, realtime, gps, charging, source);
+}
+
+// =============================================================================
+// WAKE VEHICLE (called when user opens BYD Stats app)
+// =============================================================================
+
+/**
+ * Wake vehicle and get current data
+ * Also handles trip detection if polling was missed
+ */
+export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, context) => {
+    // Default to FALSE for polling (user request: only scan once)
+    const { vin, activatePolling = false } = data;
+
+    if (!vin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+    }
+
+    console.log(`[bydWakeVehicle] Waking vehicle ${vin}...`);
+
+    try {
+        // Reuse pollVehicleInternal to ensure consistent trip detection logic
+        // This fixes the issue where opening the app updated the odometer but didn't create a trip
+        const result = await pollVehicleInternal(vin, 'wake');
+
+        if (result.isSleeping) {
+            console.log(`[bydWakeVehicle] Vehicle is sleeping/unreachable.`);
+            // Return success=true but with isSleeping=true, so UI handles it gracefully (no red error)
+            return {
+                success: true,
+                isAwake: false,
+                pollingActivated: false,
+                data: null,
+                message: 'Vehicle is sleeping or unreachable (Code 1008)'
+            };
+        }
+
+        // Check if we should auto-activate polling based on state
+        // If car is unlocked or moving, we SHOULD poll to track the trip
+        const shouldPoll = result.data?.isLocked === false ||
+            (result.data?.speed || 0) > 0 ||
+            activatePolling === true;
+
+        if (shouldPoll) {
+            console.log(`[bydWakeVehicle] Auto-activating polling (Unlocked/Moving/Requested)`);
+            await db.collection('bydVehicles').doc(vin).update({
+                pollingActive: true,
+                pollingActivatedAt: admin.firestore.Timestamp.now(),
+                pollingReason: 'app_wake_activity'
+            });
+        }
+
+        return {
+            success: true,
+            isAwake: !result.isSleeping,
+            pollingActivated: shouldPoll,
+            data: result.data,
+            message: !result.isSleeping ? 'Vehicle updated' : 'Vehicle is sleeping'
+        };
+    } catch (error: any) {
+        console.error(`[bydWakeVehicle] Error:`, error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+// =============================================================================
+// MANUAL TRIP RECALCULATION (Fix bad data)
+// =============================================================================
+
+export const bydFixTrip = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin, tripId, overrideValues } = data;
+
+    if (!vin || !tripId) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN or Trip ID');
+    }
+
+    console.log(`[bydFixTrip] Fixing trip ${tripId} for ${vin}...`);
+
+    try {
+        const vehicleRef = db.collection('bydVehicles').doc(vin);
+        const vehicleDoc = await vehicleRef.get();
+        const vehicleData = vehicleDoc.data() || {};
+
+        const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(tripId);
+        const tripDoc = await tripRef.get();
+
+        if (!tripDoc.exists) {
+            throw new functions.https.HttpsError('not-found', 'Trip not found');
+        }
+
+        const tripData = tripDoc.data()!;
+        const updates: any = {};
+
+        // 0. Apply Overrides (Priority)
+        if (overrideValues) {
+            console.log(`[bydFixTrip] Applying overrides:`, overrideValues);
+            if (overrideValues.distanceKm !== undefined) updates.distanceKm = Number(overrideValues.distanceKm);
+            if (overrideValues.gpsDistanceKm !== undefined) updates.gpsDistanceKm = Number(overrideValues.gpsDistanceKm);
+            if (overrideValues.electricity !== undefined) updates.electricity = Number(overrideValues.electricity);
+            if (overrideValues.durationMinutes !== undefined) updates.durationMinutes = Number(overrideValues.durationMinutes);
+            if (overrideValues.startSoC !== undefined) updates.startSoC = Number(overrideValues.startSoC);
+            if (overrideValues.endSoC !== undefined) updates.endSoC = Number(overrideValues.endSoC);
+        }
+
+        // 1. Recalculate Consumption
+        if (!updates.electricity && tripData.startSoC !== undefined && tripData.endSoC !== undefined) {
+            const batteryCapacity = vehicleData.batteryCapacity || 82.56; // Default to Seal 82kWh if unknown
+            const startSoC = updates.startSoC ?? tripData.startSoC;
+            const endSoC = updates.endSoC ?? tripData.endSoC;
+            const socDelta = startSoC - endSoC;
+            const electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
+
+            updates.electricity = electricityKwh;
+            console.log(`[bydFixTrip] Recalculated electricity: ${electricityKwh} kWh`);
+        }
+
+        // 2. Snap to Road & Distance
+        // 2. Snap to Road & Distance
+        let pointsToSnap = tripData.points || [];
+
+        // If no points in doc array, try fetch from subcollection
+        if (!pointsToSnap || pointsToSnap.length === 0) {
+            console.log(`[bydFixTrip] No points in doc array, checking subcollection...`);
+            const pointsRef = tripRef.collection('points');
+            const pointsSnap = await pointsRef.orderBy('timestamp').get();
+            if (!pointsSnap.empty) {
+                pointsToSnap = pointsSnap.docs.map(doc => doc.data());
+                console.log(`[bydFixTrip] Found ${pointsToSnap.length} points in subcollection.`);
+            }
+        }
+
+        if (pointsToSnap && pointsToSnap.length > 2) {
+            console.log(`[bydFixTrip] Snapping ${pointsToSnap.length} points check...`);
+            // Only snap if not already snapped (check for 'snapped' type)
+            const hasSnapped = pointsToSnap.some((p: any) => p.type === 'snapped');
+
+            if (!hasSnapped) {
+                console.log(`[bydFixTrip] Snapping points...`);
+                // Use the new pointsToSnap array
+                const snappedPoints = await snapToRoads(pointsToSnap);
+                updates.points = snappedPoints;
+
+                const gpsDistance = calculatePathDistanceKm(snappedPoints);
+                console.log(`[bydFixTrip] GPS Distance: ${gpsDistance} km`);
+
+                // Update distance if it looks valid
+                const originalDistance = tripData.distanceKm || 0;
+                // Allow update if GPS distance is positive, even if different (assuming fixing bad data)
+                if (gpsDistance > 0) {
+                    // Only update if significantly different or original was 0/bad
+                    if (originalDistance === 0 || Math.abs(gpsDistance - originalDistance) < 100) {
+                        updates.gpsDistanceKm = gpsDistance;
+                    }
+                }
+            } else {
+                console.log(`[bydFixTrip] Points already snapped.`);
+            }
+        }
+
+        // 3. Ensure status is completed
+        if (tripData.status !== 'completed') {
+            updates.status = 'completed';
+            updates.endDate = tripData.lastUpdate || admin.firestore.Timestamp.now();
+        }
+
+        const analysis = {
+            startSoC: tripData.startSoC,
+            endSoC: tripData.endSoC,
+            batteryCapacity: vehicleData.batteryCapacity || 82.56,
+            socDelta: (tripData.startSoC || 0) - (tripData.endSoC || 0),
+            startOdometer: tripData.startOdometer,
+            endOdometer: tripData.endOdometer,
+            odoDistance: (tripData.endOdometer || 0) - (tripData.startOdometer || 0),
+            gpsDistance: updates.gpsDistanceKm || tripData.gpsDistanceKm,
+            pointsCount: tripData.points?.length || 0
+        };
+
+        console.log('[bydFixTrip] Analysis:', analysis);
+
+        if (Object.keys(updates).length > 0) {
+            await tripRef.update(updates);
+            return { success: true, updates, analysis };
+        } else {
+            return { success: true, message: 'No updates needed', analysis };
+        }
+
+
+    } catch (error: any) {
+        console.error(`[bydFixTrip] Error:`, error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});
+
+// =============================================================================
+// DEBUG / API DUMP
+// =============================================================================
+
+export const bydDebug = regionalFunctions.https.onCall(async (data, context) => {
+    const { vin } = data;
+
+    if (!vin) {
+        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+    }
+
+    // Verify ownership (context.auth is required for production, allow bypass if local/testing)
+    // Verify ownership (context.auth is required for production, allow bypass if local/testing)
+    // NOTE: Temporarily disabled to allow localhost debugging without Auth domain setup
+    /*
+    if (!context.auth && process.env.FUNCTIONS_EMULATOR !== 'true') {
+        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+    }
+    */
+
+    console.log(`[bydDebug] Generating diagnostic dump for ${vin}...`);
+
+    try {
+        const client = await getBydClientWithSession(vin);
+
+        // Parallel Fetch of ALL available endpoints
+        // Using Promise.allSettled to ensure we get partial results if one fails
+        const results = await Promise.allSettled([
+            client.getRealtime(vin),
+            client.getGps(vin).catch(e => ({ error: e.message })), // GPS might fail if privacy mode
+            client.getChargingStatus(vin).catch(e => ({ error: e.message })),
+            // Add more if client supports them, e.g. Driving Records or Vehicle Status
+            // client.getDrivingRecords(vin) ... 
+        ]);
+
+        const realtime = results[0].status === 'fulfilled' ? results[0].value : { error: results[0].reason?.message };
+        const gps = results[1].status === 'fulfilled' ? results[1].value : { error: results[1].reason?.message };
+        const charging = results[2].status === 'fulfilled' ? results[2].value : { error: results[2].reason?.message };
+
+        // Construct Dump Object
+        const dump = {
+            meta: {
+                timestamp: new Date().toISOString(),
+                vin: vin, // Keep VIN for context
+                serverTime: Date.now()
+            },
+            data: {
+                realtime,
+                gps,
+                charging
+            }
+        };
+
+        // Save to Firestore (History)
+        const debugRef = db.collection('bydVehicles').doc(vin).collection('debug');
+        await debugRef.add({
+            timestamp: admin.firestore.Timestamp.now(),
+            dump: JSON.stringify(dump), // Store as string to avoid indexing issues with deep/dynamic keys if desired, or object
+            // Actually, storing as object is better for querying if needed, but string is safer for "raw dump" preservation
+            // Let's store as object but careful with depth. 
+            // We'll store the sanitized object.
+            type: 'manual_api_dump'
+        });
+
+        // Cleanup sensitive data before returning to UI?
+        // Realtime data is generally safe (technical data), tokens are not included here.
+
+        return { success: true, dump };
+
+    } catch (error: any) {
+        console.error(`[bydDebug] Error:`, error.message);
+        throw new functions.https.HttpsError('internal', error.message);
+    }
+});

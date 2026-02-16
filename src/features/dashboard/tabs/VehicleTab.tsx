@@ -12,10 +12,11 @@ const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/Odom
 import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
 import { useCar } from '@/context/CarContext';
+import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { Summary, Settings, Trip, TripInsightType } from '@/types';
 import { AnomalyService } from '@/services/AnomalyService';
 import { useLayout } from '@/context/LayoutContext';
-import { bydLock, bydStartClimate, bydFlashLights } from '@/services/bydApi';
+import { bydLock, bydUnlock, bydStartClimate, bydFlashLights, bydCloseWindows, bydSeatClimate } from '@/services/bydApi';
 import toast from 'react-hot-toast';
 
 interface VehicleTabProps {
@@ -35,6 +36,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   const { aiScenarios, aiLoss, aiSoH, aiSoHStats, charges, stats, openModal, isAiTraining } = useData();
   const { isCompact, isLargerCard, isVertical } = useLayout();
   const { activeCar } = useCar();
+  const vehicleStatus = useVehicleStatus(activeCar?.vin);
 
   const [insightType, setInsightType] = useState<TripInsightType | null>(null);
   const [showOdometerModal, setShowOdometerModal] = useState(false);
@@ -71,8 +73,55 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
     }
   };
 
-  const handleLock = () => handleCommand('Lock', bydLock);
-  const handlePreheat = () => handleCommand('Preheat', bydStartClimate, 22);
+  const isLocked = vehicleStatus?.isLocked === true;
+  const areWindowsOpen = vehicleStatus?.windows && Object.values(vehicleStatus.windows).some(isOpen => isOpen);
+
+  const handleLock = async () => {
+    if (!activeCar?.vin) return;
+
+    if (isLocked) {
+      // Unlock logic
+      await handleCommand('Unlock', bydUnlock);
+    } else {
+      // Lock logic
+      if (areWindowsOpen) {
+        toast('Cerrando ventanillas...', { icon: '🪟' });
+        await handleCommand('CloseWindows', bydCloseWindows);
+        // Add a small delay for the windows command to be processed
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      }
+      await handleCommand('Lock', bydLock);
+    }
+  };
+  const handleSmartClimate = async () => {
+    if (!activeCar?.vin) return;
+
+    // Determine current temp (Interior > Exterior > Default 15)
+    // If no temp data available, assume cold as safebox for "Preheat"
+    const currentTemp = vehicleStatus?.interiorTemp ?? vehicleStatus?.exteriorTemp ?? 15;
+    const isCold = currentTemp < 20;
+
+    if (isCold) {
+      toast(`Detectado frío (${currentTemp}ºC). Calentando... 🌡️`, { duration: 4000 });
+      // Heat: 22ºC + Seat Heat High (Mode 2)
+      await handleCommand('Smart Heat', async (vin) => {
+        await bydStartClimate(vin, 22);
+        // Driver seat heat
+        await bydSeatClimate(vin, 0, 2);
+        return { success: true };
+      });
+    } else {
+      toast(`Detectado calor (${currentTemp}ºC). Enfriando... ❄️`, { duration: 4000 });
+      // Cool: 21ºC + Seat Ventilation (Not avail so Off - Mode 0)
+      await handleCommand('Smart Cool', async (vin) => {
+        await bydStartClimate(vin, 21);
+        // Ensure seat heat is off
+        await bydSeatClimate(vin, 0, 0);
+        return { success: true };
+      });
+    }
+  };
+
   const handleLocate = () => handleCommand('Locate', bydFlashLights);
 
   // Calculate system health anomalies
@@ -202,16 +251,18 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
             disabled={loadingButton === 'Lock'}
             className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
           >
-            <Lock className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-xs sm:text-sm font-medium">Bloquear</span>
+            <Lock className={`w-5 h-5 sm:w-6 sm:h-6 ${!isLocked ? 'text-red-400' : ''}`} />
+            <span className="text-xs sm:text-sm font-medium">
+              {isLocked ? 'Desbloquear' : 'Bloquear'}
+            </span>
           </button>
           <button
-            onClick={handlePreheat}
-            disabled={loadingButton === 'Preheat'}
+            onClick={handleSmartClimate}
+            disabled={loadingButton?.includes('Smart')}
             className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
           >
             <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-xs sm:text-sm font-medium">Precalentar</span>
+            <span className="text-xs sm:text-sm font-medium">Climatizar</span>
           </button>
           <button
             onClick={handleLocate}
@@ -261,7 +312,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
         {insightType === 'distance' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="distance" trips={trips} settings={settings} summary={summary || undefined} />}
         {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" trips={trips} settings={settings} summary={summary || undefined} />}
         {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} />}
-        {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} aiSoHStats={aiSoHStats} onMfgDateClick={() => {}} onThermalStressClick={() => {}} />}
+        {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} aiSoHStats={aiSoHStats} onMfgDateClick={() => { }} onThermalStressClick={() => { }} />}
         {showOdometerModal && <OdometerAdjustmentModal isOpen={showOdometerModal} onClose={() => setShowOdometerModal(false)} />}
         {showHealthModal && <HealthReportModal isOpen={showHealthModal} onClose={() => setShowHealthModal(false)} anomalies={activeAnomalies} onAcknowledge={(id) => setAcknowledgedAnomalies([...acknowledgedAnomalies, id])} onDelete={(id) => setDeletedAnomalies([...deletedAnomalies, id])} />}
       </React.Suspense>

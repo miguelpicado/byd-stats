@@ -45,7 +45,7 @@ async function recover() {
     ];
 
     for (const trip of trips) {
-        const res = await db.collection('trips').add(trip);
+        const res = await db.collection('bydVehicles').doc(trip.vehicleId).collection('trips').add(trip);
         console.log('Added trip with ID:', res.id);
     }
 }

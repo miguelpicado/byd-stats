@@ -13,7 +13,7 @@ async function getRecentTrips() {
         const feb3Start = new Date('2026-02-03T00:00:00Z');
         const feb5Start = new Date('2026-02-05T00:00:00Z');
 
-        const tripsSnapshot = await db.collection('trips')
+        const tripsSnapshot = await db.collectionGroup('trips')
             .where('startDate', '>=', admin.firestore.Timestamp.fromDate(feb3Start))
             .where('startDate', '<', admin.firestore.Timestamp.fromDate(feb5Start))
             .orderBy('startDate', 'asc')
