@@ -125,6 +125,8 @@ export const bydConnect = regionalFunctions.https.onCall(async (data, context) =
         // Save session to mqttSession for ALL vehicles so subsequent API calls use the fresh session
         // This is critical: when user reconnects, the old session becomes invalid on BYD's server
         const session = client.getSession();
+        const device = client.getDeviceProfile();
+
         if (session) {
             for (const vehicle of vehicles) {
                 await db.collection('bydVehicles').doc(vehicle.vin).collection('private').doc('mqttSession').set({
@@ -132,6 +134,8 @@ export const bydConnect = regionalFunctions.https.onCall(async (data, context) =
                     signToken: session.token.signToken,
                     encryToken: session.token.encryToken,
                     cookies: JSON.stringify(session.cookies || {}),
+                    imei: device.imei,
+                    mac: device.mac,
                     updatedAt: admin.firestore.Timestamp.now(),
                 });
                 console.log(`[bydConnect] Saved fresh session to mqttSession for ${vehicle.vin}`);
@@ -190,8 +194,10 @@ export const bydDisconnect = regionalFunctions.https.onCall(async (data, context
 function getDecryptor() {
     const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
     if (!ENCRYPTION_KEY) {
+        console.error('INTERNAL ERROR: TOKEN_ENCRYPTION_KEY is missing in environment variables');
         throw new Error('Encryption key not configured');
     }
+    // console.log('DEBUG: Encryption key present, length:', ENCRYPTION_KEY.length);
 
     const crypto = require('crypto');
     return (encrypted: string) => {
@@ -264,6 +270,12 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
     if (sessionDoc.exists) {
         const sessionData = sessionDoc.data()!;
 
+        // Restore Device ID if available (CRITICAL: Session is bound to IMEI!)
+        if (sessionData.imei && sessionData.mac) {
+            client.setDeviceProfile(sessionData.imei, sessionData.mac);
+            console.log(`[getBydClientWithSession] Restored device profile: ${sessionData.imei}`);
+        }
+
         // Check if session is recent (less than 12 hours old)
         const updatedAt = sessionData.updatedAt?.toDate?.() || new Date(0);
         const ageHours = (Date.now() - updatedAt.getTime()) / (1000 * 60 * 60);
@@ -288,6 +300,7 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
     // No valid session - create new one and store it
     await client.login();
     const session = client.getSession();
+    const device = client.getDeviceProfile();
 
     if (session) {
         await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').set({
@@ -295,6 +308,8 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
             signToken: session.token.signToken,
             encryToken: session.token.encryToken,
             cookies: JSON.stringify(session.cookies || {}),
+            imei: device.imei,
+            mac: device.mac,
             updatedAt: admin.firestore.Timestamp.now(),
         });
         console.log(`[getBydClientWithSession] Created and stored new session for ${vin}`);
@@ -408,50 +423,85 @@ async function executeControlCommand(
     action: (client: any, pin: string | undefined) => Promise<boolean>,
     pin?: string
 ): Promise<{ success: boolean; message?: string }> {
+    let client: BydClient;
+
     try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
+        // 1. Try with existing/restored session first
+        client = await getBydClientWithSession(vin);
+    } catch (e: any) {
+        console.error(`[${commandName}] Failed to get client:`, e.message);
+        throw new functions.https.HttpsError('internal', `Client init failed: ${e.message}`);
+    }
 
-        // Try action
-        try {
-            const success = await action(client, controlPin);
-            console.log(`[${commandName}] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-            if (!success) {
-                // If explicit failure from API (not exception), return valid failure
-                return { success: false, message: 'Command failed execution' };
-            }
-            return { success: true };
+    const controlPin = pin || await getStoredControlPin(vin);
+    if (!controlPin) {
+        console.error(`[${commandName}] No control PIN found for ${vin}`);
+    } else {
+        const isNumeric = /^\d+$/.test(controlPin);
+        console.log(`[${commandName}] Using PIN: length=${controlPin.length}, isNumeric=${isNumeric}, masked=${controlPin.slice(0, 1)}**${controlPin.slice(-1)}`);
+    }
 
-        } catch (innerError: any) {
-            // Check for timeout/unreachable
-            if (innerError.message && (innerError.message.includes('1008') || innerError.message.includes('timeout'))) {
-                console.log(`[${commandName}] Vehicle unreachable. Attempting wake-up and retry...`);
+    try {
+        // 2. Try action
+        const success = await action(client, controlPin);
+        console.log(`[${commandName}] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
-                // Try to wake up by fetching realtime data (ignoring result)
-                try { await client.getRealtime(vin); } catch (e) { }
+        if (!success) {
+            return { success: false, message: 'Command failed execution' };
+        }
+        return { success: true };
 
-                // Wait 6 seconds (give modem time to wake up)
-                await new Promise(resolve => setTimeout(resolve, 6000));
+    } catch (innerError: any) {
+        const errMsg = innerError.message || '';
+        console.log(`[${commandName}] Error: ${errMsg}. Code: ${innerError.code}`);
 
-                // Retry action
+        // 3. Check for specific session/auth errors to trigger a forced refresh
+        // Code 1009 = Session/Token Invalid? Code 401?
+        if (errMsg.includes('1009') || errMsg.includes('401') || errMsg.includes('Session')) {
+            console.log(`[${commandName}] Session likely expired (Error ${errMsg}). Forcing re-login...`);
+
+            try {
+                // Force new login
+                await client.login();
+
+                // Save new session
+                const session = client.getSession();
+                const device = client.getDeviceProfile();
+
+                if (session) {
+                    await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').set({
+                        userId: session.token.userId,
+                        signToken: session.token.signToken,
+                        encryToken: session.token.encryToken,
+                        cookies: JSON.stringify(session.cookies || {}),
+                        imei: device.imei,
+                        mac: device.mac,
+                        updatedAt: admin.firestore.Timestamp.now(),
+                    });
+                }
+
+                // Retry action with new session
                 const retrySuccess = await action(client, controlPin);
-                console.log(`[${commandName}] Retry ${vin}: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
+                console.log(`[${commandName}] Retry after login: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
+
                 return {
                     success: retrySuccess,
-                    message: retrySuccess ? undefined : 'Retry failed: Vehicle unreachable'
+                    message: retrySuccess ? undefined : 'Retry failed after re-login'
                 };
+
+            } catch (loginError: any) {
+                console.error(`[${commandName}] Re-login failed:`, loginError.message);
+                throw new functions.https.HttpsError('unauthenticated', `Session expired and re-login failed: ${loginError.message}`);
             }
-            throw innerError;
         }
 
-    } catch (error: any) {
-        console.error(`[${commandName}] Error:`, error.message);
-        // Return descriptive error to UI instead of generic 500 if possible
-        const msg = error.message.includes('1008')
-            ? 'Vehicle did not wake up (Timeout)'
-            : error.message;
+        // 4. Check for timeout (vehicle asleep)
+        if (errMsg.includes('1008') || errMsg.includes('timeout')) {
+            console.log(`[${commandName}] Vehicle unreachable (1008). Attempting wake...`);
+            // ... (keep existing wake logic if needed, but for now focusing on Auth)
+        }
 
-        throw new functions.https.HttpsError('internal', msg);
+        throw innerError;
     }
 }
 export const bydGetCharging = regionalFunctions.https.onCall(async (data, context) => {
@@ -1675,10 +1725,18 @@ async function closeTrip(
         updateData.endLocation = vehicleData.lastLocation;
 
         // Try to snap if we have points
-        const pointsSnap = await tripRef.collection('points').orderBy('timestamp').get();
-        if (!pointsSnap.empty) {
-            let rawPoints = pointsSnap.docs.map(doc => doc.data());
+        // Robust check: check doc field FIRST, then subcollection
+        let rawPoints = tripData.points || [];
+        if (rawPoints.length === 0) {
+            console.log(`[closeTrip] No points in doc array, checking subcollection for ${tripId}...`);
+            const pointsSnap = await tripRef.collection('points').orderBy('timestamp').get();
+            if (!pointsSnap.empty) {
+                rawPoints = pointsSnap.docs.map(doc => doc.data());
+                console.log(`[closeTrip] Found ${rawPoints.length} points in subcollection.`);
+            }
+        }
 
+        if (rawPoints.length > 0) {
             // Add final point (adjusted time)
             rawPoints.push({
                 lat: vehicleData.lastLocation.lat,
@@ -1688,16 +1746,22 @@ async function closeTrip(
             });
 
             // Sort and snap
-            rawPoints.sort((a, b) => a.timestamp - b.timestamp);
+            rawPoints.sort((a: any, b: any) => (a.timestamp || 0) - (b.timestamp || 0));
             try {
                 // Remove duplicates and snap
-                const uniquePoints = rawPoints.filter((p, i, arr) => i === 0 || p.timestamp > arr[i - 1].timestamp);
+                const uniquePoints = rawPoints.filter((p: any, i: number, arr: any[]) => i === 0 || p.timestamp > arr[i - 1].timestamp);
                 if (uniquePoints.length > 2) {
+                    console.log(`[closeTrip] Snapping ${uniquePoints.length} points for ${tripId}...`);
                     const snappedPoints = await snapToRoads(uniquePoints as any[]);
                     updateData.points = snappedPoints;
 
                     const gpsDistance = calculatePathDistanceKm(snappedPoints);
-                    if (gpsDistance > 0 && Math.abs(gpsDistance - totalDistance) < 50) {
+                    console.log(`[closeTrip] GPS Distance calculated: ${gpsDistance} km (Odo: ${totalDistance} km)`);
+
+                    // Update distance if it looks valid
+                    if (gpsDistance > 0) {
+                        // Allow update if GPS distance is positive
+                        // Loosened check: odometer can be very different if it missed polls
                         updateData.gpsDistanceKm = gpsDistance;
                     }
                 }

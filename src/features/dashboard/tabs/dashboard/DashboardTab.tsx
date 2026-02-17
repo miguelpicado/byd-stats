@@ -121,7 +121,7 @@ const DashboardTab: React.FC = () => {
                     type={insightType || 'distance'} // Default to distance if null but open logic prevents it
                     trips={trips || []}
                     settings={settings}
-                    summary={summary || null}
+                    summary={summary || undefined}
                     aiSoH={aiSoH}
                 />
                 <OdometerAdjustmentModal

@@ -289,3 +289,16 @@ export async function bydWakeVehicle(vin: string, activatePolling = false): Prom
     const result = await callable({ vin, activatePolling });
     return result.data;
 }
+/**
+ * Fix and recalculate trip data
+ */
+export async function bydFixTrip(vin: string, tripId: string, overrideValues?: any): Promise<{
+    success: boolean;
+    updates?: any;
+    analysis?: any;
+    message?: string;
+}> {
+    const callable = httpsCallable<any, any>(functions, 'bydFixTrip');
+    const result = await callable({ vin, tripId, overrideValues });
+    return result.data;
+}

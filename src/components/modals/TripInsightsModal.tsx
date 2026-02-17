@@ -26,7 +26,7 @@ interface TripInsightsModalProps {
     onMfgDateClick?: () => void;
     onThermalStressClick?: () => void;
     aiSoH?: number | null;
-    aiSoHStats?: { points: SoHPoint[]; trend: SoHPoint[] } | null;
+    aiSoHStats?: { points: SoHPoint[]; trend: SoHPoint[]; samples: number } | null;
 }
 
 /**
@@ -478,7 +478,7 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
                                             <Info className="w-2.5 h-2.5 opacity-50" />
                                         </span>
                                         <span className="text-xl font-black text-slate-700 dark:text-slate-300">
-                                            {aiSoHStats?.points.length || 0}
+                                            {aiSoHStats?.samples || 0}
                                         </span>
                                     </button>
                                 </div>

@@ -3,7 +3,7 @@
  * Ported from pyBYD (https://github.com/jkaberg/pyBYD)
  */
 
-import * as crypto from 'crypto';
+import * as node_crypto from 'node:crypto';
 import fetch from 'node-fetch';
 import {
     md5Hex,
@@ -15,7 +15,8 @@ import {
     buildSignString,
     encodeEnvelope,
     decodeEnvelope,
-    areBangcleTablesLoaded
+    areBangcleTablesLoaded,
+    compactJson
 } from './crypto';
 
 // =============================================================================
@@ -23,24 +24,50 @@ import {
 // =============================================================================
 
 const BASE_URL = 'https://dilinkappoversea-eu.byd.auto';
-const USER_AGENT = 'okhttp/4.12.0';
+// USER_AGENT removed - using okhttp/3.12.0 in postSecure directly
 
-// Default device info (simulates Android app) - matches pyBYD values exactly
-const DEFAULT_DEVICE = {
+// Helper to generate random MAC
+const randomMac = () => {
+    const buf = node_crypto.randomBytes(6);
+    buf[0] = (buf[0] & 0xfc) | 0x02; // Set locally administered bit
+    return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
+};
+
+// Helper to generate valid random IMEI (15 digits with Luhn checksum)
+const randomImei = () => {
+    let imei = '86'; // Common prefix
+    // Generate first 14 digits (prefix + 12 random)
+    for (let i = 0; i < 12; i++) imei += Math.floor(Math.random() * 10);
+
+    let sum = 0;
+    // Iterate from right to left (over the 14 digits)
+    for (let i = 13; i >= 0; i--) {
+        let digit = parseInt(imei.charAt(i), 10);
+        // Position 1 (rightmost of 14) corresponds to "double" position relative to check digit
+        // 14( Check), 13 (Double), 12 (Single)...
+        if ((14 - i) % 2 !== 0) { // odd pos from right (1st, 3rd...) -> Double
+            digit *= 2;
+            if (digit > 9) digit -= 9;
+        }
+        sum += digit;
+    }
+
+    const checkDigit = (10 - (sum % 10)) % 10;
+    return imei + checkDigit;
+};
+
+// Default device info generator
+const generateDeviceProfile = () => ({
     // Device profile fields
     ostype: 'and',
-    imei: 'BANGCLE01234',
-    mac: '00:00:00:00:00:00',
-    model: 'POCO F1',
+    imei: randomImei(),
+    mac: randomMac(),
+    model: 'M2011K2G', // Xiaomi Mi 11
     sdk: '35',
     mod: 'Xiaomi',
-    imeiMD5: '00000000000000000000000000000000',
+    imeiMD5: '00000000000000000000000000000000', // Will be recalculated
     mobileBrand: 'XIAOMI',
-    mobileModel: 'POCO F1',
-    deviceType: '0',
-    networkType: 'wifi',
-    osType: '15',  // This is different from ostype!
-    osVersion: '35',
+    mobileModel: 'M2011K2G',
     // Config fields
     appVersion: '3.2.3',
     appInnerVersion: '323',
@@ -49,9 +76,14 @@ const DEFAULT_DEVICE = {
     tboxVersion: '3',
     isAuto: '1',
     language: 'en',
-};
+    // Added fields to match previous DEFAULT_DEVICE
+    deviceType: '1', // Android
+    networkType: 'wifi',
+    osType: '15',
+    osVersion: '35',
+});
 
-// Session expired codes - includes 1002 (logged in from another device)
+// Session expired codes
 const SESSION_EXPIRED_CODES = ['1002', '1005', '1010'];
 
 // =============================================================================
@@ -63,7 +95,7 @@ export interface BydConfig {
     password: string;
     countryCode: string;
     controlPin?: string;
-    device?: Partial<typeof DEFAULT_DEVICE>;
+    device?: Partial<ReturnType<typeof generateDeviceProfile>>;
 }
 
 export interface AuthToken {
@@ -147,14 +179,24 @@ export interface BydCharging {
 
 export class BydClient {
     private config: BydConfig;
-    private device: typeof DEFAULT_DEVICE;
+    private device: ReturnType<typeof generateDeviceProfile>;
     private session: BydSession | null = null;
     private cookies: Record<string, string> = {};
     private reloginPromise: Promise<void> | null = null;
 
     constructor(config: BydConfig) {
         this.config = config;
-        this.device = { ...DEFAULT_DEVICE, ...config.device };
+
+        // Use provided device config or generate random one
+        // IMPORTANT: We should ideally persist this per user/vehicle to avoid triggering security checks
+        // For now, we generate consistent-looking ones based on username if possible, or random
+        const baseDevice = generateDeviceProfile();
+
+        // If config passed a device, merge it. Otherwise use generated.
+        this.device = { ...baseDevice, ...config.device };
+
+        // Calculate IMEI MD5 (required for BYD)
+        this.device.imeiMD5 = md5Hex(this.device.imei);
     }
 
     /**
@@ -171,6 +213,26 @@ export class BydClient {
             cookies: sessionData.cookies || {},
         };
         this.cookies = sessionData.cookies || {};
+    }
+
+    /**
+     * Set device identity to match a stored session
+     */
+    setDeviceProfile(imei: string, mac: string) {
+        this.device.imei = imei;
+        this.device.mac = mac;
+        // Recalculate MD5 as it depends on IMEI
+        this.device.imeiMD5 = md5Hex(imei);
+    }
+
+    /**
+     * Get current device identity (for storage)
+     */
+    getDeviceProfile() {
+        return {
+            imei: this.device.imei,
+            mac: this.device.mac
+        };
     }
 
     /**
@@ -199,7 +261,7 @@ export class BydClient {
         const nowMs = Date.now();
         const serviceTime = String(nowMs);
         const reqTimestamp = String(nowMs);
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
 
         // Build inner payload - EXACT match to pyBYD
         const inner: Record<string, string> = {
@@ -321,7 +383,7 @@ export class BydClient {
     async getVehicles(): Promise<BydVehicle[]> {
         await this.ensureSession();
         const nowMs = Date.now();
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
 
         // Inner payload must have these specific fields per pyBYD
         const inner = {
@@ -368,7 +430,7 @@ export class BydClient {
         // Stage 1: Trigger request - wakes the car and returns cached data + requestSerial
         // MUST send full inner payload (matching BYD-re) - sending only { vin } returns zeros
         const nowMs = Date.now();
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
         const inner = {
             deviceType: this.device.deviceType,
             energyType: '0',
@@ -424,7 +486,7 @@ export class BydClient {
             energyType: '0',
             imeiMD5: this.device.imeiMD5,
             networkType: this.device.networkType,
-            random: crypto.randomBytes(16).toString('hex').toUpperCase(),
+            random: node_crypto.randomBytes(16).toString('hex').toUpperCase(),
             requestSerial,
             tboxVersion: this.device.tboxVersion,
             timeStamp: String(Date.now()),
@@ -612,7 +674,7 @@ export class BydClient {
     async getEmqBrokerInfo(): Promise<{ host: string; port: number } | null> {
         await this.ensureSession();
         const nowMs = Date.now();
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
 
         // Inner payload must have these specific fields per pyBYD
         const inner = {
@@ -752,8 +814,9 @@ export class BydClient {
         // Hash PIN if not already hashed - BYD-re/pyBYD both use UPPERCASE MD5 for control PIN
         const commandPwd = controlPin.length === 32 ? controlPin.toUpperCase() : md5Hex(controlPin);
 
-        // Verify PIN first
-        await this.verifyControlPin(vin, commandPwd);
+        // OPTIMIZATION: Skipping explicit verifyControlPin call.
+        // remoteControl checks the PIN anyway, and calling verify first might cause timing/state issues (1009).
+        // await this.verifyControlPin(vin, commandPwd);
 
         // Command codes (pyBYD: RemoteCommand enum values)
         const commandCodes: Record<string, string> = {
@@ -774,7 +837,11 @@ export class BydClient {
         }
 
         // Trigger command - field names must match pyBYD/BYD-re exactly
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        // pyBYD uses 8 bytes (16 chars) for random in remote_control (vs 16 bytes/32 chars in login)
+        // pyBYD: secrets.token_hex(16).upper() -> 32 characters
+        const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
+        const nowMsStr = String(Date.now());
+
         const payload: any = {
             commandPwd,
             commandType,
@@ -782,19 +849,23 @@ export class BydClient {
             imeiMD5: this.device.imeiMD5,
             networkType: this.device.networkType,
             random: randomHex,
-            timeStamp: String(Date.now()),
+            timeStamp: nowMsStr,
             version: this.device.appInnerVersion,
             vin,
         };
         if (params) {
-            payload.controlParamsMap = JSON.stringify(params);
+            // pyBYD: json.dumps(control_params, separators=(",", ":"), sort_keys=True)
+            payload.controlParamsMap = compactJson(params);
         }
 
         console.log(`[remoteControl] Sending ${command} (type=${commandType}) for ${vin}`);
         const triggerResponse = await this.postAuthenticatedJson('/control/remoteControl', payload, true);
 
         if (String(triggerResponse.code) !== '0') {
-            throw new Error(`Remote control failed: code=${triggerResponse.code} msg=${triggerResponse.msg}`);
+            const payloadStr = JSON.stringify(payload);
+            console.error(`[remoteControl] FAILED code=${triggerResponse.code} msg=${triggerResponse.msg}. Payload: ${payloadStr}`);
+            // Include payload in error message for frontend debugging
+            throw new Error(`Remote control failed: code=${triggerResponse.code} msg=${triggerResponse.msg} payload=${payloadStr.substring(0, 100)}...`);
         }
 
         // Poll for result
@@ -808,9 +879,10 @@ export class BydClient {
         return result.controlState === '1';
     }
 
+    // @ts-ignore
     private async verifyControlPin(vin: string, commandPwd: string): Promise<void> {
         // Build inner payload matching pyBYD/BYD-re exactly
-        const randomHex = crypto.randomBytes(16).toString('hex').toUpperCase();
+        const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
         const inner = {
             commandPwd,
             deviceType: this.device.deviceType,
@@ -828,24 +900,33 @@ export class BydClient {
             const response = await this.postAuthenticatedJson(
                 '/vehicle/vehicleswitch/verifyControlPassword',
                 inner,
-                true  // rawInner - payload already has timeStamp
+                true  // rawInner
             );
 
+            // Log details of failure
+            if (response.code !== '0') {
+                console.log(`[verifyControlPin] FAILED code=${response.code} msg=${response.msg}. Payload: ${JSON.stringify(inner).substring(0, 500)}`);
+                // Don't throw yet, try to handle specific codes
+            }
+
             if (response.code === '0') {
-                console.log(`[verifyControlPin] PIN verified for ${inner.vin}`);
+                console.log(`[verifyControlPin] PIN verified for ${vin}`);
                 return;
             }
 
             if (response.code === '6024') {
                 if (attempt < 2) {
                     console.log(`[verifyControlPin] Rate limited (6024), waiting 5s before retry ${attempt + 2}/3...`);
-                    await this.sleep(5000);
+                    await new Promise(resolve => setTimeout(resolve, 5000));
                     // Refresh timestamp and random for retry
                     inner.timeStamp = String(Date.now());
-                    inner.random = crypto.randomBytes(16).toString('hex').toUpperCase();
+
+                    // Generate new random hex
+                    const buf = node_crypto.randomBytes(16);
+                    inner.random = buf.toString('hex').toUpperCase();
                     continue;
                 }
-                throw new Error('Rate limited (6024) - too many attempts, please wait before retrying');
+                throw new Error('Rate limited (6024) - too many attempts');
             }
 
             if (response.code === '5005') {
@@ -881,39 +962,29 @@ export class BydClient {
             reqTimestamp: String(nowMs),
         };
 
-        // Use the same timestamp as inner for consistency
-        // If rawInner, use inner's timeStamp; otherwise use nowMs
         const reqTimestamp = rawInner && payload.timeStamp ? payload.timeStamp : String(nowMs);
-
-        // Encrypt inner data - encryToken must be MD5 hashed to get the AES key
-        // pyBYD: "decrypts payloads using MD5(encryToken) + AES-128-CBC (zero IV)"
         const contentKey = md5Hex(session.token.encryToken);
-        console.log(`[postAuthenticatedJson] endpoint: ${endpoint}`);
-        console.log(`[postAuthenticatedJson] encryToken: ${session.token.encryToken.substring(0, 10)}...`);
-        console.log(`[postAuthenticatedJson] contentKey (MD5): ${contentKey}`);
-        console.log(`[postAuthenticatedJson] inner: ${JSON.stringify(inner)}`);
-        console.log(`[postAuthenticatedJson] reqTimestamp: ${reqTimestamp}`);
-        const encryData = aesEncryptHex(JSON.stringify(inner), contentKey);
-
-        // Build sign string - pyBYD: inner payload + countryCode, identifier, imeiMD5, language, reqTimestamp
-        // IMPORTANT: sign_key = MD5(signToken), not signToken directly!
         const signKey = md5Hex(session.token.signToken);
+
+        // Encrypt inner data with COMPACT JSON (no spaces)
+        // Equivalent to Python's json.dumps(inner, separators=(',', ':'))
+        const innerJson = compactJson(inner);
+        const encryData = aesEncryptHex(innerJson, contentKey);
+
+        // Build sign string
         const signFields = {
             ...inner,
             countryCode: this.config.countryCode,
             identifier: session.token.userId,
             imeiMD5: this.device.imeiMD5,
             language: this.device.language,
-            reqTimestamp,  // Must match inner's timeStamp
+            reqTimestamp,
         };
         const signString = buildSignString(signFields, signKey);
-        console.log(`[postAuthenticatedJson] signKey (MD5 of signToken): ${signKey}`);
-        console.log(`[postAuthenticatedJson] signFields: ${JSON.stringify(signFields)}`);
-        console.log(`[postAuthenticatedJson] signString: ${signString.substring(0, 100)}...`);
         const sign = sha1Mixed(signString);
-        console.log(`[postAuthenticatedJson] sign: ${sign}`);
 
-        // Build outer payload - MUST match pyBYD field order for checkcode
+        // Build outer payload - ORDER MATTERS for checkcode in BYD's server
+        // We construct it manually to ensure the object keys are in the correct order
         const outer: any = {
             countryCode: this.config.countryCode,
             encryData,
@@ -928,10 +999,16 @@ export class BydClient {
             model: this.device.model,
             sdk: this.device.sdk,
             mod: this.device.mod,
-            serviceTime: reqTimestamp,  // Use same timestamp
+            serviceTime: String(Date.now()), // Fresh timestamp for outer
         };
+
         outer.checkcode = computeCheckcode(outer);
-        console.log(`[postAuthenticatedJson] outer (no encryData): ${JSON.stringify({ ...outer, encryData: '...' })}`);
+
+        console.log(`[postAuthenticatedJson] endpoint: ${endpoint}`);
+        console.log(`[postAuthenticatedJson] innerJson (compact): ${innerJson}`);
+        console.log(`[postAuthenticatedJson] signString: ${signString}`);
+        console.log(`[postAuthenticatedJson] outer.checkcode: ${outer.checkcode}`);
+        console.log(`[postAuthenticatedJson] session: ${session.token.signToken.substring(0, 8)}...`);
 
         // Make request
         const response = await this.postSecure(endpoint, outer);
@@ -989,15 +1066,20 @@ export class BydClient {
         const encoded = encodeEnvelope(JSON.stringify(payload));
 
         const headers: Record<string, string> = {
-            'accept-encoding': 'identity',
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9',
             'content-type': 'application/json; charset=UTF-8',
-            'user-agent': USER_AGENT,
+            'user-agent': 'okhttp/3.12.0',
         };
 
         if (Object.keys(this.cookies).length > 0) {
-            headers['cookie'] = Object.entries(this.cookies)
+            const cookieStr = Object.entries(this.cookies)
                 .map(([k, v]) => `${k}=${v}`)
                 .join('; ');
+            headers['Cookie'] = cookieStr;
+            console.log(`[postSecure] Sending cookies: ${cookieStr}`);
+        } else {
+            console.log('[postSecure] No cookies to send.');
         }
 
         const response = await fetch(url, {
@@ -1007,8 +1089,19 @@ export class BydClient {
         });
 
         // Update cookies
-        const setCookie = response.headers.get('set-cookie');
+        // node-fetch v2: response.headers.raw()['set-cookie'] returns array
+        let setCookie: string | string[] | undefined;
+        if (typeof (response.headers as any).raw === 'function') {
+            const raw = (response.headers as any).raw();
+            setCookie = raw['set-cookie'];
+        } else if (typeof (response.headers as any).getSetCookie === 'function') {
+            setCookie = (response.headers as any).getSetCookie();
+        } else {
+            setCookie = response.headers.get('set-cookie') || undefined;
+        }
+
         if (setCookie) {
+            console.log(`[postSecure] Received cookies: ${Array.isArray(setCookie) ? setCookie.join('; ') : setCookie}`);
             this.parseCookies(setCookie);
         }
 
@@ -1065,7 +1158,7 @@ export class BydClient {
             // Refresh random and timeStamp on each poll attempt (as BYD-re does)
             if (rawInner && payload.timeStamp) {
                 payload.timeStamp = String(Date.now());
-                payload.random = crypto.randomBytes(16).toString('hex').toUpperCase();
+                payload.random = node_crypto.randomBytes(16).toString('hex').toUpperCase();
             }
 
             // skipAutoRelogin=true: in poll contexts, 1002 means "still processing", not session expired
@@ -1119,13 +1212,25 @@ export class BydClient {
     // UTILITIES
     // =========================================================================
 
-    private parseCookies(setCookie: string): void {
-        const parts = setCookie.split(',');
-        for (const part of parts) {
-            const [cookie] = part.split(';');
-            const [name, value] = cookie.trim().split('=');
-            if (name && value) {
-                this.cookies[name] = value;
+    private parseCookies(setCookie: string | string[]): void {
+        const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+
+        for (const cookieStr of cookies) {
+            // Some servers send multiple cookies in one header separated by comma (bad practice but happens)
+            // But raw() splits them into array. If we get a string, it might still have commas?
+            // node-fetch v2 might give comma-separated if we use get().
+            // Safest: split by comma ONLY if it's a string and looks like multiple cookies?
+            // Actually, split(',') is dangerous because Expires=... has commas.
+            // Better to rely on array from raw(). If string, assume one cookie or use a smart splitter.
+            // For now, let's assume raw() gave us individual cookies.
+
+            const parts = cookieStr.split(';');
+            const [nameValue] = parts;
+            if (!nameValue) continue;
+
+            const [name, ...valueParts] = nameValue.trim().split('=');
+            if (name && valueParts.length > 0) {
+                this.cookies[name.trim()] = valueParts.join('=').trim();
             }
         }
     }

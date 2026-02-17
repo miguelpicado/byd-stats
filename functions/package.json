@@ -2,7 +2,7 @@
     "name": "functions",
     "scripts": {
         "build": "tsc && npm run copy-assets",
-        "copy-assets": "mkdir -p lib/byd && cp src/byd/*.bin lib/byd/ 2>/dev/null || xcopy /Y src\\byd\\*.bin lib\\byd\\",
+        "copy-assets": "xcopy /Y /I src\\byd\\*.bin lib\\byd\\",
         "build:watch": "tsc --watch",
         "serve": "npm run build && firebase emulators:start --only functions",
         "shell": "npm run build && firebase functions:shell",
@@ -22,6 +22,7 @@
         "node-fetch": "^2.7.0"
     },
     "devDependencies": {
+        "@types/node": "^20.19.33",
         "@types/node-fetch": "^2.6.11",
         "firebase-functions-test": "^3.1.0",
         "typescript": "^5.0.0"

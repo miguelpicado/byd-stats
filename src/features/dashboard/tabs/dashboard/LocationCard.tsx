@@ -8,14 +8,7 @@ import L from 'leaflet';
 // ... (imports done)
 
 // ... inside component ...
-{
-    status?.lastUpdate && (
-        <span className="text-[10px] text-slate-800 dark:text-slate-300 bg-white/90 dark:bg-slate-900/80 px-2 py-0.5 rounded-full backdrop-blur-sm font-medium shadow-sm">
-            {/* Timestamp logic */}
-            {new Date(status.lastUpdate.seconds * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span>
-    )
-}
+
 
 // Fix Leaflet default marker icons (same as in TripMapModal)
 delete (L.Icon.Default.prototype as any)._getIconUrl;

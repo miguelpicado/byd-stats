@@ -305,12 +305,24 @@ async function trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ l
         const date = c.date;
 
         if (kwh === undefined || start === undefined || end === undefined || !date) return false;
-        return kwh > 0 && start >= 0 && end > start && (end - start) >= 5;
+        // Relaxed from 5% to 3% to include more samples for training
+        return kwh > 0 && start >= 0 && end > start && (end - start) >= 3;
     });
 
-    console.log(`[TF Worker] Training SoH with ${validCharges.length}/${charges.length} charges.`);
+    console.log(`[TF Worker] Training SoH with ${validCharges.length}/${charges.length} charges. (Filter: >3% delta, >0 kWh)`);
 
-    if (validCharges.length < 3) return { loss: 0, samples: 0, predictedSoH: 100 };
+    if (validCharges.length < 3) {
+        if (charges.length > 0) {
+            console.warn('[TF Worker] Too few valid charges for SoH training. Reasons for rejection:');
+            charges.slice(0, 5).forEach(c => {
+                const kwh = c.kwhCharged ?? c.kwh;
+                const delta = (c.finalPercentage || 0) - (c.initialPercentage || 0);
+                console.warn(` - Charge ${c.id}: kwh=${kwh}, delta=${delta}%, hasDate=${!!c.date}`);
+            });
+        }
+        return { loss: 0, samples: 0, predictedSoH: 100 };
+    }
+
 
     const features: number[] = [];
     const labels: number[] = [];
@@ -418,18 +430,19 @@ function sohPredictInternal(days: number): number {
 interface SoHPoint { x: string; y: number; cap: number }
 interface SoHTrend { x: string; y: number }
 
-function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHPoint[]; trend: SoHTrend[] } {
-    if (!sohModel) return { points: [], trend: [] };
+function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHPoint[]; trend: SoHTrend[]; samples: number } {
+    if (!sohModel) return { points: [], trend: [], samples: 0 };
 
     const validCharges = charges.filter((c) => {
         const kwh = c.kwhCharged ?? c.kwh;
         const start = c.initialPercentage;
         const end = c.finalPercentage;
         if (kwh === undefined || start === undefined || end === undefined || !c.date) return false;
-        return kwh > 0 && start >= 0 && end > start && (end - start) >= 10;
+        // Aligned with trainSoH (3% delta) to ensure consistent sample reporting
+        return kwh > 0 && start >= 0 && end > start && (end - start) >= 3;
     }).sort((a, b) => a.date.localeCompare(b.date));
 
-    if (validCharges.length === 0) return { points: [], trend: [] };
+    if (validCharges.length === 0) return { points: [], trend: [], samples: 0 };
 
     const firstDate = new Date(validCharges[0].date).getTime();
     const points = validCharges.map((c): SoHPoint | null => {
@@ -454,7 +467,7 @@ function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHP
         };
     });
 
-    return { points, trend };
+    return { points, trend, samples: points.length };
 }
 
 // ============================================================

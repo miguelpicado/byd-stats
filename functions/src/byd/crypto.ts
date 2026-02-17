@@ -6,17 +6,42 @@
  * The algorithm uses pre-computed lookup tables extracted from libencrypt.so.
  */
 
-import * as crypto from 'crypto';
+import * as node_crypto from 'node:crypto';
 
 // =============================================================================
 // MD5 & SHA1 HASHING
 // =============================================================================
 
 /**
+ * Helper to sort object keys recursively
+ */
+function sortObjectKeys(obj: any): any {
+    if (obj === null || typeof obj !== 'object' || Array.isArray(obj)) {
+        return obj;
+    }
+    // Handle Date or other non-plain objects if they ever appear
+    if (obj instanceof Date) return obj.toISOString();
+
+    return Object.keys(obj).sort().reduce((acc: any, key) => {
+        acc[key] = sortObjectKeys(obj[key]);
+        return acc;
+    }, {});
+}
+
+/**
+ * Stringify object to compact JSON (no spaces)
+ * Equivalent to Python's json.dumps(payload, separators=(',', ':'))
+ */
+export function compactJson(obj: any): string {
+    const sorted = sortObjectKeys(obj);
+    return JSON.stringify(sorted, null, 0);
+}
+
+/**
  * Compute MD5 hash of a string, returns uppercase hex
  */
 export function md5Hex(input: string): string {
-    return crypto.createHash('md5').update(input, 'utf8').digest('hex').toUpperCase();
+    return node_crypto.createHash('md5').update(input, 'utf8').digest('hex').toUpperCase();
 }
 
 /**
@@ -24,7 +49,7 @@ export function md5Hex(input: string): string {
  * Used for control PIN which BYD expects in lowercase
  */
 export function md5HexLower(input: string): string {
-    return crypto.createHash('md5').update(input, 'utf8').digest('hex').toLowerCase();
+    return node_crypto.createHash('md5').update(input, 'utf8').digest('hex').toLowerCase();
 }
 
 /**
@@ -36,7 +61,7 @@ export function md5HexLower(input: string): string {
  * 4. Filter: drop any '0' at even position in final string
  */
 export function sha1Mixed(input: string): string {
-    const digest = crypto.createHash('sha1').update(input, 'utf8').digest();
+    const digest = node_crypto.createHash('sha1').update(input, 'utf8').digest();
 
     // Convert to hex with alternating case BY BYTE (not by char)
     let mixed = '';
@@ -77,10 +102,14 @@ export function pwdLoginKey(password: string): string {
 /**
  * Compute checkcode from JSON payload
  * MD5 of compact JSON, then reorder: [24:32][8:16][16:24][0:8]
+ *
+ * IMPORTANT: Field order in the payload object MUST BE PRESERVED
+ * (JS doesn't guarantee order, so we accept a Map or pre-ordered object)
  */
-export function computeCheckcode(payload: object): string {
-    const json = JSON.stringify(payload);
-    const hash = md5Hex(json);
+export function computeCheckcode(payload: any): string {
+    // We use a custom stringify to ensure NO spaces, matching Python's separators=(',', ':')
+    const json = JSON.stringify(payload, null, 0).replace(/: /g, ':').replace(/, /g, ',');
+    const hash = node_crypto.createHash('md5').update(json, 'utf8').digest('hex');
 
     // Reorder: positions 24-32, 8-16, 16-24, 0-8
     return hash.slice(24, 32) + hash.slice(8, 16) + hash.slice(16, 24) + hash.slice(0, 8);
@@ -108,7 +137,7 @@ export function aesEncryptHex(plaintext: string, keyHex: string): string {
         throw new Error(`Invalid AES key buffer: expected 16 bytes, got ${key.length}`);
     }
 
-    const cipher = crypto.createCipheriv('aes-128-cbc', key, ZERO_IV);
+    const cipher = node_crypto.createCipheriv('aes-128-cbc', key, ZERO_IV);
     cipher.setAutoPadding(true);
 
     const encrypted = Buffer.concat([
@@ -126,7 +155,7 @@ export function aesDecryptUtf8(ciphertextHex: string, keyHex: string): string {
     const key = Buffer.from(keyHex, 'hex');
     const ciphertext = Buffer.from(ciphertextHex, 'hex');
 
-    const decipher = crypto.createDecipheriv('aes-128-cbc', key, ZERO_IV);
+    const decipher = node_crypto.createDecipheriv('aes-128-cbc', key, ZERO_IV);
     decipher.setAutoPadding(true);
 
     const decrypted = Buffer.concat([
@@ -147,12 +176,16 @@ export function aesDecryptUtf8(ciphertextHex: string, keyHex: string): string {
  */
 export function buildSignString(fields: Record<string, any>, password: string): string {
     const sortedKeys = Object.keys(fields).sort();
-    const pairs = sortedKeys.map(key => {
-        const value = fields[key] === null ? 'null' : String(fields[key]);
-        return `${key}=${value}`;
-    });
+    const pairs: string[] = [];
 
-    return pairs.join('&') + `&password=${password}`;
+    for (const key of sortedKeys) {
+        if (fields[key] !== null && fields[key] !== undefined) {
+            pairs.push(`${key}=${fields[key]}`);
+        }
+    }
+
+    const signString = pairs.join('&') + `&password=${password}`;
+    return signString;
 }
 
 // =============================================================================

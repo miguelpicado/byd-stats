@@ -17,6 +17,7 @@ import {
     bydDebugDump,
 } from '../../services/bydApi';
 import { waitForAuth } from '../../services/firebase';
+import toast from 'react-hot-toast';
 
 // Country codes for BYD API
 const COUNTRY_CODES = [
@@ -100,8 +101,8 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         setSuccess(null);
 
         try {
-            // Get Firebase Auth UID for proper Firestore security (optional for dev)
             const userId = await waitForAuth() || 'dev-user';
+            toast.success(`Debug: Using UserID = ${userId}`);
 
             const result = await bydConnect(
                 username,

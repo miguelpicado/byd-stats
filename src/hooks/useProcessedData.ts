@@ -162,8 +162,8 @@ export const useProcessedData = (
 
             // Hash for SoH: ChargesSignature + BatteryCapacity + Version
             const chargeHash = `${charges.length}_${charges[0]?.date || ''}`;
-            // Version 8: Validating weighted median with 10% filter
-            const sohHash = `${chargeHash}__${processingSettings.batterySize}__v8`;
+            // Version 9: Aligning filters to 3% for both training and stats
+            const sohHash = `${chargeHash}__${processingSettings.batterySize}__v9`;
 
             // Check Cache (Efficiency)
             let cacheHit = false;

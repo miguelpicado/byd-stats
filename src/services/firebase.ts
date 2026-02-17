@@ -63,13 +63,24 @@ export const getCurrentUserId = (): string | null => {
 };
 
 /**
- * Wait for authentication to be ready (optional)
+ * Wait for authentication to be ready
  * Returns user UID or null if auth is not available
  */
-export const waitForAuth = async (): Promise<string | null> => {
-    // Give auth a moment to complete
-    await new Promise(resolve => setTimeout(resolve, 500));
-    return currentUser?.uid || null;
+export const waitForAuth = async (timeoutMs = 5000): Promise<string | null> => {
+    if (currentUser?.uid) return currentUser.uid;
+
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe();
+            resolve(user?.uid || null);
+        });
+
+        // Fallback timeout
+        setTimeout(() => {
+            unsubscribe();
+            resolve(currentUser?.uid || null); // Return current state (likely null) if timeout
+        }, timeoutMs);
+    });
 };
 
 // Initialize Firestore with modern persistence configuration
