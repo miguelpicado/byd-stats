@@ -294,7 +294,25 @@
         "percentile": "Percentil"
     },
     "dashboard": {
-        "rangeInsights": "Análisis de Autonomía IA"
+        "rangeInsights": "Análisis de Autonomía IA",
+        "range": "Autonomía",
+        "odo": "Odo",
+        "energy": "Energía",
+        "soh": "SoH",
+        "system": "Sistema",
+        "tires": "Neumáticos",
+        "windows": "Ventanas",
+        "doors": "Puertas",
+        "climate": "Clima",
+        "mapPlaceholder": "Vista de Mapa",
+        "lastUpdated": "Última actualización"
+    },
+    "actions": {
+        "lock": "Bloquear",
+        "unlock": "Desbloquear",
+        "windows": "Ventanas",
+        "flash": "Luces",
+        "heat": "Calefacción"
     },
     "upload": {
         "title": "Estadísticas BYD",

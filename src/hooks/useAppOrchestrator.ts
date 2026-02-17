@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Capacitor } from '@capacitor/core';
 import useAppVersion from '@hooks/useAppVersion';
 import { useApp } from '@/context/AppContext';
 import { useLayout } from '@/context/LayoutContext';
@@ -13,11 +12,11 @@ import { Trip, Charge } from '@/types';
 
 export const useAppOrchestrator = () => {
     const { t } = useTranslation();
-    const isNative = Capacitor.isNativePlatform();
 
     // Contexts
     const { settings, updateSettings } = useApp();
-    const { layoutMode, isCompact, isFullscreenBYD, isVertical } = useLayout();
+    const { layoutMode, isCompact, isFullscreenBYD, isVertical, isNative } = useLayout();
+
     const { version: appVersion } = useAppVersion();
 
     // Data Context
@@ -124,7 +123,7 @@ export const useAppOrchestrator = () => {
         isTransitioning,
         handleTabClick,
         tabs
-    } = useTabNavigation({ settings });
+    } = useTabNavigation({ settings, isVertical, isNative });
 
     // Swipe Gesture
     const setSwipeContainer = useSwipeGesture({

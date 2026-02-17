@@ -1287,15 +1287,18 @@ async function processVehicleState(
 
     // GPS-based detection if available
     let hasGpsMovement = false;
+    let gpsDelta = 0; // Track magnitude for strict filtering
+
     if (gps && gps.latitude > 0) {
         const prevLat = vehicleData.lastLocation?.lat;
         const prevLon = vehicleData.lastLocation?.lon;
         if (prevLat !== undefined && prevLon !== undefined) {
             const latDelta = Math.abs(gps.latitude - prevLat);
             const lonDelta = Math.abs(gps.longitude - prevLon);
-            // Increased threshold to ~100m (0.001 deg) to avoid drift
-            // Reduced strictness: Don't require climateActive, just significant position change
-            hasGpsMovement = (latDelta + lonDelta) > 0.002; // ~200m change
+            gpsDelta = latDelta + lonDelta;
+
+            // Standard tracking threshold (~200m) - sufficient for "active" status persistence
+            hasGpsMovement = gpsDelta > 0.002;
         }
     }
 
@@ -1352,6 +1355,10 @@ async function processVehicleState(
         isLocked: realtime.isLocked,
         isOnline: effectiveSoc > 0 || realtime.isOnline,
         lastSpeed: realtime.speed || 0,
+
+        // New fields
+        lastGear: realtime.gear !== undefined ? realtime.gear : (vehicleData.lastGear || 0),
+        epbStatus: realtime.parkingBrake !== undefined ? realtime.parkingBrake : (vehicleData.epbStatus || 0)
     };
 
     // Update metrics if they have real values
@@ -1384,10 +1391,22 @@ async function processVehicleState(
         // --- START NEW TRIP ---
         // Allow trip start even if locked (auto-lock while driving)
         // Prevent trip start only if source is 'wake' (opening app) to avoid ghost trips
-        const canStartTrip = source !== 'wake';
+        // NEW: Check GEAR. If Gear=1 (Park), DO NOT start trip.
+        const isParked = realtime.gear === 1;
+        const canStartTrip = source !== 'wake' && !isParked;
 
         if (canStartTrip) {
-            if (odoDelta > 0 || hasGpsMovement || hasSpeedMovement) {
+            // STRICT START RULES to prevent Ghost Trips:
+            // 1. Speed > 0 (Most reliable indicator)
+            // 2. Odometer > 0.1km (Ignore minor rounding noise)
+            // 3. GPS Delta > 0.005 (~550m) (Ignore garage drift)
+            // 4. Gear is DRIVE (3) (Explicit intent to move)
+            const strictStart = (realtime.speed || 0) > 0 ||
+                odoDelta >= 0.1 ||
+                (hasGpsMovement && gpsDelta > 0.005) ||
+                realtime.gear === 3;
+
+            if (strictStart) {
                 const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc();
                 await tripRef.set({
                     vin,
@@ -1441,12 +1460,15 @@ async function processVehicleState(
         const isLocked = realtime.isLocked;
 
         // Increment counters based on state
-        const prevCounters = vehicleData.tripStopCounters || { gps: 0, climateOff: 0, lockedOff: 0 };
+        const prevCounters = vehicleData.tripStopCounters || { gps: 0, climateOff: 0, lockedOff: 0, parked: 0 };
+        const isParkedGear = realtime.gear === 1; // 1=Park
+        const isSpeedZero = (realtime.speed || 0) === 0;
 
         const newCounters = {
             gps: prevCounters.gps + 1, // GPS is stationary (we are in this block because !hasMovement)
             climateOff: isClimateOn ? 0 : (prevCounters.climateOff + 1),
-            lockedOff: (isLocked && !isClimateOn) ? (prevCounters.lockedOff + 1) : 0
+            lockedOff: (isLocked && !isClimateOn) ? (prevCounters.lockedOff + 1) : 0,
+            parked: (isParkedGear && isSpeedZero) ? (prevCounters.parked + 1) : 0
         };
 
         // Save counters for next poll
@@ -1460,7 +1482,10 @@ async function processVehicleState(
         let stopReason = null;
         let trimMinutes = 0;
 
-        if (newCounters.gps >= 15) {
+        if (newCounters.parked >= 6) { // 6 polls (~2m) in Park + stopped = End Trip
+            stopReason = 'gear_park_detected';
+            trimMinutes = 2;
+        } else if (newCounters.gps >= 15) {
             stopReason = 'timeout_gps_5m';
             trimMinutes = 5;
         } else if (newCounters.climateOff >= 9) {
@@ -1477,7 +1502,7 @@ async function processVehicleState(
 
             vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
             vehicleUpdate.pollingActive = false;
-            vehicleUpdate.tripStopCounters = { gps: 0, climateOff: 0, lockedOff: 0 };
+            vehicleUpdate.tripStopCounters = { gps: 0, climateOff: 0, lockedOff: 0, parked: 0 };
             vehicleUpdate.stationaryPollCount = 0;
         } else {
             // Update trip end values while stationary (without closing)
@@ -1583,7 +1608,7 @@ export const bydActiveTripMonitor = regionalFunctions.runWith({ timeoutSeconds: 
  * Ignores those already handled by Active Monitor
  */
 export const bydIdleHeartbeat = regionalFunctions.runWith({ timeoutSeconds: 300 }).pubsub
-    .schedule('every 2 hours')
+    .schedule('every 3 hours')
     .onRun(async (context) => {
         console.log('[bydIdleHeartbeat] Starting idle check...');
         ensureBydInit();

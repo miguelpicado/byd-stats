@@ -96,6 +96,8 @@ export interface BydRealtime {
     isCharging: boolean;
     isLocked: boolean;
     isOnline: boolean;
+    gear?: number;                  // 1=Park, 3=Drive, 2=Reverse/Neutral (TBC), 0=Unknown
+    parkingBrake?: number;          // 0=Released, -1/1=Engaged (TBC)
     interiorTemp?: number;
     doors?: {
         frontLeft: boolean;
@@ -479,6 +481,10 @@ export class BydClient {
         // Detect offline state: if all key values are 0, car is likely asleep
         const isOffline = soc === 0 && range === 0 && odometer === 0;
 
+        // Gear (1=Park, 3=Drive) and EPB
+        const gear = this.parseNumber(info.powerGear);
+        const parkingBrake = this.parseNumber(info.epb);
+
         // Lock state: check individual door locks (2 = locked) or global lockState
         const isLocked = Number(info.leftFrontDoorLock) === 2 ||
             info.lockState === '2' || info.doorLockState === '2';
@@ -491,6 +497,8 @@ export class BydClient {
             isCharging: info.chargingState === 1 || info.chargeState === 1 || info.chargeStatus === '1',
             isLocked,
             isOnline: !isOffline && (Number(info.onlineState) !== 2),
+            gear,
+            parkingBrake,
             interiorTemp: this.parseNumber(info.tempInCar || info.interiorTemperature),
             doors: {
                 frontLeft: Number(info.leftFrontDoor) === 2,

@@ -4,6 +4,7 @@ import { toast } from 'react-hot-toast';
 import { logger } from '@core/logger';
 import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
+import { useLayout } from '@/context/LayoutContext';
 import { useTripsContext } from './TripsProvider';
 import { useChargesContext } from './ChargesProvider';
 import { useModalContext } from './ModalProvider';
@@ -33,6 +34,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCarId, cars, updateCar, activeCar } = useCar();
+    const { isNative } = useLayout();
 
     // Dependencies
     const tripsContext = useTripsContext();
@@ -62,6 +64,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     // BYD Wake on App Load - wake vehicle when app starts if BYD is connected
     const hasWokenVehicle = useRef<string | null>(null);
     useEffect(() => {
+        if (!isNative) return;
+
         const vin = activeCar?.vin;
         // Only wake BYD vehicles (17-char VIN) once per session
         if (!vin || vin.length !== 17 || hasWokenVehicle.current === vin) return;
@@ -81,7 +85,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
             .catch((error) => {
                 logger.error('[SyncProvider] Failed to wake BYD vehicle:', error);
             });
-    }, [activeCar?.vin]);
+    }, [activeCar?.vin, isNative]);
 
     // Auto-Sync Effect
     useEffect(() => {

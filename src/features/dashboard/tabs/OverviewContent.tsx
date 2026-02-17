@@ -10,7 +10,7 @@ import LiveVehicleStatus from '@components/cards/LiveVehicleStatus';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
 import HealthReportModal from '@components/modals/HealthReportModal';
-import { MapPin, Zap, Battery, Activity, Fuel, IconProps, AlertTriangle } from '@components/Icons';
+import { MapPin, Zap, Battery, Activity, Fuel, IconProps, AlertTriangle, Clock } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
 import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
 import { AnomalyService, Anomaly } from '@/services/AnomalyService';
@@ -93,7 +93,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
     stats
 }) => {
     const { t } = useTranslation();
-    const { isCompact, isLargerCard, isVertical } = useLayout();
+    const { isCompact, isLargerCard, isVertical, isNative } = useLayout();
 
     // Refs to chart instances for manual animation control - typed to match react-chartjs-2 ref expectations
     const lineChartRef = useRef<Chart<'line'>>(null!);
@@ -193,10 +193,18 @@ const OverviewContent: FC<OverviewContentProps> = ({
         summary.isHybrid ? {
             key: 'estimated_charge',
             isCustom: true // Custom renderer
-        } : {
+        } : (isNative ? {
             key: 'live_status',
             isCustom: true // Custom renderer for LiveVehicleStatus
-        },
+        } : {
+            key: 'time',
+            icon: Clock,
+            label: t('stats.drivingHours', 'Horas Conducción'),
+            value: summary.totalHours,
+            unit: 'h',
+            color: "bg-slate-500/20 text-slate-400",
+            onClick: () => onInsightClick('time')
+        }),
         {
             key: 'efficiency',
             icon: Battery,

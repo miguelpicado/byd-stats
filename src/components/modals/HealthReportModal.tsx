@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Activity, Battery, Zap, AlertCircle, CheckCircle, Clock, RefreshCw, Wheel } from '../Icons';
+import { X, Activity, Battery, Zap, AlertCircle, CheckCircle, Clock } from '../Icons';
 import { getFirestore, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
 import { useCar } from '../../context/CarContext';
-import toast from 'react-hot-toast';
+import { useLayout } from '@/context/LayoutContext';
 import { Anomaly } from '@/services/AnomalyService';
 import AlertHistoryModal from './AlertHistoryModal';
 import ModalPortal from '../common/ModalPortal';
-import { bydWakeVehicle, bydLock, bydUnlock, bydStartClimate, bydStopClimate, bydDiagnostic } from '@/services/bydApi';
+import { bydWakeVehicle } from '@/services/bydApi';
 
 interface VehicleFirestoreData {
     isLocked?: boolean;
@@ -48,13 +48,14 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
 }) => {
     const { t } = useTranslation();
     const { activeCar, activeCarId, updateCar } = useCar();
+    const { isNative } = useLayout();
     const [showHistory, setShowHistory] = useState(false);
-    const [actionLoading, setActionLoading] = useState<string | null>(null);
+    // const [actionLoading, setActionLoading] = useState<string | null>(null);
     const [vehicleData, setVehicleData] = useState<VehicleFirestoreData | null>(null);
 
     // Subscribe to vehicle document in Firestore for real-time data
     useEffect(() => {
-        if (!activeCar?.vin) {
+        if (!activeCar?.vin || !isNative) {
             setVehicleData(null);
             return;
         }
@@ -74,26 +75,28 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
         });
 
         return () => unsubscribe();
-    }, [activeCar?.vin]);
+    }, [activeCar?.vin, isNative]);
 
     // Auto-refresh vehicle data when modal opens
     useEffect(() => {
+        if (!isNative) return;
+
         const vin = activeCar?.vin;
         if (isOpen && vin) {
             const refreshData = async () => {
-                setActionLoading('refreshVehicleData');
+                // setActionLoading('refreshVehicleData');
                 try {
                     const result = await bydWakeVehicle(vin, false);
                     console.log('[HealthReportModal] BYD wake result:', result.isAwake, result.data.soc);
                 } catch (error: unknown) {
                     console.error('[HealthReportModal] Auto-refresh failed:', error instanceof Error ? error.message : error);
                 } finally {
-                    setActionLoading(null);
+                    // setActionLoading(null);
                 }
             };
             refreshData();
         }
-    }, [isOpen, activeCar?.vin]);
+    }, [isOpen, activeCar?.vin, isNative]);
 
     // Persist Tires: If we get new data, save it to the car context for fallback
     useEffect(() => {
@@ -127,107 +130,6 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
             updateCar(activeCarId, { tires: newTires });
         }
     }, [vehicleData, activeCar?.tires, activeCarId, updateCar]);
-
-    // Use Firestore data for live status, fallback to activeCar
-    // Note: Firestore returns 'tirePressure' with 'rearLeft'/'rearRight' but our app uses 'tires' with 'backLeft'/'backRight'
-    const getTires = () => {
-        if (vehicleData?.tirePressure) {
-            return {
-                frontLeft: vehicleData.tirePressure.frontLeft,
-                frontRight: vehicleData.tirePressure.frontRight,
-                backLeft: vehicleData.tirePressure.rearLeft,
-                backRight: vehicleData.tirePressure.rearRight
-            };
-        }
-        return vehicleData?.tires ?? activeCar?.tires;
-    };
-
-    const tires = getTires();
-
-    // Tire Pressure View
-    const TiresView = ({ tires }: { tires: { frontLeft: number; frontRight: number; backLeft: number; backRight: number } }) => {
-        if (!tires) return null;
-
-        const Tire = ({ label, value }: { label: string; value: number }) => {
-            // Check if value is valid number
-            if (typeof value !== 'number') return null;
-
-            // Values may be in kPa. 250 kPa = 2.5 bar.
-            // If value > 10, it's likely kPa, so we divide by 100
-            const displayValue = value > 10 ? (value / 100).toFixed(1) : value.toFixed(1);
-
-            return (
-                <div className={`flex flex-col items-center bg-white dark:bg-slate-800 rounded-xl p-2 border border-slate-100 dark:border-slate-800 shadow-sm`}>
-                    <span className="text-[10px] text-slate-400 uppercase font-bold">{label}</span>
-                    <span className="text-sm font-bold text-slate-700 dark:text-slate-200">{displayValue} bar</span>
-                </div>
-            );
-        };
-
-        return (
-            <div className="mt-4 mb-6">
-                <div className="grid grid-cols-2 gap-4 relative">
-                    {/* Wheel background icon */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
-                        <Wheel className="w-24 h-24" />
-                    </div>
-
-                    <Tire label="DI" value={tires.frontLeft} />
-                    <Tire label="DD" value={tires.frontRight} />
-                    <Tire label="TI" value={tires.backLeft} />
-                    <Tire label="TD" value={tires.backRight} />
-                </div>
-            </div>
-        );
-    };
-
-    const handleAction = async (action: string) => {
-        if (!activeCarId || !activeCar?.vin) return;
-
-        setActionLoading(action);
-        const toastId = toast.loading(`${t('common.processing', 'Procesando...')} ${action}`);
-
-        try {
-            const vin = activeCar.vin;
-
-            switch (action) {
-                case 'refreshVehicleData':
-                    await bydWakeVehicle(vin, false);
-                    break;
-                case 'lockVehicle':
-                    await bydLock(vin);
-                    updateCar(activeCarId, { isLocked: true });
-                    break;
-                case 'unlockVehicle':
-                    await bydUnlock(vin);
-                    updateCar(activeCarId, { isLocked: false });
-                    break;
-                case 'startClimate':
-                    await bydStartClimate(vin);
-                    updateCar(activeCarId, { climateActive: true });
-                    break;
-                case 'stopClimate':
-                    await bydStopClimate(vin);
-                    updateCar(activeCarId, { climateActive: false });
-                    break;
-                case 'diagnostic':
-                    const diagResult = await bydDiagnostic(vin);
-                    console.log('=== BYD DIAGNOSTIC RESULTS ===');
-                    console.log(JSON.stringify(diagResult, null, 2));
-                    toast.success(`Diagnóstico completo. Ver consola (F12)`, { id: toastId, duration: 8000 });
-                    return;
-                default:
-                    console.warn(`Unknown action: ${action}`);
-            }
-
-            toast.success(`${t('common.success', '¡Éxito!')}`, { id: toastId });
-        } catch (error: unknown) {
-            console.error(`Action ${action} failed:`, error);
-            toast.error(`${t('common.error', 'Error')}: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
-        } finally {
-            setActionLoading(null);
-        }
-    };
 
     if (!isOpen) return null;
 
@@ -385,32 +287,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 emptyText={t('health.efficiencyOk', 'Consumo consistente con el historial.')}
                             />
 
-                            {/* Tire Pressure Section */}
-                            <div className="mt-8">
-                                <div className="flex items-center justify-between mb-3">
-                                    <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
-                                        <Activity className="w-5 h-5" />
-                                        {t('health.tires', 'Presión de Neumáticos')}
-                                    </h3>
-                                    <button
-                                        onClick={() => handleAction('refreshVehicleData')}
-                                        disabled={!!actionLoading}
-                                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
-                                        title={t('health.refreshData', 'Actualizar datos del vehículo')}
-                                    >
-                                        <RefreshCw className={`w-3.5 h-3.5 ${actionLoading === 'refreshVehicleData' ? 'animate-spin' : ''}`} />
-                                        {t('health.refresh', 'Actualizar')}
-                                    </button>
-                                </div>
-                                {tires ? (
-                                    <TiresView tires={tires} />
-                                ) : (
-                                    <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-slate-500 dark:text-slate-400 mb-6">
-                                        <Activity className="w-5 h-5 opacity-30" />
-                                        <span className="text-sm">{t('health.noTireData', 'No hay datos de presión recientes.')}</span>
-                                    </div>
-                                )}
-                            </div>
+                            {/* Tire Pressure Section Removed */}
 
                         </div>
 

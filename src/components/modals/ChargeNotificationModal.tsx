@@ -5,6 +5,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Battery, X, Check, Trash2 } from '../Icons';
 import { BYD_RED } from '@core/constants';
+import { useLayout } from '@/context/LayoutContext';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
@@ -35,6 +36,7 @@ const ChargeNotificationModal: React.FC = () => {
     const { settings } = useApp();
     const { addCharge } = useData();
     const { activeCar } = useCar();
+    const { isNative } = useLayout();
 
     const [pendingSessions, setPendingSessions] = useState<ChargeSession[]>([]);
     const [currentSession, setCurrentSession] = useState<ChargeSession | null>(null);
@@ -42,7 +44,7 @@ const ChargeNotificationModal: React.FC = () => {
 
     // Subscribe to completed charge sessions for the active vehicle
     useEffect(() => {
-        if (!activeCar?.vin) return;
+        if (!activeCar?.vin || !isNative) return;
 
         const db = getFirestore(getApp());
         const sessionsRef = collection(db, 'bydVehicles', activeCar.vin, 'chargingSessions');
@@ -80,7 +82,7 @@ const ChargeNotificationModal: React.FC = () => {
         });
 
         return () => unsubscribe();
-    }, [activeCar?.vin]);
+    }, [activeCar?.vin, isNative]);
 
     // Calculate energy added based on SoC change
     const calculateEnergyAdded = (session: ChargeSession): number => {

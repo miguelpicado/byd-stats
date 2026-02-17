@@ -148,7 +148,25 @@
         "percentile": "Percentile"
     },
     "dashboard": {
-        "rangeInsights": "AI Range Insights"
+        "rangeInsights": "AI Range Insights",
+        "range": "Range",
+        "odo": "Odo",
+        "energy": "Energy",
+        "soh": "SoH",
+        "system": "System",
+        "tires": "Tires",
+        "windows": "Windows",
+        "doors": "Doors",
+        "climate": "Climate",
+        "mapPlaceholder": "Map View",
+        "lastUpdated": "Last updated"
+    },
+    "actions": {
+        "lock": "Lock",
+        "unlock": "Unlock",
+        "windows": "Windows",
+        "flash": "Flash",
+        "heat": "Preheat"
     },
     "insights": {
         "dailyGoal": "Daily Goal",

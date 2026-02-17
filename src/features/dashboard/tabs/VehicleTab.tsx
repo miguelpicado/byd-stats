@@ -9,7 +9,6 @@ const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsi
 const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
 
-import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
 import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
@@ -30,11 +29,9 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   summary,
   trips = [],
   settings,
-  isActive = true
 }) => {
-  const { updateSettings } = useApp();
   const { aiScenarios, aiLoss, aiSoH, aiSoHStats, charges, stats, openModal, isAiTraining } = useData();
-  const { isCompact, isLargerCard, isVertical } = useLayout();
+  const { isCompact, isLargerCard, isVertical, isNative } = useLayout();
   const { activeCar } = useCar();
   const vehicleStatus = useVehicleStatus(activeCar?.vin);
 
@@ -53,8 +50,8 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
     fn: (vin: string, ...args: any[]) => Promise<any>,
     ...args: any[]
   ) => {
-    if (!activeCar?.vin) {
-      toast.error('No vehicle selected');
+    if (!activeCar?.vin || !isNative) {
+      toast.error('Feature not available');
       return;
     }
 
@@ -244,35 +241,37 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
           />
         </div>
 
-        {/* Row 5: Action Buttons (Lock, Preheat, Locate) */}
-        <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
-          <button
-            onClick={handleLock}
-            disabled={loadingButton === 'Lock'}
-            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
-          >
-            <Lock className={`w-5 h-5 sm:w-6 sm:h-6 ${!isLocked ? 'text-red-400' : ''}`} />
-            <span className="text-xs sm:text-sm font-medium">
-              {isLocked ? 'Desbloquear' : 'Bloquear'}
-            </span>
-          </button>
-          <button
-            onClick={handleSmartClimate}
-            disabled={loadingButton?.includes('Smart')}
-            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
-          >
-            <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-xs sm:text-sm font-medium">Climatizar</span>
-          </button>
-          <button
-            onClick={handleLocate}
-            disabled={loadingButton === 'Locate'}
-            className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
-          >
-            <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
-            <span className="text-xs sm:text-sm font-medium">Localizar</span>
-          </button>
-        </div>
+        {/* Row 5: Action Buttons (Lock, Preheat, Locate) - ONLY NATIVE */}
+        {isNative && (
+          <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
+            <button
+              onClick={handleLock}
+              disabled={loadingButton === 'Lock'}
+              className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
+            >
+              <Lock className={`w-5 h-5 sm:w-6 sm:h-6 ${!isLocked ? 'text-red-400' : ''}`} />
+              <span className="text-xs sm:text-sm font-medium">
+                {isLocked ? 'Desbloquear' : 'Bloquear'}
+              </span>
+            </button>
+            <button
+              onClick={handleSmartClimate}
+              disabled={loadingButton?.includes('Smart')}
+              className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-orange-500/20 text-orange-400 hover:bg-orange-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
+            >
+              <Zap className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm font-medium">Climatizar</span>
+            </button>
+            <button
+              onClick={handleLocate}
+              disabled={loadingButton === 'Locate'}
+              className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-purple-500/20 text-purple-400 hover:bg-purple-500/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[100px] sm:min-h-[120px]"
+            >
+              <MapPin className="w-5 h-5 sm:w-6 sm:h-6" />
+              <span className="text-xs sm:text-sm font-medium">Localizar</span>
+            </button>
+          </div>
+        )}
 
         {/* Row 6: Navigation Buttons (Trips, Charges, New Charge) */}
         <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>

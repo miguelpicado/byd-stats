@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { getFirestore, doc, onSnapshot, Timestamp } from 'firebase/firestore';
 import { getApp } from 'firebase/app';
 import { logger } from '@core/logger';
+import { useLayout } from '@/context/LayoutContext';
 
 /**
  * Vehicle data structure from Firestore
@@ -15,6 +16,7 @@ export interface VehicleStatus {
     lastSoC?: number;
     chargingActive?: boolean;
     activeChargeSessionId?: string;
+    lastOdometer?: number;
 
     // Trip status
     activeTripId?: string;
@@ -59,6 +61,13 @@ export interface VehicleStatus {
     lastBatteryCapacity?: number;
     lastBatteryCapacityDate?: Timestamp;
 
+    // Location
+    lastLocation?: {
+        lat: number;
+        lon: number;
+        heading?: number;
+    };
+
     // Metadata
     lastUpdate?: Timestamp;
 }
@@ -79,11 +88,12 @@ export function useVehicleStatus(
     options: UseVehicleStatusOptions = {}
 ): VehicleStatus | null {
     const { enabled = true } = options;
+    const { isNative } = useLayout();
     const [vehicleData, setVehicleData] = useState<VehicleStatus | null>(null);
 
     useEffect(() => {
-        // Don't subscribe if disabled or no vehicle ID
-        if (!enabled || !vehicleId) {
+        // Don't subscribe if disabled, no vehicle ID, or not native (PWA)
+        if (!enabled || !vehicleId || !isNative) {
             setVehicleData(null);
             return;
         }
@@ -109,7 +119,7 @@ export function useVehicleStatus(
         );
 
         return () => unsubscribe();
-    }, [vehicleId, enabled]);
+    }, [vehicleId, enabled, isNative]);
 
     return vehicleData;
 }

@@ -12,6 +12,7 @@ interface LayoutContextType {
     isVertical: boolean;
     isHorizontal: boolean;
     isLargerCard: boolean;
+    isNative: boolean;
 }
 
 const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
@@ -52,6 +53,14 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             if (isTablet && isLandscape) {
                 newLayoutMode = 'horizontal';
             }
+
+            // Force vertical mode if debugging APK on desktop
+            const searchParams = new URLSearchParams(window.location.search);
+            const isModeApk = searchParams.get('mode') === 'apk' || window.location.href.includes('mode=apk');
+            if (isModeApk) {
+                newLayoutMode = 'vertical';
+            }
+
             setLayoutMode(newLayoutMode);
 
             // Sub-modes (Compact / FullscreenBYD) - ONLY enabled in Horizontal Mode
@@ -89,16 +98,26 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     }, []);
 
     // Memoize the context value to prevent unnecessary re-renders
-    const value = useMemo(() => ({
-        layoutMode,
-        setLayoutMode,
-        isCompact,
-        isFullscreenBYD,
-        // Convenience computed values
-        isVertical: layoutMode === 'vertical',
-        isHorizontal: layoutMode === 'horizontal',
-        isLargerCard: isCompact && layoutMode === 'horizontal'
-    }), [layoutMode, isCompact, isFullscreenBYD]);
+    const value = useMemo(() => {
+        // Allow forcing native mode via ?mode=apk for testing
+        // Check both search params and href to handle HashRouter cases where ? might be after #
+        const searchParams = new URLSearchParams(window.location.search);
+        const isModeApk = searchParams.get('mode') === 'apk' || window.location.href.includes('mode=apk');
+        // Initial detection
+        const isNativeDetected = isModeApk || (window as any).Capacitor?.isNativePlatform();
+
+        return {
+            layoutMode,
+            setLayoutMode,
+            isCompact,
+            isFullscreenBYD,
+            isNative: isNativeDetected,
+            // Convenience computed values
+            isVertical: layoutMode === 'vertical',
+            isHorizontal: layoutMode === 'horizontal',
+            isLargerCard: isCompact && layoutMode === 'horizontal'
+        };
+    }, [layoutMode, isCompact, isFullscreenBYD]);
 
     return (
         <LayoutContext.Provider value={value}>

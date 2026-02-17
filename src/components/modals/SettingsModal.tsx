@@ -12,6 +12,7 @@ import { PriceSettings } from '../settings/PriceSettings';
 import { ChargingSettings } from '../settings/ChargingSettings';
 import { BydSettings } from '../settings/BydSettings';
 import { AppPreferences } from '../settings/AppPreferences';
+import { useLayout } from '@/context/LayoutContext';
 
 interface SettingsModalProps {
     onClose?: () => void;
@@ -24,6 +25,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
     const { t } = useTranslation();
     const { googleSync, closeModal } = useData();
     const { updateCar, activeCarId } = useCar();
+    const { isNative } = useLayout();
 
     // Handle close logic - either props or context
     const handleClose = () => {
@@ -66,20 +68,22 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ onClose }) => {
 
                     <div className="border-t border-slate-200 dark:border-slate-700 my-4" />
 
-                    {/* BYD Direct API (PyBYD) */}
-                    <BydSettings onConnectionChange={(connected, vin) => {
-                        if (connected && vin && activeCarId) {
-                            updateCar(activeCarId, {
-                                vin,
-                                connectorType: 'pybyd'
-                            });
-                        } else if (!connected && activeCarId) {
-                            updateCar(activeCarId, {
-                                vin: undefined,
-                                connectorType: undefined
-                            });
-                        }
-                    }} />
+                    {/* BYD Direct API (PyBYD) - ONLY FOR NATIVE APK */}
+                    {isNative && (
+                        <BydSettings onConnectionChange={(connected, vin) => {
+                            if (connected && vin && activeCarId) {
+                                updateCar(activeCarId, {
+                                    vin,
+                                    connectorType: 'pybyd'
+                                });
+                            } else if (!connected && activeCarId) {
+                                updateCar(activeCarId, {
+                                    vin: undefined,
+                                    connectorType: undefined
+                                });
+                            }
+                        }} />
+                    )}
 
                 </div>
 

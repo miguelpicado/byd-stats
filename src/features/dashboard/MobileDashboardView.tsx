@@ -13,6 +13,7 @@ import { useChartDimensions } from '@hooks/useChartDimensions';
 
 // Tabs
 import OverviewTab from '@tabs/OverviewTab';
+import DashboardTab from '@tabs/dashboard/DashboardTab';
 import VehicleTab from '@tabs/VehicleTab';
 import TabFallback from '@components/common/TabFallback';
 import FloatingActionButton from '@components/common/FloatingActionButton';
@@ -140,6 +141,11 @@ const MobileDashboardView = memo(({
                                 >
                                     {(isActive || backgroundLoad) && (
                                         <>
+                                            {tab.id === 'dashboard' && (
+                                                <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
+                                                    <DashboardTab />
+                                                </ErrorBoundary>
+                                            )}
                                             {tab.id === 'vehicle' && (
                                                 <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                                     <VehicleTab
