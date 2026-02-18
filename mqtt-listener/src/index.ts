@@ -302,11 +302,6 @@ class BydMqttManager {
                 });
             }
 
-            // After connecting and subscribing, trigger a refresh to test MQTT push
-            // This should generate a response that arrives via MQTT
-            setTimeout(() => {
-                this.triggerMqttRefresh(conn.vin);
-            }, 2000);  // Wait 2 seconds for subscriptions to complete
         });
 
         client.on('message', (topic, message) => {
@@ -402,103 +397,6 @@ class BydMqttManager {
         });
     }
 
-    /**
-     * Trigger a data refresh via Firebase to test MQTT push
-     * This uses the stored session so responses should arrive via MQTT
-     */
-    private async triggerMqttRefresh(vin: string): Promise<void> {
-        const https = require('https');
-
-        console.log(`[${vin}] Triggering MQTT refresh via Firebase...`);
-
-        const postData = JSON.stringify({ data: { vin } });
-
-        const options = {
-            hostname: `${config.firebaseRegion}-${config.firebaseProject}.cloudfunctions.net`,
-            port: 443,
-            path: '/bydTriggerMqttRefresh',
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData),
-            },
-        };
-
-        const req = https.request(options, (res: any) => {
-            let data = '';
-            res.on('data', (chunk: string) => data += chunk);
-            res.on('end', () => {
-                try {
-                    const response = JSON.parse(data);
-                    if (response.result?.success) {
-                        console.log(`[${vin}] MQTT refresh triggered successfully`);
-                        console.log(`[${vin}] Response data: SOC=${response.result.realtime?.soc}%, Range=${response.result.realtime?.range}km`);
-                    } else {
-                        console.log(`[${vin}] MQTT refresh failed:`, response.error?.message || data.substring(0, 200));
-                    }
-                } catch (e) {
-                    console.log(`[${vin}] MQTT refresh parse error:`, data.substring(0, 200));
-                }
-            });
-        });
-
-        req.on('error', (error: any) => {
-            console.error(`[${vin}] MQTT refresh request error:`, error.message);
-        });
-
-        req.write(postData);
-        req.end();
-    }
-
-    /**
-     * Trigger the "DOORBELL" function (bydMqttUpdate)
-     * This ensures the cloud function checks the car and decides whether to start tracking
-     */
-    private async triggerPoll(vin: string, payload?: any): Promise<void> {
-        const https = require('https');
-
-        console.log(`[${vin}] Ringing Doorbell (bydMqttUpdate)...`);
-
-        // We can pass the payload to save a cloud poll if we want, 
-        // but for now let's just wake it up.
-        const postData = JSON.stringify({ data: { vin, payload } });
-
-        const options = {
-            hostname: `${config.firebaseRegion}-${config.firebaseProject}.cloudfunctions.net`,
-            port: 443,
-            path: '/bydMqttUpdate', // UPDATED to new function
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Content-Length': Buffer.byteLength(postData),
-            },
-        };
-
-        const req = https.request(options, (res: any) => {
-            let data = '';
-            res.on('data', (chunk: string) => data += chunk);
-            res.on('end', () => {
-                try {
-                    const response = JSON.parse(data);
-                    if (response.result?.success) {
-                        console.log(`[${vin}] Poll triggered successfully`);
-                    } else {
-                        console.log(`[${vin}] Poll trigger failed:`, response.error?.message || data.substring(0, 200));
-                    }
-                } catch (e) {
-                    console.log(`[${vin}] Poll trigger parse error:`, data.substring(0, 200));
-                }
-            });
-        });
-
-
-        req.on('error', (error: any) => {
-            console.error(`[${vin}] Poll trigger request error:`, error.message);
-        });
-
-        req.write(postData);
-        req.end();
-    }
 
     private handleMessage(conn: VehicleConnection, topic: string, message: Buffer): void {
         conn.lastEvent = Date.now();
@@ -684,18 +582,26 @@ class BydMqttManager {
                     await this.updateChargingSession(vin, currentSoC);
                 }
 
-                // POLLING ACTIVATION
-                // Trigger immediate poll if car is unlocked (start of trip?)
+                // POLLING ACTIVATION — Write directly to Firestore (no HTTP call needed)
                 if (isUnlocked) {
-                    console.log(`[${vin}] vehicleInfo: Car is OPEN - triggering trip detection`);
-                    await this.triggerPoll(vin, true);
+                    console.log(`[${vin}] vehicleInfo: Car is OPEN - activating polling via Firestore`);
+                    await vehicleRef.update({
+                        pollingActive: true,
+                        pollingActivatedAt: admin.firestore.Timestamp.now(),
+                        pollingReason: 'mqtt_unlock',
+                        lastMqttTrigger: admin.firestore.Timestamp.now(),
+                    });
                 } else {
-                    // Car locked - only poll if we have an active trip that needs closing
+                    // Car locked - if there's an active trip, keep polling active so scheduler can close it
                     if (prevState.activeTripId) {
-                        console.log(`[${vin}] vehicleInfo: Car is LOCKED but Trip ${prevState.activeTripId} is active - checking for trip end`);
-                        await this.triggerPoll(vin, false);
+                        console.log(`[${vin}] vehicleInfo: Car is LOCKED but Trip ${prevState.activeTripId} is active - keeping polling for trip end`);
+                        // Don't deactivate - let the scheduler's trip-end logic handle it
                     } else {
-                        console.log(`[${vin}] vehicleInfo: Car is LOCKED and no active trip - skipping poll`);
+                        console.log(`[${vin}] vehicleInfo: Car is LOCKED and no active trip - ensuring polling is OFF`);
+                        await vehicleRef.update({
+                            pollingActive: false,
+                            lastMqttTrigger: admin.firestore.Timestamp.now(),
+                        });
                     }
                 }
             }
@@ -705,20 +611,25 @@ class BydMqttManager {
                 const data = payload.data || {};
                 const controlType = data.controlType || data.type || '';
 
-                // Only activate polling for trip-relevant commands (UNLOCK)
                 if (controlType === 'UNLOCK' || controlType === '2' || controlType.toLowerCase().includes('unlock')) {
-                    console.log(`[${vin}] remoteControl: UNLOCK detected - triggering trip detection`);
-                    await this.triggerPoll(vin, true);
+                    console.log(`[${vin}] remoteControl: UNLOCK detected - activating polling via Firestore`);
+                    await vehicleRef.update({
+                        pollingActive: true,
+                        pollingActivatedAt: admin.firestore.Timestamp.now(),
+                        pollingReason: 'mqtt_remote_unlock',
+                        lastMqttTrigger: admin.firestore.Timestamp.now(),
+                    });
                 } else if (controlType === 'LOCK' || controlType === '1' || controlType.toLowerCase().includes('lock')) {
-                    // For explicit LOCK commands, we should check if a trip needs closing
-                    // We can check the vehicleDoc we fetched earlier, but remoteControl doesn't fetch it by default in this block
-                    // So we'll just fetch it here to be safe/efficient
                     const vDoc = await vehicleRef.get();
                     if (vDoc.data()?.activeTripId) {
-                        console.log(`[${vin}] remoteControl: LOCK detected & active trip found - attempting to close trip`);
-                        await this.triggerPoll(vin, false);
+                        console.log(`[${vin}] remoteControl: LOCK detected & active trip found - keeping polling for trip end`);
+                        // Don't deactivate - let scheduler close the trip
                     } else {
-                        console.log(`[${vin}] remoteControl: LOCK detected but no active trip - skipping poll`);
+                        console.log(`[${vin}] remoteControl: LOCK detected but no active trip - ensuring polling is OFF`);
+                        await vehicleRef.update({
+                            pollingActive: false,
+                            lastMqttTrigger: admin.firestore.Timestamp.now(),
+                        });
                     }
                 } else {
                     console.log(`[${vin}] remoteControl: ${controlType} - no polling needed`);

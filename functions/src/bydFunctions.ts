@@ -1778,6 +1778,26 @@ async function closeTrip(
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+/**
+ * Log API calls to Firestore for auditing
+ * Allows verifying that the car is not being woken unnecessarily
+ */
+async function logApiCall(vin: string, context: 'trip_poll' | 'trip_start' | 'trip_end' | 'heartbeat' | 'wake' | 'debug', wakesCar: boolean) {
+    try {
+        const vehicleRef = db.collection('bydVehicles').doc(vin);
+        await vehicleRef.collection('apiCallLog').add({
+            ts: Date.now(),
+            context,
+            wakesCar,
+            source: wakesCar ? 'byd_api_trigger' : 'firestore_cache',
+            timestamp: admin.firestore.Timestamp.now(),
+        });
+    } catch (e) {
+        // Non-critical, don't throw
+        console.error(`[logApiCall] Failed to log for ${vin}:`, e);
+    }
+}
+
 // Helper to poll ONLY active vehicles (efficient)
 async function pollActiveVehicles() {
     try {
@@ -1787,9 +1807,37 @@ async function pollActiveVehicles() {
 
         if (activeVehicles.empty) return;
 
-        console.log(`[bydActiveTripMonitor] Polling ${activeVehicles.size} active vehicle(s)`);
+        // CRITICAL: Only poll vehicles that have an active trip
+        // This prevents waking the car when it's parked
+        const vehiclesWithTrip: admin.firestore.QueryDocumentSnapshot[] = [];
+        for (const doc of activeVehicles.docs) {
+            const data = doc.data();
+            const hasActiveTrip = !!data.activeTripId;
 
-        const promises = activeVehicles.docs.map(async (doc) => {
+            if (!hasActiveTrip) {
+                // Safety: deactivate stale polling (no trip started within 2h of activation)
+                const pollingActivatedAt = data.pollingActivatedAt?.toMillis() || 0;
+                const twoHoursMs = 2 * 60 * 60 * 1000;
+                if (pollingActivatedAt > 0 && (Date.now() - pollingActivatedAt) > twoHoursMs) {
+                    console.log(`[bydActiveTripMonitor] ${doc.id}: Stale polling detected (activated ${Math.round((Date.now() - pollingActivatedAt) / 60000)}min ago, no trip) — auto-deactivating`);
+                    await db.collection('bydVehicles').doc(doc.id).update({ pollingActive: false });
+                } else {
+                    console.log(`[bydActiveTripMonitor] ${doc.id}: pollingActive=true but NO activeTripId — skipping to avoid waking car`);
+                }
+                continue;
+            }
+
+            vehiclesWithTrip.push(doc);
+        }
+
+        if (vehiclesWithTrip.length === 0) {
+            console.log('[bydActiveTripMonitor] No vehicles with active trips — nothing to poll');
+            return;
+        }
+
+        console.log(`[bydActiveTripMonitor] Polling ${vehiclesWithTrip.length} vehicle(s) with active trips`);
+
+        const promises = vehiclesWithTrip.map(async (doc) => {
             try {
                 await pollVehicleInternal(doc.id, 'polling');
             } catch (e: any) {
@@ -1890,6 +1938,10 @@ async function pollVehicles(onlyTrips: boolean) {
  */
 async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mqtt'): Promise<any> {
     const client = await getBydClientWithSession(vin);
+
+    // Log that we're about to wake the car
+    const logContext = source === 'polling' ? 'trip_poll' : source === 'wake' ? 'wake' : 'trip_poll';
+    await logApiCall(vin, logContext, true);
 
     // Get data sequentially
     let realtime;
