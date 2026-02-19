@@ -1,26 +1,21 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Lock, Zap, Wind, Thermometer, AlertTriangle } from '@/components/Icons';
 import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { bydLock, bydUnlock, bydStartClimate, bydFlashLights, bydCloseWindows, bydSeatClimate } from '@/services/bydApi';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { useData } from '@/providers/DataProvider';
+import { getAuth } from 'firebase/auth'; // Still needed for UID logging in handleCommand
 import toast from 'react-hot-toast';
 
 const QuickActions: React.FC = () => {
     const { t } = useTranslation();
     const { activeCar } = useCar();
+    const { googleSync } = useData();
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
     const [loadingButton, setLoadingButton] = useState<string | null>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-    useEffect(() => {
-        const auth = getAuth();
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            setIsAuthenticated(!!user);
-        });
-        return () => unsubscribe();
-    }, []);
+    const isAuthenticated = googleSync.isAuthenticated;
 
     const isLocked = vehicleStatus?.isLocked === true;
     const areWindowsOpen = vehicleStatus?.windows && Object.values(vehicleStatus.windows).some(isOpen => isOpen);

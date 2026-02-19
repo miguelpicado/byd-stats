@@ -81,7 +81,12 @@ export default function BYDStatsAnalyzer() {
 
   // Landing Page (No Data)
   const searchParams = new URLSearchParams(window.location.search);
-  const shouldSkipLanding = searchParams.get('mode') === 'apk' || searchParams.has('skipLanding');
+  const isModeApk = searchParams.get('mode') === 'apk';
+  const hasSkipLanding = searchParams.has('skipLanding');
+
+  // Only skip landing if we are in APK mode AND authenticated (or explicitly forcing skip)
+  // If not authenticated, we MUST show landing page so they can log in
+  const shouldSkipLanding = (isModeApk || hasSkipLanding) && googleSync.isAuthenticated;
 
   if (isLandingPage && !shouldSkipLanding) {
     return (
