@@ -73,7 +73,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         hasWokenVehicle.current = vin;
         logger.info(`[SyncProvider] App loaded with BYD vehicle ${vin}, waking...`);
 
-        bydWakeVehicle(vin, false)
+        bydWakeVehicle(vin)
             .then((result) => {
                 logger.info(`[SyncProvider] BYD wake result: isAwake=${result.isAwake}, SOC=${result.data.soc}%`);
                 if (result.isAwake && result.data.soc > 0) {

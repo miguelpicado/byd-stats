@@ -80,7 +80,10 @@ export default function BYDStatsAnalyzer() {
   }
 
   // Landing Page (No Data)
-  if (isLandingPage) {
+  const searchParams = new URLSearchParams(window.location.search);
+  const shouldSkipLanding = searchParams.get('mode') === 'apk' || searchParams.has('skipLanding');
+
+  if (isLandingPage && !shouldSkipLanding) {
     return (
       <>
         <Suspense fallback={null}>

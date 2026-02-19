@@ -1,6 +1,0 @@
-Fetching trips for Feb 16...
-
-Vehicle: LGXCH6CD0S2052990
-ID: rO4UHU6kzplxWUWhS5Tz | Status: completed | SoC: 0.78->0.75 | kWh: 2.48
-ID: x3N5VIajJ54ahunKiIEU | Status: completed | SoC: 0.74->0.7 | kWh: 3.3
-ID: kcagoIpPfkivvmnFBRfO | Status: completed | SoC: 0.7->0.7 | kWh: 0

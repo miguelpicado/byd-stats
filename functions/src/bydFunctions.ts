@@ -443,6 +443,7 @@ async function executeControlCommand(
 
     try {
         // 2. Try action
+        console.log(`[${commandName}] Executing action for ${vin}...`);
         const success = await action(client, controlPin);
         console.log(`[${commandName}] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
@@ -456,8 +457,9 @@ async function executeControlCommand(
         console.log(`[${commandName}] Error: ${errMsg}. Code: ${innerError.code}`);
 
         // 3. Check for specific session/auth errors to trigger a forced refresh
-        // Code 1009 = Session/Token Invalid? Code 401?
-        if (errMsg.includes('1009') || errMsg.includes('401') || errMsg.includes('Session')) {
+        // NOTE: 1009 is a command verification error (wrong PIN/params), NOT session expiry!
+        // Session expiry codes (1002, 1005, 1010) are handled internally by client.ts postAuthenticatedJson
+        if (errMsg.includes('401') || errMsg.includes('Session expired')) {
             console.log(`[${commandName}] Session likely expired (Error ${errMsg}). Forcing re-login...`);
 
             try {
@@ -495,7 +497,14 @@ async function executeControlCommand(
             }
         }
 
-        // 4. Check for timeout (vehicle asleep)
+        // 4. Check for command verification error (1009)
+        if (errMsg.includes('1009')) {
+            console.error(`[${commandName}] Command verification failed (1009). This usually means wrong PIN format or invalid parameters.`);
+            throw new functions.https.HttpsError('failed-precondition',
+                `Remote control command rejected by BYD (1009). Check control PIN format. Details: ${errMsg.substring(0, 200)}`);
+        }
+
+        // 5. Check for timeout (vehicle asleep)
         if (errMsg.includes('1008') || errMsg.includes('timeout')) {
             console.log(`[${commandName}] Vehicle unreachable (1008). Attempting wake...`);
             // ... (keep existing wake logic if needed, but for now focusing on Auth)
@@ -654,19 +663,9 @@ export const bydSeatClimate = regionalFunctions.https.onCall(async (data, contex
         throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: vin, seat, mode');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
-        const success = await client.seatClimate(vin, seat, mode, controlPin);
-
-        console.log(`[bydSeatClimate] ${vin}: seat=${seat}, mode=${mode}, ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydSeatClimate] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+    return await executeControlCommand(vin, 'bydSeatClimate', async (client, controlPin) => {
+        return await client.seatClimate(vin, seat, mode, controlPin);
+    }, pin);
 });
 
 /**
@@ -679,19 +678,9 @@ export const bydBatteryHeat = regionalFunctions.https.onCall(async (data, contex
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    try {
-        const client = await getBydClientWithSession(vin);
-        const controlPin = pin || await getStoredControlPin(vin);
-        const success = await client.batteryHeat(vin, controlPin);
-
-        console.log(`[bydBatteryHeat] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
-
-        return { success };
-
-    } catch (error: any) {
-        console.error('[bydBatteryHeat] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
+    return await executeControlCommand(vin, 'bydBatteryHeat', async (client, controlPin) => {
+        return await client.batteryHeat(vin, controlPin);
+    }, pin);
 });
 
 // =============================================================================
@@ -1222,71 +1211,8 @@ export const bydGetMqttCredentials = regionalFunctions.https.onCall(async (data,
     }
 });
 
-/**
- * Trigger a data refresh using stored MQTT session
- * Called by Raspberry Pi AFTER it connects to MQTT
- * This should generate a response that arrives via MQTT
- */
-export const bydTriggerMqttRefresh = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
 
-    if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
-    }
 
-    ensureBydInit();
-
-    try {
-        // Get stored MQTT session (created by bydGetMqttCredentials)
-        const sessionDoc = await db.collection('bydVehicles').doc(vin).collection('private').doc('mqttSession').get();
-
-        if (!sessionDoc.exists) {
-            throw new Error('No MQTT session found. Call bydGetMqttCredentials first.');
-        }
-
-        const sessionData = sessionDoc.data()!;
-        console.log('[bydTriggerMqttRefresh] Using stored session for userId:', sessionData.userId);
-
-        // Create a client using the stored session
-        const client = await getBydClientForVehicle(vin);
-
-        // Override the session with the stored one to use same credentials as MQTT
-        (client as any).session = {
-            token: {
-                userId: sessionData.userId,
-                signToken: sessionData.signToken,
-                encryToken: sessionData.encryToken,
-            },
-            cookies: JSON.parse(sessionData.cookies || '{}'),
-        };
-
-        let result: any;
-        const command = data.command || 'refresh';
-        const pin = data.pin;
-
-        // Execute command using the MQTT session
-        if (command === 'flashLights') {
-            console.log('[bydTriggerMqttRefresh] Sending flashLights command...');
-            result = await client.flashLights(vin, pin);
-            console.log('[bydTriggerMqttRefresh] flashLights result:', result);
-        } else {
-            // Default: trigger refresh
-            console.log('[bydTriggerMqttRefresh] Triggering realtime refresh...');
-            result = await client.getRealtime(vin);
-            console.log('[bydTriggerMqttRefresh] Got realtime data:', JSON.stringify(result).substring(0, 200));
-        }
-
-        return {
-            success: true,
-            message: `Command '${command}' triggered, check MQTT for response`,
-            result,
-        };
-
-    } catch (error: any) {
-        console.error('[bydTriggerMqttRefresh] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
-    }
-});
 
 // =============================================================================
 // SHARED VEHICLE STATE PROCESSING
@@ -1451,10 +1377,16 @@ async function processVehicleState(
             // 2. Odometer > 0.1km (Ignore minor rounding noise)
             // 3. GPS Delta > 0.005 (~550m) (Ignore garage drift)
             // 4. Gear is DRIVE (3) (Explicit intent to move)
+            // 5. Gear is NOT PARK (any gear change from P = about to drive)
+            // 6. EPB released (parking brake off = about to drive)
+            const gearNotPark = realtime.gear !== undefined && realtime.gear !== 1 && realtime.gear !== 0;
+            const epbReleased = realtime.parkingBrake !== undefined && realtime.parkingBrake === 0;
             const strictStart = (realtime.speed || 0) > 0 ||
                 odoDelta >= 0.1 ||
                 (hasGpsMovement && gpsDelta > 0.005) ||
-                realtime.gear === 3;
+                realtime.gear === 3 ||
+                gearNotPark ||
+                epbReleased;
 
             if (strictStart) {
                 const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc();
@@ -1587,13 +1519,11 @@ async function processVehicleState(
             await tripRef.update(updateData);
         }
     } else {
-        // --- IDLE ---
-        const newStationaryCount = (vehicleData.stationaryPollCount || 0) + 1;
-        vehicleUpdate.stationaryPollCount = newStationaryCount;
-        if (vehicleData.pollingActive && newStationaryCount >= 5 && realtime.isLocked) {
-            vehicleUpdate.pollingActive = false;
-            vehicleUpdate.stationaryPollCount = 0;
-        }
+        // --- IDLE (no trip, no movement) ---
+        // cloudProbeAllVehicles handles detection. Deactivate polling if no trip started.
+        vehicleUpdate.pollingActive = false;
+        vehicleUpdate.stationaryPollCount = 0;
+        console.log(`[processVehicleState] IDLE — no movement detected, deactivating polling`);
     }
 
     await vehicleRef.update(vehicleUpdate);
@@ -1632,22 +1562,26 @@ async function processVehicleState(
 export const bydActiveTripMonitor = regionalFunctions.runWith({ timeoutSeconds: 300 }).pubsub
     .schedule('every 1 minutes')
     .onRun(async (context) => {
-        console.log('[bydActiveTripMonitor] Checking for active trips...');
+        console.log('[bydActiveTripMonitor] Tick');
         ensureBydInit();
         const startTime = Date.now();
 
-        // POLL 1: T=0
-        await pollActiveVehicles();
+        // CLOUD PROBE: Read BYD cloud cache for ALL idle vehicles (no T-Box wake).
+        // Detects state changes (SoC drop) and escalates to full wake poll if needed.
+        await cloudProbeAllVehicles();
 
-        // POLL 2: T+20s
+        // TRIP POLL 1: T=0 — Track vehicles with an active trip (wakes T-Box for GPS+realtime)
+        await pollActiveTripVehicles();
+
+        // TRIP POLL 2: T+20s
         const elapsed1 = Date.now() - startTime;
         if (elapsed1 < 20000) await delay(20000 - elapsed1);
-        await pollActiveVehicles();
+        await pollActiveTripVehicles();
 
-        // POLL 3: T+40s
+        // TRIP POLL 3: T+40s
         const elapsed2 = Date.now() - startTime;
         if (elapsed2 < 40000) await delay(40000 - elapsed2);
-        await pollActiveVehicles();
+        await pollActiveTripVehicles();
 
         return null;
     });
@@ -1660,11 +1594,47 @@ export const bydActiveTripMonitor = regionalFunctions.runWith({ timeoutSeconds: 
 export const bydIdleHeartbeat = regionalFunctions.runWith({ timeoutSeconds: 300 }).pubsub
     .schedule('every 3 hours')
     .onRun(async (context) => {
-        console.log('[bydIdleHeartbeat] Starting idle check...');
+        console.log('[bydIdleHeartbeat] Starting idle heartbeat for ALL connected vehicles...');
         ensureBydInit();
-        // Poll ALL vehicles once. 
-        // The processVehicleState logic prevents new trips from starting unless conditions are met.
-        await pollVehicles(false);
+
+        const allVehicles = await db.collection('bydVehicles')
+            .where('userId', '!=', '')
+            .get();
+
+        if (allVehicles.empty) {
+            console.log('[bydIdleHeartbeat] No connected vehicles found');
+            return null;
+        }
+
+        console.log(`[bydIdleHeartbeat] Cloud-probing ${allVehicles.docs.length} connected vehicle(s)`);
+
+        const promises = allVehicles.docs.map(async (doc) => {
+            const vin = doc.id;
+            const data = doc.data();
+
+            // Skip vehicles with active trips (already being polled by bydActiveTripMonitor)
+            if (data.activeTripId) {
+                console.log(`[bydIdleHeartbeat] Skipping ${vin} (active trip ${data.activeTripId})`);
+                return;
+            }
+
+            try {
+                // Cloud probe only — NO T-Box wake
+                const result = await cloudProbeVehicle(vin);
+
+                if (result.changed) {
+                    // Something changed since last heartbeat — escalate to full wake for GPS+realtime
+                    console.log(`[bydIdleHeartbeat] ${vin}: State change detected, escalating to full poll (wake)`);
+                    await pollVehicleInternal(vin, 'polling');
+                } else {
+                    console.log(`[bydIdleHeartbeat] ${vin}: No change (cloud-only, no wake)`);
+                }
+            } catch (error: any) {
+                console.error(`[bydIdleHeartbeat] Error probing ${vin}:`, error.message);
+            }
+        });
+
+        await Promise.all(promises);
         return null;
     });
 
@@ -1782,14 +1752,14 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
  * Log API calls to Firestore for auditing
  * Allows verifying that the car is not being woken unnecessarily
  */
-async function logApiCall(vin: string, context: 'trip_poll' | 'trip_start' | 'trip_end' | 'heartbeat' | 'wake' | 'debug', wakesCar: boolean) {
+async function logApiCall(vin: string, context: 'trip_poll' | 'trip_start' | 'trip_end' | 'heartbeat' | 'wake' | 'cloud_probe' | 'debug', wakesCar: boolean) {
     try {
         const vehicleRef = db.collection('bydVehicles').doc(vin);
         await vehicleRef.collection('apiCallLog').add({
             ts: Date.now(),
             context,
             wakesCar,
-            source: wakesCar ? 'byd_api_trigger' : 'firestore_cache',
+            source: wakesCar ? 'byd_api_trigger' : 'byd_cloud_read',
             timestamp: admin.firestore.Timestamp.now(),
         });
     } catch (e) {
@@ -1798,8 +1768,75 @@ async function logApiCall(vin: string, context: 'trip_poll' | 'trip_start' | 'tr
     }
 }
 
-// Helper to poll ONLY active vehicles (efficient)
-async function pollActiveVehicles() {
+// =============================================================================
+// CLOUD PROBE — Reads BYD cloud cache WITHOUT waking the T-Box
+// =============================================================================
+
+/**
+ * Probe BYD cloud for vehicle state changes WITHOUT waking the T-Box.
+ *
+ * Uses /control/smartCharge/homePage which returns cloud-cached data
+ * (SoC, charging state, updateTime). This endpoint does NOT send a
+ * wake command to the car's T-Box, so it has zero impact on the 12V battery.
+ *
+ * When the car wakes on its own (driving, charging, user interaction),
+ * the BYD cloud gets fresh data. Our cloud probe detects this change
+ * (SoC delta or updateTime change) and THEN activates full polling
+ * (getRealtime + getGps) which does wake the T-Box for tracking.
+ *
+ * Returns: { changed: boolean, shouldEscalate: boolean, charging: BydCharging }
+ */
+async function cloudProbeVehicle(vin: string): Promise<{
+    changed: boolean;
+    shouldEscalate: boolean;
+    charging: any;
+}> {
+    const client = await getBydClientWithSession(vin);
+    await logApiCall(vin, 'cloud_probe', false);
+
+    const charging = await client.getChargingStatus(vin);
+    const vehicleRef = db.collection('bydVehicles').doc(vin);
+    const vehicleDoc = await vehicleRef.get();
+    const vehicleData = vehicleDoc.data() || {};
+
+    const prevSoC = vehicleData.lastSoC || 0; // stored as decimal 0.0-1.0
+    const prevCloudUpdateTime = vehicleData.lastCloudUpdateTime || 0;
+    const currentSoC = normalizeSoC(charging.soc); // convert to decimal
+    const cloudUpdateTime = charging.raw?.updateTime || 0;
+
+    // Detect changes in cloud data
+    const socChanged = Math.abs(currentSoC - prevSoC) >= 0.005; // ≥0.5% change
+    const updateTimeChanged = cloudUpdateTime > 0 && cloudUpdateTime !== prevCloudUpdateTime;
+    const changed = socChanged || updateTimeChanged;
+
+    // Escalate to full poll (wake T-Box) when cloud data changed AND car is NOT just charging.
+    // When updateTime changes without charging, the T-Box activated for some reason
+    // (driving, user opened car, EPB released, gear change, etc.)
+    // The full poll (getRealtime+getGps) gives us speed, gear, EPB, GPS — and
+    // processVehicleState() decides whether to start/continue/end a trip.
+    const shouldEscalate = changed && !charging.isCharging;
+
+    // Always update cloud cache metadata
+    const cloudUpdate: any = {
+        lastCloudProbeTime: admin.firestore.Timestamp.now(),
+    };
+    if (cloudUpdateTime > 0) cloudUpdate.lastCloudUpdateTime = cloudUpdateTime;
+    if (charging.soc > 0) cloudUpdate.lastSoC = currentSoC;
+    if (charging.isCharging !== undefined) cloudUpdate.isCharging = charging.isCharging;
+
+    await vehicleRef.update(cloudUpdate);
+
+    console.log(`[cloudProbe] ${vin}: SoC=${(currentSoC * 100).toFixed(1)}% (prev=${(prevSoC * 100).toFixed(1)}%), updateTime=${cloudUpdateTime} (prev=${prevCloudUpdateTime}), charging=${charging.isCharging}, changed=${changed}, escalate=${shouldEscalate}`);
+
+    return { changed, shouldEscalate, charging };
+}
+
+/**
+ * Poll ONLY vehicles with active trips (every 20s for high-res tracking).
+ * Detection of NEW trips is handled by cloudProbeAllVehicles() which runs
+ * every minute and reads BYD cloud WITHOUT waking the T-Box.
+ */
+async function pollActiveTripVehicles() {
     try {
         const activeVehicles = await db.collection('bydVehicles')
             .where('pollingActive', '==', true)
@@ -1807,35 +1844,27 @@ async function pollActiveVehicles() {
 
         if (activeVehicles.empty) return;
 
-        // CRITICAL: Only poll vehicles that have an active trip
-        // This prevents waking the car when it's parked
         const vehiclesWithTrip: admin.firestore.QueryDocumentSnapshot[] = [];
+
         for (const doc of activeVehicles.docs) {
             const data = doc.data();
-            const hasActiveTrip = !!data.activeTripId;
-
-            if (!hasActiveTrip) {
+            if (data.activeTripId) {
+                vehiclesWithTrip.push(doc);
+            } else {
+                // pollingActive=true but no trip — this shouldn't happen in normal flow.
                 // Safety: deactivate stale polling (no trip started within 2h of activation)
                 const pollingActivatedAt = data.pollingActivatedAt?.toMillis() || 0;
                 const twoHoursMs = 2 * 60 * 60 * 1000;
                 if (pollingActivatedAt > 0 && (Date.now() - pollingActivatedAt) > twoHoursMs) {
-                    console.log(`[bydActiveTripMonitor] ${doc.id}: Stale polling detected (activated ${Math.round((Date.now() - pollingActivatedAt) / 60000)}min ago, no trip) — auto-deactivating`);
+                    console.log(`[pollActiveTripVehicles] ${doc.id}: Stale polling (${Math.round((Date.now() - pollingActivatedAt) / 60000)}min, no trip) — deactivating`);
                     await db.collection('bydVehicles').doc(doc.id).update({ pollingActive: false });
-                } else {
-                    console.log(`[bydActiveTripMonitor] ${doc.id}: pollingActive=true but NO activeTripId — skipping to avoid waking car`);
                 }
-                continue;
             }
-
-            vehiclesWithTrip.push(doc);
         }
 
-        if (vehiclesWithTrip.length === 0) {
-            console.log('[bydActiveTripMonitor] No vehicles with active trips — nothing to poll');
-            return;
-        }
+        if (vehiclesWithTrip.length === 0) return;
 
-        console.log(`[bydActiveTripMonitor] Polling ${vehiclesWithTrip.length} vehicle(s) with active trips`);
+        console.log(`[pollActiveTripVehicles] Polling ${vehiclesWithTrip.length} trip vehicle(s)`);
 
         const promises = vehiclesWithTrip.map(async (doc) => {
             try {
@@ -1846,92 +1875,62 @@ async function pollActiveVehicles() {
         });
         await Promise.all(promises);
     } catch (e) {
-        console.error('[bydActiveTripMonitor] Error:', e);
+        console.error('[pollActiveTripVehicles] Error:', e);
     }
 }
 
-
-
-async function pollVehicles(onlyTrips: boolean) {
+/**
+ * Cloud probe ALL connected vehicles (runs every minute).
+ * Reads BYD cloud cache (getChargingStatus) WITHOUT waking the T-Box.
+ * When a state change is detected (SoC delta, car came online), escalates
+ * to a full pollVehicleInternal() which DOES wake the T-Box for GPS+realtime.
+ */
+async function cloudProbeAllVehicles() {
     try {
-        // Find all vehicles with active polling
-        const activeVehicles = await db.collection('bydVehicles')
-            .where('pollingActive', '==', true)
+        const allVehicles = await db.collection('bydVehicles')
+            .where('userId', '!=', '')
             .get();
 
-        if (activeVehicles.empty) {
-            console.log('[pollVehicles] No vehicles with active polling');
-            return;
-        }
+        if (allVehicles.empty) return;
 
-        // Filter vehicles
-        const targetDocs = activeVehicles.docs.filter(doc => {
+        // Skip vehicles already being tracked (active trip)
+        const vehiclesToProbe = allVehicles.docs.filter(doc => {
             const data = doc.data();
-
-            // 1. If looking for ONLY active trips, check activeTripId
-            if (onlyTrips) {
-                return !!data.activeTripId;
-            }
-
-            // 2. If looking for ANY vehicle (Cycle 1):
-            //    - ALWAYS poll if activeTripId exists (Tracking trip)
-            //    - ALWAYS poll if pollingReason is 'app_wake_activity' (User opened app)
-            //    - OTHERWISE, only poll if lastPollTime > 2 hours (Standard idle poll)
-
-            if (data.activeTripId) return true;
-
-            // If user just opened the app, we want to poll
-            // We can use a timestamp check on pollingActivatedAt if needed, or rely on pollingReason
-            // But simplified: If no trip, check time since last poll
-
-            const lastPoll = data.lastPollTime?.toMillis() || 0;
-            const twoHoursMs = 2 * 60 * 60 * 1000;
-            const timeSinceLastPoll = Date.now() - lastPoll;
-
-            if (timeSinceLastPoll >= twoHoursMs) {
-                console.log(`[pollVehicles] Polling ${doc.id} (Idle > 2h)`);
-                return true;
-            }
-
-            // Also poll if we specifically requested polling recently (e.g. app wake)
-            // We'll rely on the logic that 'bydWakeVehicle' sets 'pollingActive=true'.
-            // If we want to support "poll for 5 mins after app open", we need a timestamp check.
-            // For now, let's respect the user's wish: "Idle check every 2h".
-            // If the user OPENS the app, 'bydWakeVehicle' runs ONCE.
-            // Does the user want continuous polling while app is open? 
-            // "cuando abro la app BYD Stats hará una consulta pero esa consulta nunca puede iniciar un viaje"
-            // The wake function handles the "one-time" query.
-            // The scheduler should NOT poll just because app is open, UNLESS a trip starts.
-
-            // So strict 2h rule for idle cars seems correct.
-
-            return false;
+            return !data.activeTripId; // Only probe idle vehicles
         });
 
-        if (targetDocs.length === 0) {
-            if (onlyTrips) console.log('[pollVehicles] No active trips to poll this cycle');
-            else console.log('[pollVehicles] No vehicles due for 2h poll');
-            return;
-        }
+        if (vehiclesToProbe.length === 0) return;
 
-        console.log(`[pollVehicles] Polling ${targetDocs.length} vehicle(s) (onlyTrips=${onlyTrips})`);
-
-        // Poll each vehicle
-        const promises = targetDocs.map(async (doc) => {
+        const promises = vehiclesToProbe.map(async (doc) => {
             const vin = doc.id;
             try {
-                await pollVehicleInternal(vin, 'polling');
-            } catch (error: any) {
-                console.error(`[pollVehicles] Error polling ${vin}:`, error.message);
+                const result = await cloudProbeVehicle(vin);
+
+                if (result.shouldEscalate) {
+                    // Cloud data changed + not charging → T-Box woke up (driving, user interaction, etc.)
+                    // Escalate to full poll for GPS, speed, EPB, gear
+                    console.log(`[cloudProbe] ${vin}: State change detected! Escalating to full poll (will wake T-Box)`);
+                    await pollVehicleInternal(vin, 'polling');
+                } else if (result.changed && result.charging.isCharging) {
+                    // Charging started or SoC changed while charging
+                    // No need to wake — cloud data is sufficient for charging tracking
+                    console.log(`[cloudProbe] ${vin}: Charging activity detected (cloud-only, no wake)`);
+                }
+                // If !changed → car is idle, do nothing (no wake, no write beyond cloud metadata)
+            } catch (e: any) {
+                console.error(`[cloudProbe] Error probing ${vin}: ${e.message}`);
             }
         });
 
         await Promise.all(promises);
-
-    } catch (error: any) {
-        console.error('[pollVehicles] Error:', error.message);
+    } catch (e) {
+        console.error('[cloudProbeAllVehicles] Error:', e);
     }
 }
+
+
+
+// pollVehicles removed — replaced by bydIdleHeartbeat which queries ALL connected vehicles
 
 /**
  * Internal polling function - used by scheduler, manual wake, and mqtt trigger
@@ -1977,62 +1976,45 @@ async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mq
 
 // =============================================================================
 // WAKE VEHICLE (called when user opens BYD Stats app)
+// Returns cached Firestore data — does NOT wake the T-Box
 // =============================================================================
 
-/**
- * Wake vehicle and get current data
- * Also handles trip detection if polling was missed
- */
 export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, context) => {
-    // Default to FALSE for polling (user request: only scan once)
-    const { vin, activatePolling = false } = data;
+    const { vin } = data;
 
     if (!vin) {
         throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    console.log(`[bydWakeVehicle] Waking vehicle ${vin}...`);
+    console.log(`[bydWakeVehicle] Reading cached data for ${vin}...`);
 
     try {
-        // Reuse pollVehicleInternal to ensure consistent trip detection logic
-        // This fixes the issue where opening the app updated the odometer but didn't create a trip
-        const result = await pollVehicleInternal(vin, 'wake');
+        const vehicleRef = db.collection('bydVehicles').doc(vin);
+        const vehicleDoc = await vehicleRef.get();
 
-        if (result.isSleeping) {
-            console.log(`[bydWakeVehicle] Vehicle is sleeping/unreachable.`);
-            // Return success=true but with isSleeping=true, so UI handles it gracefully (no red error)
-            return {
-                success: true,
-                isAwake: false,
-                pollingActivated: false,
-                data: null,
-                message: 'Vehicle is sleeping or unreachable (Code 1008)'
-            };
+        if (!vehicleDoc.exists) {
+            throw new functions.https.HttpsError('not-found', 'Vehicle not found');
         }
 
-        // Check if we should auto-activate polling based on state
-        // If car is unlocked or moving, we SHOULD poll to track the trip
-        const shouldPoll = result.data?.isLocked === false ||
-            (result.data?.speed || 0) > 0 ||
-            activatePolling === true;
-
-        if (shouldPoll) {
-            console.log(`[bydWakeVehicle] Auto-activating polling (Unlocked/Moving/Requested)`);
-            await db.collection('bydVehicles').doc(vin).update({
-                pollingActive: true,
-                pollingActivatedAt: admin.firestore.Timestamp.now(),
-                pollingReason: 'app_wake_activity'
-            });
-        }
-
+        const d = vehicleDoc.data()!;
         return {
             success: true,
-            isAwake: !result.isSleeping,
-            pollingActivated: shouldPoll,
-            data: result.data,
-            message: !result.isSleeping ? 'Vehicle updated' : 'Vehicle is sleeping'
+            isAwake: d.isOnline ?? false,
+            pollingActivated: d.pollingActive ?? false,
+            data: {
+                soc: d.lastSoC ?? 0,
+                socPercent: Math.round((d.lastSoC ?? 0) * 100),
+                range: d.lastRange ?? 0,
+                odometer: d.lastOdometer ?? 0,
+                isCharging: d.isCharging ?? false,
+                isLocked: d.isLocked ?? true,
+                isOnline: d.isOnline ?? false,
+                location: d.lastLocation ?? null,
+            },
+            message: 'Cached vehicle data',
         };
     } catch (error: any) {
+        if (error instanceof functions.https.HttpsError) throw error;
         console.error(`[bydWakeVehicle] Error:`, error.message);
         throw new functions.https.HttpsError('internal', error.message);
     }

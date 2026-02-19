@@ -50,11 +50,11 @@ export interface VehicleStatus {
     trunkOpen?: boolean;
 
     // Tires
-    tires?: {
+    tirePressure?: {
         frontLeft: number;
         frontRight: number;
-        backLeft: number;
-        backRight: number;
+        rearLeft: number;
+        rearRight: number;
     };
 
     // Capacity tracking

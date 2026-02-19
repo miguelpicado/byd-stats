@@ -401,29 +401,27 @@ class BydMqttManager {
     private handleMessage(conn: VehicleConnection, topic: string, message: Buffer): void {
         conn.lastEvent = Date.now();
 
-        // Note: Polling activation is now event-specific
-        // Only activate for trip-relevant events (UNLOCK, vehicleInfo with open doors)
-        // This avoids polling for unrelated events (climate preconditioning, etc.)
+        // NOTE: We do NOT activate polling here for undecryptable messages.
+        // Previously, every MQTT message (including keepalives and noise) triggered
+        // activatePolling(), causing a cycle: activate → 9 detection polls (wake car) →
+        // deactivate → next MQTT msg → reactivate → 9 more polls → ...
+        // This was draining the 12V battery with dozens of unnecessary API wake calls.
+        // Polling is now only activated for successfully decoded events (vehicleInfo, etc.)
+        // or by the bydIdleHeartbeat (every 3h) for regular status checks.
+
         console.log(`[${conn.vin}] ===== MQTT MESSAGE RECEIVED =====`);
 
         try {
             let payload: any;
 
-            // DIAGNOSTIC: Log raw buffer info
-            console.log(`[${conn.vin}] Message received on topic: ${topic}`);
-            console.log(`[${conn.vin}] Topic: ${topic}`);
-            console.log(`[${conn.vin}] Buffer length: ${message.length}`);
-            console.log(`[${conn.vin}] First 32 bytes (hex): ${message.subarray(0, 32).toString('hex')}`);
-            console.log(`[${conn.vin}] First 32 bytes (utf8): ${message.subarray(0, 32).toString('utf8')}`);
+            console.log(`[${conn.vin}] Topic: ${topic}, Buffer length: ${message.length}`);
 
             const messageStr = message.toString('utf8').trim();
-            console.log(`[${conn.vin}] Message length: ${messageStr.length} bytes`);
 
             // Try JSON first (like ioBroker.byd does)
             try {
                 payload = JSON.parse(messageStr);
                 console.log(`[${conn.vin}] Plain JSON message - Event: ${payload.event || 'unknown'}`);
-                console.log(`[${conn.vin}] JSON content: ${JSON.stringify(payload).substring(0, 200)}`);
             } catch (jsonError) {
                 // Not JSON, continue with hex check
             }
@@ -435,24 +433,18 @@ class BydMqttManager {
                 const encryToken = conn.session!.encryToken;
                 const decryptKey = md5Hex(encryToken);
                 const decryptKeyLower = decryptKey.toLowerCase();
-                // Also try using encryToken directly (first 32 hex chars of UTF-8 bytes = 16 bytes for AES key)
                 const encryTokenHex = Buffer.from(encryToken.substring(0, 16), 'utf8').toString('hex');
-
-                console.log(`[${conn.vin}] Attempting decryption (encrypted message, ${messageStr.length} chars)`);
 
                 // Static key found in BYD app reverse engineering (Base64: OlLzwi7W/N5b9pamwCyecw==)
                 const staticKey = '3a52f3c22ed6fcde5bf696a6c02c9e73';
 
-                // Helper to try base64 decode first then AES decrypt
                 const tryBase64ThenDecrypt = (b64: string, key: string): string => {
                     const decoded = Buffer.from(b64, 'base64');
                     const hexStr = decoded.toString('hex');
                     return aesDecryptUtf8(hexStr, key);
                 };
 
-                // Try multiple decryption strategies
                 const strategies = [
-                    // Standard hex input
                     { name: 'md5-zero-iv-upper', fn: () => aesDecryptUtf8(messageStr, decryptKey) },
                     { name: 'md5-zero-iv-lower', fn: () => aesDecryptUtf8(messageStr, decryptKeyLower) },
                     { name: 'md5-first-block-iv-upper', fn: () => aesDecryptWithIv(messageStr, decryptKey) },
@@ -461,40 +453,38 @@ class BydMqttManager {
                     { name: 'raw-token-first-block-iv', fn: () => aesDecryptWithIv(messageStr, encryTokenHex) },
                     { name: 'static-key-zero-iv', fn: () => aesDecryptUtf8(messageStr, staticKey) },
                     { name: 'static-key-first-block-iv', fn: () => aesDecryptWithIv(messageStr, staticKey) },
-                    // Base64 input (decode first then decrypt)
                     { name: 'base64-md5-upper', fn: () => tryBase64ThenDecrypt(messageStr, decryptKey) },
                     { name: 'base64-md5-lower', fn: () => tryBase64ThenDecrypt(messageStr, decryptKeyLower) },
                 ];
 
-                let decrypted: string | null = null;
-                const errors: string[] = [];
                 for (const strategy of strategies) {
                     try {
-                        decrypted = strategy.fn();
-                        // Verify it's valid JSON
+                        const decrypted = strategy.fn();
                         payload = JSON.parse(decrypted);
                         console.log(`[${conn.vin}] Decrypt SUCCESS (${strategy.name}) - Event: ${payload.event || 'unknown'}`);
                         break;
                     } catch (e: any) {
-                        errors.push(`${strategy.name}: ${e.message}`);
                         // Try next strategy
                     }
                 }
 
                 if (!payload) {
-                    // Decryption failed - this is expected because the BYD app uses a different session
-                    // with different encryToken than ours. The important thing is we already triggered
-                    // polling above, so HTTP responses will use OUR session and can be decrypted.
-                    console.log(`[${conn.vin}] Decryption failed (expected - app uses different session). Polling already triggered.`);
-                    return; // Can't forward undecrypted message, but polling is active
+                    // Decryption failed — don't activate polling for undecryptable messages.
+                    // The bydIdleHeartbeat (every 3h) handles regular status checks.
+                    console.log(`[${conn.vin}] Undecryptable MQTT message (${messageStr.length} chars) — ignored, no polling triggered.`);
+                    return;
                 }
             } else if (!payload) {
-                // Not hex and not JSON - still fine, we triggered polling
-                console.log(`[${conn.vin}] Message format unknown. Polling already triggered.`);
+                // Not hex and not JSON — ignore.
+                console.log(`[${conn.vin}] Unknown message format (${messageStr.length} chars) — ignored.`);
                 return;
             }
 
-            // Forward to Firestore
+            // Successfully decoded message → forward to Firestore
+            // NOTE: As of Feb 2025, BYD encrypts all MQTT messages with a session key
+            // we cannot derive, so this code path is effectively unreachable.
+            // If decryption ever works, forwardEvent handles polling activation
+            // for specific events (unlock, vehicleInfo, etc.)
             this.forwardEvent(conn.vin, payload);
 
         } catch (error: any) {
@@ -584,12 +574,14 @@ class BydMqttManager {
 
                 // POLLING ACTIVATION — Write directly to Firestore (no HTTP call needed)
                 if (isUnlocked) {
-                    console.log(`[${vin}] vehicleInfo: Car is OPEN - activating polling via Firestore`);
+                    console.log(`[${vin}] vehicleInfo: Car is OPEN - activating polling via Firestore (bypasses cooldown)`);
                     await vehicleRef.update({
                         pollingActive: true,
                         pollingActivatedAt: admin.firestore.Timestamp.now(),
                         pollingReason: 'mqtt_unlock',
                         lastMqttTrigger: admin.firestore.Timestamp.now(),
+                        mqttDetectionPollCount: 0,
+                        pollingCooldownUntil: admin.firestore.FieldValue.delete(),
                     });
                 } else {
                     // Car locked - if there's an active trip, keep polling active so scheduler can close it
@@ -612,12 +604,14 @@ class BydMqttManager {
                 const controlType = data.controlType || data.type || '';
 
                 if (controlType === 'UNLOCK' || controlType === '2' || controlType.toLowerCase().includes('unlock')) {
-                    console.log(`[${vin}] remoteControl: UNLOCK detected - activating polling via Firestore`);
+                    console.log(`[${vin}] remoteControl: UNLOCK detected - activating polling via Firestore (bypasses cooldown)`);
                     await vehicleRef.update({
                         pollingActive: true,
                         pollingActivatedAt: admin.firestore.Timestamp.now(),
                         pollingReason: 'mqtt_remote_unlock',
                         lastMqttTrigger: admin.firestore.Timestamp.now(),
+                        mqttDetectionPollCount: 0,
+                        pollingCooldownUntil: admin.firestore.FieldValue.delete(),
                     });
                 } else if (controlType === 'LOCK' || controlType === '1' || controlType.toLowerCase().includes('lock')) {
                     const vDoc = await vehicleRef.get();
@@ -786,12 +780,43 @@ class BydMqttManager {
      */
     private async activatePolling(vin: string): Promise<void> {
         try {
-            await db.collection('bydVehicles').doc(vin).update({
-                pollingActive: true,
-                isOnline: true,
-                stationaryPollCount: 0, // Reset counter
-            });
-            console.log(`[${vin}] Polling activated - car is active!`);
+            const vehicleRef = db.collection('bydVehicles').doc(vin);
+            const doc = await vehicleRef.get();
+            const data = doc.data();
+
+            if (!data?.pollingActive) {
+                // Check cooldown: after 9 failed detection polls, a 3h cooldown is set
+                // to prevent the cycle: MQTT msg → activate → 9 polls → deactivate → MQTT msg → ...
+                // This was draining the 12V battery with dozens of unnecessary API wake calls
+                const cooldownUntil = data?.pollingCooldownUntil?.toMillis?.() || 0;
+                if (cooldownUntil > Date.now()) {
+                    // In cooldown — don't reactivate from generic MQTT messages
+                    // The bydIdleHeartbeat (every 3h) will handle the next scheduled poll
+                    // Explicit unlock events bypass this (handled in forwardEvent)
+                    return;
+                }
+
+                // NEW activation → reset everything for a fresh 9-poll detection window
+                await vehicleRef.update({
+                    pollingActive: true,
+                    pollingActivatedAt: admin.firestore.Timestamp.now(),
+                    pollingReason: 'mqtt_message',
+                    isOnline: true,
+                    stationaryPollCount: 0,
+                    mqttDetectionPollCount: 0,
+                    pollingCooldownUntil: admin.firestore.FieldValue.delete(),
+                });
+                console.log(`[${vin}] Polling ACTIVATED - MQTT signal received, starting 9-poll detection window`);
+            } else {
+                // Already active → just mark online, DON'T reset detection counter
+                // This prevents the counter from never reaching 9 when MQTT messages
+                // keep arriving while the car is parked
+                await vehicleRef.update({
+                    isOnline: true,
+                    lastMqttTrigger: admin.firestore.Timestamp.now(),
+                });
+                // Silent — don't spam logs for every MQTT message when already polling
+            }
         } catch (error: any) {
             console.error(`[${vin}] Failed to activate polling:`, error.message);
         }

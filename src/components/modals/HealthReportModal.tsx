@@ -86,7 +86,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
             const refreshData = async () => {
                 // setActionLoading('refreshVehicleData');
                 try {
-                    const result = await bydWakeVehicle(vin, false);
+                    const result = await bydWakeVehicle(vin);
                     console.log('[HealthReportModal] BYD wake result:', result.isAwake, result.data.soc);
                 } catch (error: unknown) {
                     console.error('[HealthReportModal] Auto-refresh failed:', error instanceof Error ? error.message : error);

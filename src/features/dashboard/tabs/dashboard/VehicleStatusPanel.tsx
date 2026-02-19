@@ -2,6 +2,9 @@ import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { VehicleStatus } from '@/hooks/useVehicleStatus';
 import { Wheel, Wind, Unlock, Thermometer } from '@/components/Icons'; // Icons for tabs
+import { useCar } from '@/context/CarContext';
+import { bydStartClimate, bydSeatClimate, bydBatteryHeat } from '@/services/bydApi';
+import toast from 'react-hot-toast';
 
 interface VehicleStatusPanelProps {
     status: VehicleStatus | null;
@@ -11,7 +14,29 @@ type TabType = 'tires' | 'windows' | 'doors' | 'climate';
 
 const VehicleStatusPanel: React.FC<VehicleStatusPanelProps> = ({ status }) => {
     const { t } = useTranslation();
+    const { activeCar } = useCar();
     const [activeTab, setActiveTab] = useState<TabType>('tires');
+    const [loading, setLoading] = useState<string | null>(null);
+
+    const handleCommand = async (id: string, fn: () => Promise<any>) => {
+        if (!activeCar?.vin) {
+            toast.error(t('errors.noVehicle', 'No vehicle selected'));
+            return;
+        }
+        setLoading(id);
+        try {
+            const result = await fn();
+            if (result.success) {
+                toast.success(t('messages.commandSuccess', 'Command sent successfully'));
+            } else {
+                toast.error(t('messages.commandFailed', 'Command failed'));
+            }
+        } catch (error: any) {
+            toast.error(error.message || 'Error');
+        } finally {
+            setLoading(null);
+        }
+    };
 
     const tabs: { id: TabType; label: string; icon: React.ElementType }[] = [
         { id: 'tires', label: t('dashboard.tires', 'Tires'), icon: Wheel },
@@ -21,7 +46,7 @@ const VehicleStatusPanel: React.FC<VehicleStatusPanelProps> = ({ status }) => {
     ];
 
     const renderTires = () => {
-        const tires = status?.tires || { frontLeft: 0, frontRight: 0, backLeft: 0, backRight: 0 };
+        const tires = status?.tirePressure || { frontLeft: 0, frontRight: 0, rearLeft: 0, rearRight: 0 };
         return (
             <div className="grid grid-cols-4 gap-1 p-2 text-center text-[10px]">
                 <div>
@@ -34,11 +59,11 @@ const VehicleStatusPanel: React.FC<VehicleStatusPanelProps> = ({ status }) => {
                 </div>
                 <div>
                     <div className="text-slate-500 dark:text-slate-500">RL</div>
-                    <div className="font-bold text-slate-900 dark:text-white">{tires.backLeft}</div>
+                    <div className="font-bold text-slate-900 dark:text-white">{tires.rearLeft}</div>
                 </div>
                 <div>
                     <div className="text-slate-500 dark:text-slate-500">RR</div>
-                    <div className="font-bold text-slate-900 dark:text-white">{tires.backRight}</div>
+                    <div className="font-bold text-slate-900 dark:text-white">{tires.rearRight}</div>
                 </div>
             </div>
         );
@@ -89,19 +114,36 @@ const VehicleStatusPanel: React.FC<VehicleStatusPanelProps> = ({ status }) => {
     };
 
     const renderClimate = () => {
+        const vin = activeCar?.vin;
         return (
             <div className="grid grid-cols-4 gap-2 p-2">
-                <button className="bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium">
+                <button
+                    disabled={!!loading || !vin}
+                    onClick={() => vin && handleCommand('ac', () => bydStartClimate(vin, 22))}
+                    className={`bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium ${loading === 'ac' ? 'animate-pulse' : ''}`}
+                >
                     AC
                 </button>
-                <button className="bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium">
+                <button
+                    disabled={!!loading || !vin}
+                    onClick={() => vin && handleCommand('heat', () => bydSeatClimate(vin, 0, 2))}
+                    className={`bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium ${loading === 'heat' ? 'animate-pulse' : ''}`}
+                >
                     Heat
                 </button>
-                <button className="bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium">
+                <button
+                    disabled={!!loading || !vin}
+                    onClick={() => vin && handleCommand('cool', () => bydSeatClimate(vin, 0, 0))}
+                    className={`bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium ${loading === 'cool' ? 'animate-pulse' : ''}`}
+                >
                     Cool
                 </button>
-                <button className="bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium">
-                    Wheel
+                <button
+                    disabled={!!loading || !vin}
+                    onClick={() => vin && handleCommand('battery', () => bydBatteryHeat(vin))}
+                    className={`bg-slate-100 dark:bg-slate-700/50 p-1 rounded flex items-center justify-center text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-slate-600 transition text-[10px] font-medium ${loading === 'battery' ? 'animate-pulse' : ''}`}
+                >
+                    Batt
                 </button>
             </div>
         );

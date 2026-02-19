@@ -548,8 +548,15 @@ export class BydClient {
         const parkingBrake = this.parseNumber(info.epb);
 
         // Lock state: check individual door locks (2 = locked) or global lockState
-        const isLocked = Number(info.leftFrontDoorLock) === 2 ||
-            info.lockState === '2' || info.doorLockState === '2';
+        // IMPORTANT: Default to TRUE (locked) when data is missing/zero.
+        // When the car is in light sleep it may return partial data where lock fields
+        // are absent or zero — treating that as "unlocked" caused false polling activation
+        // (bydWakeVehicle would see isLocked=false and start polling, draining 12V battery).
+        const hasLockData = info.leftFrontDoorLock !== undefined ||
+            info.lockState !== undefined || info.doorLockState !== undefined;
+        const isLocked = !hasLockData ? true :
+            (Number(info.leftFrontDoorLock) === 2 ||
+                info.lockState === '2' || info.doorLockState === '2');
 
         return {
             soc,
@@ -811,12 +818,13 @@ export class BydClient {
             throw new Error('Control PIN required for remote commands');
         }
 
-        // Hash PIN if not already hashed - BYD-re/pyBYD both use UPPERCASE MD5 for control PIN
+        // Hash PIN if not already hashed
+        // BYD API expects UPPERCASE MD5 hash for commandPwd
         const commandPwd = controlPin.length === 32 ? controlPin.toUpperCase() : md5Hex(controlPin);
 
-        // OPTIMIZATION: Skipping explicit verifyControlPin call.
-        // remoteControl checks the PIN anyway, and calling verify first might cause timing/state issues (1009).
-        // await this.verifyControlPin(vin, commandPwd);
+        // Verify PIN with BYD server BEFORE sending the command
+        // This step is required by the API — skipping it causes 1009 errors
+        await this.verifyControlPin(vin, commandPwd);
 
         // Command codes (pyBYD: RemoteCommand enum values)
         const commandCodes: Record<string, string> = {
@@ -879,7 +887,6 @@ export class BydClient {
         return result.controlState === '1';
     }
 
-    // @ts-ignore
     private async verifyControlPin(vin: string, commandPwd: string): Promise<void> {
         // Build inner payload matching pyBYD/BYD-re exactly
         const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();

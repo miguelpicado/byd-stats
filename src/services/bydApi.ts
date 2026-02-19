@@ -219,26 +219,7 @@ export async function bydBatteryHeat(vin: string, pin?: string): Promise<{ succe
     return result.data;
 }
 
-/**
- * Poll vehicle for trip data
- */
-export async function bydPollVehicle(vin: string): Promise<{
-    success: boolean;
-    data: {
-        soc: number;
-        range: number;
-        odometer: number;
-        isCharging: boolean;
-        isLocked: boolean;
-        location: { lat: number; lon: number } | null;
-        hasMovement: boolean;
-        activeTripId: string | null;
-    };
-}> {
-    const callable = httpsCallable(functions, 'bydPollVehicle');
-    const result = await callable({ vin });
-    return result.data as any;
-}
+
 
 /**
  * Get full diagnostic
@@ -264,7 +245,6 @@ export async function bydDebugDump(vin: string): Promise<{ success: boolean; dum
 export interface BydWakeResult {
     success: boolean;
     isAwake: boolean;
-    attempts: number;
     pollingActivated: boolean;
     data: {
         soc: number;
@@ -280,13 +260,12 @@ export interface BydWakeResult {
 }
 
 /**
- * Wake vehicle and get current data
- * Called when user opens the app to refresh vehicle state
- * Retries up to 3 times if car is sleeping
+ * Get cached vehicle data (does not wake the T-Box)
+ * Called when user opens the app to display latest known state
  */
-export async function bydWakeVehicle(vin: string, activatePolling = false): Promise<BydWakeResult> {
+export async function bydWakeVehicle(vin: string): Promise<BydWakeResult> {
     const callable = httpsCallable<any, BydWakeResult>(functions, 'bydWakeVehicle');
-    const result = await callable({ vin, activatePolling });
+    const result = await callable({ vin });
     return result.data;
 }
 /**

@@ -107,8 +107,10 @@ export function pwdLoginKey(password: string): string {
  * (JS doesn't guarantee order, so we accept a Map or pre-ordered object)
  */
 export function computeCheckcode(payload: any): string {
-    // We use a custom stringify to ensure NO spaces, matching Python's separators=(',', ':')
-    const json = JSON.stringify(payload, null, 0).replace(/: /g, ':').replace(/, /g, ',');
+    // IMPORTANT: Do NOT use compactJson() here — it sorts keys alphabetically.
+    // The checkcode MUST be computed with keys in their original insertion order,
+    // as BYD's server validates the hash based on exact field ordering.
+    const json = JSON.stringify(payload);
     const hash = node_crypto.createHash('md5').update(json, 'utf8').digest('hex');
 
     // Reorder: positions 24-32, 8-16, 16-24, 0-8
