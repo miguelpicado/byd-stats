@@ -19,15 +19,18 @@ interface TripCardProps {
 const TripCard: React.FC<TripCardProps> = React.memo(({ trip, minEff, maxEff, onClick, isCompact, isFullscreenBYD }) => {
     const { t } = useTranslation();
 
+    // Use GPS distance when available, fallback to odometer
+    const effectiveDistance = trip.gpsDistanceKm || trip.trip || 0;
+
     // Determine if stationary/short trip
-    const isStationary = (trip.trip || 0) < 0.5;
+    const isStationary = effectiveDistance < 0.5;
 
     const efficiency = useMemo(() => {
-        if (!trip.trip || trip.trip <= 0 || trip.electricity === undefined || trip.electricity === null) {
+        if (effectiveDistance <= 0 || trip.electricity === undefined || trip.electricity === null) {
             return 0;
         }
-        return (trip.electricity / trip.trip) * 100;
-    }, [trip.trip, trip.electricity]);
+        return (trip.electricity / effectiveDistance) * 100;
+    }, [effectiveDistance, trip.electricity]);
 
     const score = useMemo(() =>
         calculateScore(efficiency, minEff, maxEff),
@@ -59,7 +62,7 @@ const TripCard: React.FC<TripCardProps> = React.memo(({ trip, minEff, maxEff, on
             <div className="grid grid-cols-5 gap-2">
                 <div className="text-center">
                     <p className={`text-slate-600 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[9px] mb-0.5' : 'text-[10px] sm:text-xs mb-1'}`}>{t('stats.distance')}</p>
-                    <p className={`text-slate-900 dark:text-white font-bold ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-base sm:text-xl'}`}>{trip.trip?.toFixed(1)}</p>
+                    <p className={`text-slate-900 dark:text-white font-bold ${(isCompact || isFullscreenBYD) ? 'text-sm' : 'text-base sm:text-xl'}`}>{effectiveDistance.toFixed(1)}</p>
                     <p className={`text-slate-500 dark:text-slate-400 ${(isCompact || isFullscreenBYD) ? 'text-[8px]' : 'text-[9px] sm:text-[10px]'}`}>km</p>
                 </div>
                 <div className="text-center">

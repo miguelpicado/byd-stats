@@ -25,7 +25,7 @@ const TripDetailModal: React.FC = () => {
     const { selectedTrip: trip, trips: allTrips, stats, modals, closeModal, setSelectedTrip } = useData();
     const summary = stats?.summary;
 
-    const [showMap, setShowMap] = useState(false);
+    const [showMap, setShowMap] = useState(true);
     const [tripPoints, setTripPoints] = useState<Array<{ lat: number; lon: number; timestamp: number }>>([]);
 
     const [scoreClicks, setScoreClicks] = useState(0);
@@ -215,7 +215,7 @@ const TripDetailModal: React.FC = () => {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="trip-detail-modal-title"
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700 animate-modal-content"
+                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700 animate-modal-content max-h-[90vh] overflow-y-auto"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header con título, fecha y score en la misma fila */}
@@ -418,10 +418,10 @@ const TripDetailModal: React.FC = () => {
                     </div>
                 )}
 
-                {/* Map Modal */}
+                {/* Map Section (inline) */}
                 {showMap && (
                     tripPoints.length > 0 ? (
-                        <Suspense fallback={<div className="h-[500px] flex items-center justify-center bg-slate-100 dark:bg-slate-800 rounded-xl">Cargando mapa...</div>}>
+                        <Suspense fallback={<div className="mt-3 h-[300px] flex items-center justify-center bg-slate-100 dark:bg-slate-700/50 rounded-xl text-slate-500 dark:text-slate-400 text-sm">Cargando mapa...</div>}>
                             <TripMapModalLazy
                                 trip={trip}
                                 points={tripPoints}
@@ -429,20 +429,17 @@ const TripDetailModal: React.FC = () => {
                             />
                         </Suspense>
                     ) : (
-                        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={() => setShowMap(false)}>
-                            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-                            <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-700 text-center" onClick={(e) => e.stopPropagation()}>
-                                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">No se puede cargar el mapa</h3>
-                                <p className="text-slate-600 dark:text-slate-400 mb-4">
-                                    {tripPoints.length === 0 ? "No hay puntos GPS registrados para este viaje." : "Cargando puntos..."}
-                                </p>
-                                <button
-                                    onClick={() => setShowMap(false)}
-                                    className="px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                                >
-                                    Cerrar
-                                </button>
-                            </div>
+                        <div className="mt-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 text-center">
+                            <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">No se puede cargar el mapa</p>
+                            <p className="text-slate-600 dark:text-slate-400 text-xs mb-3">
+                                No hay puntos GPS registrados para este viaje.
+                            </p>
+                            <button
+                                onClick={() => setShowMap(false)}
+                                className="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors text-xs"
+                            >
+                                Cerrar
+                            </button>
                         </div>
                     )
                 )}

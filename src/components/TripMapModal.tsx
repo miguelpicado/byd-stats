@@ -28,19 +28,19 @@ export const TripMapModal: React.FC<TripMapModalProps> = ({ trip, points, onClos
     const center = pathCoords[Math.floor(pathCoords.length / 2)] || [41.3879, 2.1699];
 
     return (
-        <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-content map-modal" onClick={(e) => e.stopPropagation()}>
-                <div className="modal-header">
-                    <h3>Ruta del Viaje</h3>
-                    <button onClick={onClose} className="close-btn">×</button>
-                </div>
+        <div className="mt-3 w-full overflow-hidden">
+            <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Ruta del Viaje</h3>
+                <button onClick={onClose} className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white text-lg leading-none">×</button>
+            </div>
 
-                <div className="trip-map-info">
-                    <span>Distancia GPS: <strong>{trip.gpsDistanceKm?.toFixed(1)} km</strong></span>
-                    <span>{points.length} puntos GPS</span>
-                </div>
+            <div className="flex justify-between text-xs text-slate-600 dark:text-slate-400 mb-2 px-1">
+                <span>Distancia GPS: <strong className="text-slate-900 dark:text-white">{trip.gpsDistanceKm?.toFixed(1)} km</strong></span>
+                <span>{points.length} puntos GPS</span>
+            </div>
 
-                <MapContainer center={center} zoom={13} style={{ height: '500px', width: '100%' }}>
+            <div className="rounded-xl overflow-hidden w-full">
+                <MapContainer center={center} zoom={13} style={{ height: '300px', width: '100%' }}>
                     <TileLayer
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

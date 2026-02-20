@@ -1,8 +1,8 @@
-import React, { useMemo } from 'react'; // Added useMemo
+import React, { useMemo, useEffect } from 'react'; // Added useMemo
 import { useTranslation } from 'react-i18next';
 import { VehicleStatus } from '@/hooks/useVehicleStatus';
 import { MapPin } from '@/components/Icons'; // Changed imports
-import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 // ... (imports done)
@@ -22,18 +22,46 @@ interface LocationCardProps {
     status: VehicleStatus | null;
 }
 
+// Component to update map center when location changes
+const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
+    const map = useMap();
+
+    useEffect(() => {
+        map.setView(center, map.getZoom());
+    }, [center, map]);
+
+    return null;
+};
+
 const LocationCard: React.FC<LocationCardProps> = ({ status }) => {
     const { t } = useTranslation();
 
     const location = status?.lastLocation;
     const hasLocation = location?.lat && location?.lon;
 
+    // Detect dark mode
+    const [isDark, setIsDark] = React.useState(false);
+
+    React.useEffect(() => {
+        const checkDarkMode = () => {
+            setIsDark(document.documentElement.classList.contains('dark'));
+        };
+
+        checkDarkMode();
+
+        // Watch for theme changes
+        const observer = new MutationObserver(checkDarkMode);
+        observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+        return () => observer.disconnect();
+    }, []);
+
     const mapCenter = useMemo(() => {
-        if (hasLocation) {
+        if (hasLocation && location) {
             return [location.lat, location.lon] as [number, number];
         }
         return [40.4168, -3.7038] as [number, number]; // Default to Madrid if no location
-    }, [location]);
+    }, [hasLocation, location]);
 
     return (
         <div className="w-full flex-1 min-h-[120px] bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden relative group shadow-sm dark:shadow-none">
@@ -51,9 +79,13 @@ const LocationCard: React.FC<LocationCardProps> = ({ status }) => {
                         attributionControl={false}
                     >
                         <TileLayer
-                            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                            url={isDark
+                                ? "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+                                : "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+                            }
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                         />
+                        <MapUpdater center={mapCenter} />
                         <Marker position={mapCenter}>
                             {/* Optional: Add custom icon or just standard marker */}
                         </Marker>

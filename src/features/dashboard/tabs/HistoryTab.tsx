@@ -42,12 +42,13 @@ const HistoryTab: FC<HistoryTabProps> = React.memo(({
       return (b.start_timestamp || 0) - (a.start_timestamp || 0);
     });
 
-    // Calculate min/max efficiency in a single pass
+    // Calculate min/max efficiency in a single pass (GPS distance preferred)
     let minE = Infinity;
     let maxE = -Infinity;
     for (const trip of sorted) {
-      if (trip.trip >= 1 && trip.electricity !== 0) {
-        const eff = (trip.electricity / trip.trip) * 100;
+      const dist = trip.gpsDistanceKm || trip.trip;
+      if (dist >= 1 && trip.electricity !== 0) {
+        const eff = (trip.electricity / dist) * 100;
         if (eff < minE) minE = eff;
         if (eff > maxE) maxE = eff;
       }
@@ -58,21 +59,22 @@ const HistoryTab: FC<HistoryTabProps> = React.memo(({
     const first = last10.slice(0, 5);
     const second = last10.slice(5, 10);
 
-    // Calculate averages for last 10 trips
+    // Calculate averages for last 10 trips (GPS distance preferred)
     const len = last10.length || 1;
-    const avgDist = last10.reduce((sum, trip) => sum + (trip.trip || 0), 0) / len;
+    const avgDist = last10.reduce((sum, trip) => sum + (trip.gpsDistanceKm || trip.trip || 0), 0) / len;
     const avgCons = last10.reduce((sum, trip) => sum + (trip.electricity || 0), 0) / len;
     const avgEffVal = last10.reduce((sum, trip) => {
-      if (trip.trip > 0 && trip.electricity !== undefined) {
-        return sum + ((trip.electricity / trip.trip) * 100);
+      const dist = trip.gpsDistanceKm || trip.trip;
+      if (dist > 0 && trip.electricity !== undefined) {
+        return sum + ((trip.electricity / dist) * 100);
       }
       return sum;
     }, 0) / len;
     const avgDur = last10.reduce((sum, trip) => sum + ((trip.duration || 0) / 60), 0) / len;
 
-    const speedFiltered = last10.filter(trip => trip.duration > 0 && trip.trip > 0);
+    const speedFiltered = last10.filter(trip => trip.duration > 0 && (trip.gpsDistanceKm || trip.trip) > 0);
     const avgSpd = speedFiltered.length > 0
-      ? speedFiltered.reduce((sum, trip) => sum + (trip.trip / ((trip.duration || 0) / 3600)), 0) / speedFiltered.length
+      ? speedFiltered.reduce((sum, trip) => sum + ((trip.gpsDistanceKm || trip.trip) / ((trip.duration || 0) / 3600)), 0) / speedFiltered.length
       : 0;
 
     return {
