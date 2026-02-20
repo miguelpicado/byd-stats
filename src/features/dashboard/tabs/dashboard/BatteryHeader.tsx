@@ -23,7 +23,8 @@ const BatteryHeader: React.FC<BatteryHeaderProps> = ({ status, summary, isAiRead
     };
 
     const rangeLabel = isAiReady ? t('stats.aiRange', 'AI Range') : t('dashboard.range', 'Range');
-    const rangeValue = summary?.estimatedRange ?? 0;
+    const baseRange = Number(summary?.estimatedRange ?? 0);
+    const rangeValue = Math.round(baseRange * (soc / 100));
 
     return (
         <div className="grid grid-cols-4 gap-2 w-full h-12 shrink-0">

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ModalPortal from '../common/ModalPortal';
-import { X, ChevronLeft, ChevronRight } from '../Icons';
+import { X, ChevronLeft } from '../Icons';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
@@ -197,19 +197,19 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                                 </div>
 
                                 {/* Scenarios Chart */}
-                                <div className="h-64">
+                                <div className="h-72 sm:h-80">
                                     <Bar data={chartData} options={chartOptions} />
                                 </div>
 
                                 {/* Detailed Table */}
                                 <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <table className="w-full text-sm text-left">
-                                        <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase text-xs">
+                                    <table className="w-full text-xs text-left">
+                                        <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase text-[10px]">
                                             <tr>
-                                                <th className="px-4 py-3">{t('insights.scenario', 'Scenario')}</th>
-                                                <th className="px-4 py-3">{t('stats.speed', 'Speed')}</th>
-                                                <th className="px-4 py-3 text-right">{t('stats.efficiency', 'Eff.')}</th>
-                                                <th className="px-4 py-3 text-right">{t('stats.estimatedRange', 'Range')}</th>
+                                                <th className="px-3 py-2">{t('insights.scenario', 'Scenario')}</th>
+                                                <th className="px-3 py-2">{t('stats.speed', 'Speed')}</th>
+                                                <th className="px-3 py-2 text-right">{t('stats.efficiency', 'Eff.')}</th>
+                                                <th className="px-3 py-2 text-right">{t('stats.estimatedRange', 'Range')}</th>
                                             </tr>
                                         </thead>
                                         <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
@@ -219,17 +219,18 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                                                     className="bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
                                                     onClick={() => setSelectedScenario(s.name)}
                                                 >
-                                                    <td className="px-4 py-3 font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                                    <td className="px-3 py-2 font-medium text-slate-900 dark:text-white flex items-center gap-2">
                                                         <div className={`w-2 h-2 rounded-full ${s.name === 'City' ? 'bg-green-500' : s.name === 'Highway' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                                                        {s.name === 'City' ? t('insights.city', 'City') :
-                                                            s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
-                                                                t('insights.highway', 'Highway')}
+                                                        <span className="truncate">
+                                                            {s.name === 'City' ? t('insights.city', 'City') :
+                                                                s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
+                                                                    t('insights.highway', 'Highway')}
+                                                        </span>
                                                     </td>
-                                                    <td className="px-4 py-3 text-slate-500">{s.speed} km/h</td>
-                                                    <td className="px-4 py-3 text-right text-slate-500">{s.efficiency.toFixed(1)} kWh</td>
-                                                    <td className="px-4 py-3 text-right font-bold text-indigo-600 dark:text-indigo-400">
+                                                    <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{s.speed} km/h</td>
+                                                    <td className="px-3 py-2 text-right text-slate-500 whitespace-nowrap">{s.efficiency.toFixed(1)} kWh</td>
+                                                    <td className="px-3 py-2 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                                                         {s.range} km
-                                                        <ChevronRight className="w-4 h-4 text-slate-300 inline-block ml-1" />
                                                     </td>
                                                 </tr>
                                             ))}
