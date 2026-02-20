@@ -141,6 +141,7 @@ const DashboardTab: React.FC = () => {
                     onClose={() => setShowRangeModal(false)}
                     aiScenarios={aiScenarios || []}
                     aiLoss={aiLoss || 0}
+                    summary={summary || null}
                     isTraining={isAiTraining || false}
                 />
             </React.Suspense>
