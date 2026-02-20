@@ -23,7 +23,12 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
     if (!isOpen) return null;
 
     const chartData = {
-        labels: aiScenarios.map(s => s.name === 'City' ? t('insights.city') : s.name === 'Highway' ? t('insights.highway') : t('insights.mixedScenario')),
+        labels: aiScenarios.map(s => {
+            const label = s.name === 'City' ? t('insights.city') :
+                s.name === 'Highway' ? t('insights.highway') :
+                    t('insights.mixedScenario');
+            return label.replace(/\s*\(Combinado\)/gi, '').trim();
+        }),
         datasets: [
             {
                 label: t('insights.rangeAxis'),
@@ -45,6 +50,7 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
 
     const chartOptions = {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: { display: false },
             title: { display: true, text: t('insights.predictedRange', 'Predicted Range by Scenario') }
@@ -222,9 +228,9 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                                                     <td className="px-3 py-2 font-medium text-slate-900 dark:text-white flex items-center gap-2">
                                                         <div className={`w-2 h-2 rounded-full ${s.name === 'City' ? 'bg-green-500' : s.name === 'Highway' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
                                                         <span className="truncate">
-                                                            {s.name === 'City' ? t('insights.city', 'City') :
+                                                            {(s.name === 'City' ? t('insights.city', 'City') :
                                                                 s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
-                                                                    t('insights.highway', 'Highway')}
+                                                                    t('insights.highway', 'Highway')).replace(/\s*\(Combinado\)/gi, '').trim()}
                                                         </span>
                                                     </td>
                                                     <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{s.speed} km/h</td>
