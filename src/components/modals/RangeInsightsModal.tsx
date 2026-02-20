@@ -98,155 +98,138 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
         const speedRange = `${Math.max(0, scenario.speed - 15)}-${scenario.speed + 15}`;
 
         return (
-            <div className="space-y-6 animate-fadeIn">
-                <div className={`p-6 rounded-2xl text-center border ${scenario.name === 'City' ? 'bg-green-50 border-green-100 text-green-800' :
-                    scenario.name === 'Highway' ? 'bg-red-50 border-red-100 text-red-800' :
-                        'bg-blue-50 border-blue-100 text-blue-800'
-                    }`}>
-                    <h3 className="text-2xl font-bold mb-1">{scenario.name === 'City' ? t('insights.city') : scenario.name === 'Highway' ? t('insights.highway') : t('insights.mixedScenario')}</h3>
-                    <p className="text-4xl font-black mb-2">{scenario.range} <span className="text-xl font-medium opacity-70">km</span></p>
-                    <p className="text-sm opacity-90">{getScenarioDescription(scenario.name)}</p>
-                </div>
+            <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-300">
+                <button
+                    onClick={() => setSelectedScenario(null)}
+                    className="flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-medium text-sm hover:underline"
+                >
+                    <ChevronLeft size={16} />
+                    {t('common.back', 'Back')}
+                </button>
 
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                    <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-3">{t('insights.stats', 'Statistics')}</h4>
+                <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className={`w-3 h-3 rounded-full ${s.name === 'City' ? 'bg-green-500' : s.name === 'Highway' ? 'bg-red-500' : s.name === 'Historical' ? 'bg-slate-500' : 'bg-blue-500'}`}></div>
+                        <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                            {s.isHistorical ? t('insights.historical', 'Historical') :
+                                s.name === 'City' ? t('insights.city', 'City') :
+                                    s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
+                                        t('insights.highway', 'Highway')}
+                        </h3>
+                    </div>
+
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white dark:bg-slate-700 p-3 rounded-lg shadow-sm">
-                            <p className="text-xs text-slate-500 uppercase">{t('stats.efficiency')}</p>
-                            <p className="text-xl font-bold text-slate-800 dark:text-white">{scenario.efficiency.toFixed(1)} <span className="text-xs font-normal">kWh/100km</span></p>
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">{t('stats.efficiency', 'Efficiency')}</div>
+                            <div className="text-lg font-bold text-slate-900 dark:text-white">
+                                {s.efficiency.toFixed(1)} <span className="text-xs font-normal text-slate-500">kWh/100km</span>
+                            </div>
                         </div>
-                        <div className="bg-white dark:bg-slate-700 p-3 rounded-lg shadow-sm">
-                            <p className="text-xs text-slate-500 uppercase">{t('insights.speedAvg', 'Avg Speed')}</p>
-                            <p className="text-xl font-bold text-slate-800 dark:text-white">{speedRange} <span className="text-xs font-normal">km/h</span></p>
+                        <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                            <div className="text-[10px] text-slate-500 uppercase font-bold mb-1">{t('stats.estimatedRange', 'Range')}</div>
+                            <div className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                                {s.range} <span className="text-xs font-normal text-slate-500">km</span>
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="bg-slate-50 dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
-                    <h4 className="font-bold text-slate-700 dark:text-slate-300 mb-3">{t('insights.improve', 'Tips to improve')}</h4>
-                    <ul className="space-y-2">
-                        {getTips(scenario.name).map((tip, idx) => (
-                            <li key={idx} className="flex items-start gap-2 text-sm text-slate-600 dark:text-slate-400">
-                                <span className="text-green-500 mt-0.5">✓</span> {tip}
-                            </li>
-                        ))}
-                    </ul>
+                    {s.isHistorical ? (
+                        <div className="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
+                            <p className="text-xs text-indigo-700 dark:text-indigo-300 italic">
+                                {t('insights.historicalNote', 'Based on your actual driving records.')}
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
+                            <p className="text-xs text-indigo-700 dark:text-indigo-300 italic">
+                                {t('insights.scenarioDetail', 'This is a theoretical estimate based on your profile.')}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         );
     };
 
+    if (!isOpen) return null;
+
     return (
-        <ModalPortal>
-            <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-modal-backdrop" onClick={onClose}>
-                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
-
-                <div
-                    role="dialog"
-                    aria-modal="true"
-                    className="relative bg-white dark:bg-slate-800 rounded-3xl max-w-lg w-full shadow-2xl animate-modal-content overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col max-h-[85vh]"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    {/* Header */}
-                    <div className="flex justify-between items-center p-5 border-b border-slate-100 dark:border-slate-700 bg-white dark:bg-slate-800 sticky top-0 z-10">
-                        <div className="flex items-center gap-3">
-                            {selectedScenario ? (
-                                <button onClick={() => setSelectedScenario(null)} className="p-2 -ml-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors">
-                                    <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-                                </button>
-                            ) : (
-                                <div className="w-10 h-10 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
-                                    <span className="text-xl">🧠</span>
-                                </div>
-                            )}
-
-                            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                                {selectedScenario ? (selectedScenario === 'City' ? t('insights.city') : selectedScenario === 'Highway' ? t('insights.highway') : t('insights.mixedScenario')) : t('dashboard.rangeInsights', 'AI Range Insights')}
-                            </h2>
+        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="bg-white dark:bg-slate-900 w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
+                <div className="relative p-6 pb-0 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-xl">
+                            🧠
                         </div>
-                        <button
-                            onClick={onClose}
-                            className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
-                        >
-                            <X className="w-5 h-5 text-slate-500" />
-                        </button>
+                        <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                            {t('insights.rangeTitle', 'AI Range Analysis')}
+                        </h2>
                     </div>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                    >
+                        <X size={20} className="text-slate-400" />
+                    </button>
+                </div>
 
-                    <div className="p-4 overflow-y-auto custom-scrollbar">
-                        {selectedScenario ? renderDetailView() : (
-                            <div className="space-y-4">
-                                {/* AI Explanation Section */}
-                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                                    <div>
-                                        <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5 text-sm">
-                                            {t('insights.howItWorks', 'How this works')}
-                                        </h3>
-                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">
-                                            {t('insights.aiCheck', 'The AI analyzes your driving history (speed vs efficiency) and seasonality (temperature impact) to predict range more accurately than the standard fixed value.')}
-                                        </p>
-                                    </div>
-                                    {!isTrained && (
-                                        <div className={`mt-2 text-[10px] px-2 py-1 rounded-lg ${isTraining
-                                            ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 animate-pulse'
-                                            : 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
-                                            }`}>
-                                            {isTraining ? (
-                                                <div className="flex items-center gap-2">
-                                                    <span className="animate-spin text-sm">🧠</span>
-                                                    <span>{t('insights.analyzing', 'AI is analyzing your trips... This may take a moment.')}</span>
-                                                </div>
-                                            ) : (
-                                                <span>⚠️ {t('insights.notEnoughData', 'Not enough data yet. Using standard estimates until ~5 trips are recorded.')}</span>
-                                            )}
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Scenarios Chart */}
-                                <div className="h-48 sm:h-56">
-                                    <Bar data={chartData} options={chartOptions} />
-                                </div>
-
-                                {/* Detailed Table */}
-                                <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                                    <table className="w-full text-xs text-left">
-                                        <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase text-[10px]">
-                                            <tr>
-                                                <th className="px-3 py-2">{t('insights.scenario', 'Scenario')}</th>
-                                                <th className="px-3 py-2 text-right">{t('stats.efficiency', 'Eff.')}</th>
-                                                <th className="px-3 py-2 text-right">{t('stats.estimatedRange', 'Range')}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                            {aiScenarios.map((s) => (
-                                                <tr
-                                                    key={s.name}
-                                                    className="bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                                                    onClick={() => setSelectedScenario(s.name)}
-                                                >
-                                                    <td className="px-3 py-2 font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                                                        <div className={`w-2 h-2 rounded-full ${s.name === 'City' ? 'bg-green-500' : s.name === 'Highway' ? 'bg-red-500' : 'bg-blue-500'}`}></div>
-                                                        <span className="truncate">
-                                                            {(s.name === 'City' ? t('insights.city', 'City') :
-                                                                s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
-                                                                    t('insights.highway', 'Highway')).replace(/\s*\(Combinado\)/gi, '').trim()}
-                                                        </span>
-                                                    </td>
-                                                    <td className="px-3 py-2 text-right text-slate-500 whitespace-nowrap">{s.efficiency.toFixed(1)} kWh</td>
-                                                    <td className="px-3 py-2 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                                                        {s.range} km
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
+                <div className="p-4 overflow-y-auto custom-scrollbar">
+                    {selectedScenario ? renderDetailView() : (
+                        <div className="space-y-3">
+                            {/* AI Explanation Section */}
+                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
+                                <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5 text-sm leading-tight">
+                                    {t('insights.howItWorks', 'How this works')}
+                                </h3>
+                                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-tight">
+                                    {t('insights.aiCheck', 'The AI analyzes your driving history (speed vs efficiency) and seasonality (temperature impact) to predict range more accurately than the standard fixed value.')}
+                                </p>
                             </div>
-                        )}
-                    </div>
+
+                            {/* Scenarios Chart */}
+                            <div className="h-40 sm:h-44">
+                                <Bar data={chartData} options={chartOptions} />
+                            </div>
+
+                            {/* Detailed Table */}
+                            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
+                                <table className="w-full text-xs text-left">
+                                    <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase text-[10px]">
+                                        <tr>
+                                            <th className="px-3 py-1.5">{t('insights.scenario', 'Scenario')}</th>
+                                            <th className="px-3 py-1.5 text-right">{t('stats.efficiency', 'Eff.')}</th>
+                                            <th className="px-3 py-1.5 text-right">{t('stats.estimatedRange', 'Range')}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                        {displayScenarios.sort((a, b) => (a.isHistorical ? 1 : 0) - (b.isHistorical ? 1 : 0)).map((s) => (
+                                            <tr
+                                                key={s.name}
+                                                className="bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                                onClick={() => setSelectedScenario(s.name)}
+                                            >
+                                                <td className="px-3 py-1.5 font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                                    <div className={`w-2 h-2 rounded-full ${s.name === 'City' ? 'bg-green-500' : s.name === 'Highway' ? 'bg-red-500' : s.name === 'Historical' ? 'bg-slate-500' : 'bg-blue-500'}`}></div>
+                                                    <span className="truncate">
+                                                        {s.isHistorical ? t('insights.historical', 'Historical') : (s.name === 'City' ? t('insights.city', 'City') :
+                                                            s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
+                                                                t('insights.highway', 'Highway')).replace(/\s*\(Combinado\)/gi, '').trim()}
+                                                    </span>
+                                                </td>
+                                                <td className="px-3 py-1.5 text-right text-slate-500 whitespace-nowrap">{s.efficiency.toFixed(1)}</td>
+                                                <td className="px-3 py-1.5 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                                    {s.range} km
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
-        </ModalPortal>
+        </div>
     );
 };
 
