@@ -61,7 +61,13 @@
       "Bash(git log:*)",
       "Bash(gcloud builds log:*)",
       "Bash(npm install:*)",
-      "Bash(firebase functions:delete:*)"
+      "Bash(firebase functions:delete:*)",
+      "Bash(gcloud functions list:*)",
+      "Bash(for func in ping bydConnect bydDisconnect bydGetRealtime bydGetGps bydGetCharging bydLock bydUnlock bydStartClimate bydStopClimate bydFlashLights bydCloseWindows bydSeatClimate bydBatteryHeat bydWakeVehicle bydDiagnostic bydGetMqttCredentials bydActiveTripMonitor bydIdleHeartbeat bydFixTrip bydDebug)",
+      "Bash(do)",
+      "Bash(echo:*)",
+      "Bash(gcloud functions delete:*)",
+      "Bash(done)"
     ]
   }
 }

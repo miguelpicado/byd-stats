@@ -40,7 +40,7 @@ function ensureBydInit() {
  * Connect BYD account using username/password
  * Stores encrypted credentials in Firestore
  */
-export const bydConnect = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { username, password, countryCode, controlPin, userId } = request.data;
 
     if (!username || !password || !countryCode || !userId) {
@@ -158,7 +158,7 @@ export const bydConnect = onCall({ region: REGION }, async (request: CallableReq
 /**
  * Disconnect BYD account
  */
-export const bydDisconnect = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydDisconnectV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -339,7 +339,7 @@ function normalizeSoC(val: number | undefined): number {
 /**
  * Get realtime vehicle data (battery, range, odometer, etc.)
  */
-export const bydGetRealtime = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydGetRealtimeV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -381,7 +381,7 @@ export const bydGetRealtime = onCall({ region: REGION }, async (request: Callabl
 /**
  * Get GPS location
  */
-export const bydGetGps = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydGetGpsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -454,13 +454,14 @@ async function executeControlCommand(
 
     } catch (innerError: any) {
         const errMsg = innerError.message || '';
-        console.log(`[${commandName}] Error: ${errMsg}. Code: ${innerError.code}`);
+        const errCode = String(innerError.code || '');
+        console.log(`[${commandName}] Error: ${errMsg}. Code: ${errCode}`);
 
         // 3. Check for specific session/auth errors to trigger a forced refresh
         // NOTE: 1009 is a command verification error (wrong PIN/params), NOT session expiry!
         // Session expiry codes (1002, 1005, 1010) are handled internally by client.ts postAuthenticatedJson
-        if (errMsg.includes('401') || errMsg.includes('Session expired')) {
-            console.log(`[${commandName}] Session likely expired (Error ${errMsg}). Forcing re-login...`);
+        if (errMsg.includes('401') || errMsg.includes('Session expired') || errCode === 'unauthenticated') {
+            console.log(`[${commandName}] Session likely expired. Forcing re-login...`);
 
             try {
                 // Force new login
@@ -497,48 +498,53 @@ async function executeControlCommand(
             }
         }
 
-        // 4. Check for command verification error (1009) - vehicle may be asleep
-        if (errMsg.includes('1009')) {
-            console.log(`[${commandName}] Got 1009 error. Attempting wake + retry...`);
+        // 4. Check for command verification error (1009) or timeout (1008) - vehicle may be asleep
+        if (errMsg.includes('1009') || errMsg.includes('1008') || errMsg.includes('timeout')) {
+            console.log(`[${commandName}] Got ${errMsg.includes('1009') ? '1009' : 'timeout'} error. Attempting wake + retry sequence...`);
 
             try {
-                // Try to wake the vehicle
-                console.log(`[${commandName}] Calling getRealtime to wake T-Box...`);
-                await client.getRealtime(vin);
+                // Try multiple ways to wake the vehicle in parallel
+                console.log(`[${commandName}] Triggering wake signals (Realtime + GPS)...`);
+                await Promise.allSettled([
+                    client.getRealtime(vin),
+                    client.getGps(vin)
+                ]);
 
-                // Wait 3 seconds for vehicle to wake
-                console.log(`[${commandName}] Waiting 3s for T-Box to wake...`);
-                await new Promise(resolve => setTimeout(resolve, 3000));
+                // Wait for T-Box to wake up (European T-Box can be slow)
+                // We'll try 2 incremental retries
+                for (let retry = 1; retry <= 2; retry++) {
+                    const waitTime = 3000 + (retry * 2000); // 5s then 7s
+                    console.log(`[${commandName}] Wait #${retry}: ${waitTime}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, waitTime));
 
-                // Retry the command
-                console.log(`[${commandName}] Retrying command after wake...`);
-                const retrySuccess = await action(client, controlPin);
-                console.log(`[${commandName}] Retry result: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
+                    try {
+                        console.log(`[${commandName}] Retry #${retry}...`);
+                        const retrySuccess = await action(client, controlPin);
+                        console.log(`[${commandName}] Retry #${retry} result: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
 
-                return {
-                    success: retrySuccess,
-                    message: retrySuccess ? undefined : 'Command failed after wake attempt'
-                };
+                        if (retrySuccess) return { success: true };
+                    } catch (retryErr: any) {
+                        console.log(`[${commandName}] Retry #${retry} failed: ${retryErr.message}`);
+                        // If it's still 1009/1008, continue to next retry
+                        if (!retryErr.message.includes('1009') && !retryErr.message.includes('1008')) {
+                            throw retryErr;
+                        }
+                    }
+                }
+
             } catch (retryError: any) {
-                console.error(`[${commandName}] Retry after wake failed:`, retryError.message);
-                // Fall through to throw original error
+                console.error(`[${commandName}] Wake sequence error:`, retryError.message);
             }
 
-            console.error(`[${commandName}] Command verification failed (1009). Vehicle may be asleep or PIN incorrect.`);
-            throw new HttpsError('failed-precondition',
-                `Remote control command rejected by BYD (1009). Vehicle may be asleep or PIN incorrect. Details: ${errMsg.substring(0, 200)}`);
-        }
-
-        // 5. Check for timeout (vehicle asleep)
-        if (errMsg.includes('1008') || errMsg.includes('timeout')) {
-            console.log(`[${commandName}] Vehicle unreachable (1008). Attempting wake...`);
-            // ... (keep existing wake logic if needed, but for now focusing on Auth)
+            const finalMessage = `Remote control command rejected by BYD (1009/1008). Vehicle may be asleep or PIN incorrect. Details: ${errMsg.substring(0, 200)}`;
+            console.error(`[${commandName}] ${finalMessage}`);
+            throw new HttpsError('failed-precondition', finalMessage);
         }
 
         throw innerError;
     }
 }
-export const bydGetCharging = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydGetChargingV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -572,7 +578,7 @@ export const bydGetCharging = onCall({ region: REGION }, async (request: Callabl
 /**
  * Lock vehicle
  */
-export const bydLock = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydLockV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, pin } = request.data;
 
     if (!vin) {
@@ -594,7 +600,7 @@ export const bydLock = onCall({ region: REGION }, async (request: CallableReques
 /**
  * Unlock vehicle
  */
-export const bydUnlock = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydUnlockV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, pin } = request.data;
 
     if (!vin) {
@@ -619,7 +625,7 @@ export const bydUnlock = onCall({ region: REGION }, async (request: CallableRequ
 /**
  * Start climate
  */
-export const bydStartClimate = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydStartClimateV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, temperature, pin } = request.data;
 
     if (!vin) {
@@ -634,7 +640,7 @@ export const bydStartClimate = onCall({ region: REGION }, async (request: Callab
 /**
  * Stop climate
  */
-export const bydStopClimate = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydStopClimateV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, pin } = request.data;
 
     if (!vin) {
@@ -649,7 +655,7 @@ export const bydStopClimate = onCall({ region: REGION }, async (request: Callabl
 /**
  * Flash lights / Find car
  */
-export const bydFlashLights = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydFlashLightsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, pin } = request.data;
 
     if (!vin) {
@@ -664,7 +670,7 @@ export const bydFlashLights = onCall({ region: REGION }, async (request: Callabl
 /**
  * Close windows
  */
-export const bydCloseWindows = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydCloseWindowsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, pin } = request.data;
 
     if (!vin) {
@@ -681,7 +687,7 @@ export const bydCloseWindows = onCall({ region: REGION }, async (request: Callab
  * @param seat 0=driver, 1=passenger
  * @param mode 0=off, 1=low, 2=medium, 3=high
  */
-export const bydSeatClimate = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydSeatClimateV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, seat, mode, pin } = request.data;
 
     if (!vin || seat === undefined || mode === undefined) {
@@ -696,7 +702,7 @@ export const bydSeatClimate = onCall({ region: REGION }, async (request: Callabl
 /**
  * Control battery heating
  */
-export const bydBatteryHeat = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydBatteryHeatV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, pin } = request.data;
 
     if (!vin) {
@@ -971,7 +977,7 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
 /**
  * Test BYD connection and get all vehicle data
  */
-export const bydDiagnostic = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydDiagnosticV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -1182,7 +1188,7 @@ async function createTripFromMqtt(
  * Used by Raspberry Pi to get the tokens needed for MQTT connection
  * Also triggers a data refresh to "activate" the session for push notifications
  */
-export const bydGetMqttCredentials = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -1584,85 +1590,85 @@ async function processVehicleState(
  * Queries ONLY vehicles with activeTripId or pollingActive=true
  * Loops 3 times (0s, 20s, 40s) to provide high-res tracking
  */
-export const bydActiveTripMonitor = onSchedule({
+export const bydActiveTripMonitorV2 = onSchedule({
     schedule: 'every 1 minutes',
     region: REGION,
     timeoutSeconds: 300,
 }, async (event) => {
-        console.log('[bydActiveTripMonitor] Tick');
-        ensureBydInit();
-        const startTime = Date.now();
+    console.log('[bydActiveTripMonitor] Tick');
+    ensureBydInit();
+    const startTime = Date.now();
 
-        // CLOUD PROBE: Read BYD cloud cache for ALL idle vehicles (no T-Box wake).
-        // Detects state changes (SoC drop) and escalates to full wake poll if needed.
-        await cloudProbeAllVehicles();
+    // CLOUD PROBE: Read BYD cloud cache for ALL idle vehicles (no T-Box wake).
+    // Detects state changes (SoC drop) and escalates to full wake poll if needed.
+    await cloudProbeAllVehicles();
 
-        // TRIP POLL 1: T=0 — Track vehicles with an active trip (wakes T-Box for GPS+realtime)
-        await pollActiveTripVehicles();
+    // TRIP POLL 1: T=0 — Track vehicles with an active trip (wakes T-Box for GPS+realtime)
+    await pollActiveTripVehicles();
 
-        // TRIP POLL 2: T+20s
-        const elapsed1 = Date.now() - startTime;
-        if (elapsed1 < 20000) await delay(20000 - elapsed1);
-        await pollActiveTripVehicles();
+    // TRIP POLL 2: T+20s
+    const elapsed1 = Date.now() - startTime;
+    if (elapsed1 < 20000) await delay(20000 - elapsed1);
+    await pollActiveTripVehicles();
 
-        // TRIP POLL 3: T+40s
-        const elapsed2 = Date.now() - startTime;
-        if (elapsed2 < 40000) await delay(40000 - elapsed2);
-        await pollActiveTripVehicles();
-    });
+    // TRIP POLL 3: T+40s
+    const elapsed2 = Date.now() - startTime;
+    if (elapsed2 < 40000) await delay(40000 - elapsed2);
+    await pollActiveTripVehicles();
+});
 
 /**
  * IDLE HEARTBEAT (Every 2 hours)
  * Checks all vehicles to ensure status is up to date
  * Ignores those already handled by Active Monitor
  */
-export const bydIdleHeartbeat = onSchedule({
+export const bydIdleHeartbeatV2 = onSchedule({
     schedule: 'every 3 hours',
     region: REGION,
     timeoutSeconds: 300,
 }, async (event) => {
-        console.log('[bydIdleHeartbeat] Starting idle heartbeat for ALL connected vehicles...');
-        ensureBydInit();
+    console.log('[bydIdleHeartbeat] Starting idle heartbeat for ALL connected vehicles...');
+    ensureBydInit();
 
-        const allVehicles = await db.collection('bydVehicles')
-            .where('userId', '!=', '')
-            .get();
+    const allVehicles = await db.collection('bydVehicles')
+        .where('userId', '!=', '')
+        .get();
 
-        if (allVehicles.empty) {
-            console.log('[bydIdleHeartbeat] No connected vehicles found');
+    if (allVehicles.empty) {
+        console.log('[bydIdleHeartbeat] No connected vehicles found');
+        return;
+    }
+
+    console.log(`[bydIdleHeartbeat] Cloud-probing ${allVehicles.docs.length} connected vehicle(s)`);
+
+    const promises = allVehicles.docs.map(async (doc) => {
+        const vin = doc.id;
+        const data = doc.data();
+
+        // Skip vehicles with active trips (already being polled by bydActiveTripMonitor)
+        if (data.activeTripId) {
+            console.log(`[bydIdleHeartbeat] Skipping ${vin} (active trip ${data.activeTripId})`);
             return;
         }
 
-        console.log(`[bydIdleHeartbeat] Cloud-probing ${allVehicles.docs.length} connected vehicle(s)`);
+        try {
+            // Cloud probe only — NO T-Box wake
+            const result = await cloudProbeVehicle(vin);
 
-        const promises = allVehicles.docs.map(async (doc) => {
-            const vin = doc.id;
-            const data = doc.data();
-
-            // Skip vehicles with active trips (already being polled by bydActiveTripMonitor)
-            if (data.activeTripId) {
-                console.log(`[bydIdleHeartbeat] Skipping ${vin} (active trip ${data.activeTripId})`);
-                return;
+            if (result.changed) {
+                // Something changed since last heartbeat — escalate to full wake for GPS+realtime
+                console.log(`[bydIdleHeartbeat] ${vin}: State change detected, escalating to full poll (wake)`);
+                await pollVehicleInternal(vin, 'polling');
+            } else {
+                console.log(`[bydIdleHeartbeat] ${vin}: No change (cloud-only, no wake)`);
             }
-
-            try {
-                // Cloud probe only — NO T-Box wake
-                const result = await cloudProbeVehicle(vin);
-
-                if (result.changed) {
-                    // Something changed since last heartbeat — escalate to full wake for GPS+realtime
-                    console.log(`[bydIdleHeartbeat] ${vin}: State change detected, escalating to full poll (wake)`);
-                    await pollVehicleInternal(vin, 'polling');
-                } else {
-                    console.log(`[bydIdleHeartbeat] ${vin}: No change (cloud-only, no wake)`);
-                }
-            } catch (error: any) {
-                console.error(`[bydIdleHeartbeat] Error probing ${vin}:`, error.message);
-            }
-        });
-
-        await Promise.all(promises);
+        } catch (error: any) {
+            console.error(`[bydIdleHeartbeat] Error probing ${vin}:`, error.message);
+        }
     });
+
+    await Promise.all(promises);
+});
 
 // =============================================================================
 // HELPER: Close Trip Logic
@@ -2005,7 +2011,7 @@ async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mq
 // Returns cached Firestore data — does NOT wake the T-Box
 // =============================================================================
 
-export const bydWakeVehicle = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -2050,7 +2056,7 @@ export const bydWakeVehicle = onCall({ region: REGION }, async (request: Callabl
 // MANUAL TRIP RECALCULATION (Fix bad data)
 // =============================================================================
 
-export const bydFixTrip = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, tripId, overrideValues } = request.data;
 
     if (!vin || !tripId) {
@@ -2178,7 +2184,7 @@ export const bydFixTrip = onCall({ region: REGION }, async (request: CallableReq
 // DEBUG / API DUMP
 // =============================================================================
 
-export const bydDebug = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydDebugV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {

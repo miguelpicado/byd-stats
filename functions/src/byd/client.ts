@@ -871,9 +871,10 @@ export class BydClient {
 
         if (String(triggerResponse.code) !== '0') {
             const payloadStr = JSON.stringify(payload);
-            console.error(`[remoteControl] FAILED code=${triggerResponse.code} msg=${triggerResponse.msg}. Payload: ${payloadStr}`);
-            // Include payload in error message for frontend debugging
-            throw new Error(`Remote control failed: code=${triggerResponse.code} msg=${triggerResponse.msg} payload=${payloadStr.substring(0, 100)}...`);
+            const errorMsg = triggerResponse.msg || triggerResponse.message || 'No error message';
+            console.error(`[remoteControl] FAILED code=${triggerResponse.code} msg=${errorMsg}. Payload: ${payloadStr}`);
+            // Include payload and detailed msg in error for frontend debugging
+            throw new Error(`Remote control failed: code=${triggerResponse.code} msg=${errorMsg} payload=${payloadStr.substring(0, 100)}...`);
         }
 
         // Poll for result

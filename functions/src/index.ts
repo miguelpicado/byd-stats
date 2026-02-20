@@ -14,7 +14,7 @@ const REGION = 'europe-west1';
 // PING - Health Check
 // =============================================================================
 
-export const ping = onCall({ region: REGION }, () => {
+export const pingV2 = onCall({ region: REGION }, () => {
     return { status: 'PONG', version: VERSION, timestamp: new Date().toISOString(), region: REGION };
 });
 
@@ -23,24 +23,24 @@ export const ping = onCall({ region: REGION }, () => {
 // =============================================================================
 
 export {
-    bydConnect,
-    bydDisconnect,
-    bydGetRealtime,
-    bydGetGps,
-    bydGetCharging,
-    bydLock,
-    bydUnlock,
-    bydStartClimate,
-    bydStopClimate,
-    bydFlashLights,
-    bydCloseWindows,
-    bydSeatClimate,
-    bydBatteryHeat,
-    bydWakeVehicle,
-    bydDiagnostic,
-    bydGetMqttCredentials,
-    bydActiveTripMonitor,
-    bydIdleHeartbeat,
-    bydFixTrip,
-    bydDebug,
+    bydConnectV2,
+    bydDisconnectV2,
+    bydGetRealtimeV2,
+    bydGetGpsV2,
+    bydGetChargingV2,
+    bydLockV2,
+    bydUnlockV2,
+    bydStartClimateV2,
+    bydStopClimateV2,
+    bydFlashLightsV2,
+    bydCloseWindowsV2,
+    bydSeatClimateV2,
+    bydBatteryHeatV2,
+    bydWakeVehicleV2,
+    bydDiagnosticV2,
+    bydGetMqttCredentialsV2,
+    bydActiveTripMonitorV2,
+    bydIdleHeartbeatV2,
+    bydFixTripV2,
+    bydDebugV2,
 } from './bydFunctions';

@@ -89,7 +89,7 @@ export async function bydConnect(
     controlPin?: string,
     userId?: string
 ): Promise<BydConnectResult> {
-    const callable = httpsCallable<any, BydConnectResult>(functions, 'bydConnect');
+    const callable = httpsCallable<any, BydConnectResult>(functions, 'bydConnectV2');
     const result = await callable({
         username,
         password,
@@ -104,7 +104,7 @@ export async function bydConnect(
  * Disconnect BYD account
  */
 export async function bydDisconnect(vin: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydDisconnect');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydDisconnectV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -113,7 +113,7 @@ export async function bydDisconnect(vin: string): Promise<{ success: boolean }> 
  * Get realtime vehicle data
  */
 export async function bydGetRealtime(vin: string): Promise<{ success: boolean; data: BydRealtime }> {
-    const callable = httpsCallable<any, { success: boolean; data: BydRealtime }>(functions, 'bydGetRealtime');
+    const callable = httpsCallable<any, { success: boolean; data: BydRealtime }>(functions, 'bydGetRealtimeV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -122,7 +122,7 @@ export async function bydGetRealtime(vin: string): Promise<{ success: boolean; d
  * Get GPS location
  */
 export async function bydGetGps(vin: string): Promise<{ success: boolean; data: BydGps }> {
-    const callable = httpsCallable<any, { success: boolean; data: BydGps }>(functions, 'bydGetGps');
+    const callable = httpsCallable<any, { success: boolean; data: BydGps }>(functions, 'bydGetGpsV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -131,7 +131,7 @@ export async function bydGetGps(vin: string): Promise<{ success: boolean; data: 
  * Get charging status
  */
 export async function bydGetCharging(vin: string): Promise<{ success: boolean; data: BydCharging }> {
-    const callable = httpsCallable<any, { success: boolean; data: BydCharging }>(functions, 'bydGetCharging');
+    const callable = httpsCallable<any, { success: boolean; data: BydCharging }>(functions, 'bydGetChargingV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -140,7 +140,7 @@ export async function bydGetCharging(vin: string): Promise<{ success: boolean; d
  * Lock vehicle
  */
 export async function bydLock(vin: string, pin?: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydLock');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydLockV2');
     const result = await callable({ vin, pin });
     return result.data;
 }
@@ -149,7 +149,7 @@ export async function bydLock(vin: string, pin?: string): Promise<{ success: boo
  * Unlock vehicle
  */
 export async function bydUnlock(vin: string, pin?: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydUnlock');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydUnlockV2');
     const result = await callable({ vin, pin });
     return result.data;
 }
@@ -162,7 +162,7 @@ export async function bydStartClimate(
     temperature?: number,
     pin?: string
 ): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydStartClimate');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydStartClimateV2');
     const result = await callable({ vin, temperature, pin });
     return result.data;
 }
@@ -171,7 +171,7 @@ export async function bydStartClimate(
  * Stop climate
  */
 export async function bydStopClimate(vin: string, pin?: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydStopClimate');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydStopClimateV2');
     const result = await callable({ vin, pin });
     return result.data;
 }
@@ -180,7 +180,7 @@ export async function bydStopClimate(vin: string, pin?: string): Promise<{ succe
  * Flash lights
  */
 export async function bydFlashLights(vin: string, pin?: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydFlashLights');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydFlashLightsV2');
     const result = await callable({ vin, pin });
     return result.data;
 }
@@ -189,7 +189,7 @@ export async function bydFlashLights(vin: string, pin?: string): Promise<{ succe
  * Close windows
  */
 export async function bydCloseWindows(vin: string, pin?: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydCloseWindows');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydCloseWindowsV2');
     const result = await callable({ vin, pin });
     return result.data;
 }
@@ -205,7 +205,7 @@ export async function bydSeatClimate(
     mode: number,
     pin?: string
 ): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydSeatClimate');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydSeatClimateV2');
     const result = await callable({ vin, seat, mode, pin });
     return result.data;
 }
@@ -214,7 +214,7 @@ export async function bydSeatClimate(
  * Control battery heating
  */
 export async function bydBatteryHeat(vin: string, pin?: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydBatteryHeat');
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydBatteryHeatV2');
     const result = await callable({ vin, pin });
     return result.data;
 }
@@ -228,7 +228,7 @@ export async function bydBatteryHeat(vin: string, pin?: string): Promise<{ succe
  * Get full diagnostic
  */
 export async function bydDiagnostic(vin: string): Promise<BydDiagnostic> {
-    const callable = httpsCallable<any, BydDiagnostic>(functions, 'bydDiagnostic');
+    const callable = httpsCallable<any, BydDiagnostic>(functions, 'bydDiagnosticV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -237,7 +237,7 @@ export async function bydDiagnostic(vin: string): Promise<BydDiagnostic> {
  * Get API Mapping Dump (Raw)
  */
 export async function bydDebugDump(vin: string): Promise<{ success: boolean; dump: any }> {
-    const callable = httpsCallable<any, { success: boolean; dump: any }>(functions, 'bydDebug');
+    const callable = httpsCallable<any, { success: boolean; dump: any }>(functions, 'bydDebugV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -264,7 +264,7 @@ export interface BydWakeResult {
  * Called when user opens the app to display latest known state
  */
 export async function bydWakeVehicle(vin: string): Promise<BydWakeResult> {
-    const callable = httpsCallable<any, BydWakeResult>(functions, 'bydWakeVehicle');
+    const callable = httpsCallable<any, BydWakeResult>(functions, 'bydWakeVehicleV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -277,7 +277,7 @@ export async function bydFixTrip(vin: string, tripId: string, overrideValues?: a
     analysis?: any;
     message?: string;
 }> {
-    const callable = httpsCallable<any, any>(functions, 'bydFixTrip');
+    const callable = httpsCallable<any, any>(functions, 'bydFixTripV2');
     const result = await callable({ vin, tripId, overrideValues });
     return result.data;
 }
