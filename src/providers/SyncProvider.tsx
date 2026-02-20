@@ -76,9 +76,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         bydWakeVehicle(vin)
             .then((result) => {
                 logger.info(`[SyncProvider] BYD wake result: isAwake=${result.isAwake}, SOC=${result.data.soc}%`);
-                if (result.isAwake && result.data.soc > 0) {
-                    toast.success(`Vehículo conectado: ${result.data.soc}% batería`);
-                } else {
+                if (!result.isAwake) {
                     logger.warn(`[SyncProvider] Vehicle in deep sleep: ${result.message}`);
                 }
             })
