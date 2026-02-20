@@ -172,27 +172,27 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                         </button>
                     </div>
 
-                    <div className="p-5 overflow-y-auto custom-scrollbar">
+                    <div className="p-4 overflow-y-auto custom-scrollbar">
                         {selectedScenario ? renderDetailView() : (
-                            <div className="space-y-6">
+                            <div className="space-y-4">
                                 {/* AI Explanation Section */}
-                                <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl border border-slate-100 dark:border-slate-700">
+                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
                                     <div>
-                                        <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-1">
+                                        <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5 text-sm">
                                             {t('insights.howItWorks', 'How this works')}
                                         </h3>
-                                        <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                                        <p className="text-xs text-slate-600 dark:text-slate-400 leading-tight">
                                             {t('insights.aiCheck', 'The AI analyzes your driving history (speed vs efficiency) and seasonality (temperature impact) to predict range more accurately than the standard fixed value.')}
                                         </p>
                                     </div>
                                     {!isTrained && (
-                                        <div className={`mt-3 text-xs px-3 py-2 rounded-lg ${isTraining
+                                        <div className={`mt-2 text-[10px] px-2 py-1 rounded-lg ${isTraining
                                             ? 'text-blue-600 bg-blue-50 dark:bg-blue-900/20 animate-pulse'
                                             : 'text-amber-600 bg-amber-50 dark:bg-amber-900/20'
                                             }`}>
                                             {isTraining ? (
                                                 <div className="flex items-center gap-2">
-                                                    <span className="animate-spin text-xl">🧠</span>
+                                                    <span className="animate-spin text-sm">🧠</span>
                                                     <span>{t('insights.analyzing', 'AI is analyzing your trips... This may take a moment.')}</span>
                                                 </div>
                                             ) : (
@@ -203,7 +203,7 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                                 </div>
 
                                 {/* Scenarios Chart */}
-                                <div className="h-72 sm:h-80">
+                                <div className="h-48 sm:h-56">
                                     <Bar data={chartData} options={chartOptions} />
                                 </div>
 
@@ -213,7 +213,6 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                                         <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase text-[10px]">
                                             <tr>
                                                 <th className="px-3 py-2">{t('insights.scenario', 'Scenario')}</th>
-                                                <th className="px-3 py-2">{t('stats.speed', 'Speed')}</th>
                                                 <th className="px-3 py-2 text-right">{t('stats.efficiency', 'Eff.')}</th>
                                                 <th className="px-3 py-2 text-right">{t('stats.estimatedRange', 'Range')}</th>
                                             </tr>
@@ -233,7 +232,6 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
                                                                     t('insights.highway', 'Highway')).replace(/\s*\(Combinado\)/gi, '').trim()}
                                                         </span>
                                                     </td>
-                                                    <td className="px-3 py-2 text-slate-500 whitespace-nowrap">{s.speed} km/h</td>
                                                     <td className="px-3 py-2 text-right text-slate-500 whitespace-nowrap">{s.efficiency.toFixed(1)} kWh</td>
                                                     <td className="px-3 py-2 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
                                                         {s.range} km
