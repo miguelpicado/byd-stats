@@ -5,7 +5,8 @@
  * Version: 1.0.0 - Initial BYD direct API integration
  */
 
-import * as functions from 'firebase-functions';
+import { onCall, onRequest, HttpsError, CallableRequest } from 'firebase-functions/v2/https';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BydClient, BydConfig, initBydModule } from './byd';
 import { snapToRoads, calculatePathDistanceKm } from './googleMaps';
@@ -21,7 +22,6 @@ const db = admin.firestore();
 
 // Region: Europe (Belgium) - matches Firestore eur3 location
 const REGION = 'europe-west1';
-const regionalFunctions = functions.region(REGION);
 
 // Initialize BYD module on cold start
 let bydInitialized = false;
@@ -40,11 +40,11 @@ function ensureBydInit() {
  * Connect BYD account using username/password
  * Stores encrypted credentials in Firestore
  */
-export const bydConnect = regionalFunctions.https.onCall(async (data, context) => {
-    const { username, password, countryCode, controlPin, userId } = data;
+export const bydConnect = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { username, password, countryCode, controlPin, userId } = request.data;
 
     if (!username || !password || !countryCode || !userId) {
-        throw new functions.https.HttpsError('invalid-argument',
+        throw new HttpsError('invalid-argument',
             'Missing required fields: username, password, countryCode, userId');
     }
 
@@ -66,13 +66,13 @@ export const bydConnect = regionalFunctions.https.onCall(async (data, context) =
         const vehicles = await client.getVehicles();
 
         if (vehicles.length === 0) {
-            throw new functions.https.HttpsError('not-found', 'No vehicles found in BYD account');
+            throw new HttpsError('not-found', 'No vehicles found in BYD account');
         }
 
         // Store credentials (encrypted) for each vehicle
         const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
         if (!ENCRYPTION_KEY) {
-            throw new functions.https.HttpsError('internal', 'Encryption key not configured');
+            throw new HttpsError('internal', 'Encryption key not configured');
         }
 
         const crypto = require('crypto');
@@ -151,18 +151,18 @@ export const bydConnect = regionalFunctions.https.onCall(async (data, context) =
 
     } catch (error: any) {
         console.error('[bydConnect] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
 /**
  * Disconnect BYD account
  */
-export const bydDisconnect = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydDisconnect = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     try {
@@ -180,7 +180,7 @@ export const bydDisconnect = regionalFunctions.https.onCall(async (data, context
 
     } catch (error: any) {
         console.error('[bydDisconnect] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -339,11 +339,11 @@ function normalizeSoC(val: number | undefined): number {
 /**
  * Get realtime vehicle data (battery, range, odometer, etc.)
  */
-export const bydGetRealtime = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydGetRealtime = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     try {
@@ -374,18 +374,18 @@ export const bydGetRealtime = regionalFunctions.https.onCall(async (data, contex
 
     } catch (error: any) {
         console.error('[bydGetRealtime] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
 /**
  * Get GPS location
  */
-export const bydGetGps = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydGetGps = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     try {
@@ -410,7 +410,7 @@ export const bydGetGps = regionalFunctions.https.onCall(async (data, context) =>
 
     } catch (error: any) {
         console.error('[bydGetGps] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -430,7 +430,7 @@ async function executeControlCommand(
         client = await getBydClientWithSession(vin);
     } catch (e: any) {
         console.error(`[${commandName}] Failed to get client:`, e.message);
-        throw new functions.https.HttpsError('internal', `Client init failed: ${e.message}`);
+        throw new HttpsError('internal', `Client init failed: ${e.message}`);
     }
 
     const controlPin = pin || await getStoredControlPin(vin);
@@ -493,15 +493,40 @@ async function executeControlCommand(
 
             } catch (loginError: any) {
                 console.error(`[${commandName}] Re-login failed:`, loginError.message);
-                throw new functions.https.HttpsError('unauthenticated', `Session expired and re-login failed: ${loginError.message}`);
+                throw new HttpsError('unauthenticated', `Session expired and re-login failed: ${loginError.message}`);
             }
         }
 
-        // 4. Check for command verification error (1009)
+        // 4. Check for command verification error (1009) - vehicle may be asleep
         if (errMsg.includes('1009')) {
-            console.error(`[${commandName}] Command verification failed (1009). This usually means wrong PIN format or invalid parameters.`);
-            throw new functions.https.HttpsError('failed-precondition',
-                `Remote control command rejected by BYD (1009). Check control PIN format. Details: ${errMsg.substring(0, 200)}`);
+            console.log(`[${commandName}] Got 1009 error. Attempting wake + retry...`);
+
+            try {
+                // Try to wake the vehicle
+                console.log(`[${commandName}] Calling getRealtime to wake T-Box...`);
+                await client.getRealtime(vin);
+
+                // Wait 3 seconds for vehicle to wake
+                console.log(`[${commandName}] Waiting 3s for T-Box to wake...`);
+                await new Promise(resolve => setTimeout(resolve, 3000));
+
+                // Retry the command
+                console.log(`[${commandName}] Retrying command after wake...`);
+                const retrySuccess = await action(client, controlPin);
+                console.log(`[${commandName}] Retry result: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
+
+                return {
+                    success: retrySuccess,
+                    message: retrySuccess ? undefined : 'Command failed after wake attempt'
+                };
+            } catch (retryError: any) {
+                console.error(`[${commandName}] Retry after wake failed:`, retryError.message);
+                // Fall through to throw original error
+            }
+
+            console.error(`[${commandName}] Command verification failed (1009). Vehicle may be asleep or PIN incorrect.`);
+            throw new HttpsError('failed-precondition',
+                `Remote control command rejected by BYD (1009). Vehicle may be asleep or PIN incorrect. Details: ${errMsg.substring(0, 200)}`);
         }
 
         // 5. Check for timeout (vehicle asleep)
@@ -513,11 +538,11 @@ async function executeControlCommand(
         throw innerError;
     }
 }
-export const bydGetCharging = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydGetCharging = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     try {
@@ -533,7 +558,7 @@ export const bydGetCharging = regionalFunctions.https.onCall(async (data, contex
 
     } catch (error: any) {
         console.error('[bydGetCharging] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -547,11 +572,11 @@ export const bydGetCharging = regionalFunctions.https.onCall(async (data, contex
 /**
  * Lock vehicle
  */
-export const bydLock = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, pin } = data;
+export const bydLock = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, pin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     return await executeControlCommand(vin, 'bydLock', async (client, controlPin) => {
@@ -569,11 +594,11 @@ export const bydLock = regionalFunctions.https.onCall(async (data, context) => {
 /**
  * Unlock vehicle
  */
-export const bydUnlock = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, pin } = data;
+export const bydUnlock = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, pin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     return await executeControlCommand(vin, 'bydUnlock', async (client, controlPin) => {
@@ -594,11 +619,11 @@ export const bydUnlock = regionalFunctions.https.onCall(async (data, context) =>
 /**
  * Start climate
  */
-export const bydStartClimate = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, temperature, pin } = data;
+export const bydStartClimate = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, temperature, pin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     return await executeControlCommand(vin, 'bydStartClimate', async (client, controlPin) => {
@@ -609,11 +634,11 @@ export const bydStartClimate = regionalFunctions.https.onCall(async (data, conte
 /**
  * Stop climate
  */
-export const bydStopClimate = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, pin } = data;
+export const bydStopClimate = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, pin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     return await executeControlCommand(vin, 'bydStopClimate', async (client, controlPin) => {
@@ -624,11 +649,11 @@ export const bydStopClimate = regionalFunctions.https.onCall(async (data, contex
 /**
  * Flash lights / Find car
  */
-export const bydFlashLights = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, pin } = data;
+export const bydFlashLights = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, pin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     return await executeControlCommand(vin, 'bydFlashLights', async (client, controlPin) => {
@@ -639,11 +664,11 @@ export const bydFlashLights = regionalFunctions.https.onCall(async (data, contex
 /**
  * Close windows
  */
-export const bydCloseWindows = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, pin } = data;
+export const bydCloseWindows = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, pin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     return await executeControlCommand(vin, 'bydCloseWindows', async (client, controlPin) => {
@@ -656,11 +681,11 @@ export const bydCloseWindows = regionalFunctions.https.onCall(async (data, conte
  * @param seat 0=driver, 1=passenger
  * @param mode 0=off, 1=low, 2=medium, 3=high
  */
-export const bydSeatClimate = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, seat, mode, pin } = data;
+export const bydSeatClimate = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, seat, mode, pin } = request.data;
 
     if (!vin || seat === undefined || mode === undefined) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing required fields: vin, seat, mode');
+        throw new HttpsError('invalid-argument', 'Missing required fields: vin, seat, mode');
     }
 
     return await executeControlCommand(vin, 'bydSeatClimate', async (client, controlPin) => {
@@ -671,11 +696,11 @@ export const bydSeatClimate = regionalFunctions.https.onCall(async (data, contex
 /**
  * Control battery heating
  */
-export const bydBatteryHeat = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, pin } = data;
+export const bydBatteryHeat = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, pin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     return await executeControlCommand(vin, 'bydBatteryHeat', async (client, controlPin) => {
@@ -691,11 +716,11 @@ export const bydBatteryHeat = regionalFunctions.https.onCall(async (data, contex
  * Poll vehicle for trip tracking (called by scheduler)
  * Polls vehicle status and detects trip start/end
  */
-export const bydPollVehicle = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydPollVehicle = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     try {
@@ -934,7 +959,7 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
 
     } catch (error: any) {
         console.error('[bydPollVehicle] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -946,11 +971,11 @@ export const bydPollVehicle = regionalFunctions.https.onCall(async (data, contex
 /**
  * Test BYD connection and get all vehicle data
  */
-export const bydDiagnostic = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydDiagnostic = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     try {
@@ -972,7 +997,7 @@ export const bydDiagnostic = regionalFunctions.https.onCall(async (data, context
 
     } catch (error: any) {
         console.error('[bydDiagnostic] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -986,7 +1011,7 @@ const WEBHOOK_SECRET = process.env.BYD_WEBHOOK_SECRET || 'change-me-in-productio
  * Webhook endpoint for MQTT listener
  * Receives vehicle events and processes them
  */
-export const bydMqttWebhook = regionalFunctions.https.onRequest(async (req, res) => {
+export const bydMqttWebhook = onRequest({ region: REGION }, async (req, res) => {
     // Only allow POST
     if (req.method !== 'POST') {
         res.status(405).send('Method not allowed');
@@ -1157,11 +1182,11 @@ async function createTripFromMqtt(
  * Used by Raspberry Pi to get the tokens needed for MQTT connection
  * Also triggers a data refresh to "activate" the session for push notifications
  */
-export const bydGetMqttCredentials = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydGetMqttCredentials = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     ensureBydInit();
@@ -1207,7 +1232,7 @@ export const bydGetMqttCredentials = regionalFunctions.https.onCall(async (data,
 
     } catch (error: any) {
         console.error('[bydGetMqttCredentials] Error:', error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -1559,9 +1584,11 @@ async function processVehicleState(
  * Queries ONLY vehicles with activeTripId or pollingActive=true
  * Loops 3 times (0s, 20s, 40s) to provide high-res tracking
  */
-export const bydActiveTripMonitor = regionalFunctions.runWith({ timeoutSeconds: 300 }).pubsub
-    .schedule('every 1 minutes')
-    .onRun(async (context) => {
+export const bydActiveTripMonitor = onSchedule({
+    schedule: 'every 1 minutes',
+    region: REGION,
+    timeoutSeconds: 300,
+}, async (event) => {
         console.log('[bydActiveTripMonitor] Tick');
         ensureBydInit();
         const startTime = Date.now();
@@ -1582,8 +1609,6 @@ export const bydActiveTripMonitor = regionalFunctions.runWith({ timeoutSeconds: 
         const elapsed2 = Date.now() - startTime;
         if (elapsed2 < 40000) await delay(40000 - elapsed2);
         await pollActiveTripVehicles();
-
-        return null;
     });
 
 /**
@@ -1591,9 +1616,11 @@ export const bydActiveTripMonitor = regionalFunctions.runWith({ timeoutSeconds: 
  * Checks all vehicles to ensure status is up to date
  * Ignores those already handled by Active Monitor
  */
-export const bydIdleHeartbeat = regionalFunctions.runWith({ timeoutSeconds: 300 }).pubsub
-    .schedule('every 3 hours')
-    .onRun(async (context) => {
+export const bydIdleHeartbeat = onSchedule({
+    schedule: 'every 3 hours',
+    region: REGION,
+    timeoutSeconds: 300,
+}, async (event) => {
         console.log('[bydIdleHeartbeat] Starting idle heartbeat for ALL connected vehicles...');
         ensureBydInit();
 
@@ -1603,7 +1630,7 @@ export const bydIdleHeartbeat = regionalFunctions.runWith({ timeoutSeconds: 300 
 
         if (allVehicles.empty) {
             console.log('[bydIdleHeartbeat] No connected vehicles found');
-            return null;
+            return;
         }
 
         console.log(`[bydIdleHeartbeat] Cloud-probing ${allVehicles.docs.length} connected vehicle(s)`);
@@ -1635,7 +1662,6 @@ export const bydIdleHeartbeat = regionalFunctions.runWith({ timeoutSeconds: 300 
         });
 
         await Promise.all(promises);
-        return null;
     });
 
 // =============================================================================
@@ -1979,11 +2005,11 @@ async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mq
 // Returns cached Firestore data — does NOT wake the T-Box
 // =============================================================================
 
-export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydWakeVehicle = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     console.log(`[bydWakeVehicle] Reading cached data for ${vin}...`);
@@ -1993,7 +2019,7 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
         const vehicleDoc = await vehicleRef.get();
 
         if (!vehicleDoc.exists) {
-            throw new functions.https.HttpsError('not-found', 'Vehicle not found');
+            throw new HttpsError('not-found', 'Vehicle not found');
         }
 
         const d = vehicleDoc.data()!;
@@ -2014,9 +2040,9 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
             message: 'Cached vehicle data',
         };
     } catch (error: any) {
-        if (error instanceof functions.https.HttpsError) throw error;
+        if (error instanceof HttpsError) throw error;
         console.error(`[bydWakeVehicle] Error:`, error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -2024,11 +2050,11 @@ export const bydWakeVehicle = regionalFunctions.https.onCall(async (data, contex
 // MANUAL TRIP RECALCULATION (Fix bad data)
 // =============================================================================
 
-export const bydFixTrip = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin, tripId, overrideValues } = data;
+export const bydFixTrip = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin, tripId, overrideValues } = request.data;
 
     if (!vin || !tripId) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN or Trip ID');
+        throw new HttpsError('invalid-argument', 'Missing VIN or Trip ID');
     }
 
     console.log(`[bydFixTrip] Fixing trip ${tripId} for ${vin}...`);
@@ -2042,7 +2068,7 @@ export const bydFixTrip = regionalFunctions.https.onCall(async (data, context) =
         const tripDoc = await tripRef.get();
 
         if (!tripDoc.exists) {
-            throw new functions.https.HttpsError('not-found', 'Trip not found');
+            throw new HttpsError('not-found', 'Trip not found');
         }
 
         const tripData = tripDoc.data()!;
@@ -2144,7 +2170,7 @@ export const bydFixTrip = regionalFunctions.https.onCall(async (data, context) =
 
     } catch (error: any) {
         console.error(`[bydFixTrip] Error:`, error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });
 
@@ -2152,11 +2178,11 @@ export const bydFixTrip = regionalFunctions.https.onCall(async (data, context) =
 // DEBUG / API DUMP
 // =============================================================================
 
-export const bydDebug = regionalFunctions.https.onCall(async (data, context) => {
-    const { vin } = data;
+export const bydDebug = onCall({ region: REGION }, async (request: CallableRequest) => {
+    const { vin } = request.data;
 
     if (!vin) {
-        throw new functions.https.HttpsError('invalid-argument', 'Missing VIN');
+        throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
     // Verify ownership (context.auth is required for production, allow bypass if local/testing)
@@ -2164,7 +2190,7 @@ export const bydDebug = regionalFunctions.https.onCall(async (data, context) => 
     // NOTE: Temporarily disabled to allow localhost debugging without Auth domain setup
     /*
     if (!context.auth && process.env.FUNCTIONS_EMULATOR !== 'true') {
-        throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
+        throw new HttpsError('unauthenticated', 'User must be authenticated');
     }
     */
 
@@ -2219,6 +2245,6 @@ export const bydDebug = regionalFunctions.https.onCall(async (data, context) => 
 
     } catch (error: any) {
         console.error(`[bydDebug] Error:`, error.message);
-        throw new functions.https.HttpsError('internal', error.message);
+        throw new HttpsError('internal', error.message);
     }
 });

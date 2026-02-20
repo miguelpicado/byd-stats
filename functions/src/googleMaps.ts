@@ -1,8 +1,7 @@
 
-import * as functions from 'firebase-functions';
 import axios from 'axios';
 
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || functions.config().google?.maps_api_key;
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 interface LatLng {
     lat: number;

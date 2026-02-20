@@ -58,7 +58,10 @@
       "Bash(git clone:*)",
       "Bash(1:*)",
       "Bash(git mv:*)",
-      "Bash(git log:*)"
+      "Bash(git log:*)",
+      "Bash(gcloud builds log:*)",
+      "Bash(npm install:*)",
+      "Bash(firebase functions:delete:*)"
     ]
   }
 }

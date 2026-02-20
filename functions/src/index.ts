@@ -1,4 +1,4 @@
-import * as functions from 'firebase-functions';
+import { onCall } from 'firebase-functions/v2/https';
 import * as admin from 'firebase-admin';
 
 // =============================================================================
@@ -7,15 +7,14 @@ import * as admin from 'firebase-admin';
 
 admin.initializeApp();
 
-const VERSION = '4.0.0';
+const VERSION = '5.0.0';
 const REGION = 'europe-west1';
-const regionalFunctions = functions.region(REGION);
 
 // =============================================================================
 // PING - Health Check
 // =============================================================================
 
-export const ping = regionalFunctions.https.onCall(() => {
+export const ping = onCall({ region: REGION }, () => {
     return { status: 'PONG', version: VERSION, timestamp: new Date().toISOString(), region: REGION };
 });
 
