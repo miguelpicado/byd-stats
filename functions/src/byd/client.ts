@@ -27,47 +27,20 @@ const BASE_URL = 'https://dilinkappoversea-eu.byd.auto';
 // USER_AGENT removed - using okhttp/3.12.0 in postSecure directly
 
 // Helper to generate random MAC
-const randomMac = () => {
-    const buf = node_crypto.randomBytes(6);
-    buf[0] = (buf[0] & 0xfc) | 0x02; // Set locally administered bit
-    return Array.from(buf).map(b => b.toString(16).padStart(2, '0')).join(':').toUpperCase();
-};
 
-// Helper to generate valid random IMEI (15 digits with Luhn checksum)
-const randomImei = () => {
-    let imei = '86'; // Common prefix
-    // Generate first 14 digits (prefix + 12 random)
-    for (let i = 0; i < 12; i++) imei += Math.floor(Math.random() * 10);
 
-    let sum = 0;
-    // Iterate from right to left (over the 14 digits)
-    for (let i = 13; i >= 0; i--) {
-        let digit = parseInt(imei.charAt(i), 10);
-        // Position 1 (rightmost of 14) corresponds to "double" position relative to check digit
-        // 14( Check), 13 (Double), 12 (Single)...
-        if ((14 - i) % 2 !== 0) { // odd pos from right (1st, 3rd...) -> Double
-            digit *= 2;
-            if (digit > 9) digit -= 9;
-        }
-        sum += digit;
-    }
-
-    const checkDigit = (10 - (sum % 10)) % 10;
-    return imei + checkDigit;
-};
-
-// Default device info generator
+// Default device info generator - using pyBYD's default values
+// pyBYD uses generic/fake device identifiers that work with the API
 const generateDeviceProfile = () => ({
-    // Device profile fields
     ostype: 'and',
-    imei: randomImei(),
-    mac: randomMac(),
-    model: 'M2011K2G', // Xiaomi Mi 11
+    imei: 'BANGCLE01234',
+    mac: '00:00:00:00:00:00',
+    model: 'POCO F1',
     sdk: '35',
     mod: 'Xiaomi',
     imeiMD5: '00000000000000000000000000000000', // Will be recalculated
     mobileBrand: 'XIAOMI',
-    mobileModel: 'M2011K2G',
+    mobileModel: 'POCO F1',
     // Config fields
     appVersion: '3.2.3',
     appInnerVersion: '323',
@@ -76,8 +49,7 @@ const generateDeviceProfile = () => ({
     tboxVersion: '3',
     isAuto: '1',
     language: 'en',
-    // Added fields to match previous DEFAULT_DEVICE
-    deviceType: '1', // Android
+    deviceType: '0',
     networkType: 'wifi',
     osType: '15',
     osVersion: '35',
@@ -822,21 +794,20 @@ export class BydClient {
         // BYD API expects UPPERCASE MD5 hash for commandPwd
         const commandPwd = controlPin.length === 32 ? controlPin.toUpperCase() : md5Hex(controlPin);
 
-        // Verify PIN with BYD server BEFORE sending the command
-        // This step is required by the API — skipping it causes 1009 errors
-        await this.verifyControlPin(vin, commandPwd);
+        // Skip verifyControlPassword - it returns 1007 regardless of device profile.
+        // pyBYD also does not require it before commands; commandPwd is sent inline.
 
-        // Command codes (pyBYD: RemoteCommand enum values)
+        // Command codes - pyBYD uses string enum values, NOT numeric codes
         const commandCodes: Record<string, string> = {
-            'LOCK': '1',
-            'UNLOCK': '2',
-            'FLASH_LIGHTS': '3',
-            'FIND_CAR': '4',
-            'START_CLIMATE': '5',
-            'STOP_CLIMATE': '6',
-            'CLOSE_WINDOWS': '7',
-            'SEAT_CLIMATE': '8',
-            'BATTERY_HEAT': '9',
+            'LOCK': 'LOCKDOOR',
+            'UNLOCK': 'OPENDOOR',
+            'FLASH_LIGHTS': 'FLASHLIGHTNOWHISTLE',
+            'FIND_CAR': 'FINDCAR',
+            'START_CLIMATE': 'OPENAIR',
+            'STOP_CLIMATE': 'CLOSEAIR',
+            'CLOSE_WINDOWS': 'CLOSEWINDOW',
+            'SEAT_CLIMATE': 'VENTILATIONHEATING',
+            'BATTERY_HEAT': 'BATTERYHEAT',
         };
 
         const commandType = commandCodes[command];
@@ -888,8 +859,8 @@ export class BydClient {
         return result.controlState === '1';
     }
 
+    /*
     private async verifyControlPin(vin: string, commandPwd: string): Promise<void> {
-        // Build inner payload matching pyBYD/BYD-re exactly
         const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
         const inner = {
             commandPwd,
@@ -903,51 +874,30 @@ export class BydClient {
             vin,
         };
 
-        // Retry on rate limit (6024) up to 3 times with 5s delay
-        for (let attempt = 0; attempt < 3; attempt++) {
-            const response = await this.postAuthenticatedJson(
-                '/vehicle/vehicleswitch/verifyControlPassword',
-                inner,
-                true  // rawInner
-            );
+        const response = await this.postAuthenticatedJson(
+            '/vehicle/vehicleswitch/verifyControlPassword',
+            inner,
+            true,  // rawInner
+            false, // _isRetry
+            false, // skipAutoRelogin
+            '1'    // userType
+        );
 
-            // Log details of failure
-            if (response.code !== '0') {
-                console.log(`[verifyControlPin] FAILED code=${response.code} msg=${response.msg}. Payload: ${JSON.stringify(inner).substring(0, 500)}`);
-                // Don't throw yet, try to handle specific codes
-            }
-
-            if (response.code === '0') {
-                console.log(`[verifyControlPin] PIN verified for ${vin}`);
-                return;
-            }
-
-            if (response.code === '6024') {
-                if (attempt < 2) {
-                    console.log(`[verifyControlPin] Rate limited (6024), waiting 5s before retry ${attempt + 2}/3...`);
-                    await new Promise(resolve => setTimeout(resolve, 5000));
-                    // Refresh timestamp and random for retry
-                    inner.timeStamp = String(Date.now());
-
-                    // Generate new random hex
-                    const buf = node_crypto.randomBytes(16);
-                    inner.random = buf.toString('hex').toUpperCase();
-                    continue;
-                }
-                throw new Error('Rate limited (6024) - too many attempts');
-            }
-
-            if (response.code === '5005') {
-                throw new Error('Wrong PIN - please check your control password');
-            }
-
-            if (response.code === '5006') {
-                throw new Error('Cloud control locked for the day - too many wrong PIN attempts');
-            }
-
-            throw new Error(`PIN verification failed: code=${response.code} msg=${response.msg}`);
+        if (response.code === '0') {
+            console.log(`[verifyControlPin] PIN verified for ${vin}`);
+            return;
         }
+
+        if (response.code === '5005') {
+            throw new Error('Wrong PIN - please check your control password');
+        }
+        if (response.code === '5006') {
+            throw new Error('Cloud control locked for the day - too many wrong PIN attempts');
+        }
+
+        throw new Error(`PIN verification failed: code=${response.code} msg=${response.msg}`);
     }
+    */
 
     // =========================================================================
     // HTTP TRANSPORT
@@ -960,7 +910,14 @@ export class BydClient {
      * @param rawInner If true, use payload as-is without adding reqTimestamp
      * @param skipAutoRelogin If true, don't intercept session-expired codes (used by pollForResult where 1002 means "still processing")
      */
-    private async postAuthenticatedJson(endpoint: string, payload: any, rawInner: boolean = false, _isRetry: boolean = false, skipAutoRelogin: boolean = false): Promise<any> {
+    private async postAuthenticatedJson(
+        endpoint: string,
+        payload: any,
+        rawInner: boolean = false,
+        _isRetry: boolean = false,
+        skipAutoRelogin: boolean = false,
+        userType: string | null = null
+    ): Promise<any> {
         const session = await this.ensureSession();
         const nowMs = Date.now();
 
@@ -1009,6 +966,10 @@ export class BydClient {
             mod: this.device.mod,
             serviceTime: String(Date.now()), // Fresh timestamp for outer
         };
+
+        if (userType !== null) {
+            outer.userType = userType;
+        }
 
         outer.checkcode = computeCheckcode(outer);
 
