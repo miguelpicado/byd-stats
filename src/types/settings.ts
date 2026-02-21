@@ -34,7 +34,7 @@ export const SettingsSchema = z.object({
     soh: z.union([z.string(), z.number()]).transform((val) => Number(val) || 100),
     mfgDate: z.string().optional(), // YYYY-MM-DD
     mfgDateDisplay: z.string().optional(),
-    sohMode: z.enum(['manual', 'calculated']).default('manual').optional(),
+    sohMode: z.enum(['manual', 'calculated', 'ai']).default('manual').optional(),
     odometerOffset: z.union([z.number(), z.string()]).optional(),
 
     // Prices & Strategies

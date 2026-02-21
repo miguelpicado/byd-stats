@@ -331,6 +331,7 @@ async function trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ l
     validCharges.sort((a, b) => a.date.localeCompare(b.date));
     const firstDate = new Date(validCharges[0].date).getTime();
 
+    let rejectedByCapacity = 0;
     validCharges.forEach((c) => {
         const kwh = c.kwhCharged ?? c.kwh;
         if (c.finalPercentage === undefined || c.initialPercentage === undefined) return;
@@ -342,7 +343,10 @@ async function trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ l
         const impliedCapacity = kwh / percentAddedDecimal;
 
         // Sanity Filter
-        if (impliedCapacity > nominalCapacity * 1.5 || impliedCapacity < nominalCapacity * 0.5) return;
+        if (impliedCapacity > nominalCapacity * 1.5 || impliedCapacity < nominalCapacity * 0.5) {
+            rejectedByCapacity++;
+            return;
+        }
 
         const days = (new Date(c.date).getTime() - firstDate) / (1000 * 3600 * 24);
 
@@ -351,7 +355,12 @@ async function trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ l
         impliedCapacities.push({ cap: impliedCapacity, weight: percentAddedDecimal });
     });
 
-    if (features.length < 3) return { loss: 0, samples: 0, predictedSoH: 100 };
+    console.log(`[TF Worker] After capacity sanity filter: ${features.length} samples (rejected ${rejectedByCapacity} with capacity outside ${(nominalCapacity * 0.5).toFixed(1)}-${(nominalCapacity * 1.5).toFixed(1)} kWh)`);
+
+    if (features.length < 3) {
+        console.warn(`[TF Worker] Too few samples after sanity filter (${features.length}). Need at least 3.`);
+        return { loss: 0, samples: 0, predictedSoH: 100 };
+    }
 
     // Robust Statistical Baseline (Weighted Median)
     impliedCapacities.sort((a, b) => a.cap - b.cap);
@@ -431,7 +440,12 @@ interface SoHPoint { x: string; y: number; cap: number }
 interface SoHTrend { x: string; y: number }
 
 function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHPoint[]; trend: SoHTrend[]; samples: number } {
-    if (!sohModel) return { points: [], trend: [], samples: 0 };
+    console.log(`[TF Worker] getSoHStats called with ${charges.length} charges, capacity: ${nominalCapacity}`);
+
+    if (!sohModel) {
+        console.warn('[TF Worker] getSoHStats: No SoH model available');
+        return { points: [], trend: [], samples: 0 };
+    }
 
     const validCharges = charges.filter((c) => {
         const kwh = c.kwhCharged ?? c.kwh;
@@ -442,7 +456,12 @@ function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHP
         return kwh > 0 && start >= 0 && end > start && (end - start) >= 3;
     }).sort((a, b) => a.date.localeCompare(b.date));
 
-    if (validCharges.length === 0) return { points: [], trend: [], samples: 0 };
+    console.log(`[TF Worker] getSoHStats: ${validCharges.length} valid charges`);
+
+    if (validCharges.length === 0) {
+        console.warn('[TF Worker] getSoHStats: No valid charges');
+        return { points: [], trend: [], samples: 0 };
+    }
 
     const firstDate = new Date(validCharges[0].date).getTime();
     const points = validCharges.map((c): SoHPoint | null => {
@@ -453,20 +472,23 @@ function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHP
         const cap = kwh / percentAddedDecimal;
         return {
             x: c.date,
-            y: (cap / nominalCapacity) * 100,
-            cap: cap
+            y: parseFloat(((cap / nominalCapacity) * 100).toFixed(2)),
+            cap: parseFloat(cap.toFixed(2))
         };
     }).filter((p): p is SoHPoint => p !== null && p.cap > nominalCapacity * 0.5 && p.cap < nominalCapacity * 1.5);
+
+    console.log(`[TF Worker] getSoHStats: Generated ${points.length} points after capacity filter`);
 
     const trend = points.map(p => {
         const days = (new Date(p.x).getTime() - firstDate) / (1000 * 3600 * 24);
         const predCap = sohPredictInternal(days);
         return {
             x: p.x,
-            y: (predCap / nominalCapacity) * 100
+            y: parseFloat(((predCap / nominalCapacity) * 100).toFixed(2))
         };
     });
 
+    console.log(`[TF Worker] getSoHStats: Returning ${points.length} samples`);
     return { points, trend, samples: points.length };
 }
 

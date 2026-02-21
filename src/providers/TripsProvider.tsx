@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useMemo, ReactNode, useRef, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
 import { useChargesContext } from './ChargesProvider';
@@ -7,7 +7,7 @@ import { useTrips } from '@hooks/useTrips';
 import { useMergedTrips } from '@hooks/useMergedTrips';
 import { useProcessedData } from '@hooks/useProcessedData';
 import { useLocalStorage } from '@hooks/useLocalStorage';
-import { Trip, ProcessedData, Settings } from '@/types';
+import { Trip, ProcessedData, Settings, SoHStats } from '@/types';
 
 interface TripsContextValue {
     // Data
@@ -31,10 +31,12 @@ interface TripsContextValue {
     aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
     aiLoss: number | null;
     aiSoH: number | null;
-    aiSoHStats: { points: Array<{ x: number; y: number }>; trend: Array<{ x: number; y: number }> } | null;
+    aiSoHStats: SoHStats | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
     findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<{ windows: unknown[]; weeklyKwh: number; requiredHours: number; hoursFound: number; note?: string } | null>;
     forceRecalculate: () => void;
+    recalculateSoH: () => Promise<void>;
+    recalculateAutonomy: () => Promise<void>;
 
     // Actions
     clearData: () => boolean;
@@ -102,9 +104,19 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         return undefined;
     }, [filterType, selMonth, dateFrom, dateTo]);
 
-    // 2. Merged Trips (Firebase + Local)
+    // 2. We need process hook BEFORE we can pass recalculateAutonomy to useMergedTrips, 
+    // but useMergedTrips is needed FOR useProcessedData.
+    // Let's use a ref to break the dependency cycle.
+    const recalculateAutonomyRef = useRef<(() => Promise<void>) | null>(null);
+
     // Pass vehicleId (VIN) for Firebase queries
-    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(localTrips, settings, vehicleId, serverDateRange);
+    const { allTrips, months, hasMore, isLoadingMore, loadMore } = useMergedTrips(
+        localTrips,
+        settings,
+        vehicleId,
+        serverDateRange,
+        () => recalculateAutonomyRef.current ? recalculateAutonomyRef.current() : Promise.resolve()
+    );
 
     // 3. Filtering
     const filteredTrips = useMemo(() => {
@@ -134,7 +146,12 @@ export function TripsProvider({ children }: { children: ReactNode }) {
     }, [allTrips, filterType, selMonth, dateFrom, dateTo]);
 
     // 4. Stats & AI Processing
-    const processed = useProcessedData(filteredTrips, allTrips, settings, charges, 'es');
+    const processed = useProcessedData(filteredTrips, allTrips, settings, charges, 'es', activeCarId);
+
+    // Bind the recalculateAutonomy function to the ref so useMergedTrips can call it
+    useEffect(() => {
+        recalculateAutonomyRef.current = processed.recalculateAutonomy;
+    }, [processed.recalculateAutonomy]);
 
     // 5. Anomalies
     const [acknowledgedAnomalies, setAcknowledgedAnomalies] = useLocalStorage<string[]>('acknowledged_anomalies', []);
@@ -163,6 +180,8 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         predictDeparture: processed.predictDeparture,
         findSmartChargingWindows: processed.findSmartChargingWindows,
         forceRecalculate: processed.forceRecalculate,
+        recalculateSoH: processed.recalculateSoH,
+        recalculateAutonomy: processed.recalculateAutonomy,
 
         clearData,
         saveToHistory,

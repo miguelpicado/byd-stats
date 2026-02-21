@@ -426,8 +426,11 @@ async function executeControlCommand(
     let client: BydClient;
 
     try {
-        // 1. Try with existing/restored session first
-        client = await getBydClientWithSession(vin);
+        // 1. Force fresh login for control commands (don't use MQTT session)
+        // Control commands need a clean session with consistent device identity
+        client = await getBydClientForVehicle(vin);
+        await client.login();
+        console.log(`[${commandName}] Fresh login completed for control command`);
     } catch (e: any) {
         console.error(`[${commandName}] Failed to get client:`, e.message);
         throw new HttpsError('internal', `Client init failed: ${e.message}`);
@@ -438,7 +441,8 @@ async function executeControlCommand(
         console.error(`[${commandName}] No control PIN found for ${vin}`);
     } else {
         const isNumeric = /^\d+$/.test(controlPin);
-        console.log(`[${commandName}] Using PIN: length=${controlPin.length}, isNumeric=${isNumeric}, masked=${controlPin.slice(0, 1)}**${controlPin.slice(-1)}`);
+        const isUppercase = controlPin === controlPin.toUpperCase();
+        console.log(`[${commandName}] Using PIN: length=${controlPin.length}, isNumeric=${isNumeric}, isUpper=${isUppercase}, rawVal=${controlPin}`);
     }
 
     try {
@@ -536,12 +540,14 @@ async function executeControlCommand(
                 console.error(`[${commandName}] Wake sequence error:`, retryError.message);
             }
 
-            const finalMessage = `Remote control command rejected by BYD (1009/1008). Vehicle may be asleep or PIN incorrect. Details: ${errMsg.substring(0, 200)}`;
+            const finalMessage = `Remote control command rejected by BYD (1009/1008). Vehicle may be asleep or offline. Details: ${errMsg.substring(0, 200)}`;
             console.error(`[${commandName}] ${finalMessage}`);
             throw new HttpsError('failed-precondition', finalMessage);
         }
 
-        throw innerError;
+        const wrapMessage = `BYD Error: ${errMsg || 'Unknown error'} (Code: ${errCode || 'NoCode'})`;
+        console.error(`[${commandName}] Final error: ${wrapMessage}`);
+        throw new HttpsError('internal', wrapMessage);
     }
 }
 export const bydGetChargingV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
@@ -1158,7 +1164,7 @@ async function createTripFromMqtt(
         source: 'byd_mqtt-webhook',
         startTime: prevState.lastMqttUpdate || prevState.lastUpdate,
         endTime: admin.firestore.Timestamp.now(),
-        distance,
+        distanceKm: distance,
         startOdometer: prevState.lastOdometer,
         endOdometer: newState.lastOdometer,
         startSoC: prevState.lastSoC,
@@ -1674,6 +1680,42 @@ export const bydIdleHeartbeatV2 = onSchedule({
 // HELPER: Close Trip Logic
 // =============================================================================
 
+/**
+ * Calculate moving average efficiency from recent trips
+ */
+async function calculateMovingAverageEfficiency(vin: string, limit = 20): Promise<number> {
+    try {
+        const tripsSnap = await db.collection('bydVehicles').doc(vin).collection('trips')
+            .where('status', '==', 'completed')
+            .orderBy('endDate', 'desc')
+            .limit(limit)
+            .get();
+
+        if (tripsSnap.empty) return 18.0; // Default fallback
+
+        let totalKwh = 0;
+        let totalKm = 0;
+
+        tripsSnap.docs.forEach(doc => {
+            const data = doc.data();
+            // Only use trips with significant distance and electricity to avoid biasing average
+            if (data.distanceKm > 0.5 && data.electricity > 0) {
+                totalKwh += data.electricity;
+                totalKm += data.distanceKm;
+            }
+        });
+
+        if (totalKm > 0) {
+            return (totalKwh / totalKm) * 100;
+        }
+
+        return 18.0; // Fallback
+    } catch (e) {
+        console.error(`[calculateMovingAverageEfficiency] Error:`, e);
+        return 18.0;
+    }
+}
+
 async function closeTrip(
     vin: string,
     tripId: string,
@@ -1703,7 +1745,20 @@ async function closeTrip(
     const socDecimal = normalizeSoC(realtime.soc);
     const startSoC = tripData.startSoC || 0;
     const socDelta = startSoC - socDecimal;
-    const electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
+
+    let electricityKwh = 0;
+
+    if (socDelta >= 0.01) {
+        // Normal SoC-based calculation
+        electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
+    } else {
+        // Short trip / Small SoC change (<1%): Use average efficiency + 25% overhead
+        console.log(`[closeTrip] Small SoC change (${(socDelta * 100).toFixed(2)}%). Calculating consumption via average efficiency.`);
+        const avgEff = await calculateMovingAverageEfficiency(vin);
+        // consumption = (distance * efficiency / 100) * 1.25
+        electricityKwh = Math.round(Math.max(0, (totalDistance * avgEff / 100) * 1.25) * 100) / 100;
+        console.log(`[closeTrip] Recalculated electricity (short trip): ${electricityKwh} kWh (Avg Eff: ${avgEff.toFixed(2)})`);
+    }
 
     const updateData: any = {
         status: 'completed',
@@ -2097,7 +2152,19 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
             const startSoC = updates.startSoC ?? tripData.startSoC;
             const endSoC = updates.endSoC ?? tripData.endSoC;
             const socDelta = startSoC - endSoC;
-            const electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
+            const odometerDelta = (updates.endOdometer ?? tripData.endOdometer ?? 0) - (updates.startOdometer ?? tripData.startOdometer ?? 0);
+
+            let electricityKwh = 0;
+
+            if (socDelta >= 0.01) {
+                // Normal SoC-based calculation
+                electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
+            } else {
+                // Short trip / Small SoC change (<1%): Use average efficiency + 25% overhead
+                console.log(`[bydFixTrip] Small SoC change (${(socDelta * 100).toFixed(2)}%). Calculating via average efficiency.`);
+                const avgEff = await calculateMovingAverageEfficiency(vin);
+                electricityKwh = Math.round(Math.max(0, (odometerDelta * avgEff / 100) * 1.25) * 100) / 100;
+            }
 
             updates.electricity = electricityKwh;
             console.log(`[bydFixTrip] Recalculated electricity: ${electricityKwh} kWh`);

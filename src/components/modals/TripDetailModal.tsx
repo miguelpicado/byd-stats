@@ -11,7 +11,6 @@ import { Trip } from '@/types';
 
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
-import { bydFixTrip } from '@/services/bydApi';
 
 // Lazy load TripMapModal to avoid bundling Leaflet in the main bundle
 const TripMapModalLazy = React.lazy(() => import('../TripMapModal').then(module => ({ default: module.TripMapModal })));
@@ -31,7 +30,6 @@ const TripDetailModal: React.FC = () => {
     const [scoreClicks, setScoreClicks] = useState(0);
     const [lastClickTime, setLastClickTime] = useState(0);
     const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-    const [isRecalculating, setIsRecalculating] = useState(false);
 
     const isOpen = modals.tripDetail;
     const onClose = () => {
@@ -104,27 +102,7 @@ const TripDetailModal: React.FC = () => {
         }
     };
 
-    // Handle trip recalculation (fix GPS distance)
-    const handleRecalculate = async () => {
-        if (!trip?.id || !trip.vehicleId) return;
 
-        setIsRecalculating(true);
-        try {
-            const result = await bydFixTrip(trip.vehicleId, trip.id);
-            if (result.success) {
-                alert('Viaje recalculado correctamente. Los cambios se verán reflejados en unos segundos.');
-                // Refresh data if possible, or just close and let user reopen
-                window.location.reload();
-            } else {
-                alert('Error al recalcular: ' + (result.message || 'Error desconocido'));
-            }
-        } catch (error: any) {
-            console.error('Error recalculating trip:', error);
-            alert('Error al conectar con el servidor: ' + error.message);
-        } finally {
-            setIsRecalculating(false);
-        }
-    };
 
     // Handle trip deletion
     const handleDeleteTrip = async () => {
@@ -197,13 +175,19 @@ const TripDetailModal: React.FC = () => {
                     }
                 }
 
+                console.log(`[TripDetail] Setting ${points.length} trip points`);
                 setTripPoints(points);
             } catch (error) {
-                console.error('Error loading GPS points:', error);
+                console.error('[TripDetail] Error loading GPS points:', error);
             }
         };
 
-        loadGpsPoints();
+        if (trip?.id) {
+            console.log(`[TripDetail] Loading GPS points for trip ${trip.id}`);
+            loadGpsPoints();
+        } else {
+            console.warn('[TripDetail] No trip ID available');
+        }
     }, [trip?.id]);
 
     if (!isOpen || !trip) return null;
@@ -374,22 +358,7 @@ const TripDetailModal: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Recalculate Button - Only for BYD trips */}
-                {(trip.source === 'byd' || (trip.vehicleId && trip.vehicleId.length === 17)) && (
-                    <div className="mt-3 flex justify-center">
-                        <button
-                            onClick={handleRecalculate}
-                            disabled={isRecalculating}
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${isRecalculating
-                                    ? 'bg-slate-200 dark:bg-slate-700 text-slate-400'
-                                    : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800'
-                                }`}
-                        >
-                            <TrendingUp className={`w-3.5 h-3.5 ${isRecalculating ? 'animate-spin' : ''}`} />
-                            {isRecalculating ? 'Recalculando...' : 'Recalcular distancia GPS'}
-                        </button>
-                    </div>
-                )}
+
 
                 {/* Delete Confirmation Modal */}
                 {showDeleteConfirm && (

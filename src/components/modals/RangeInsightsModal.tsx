@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { X, ChevronLeft } from '../Icons';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
+import ModalPortal from '../common/ModalPortal';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend);
 
@@ -19,12 +20,12 @@ interface RangeInsightsModalProps {
     isOpen: boolean;
     onClose: () => void;
     aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
-    aiLoss: number | null;
+    aiLoss?: number | null; // Kept in interface but marked optional/ignored to prevent prop errors elsewhere
     summary: any;
     isTraining?: boolean;
 }
 
-const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose, aiScenarios, aiLoss, summary, isTraining = false }) => {
+const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose, aiScenarios, summary, isTraining = false }) => {
     const { t } = useTranslation();
     const [selectedScenario, setSelectedScenario] = React.useState<string | null>(null);
 
@@ -41,6 +42,8 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
             isHistorical: true
         }
     ];
+
+    const hasAiData = aiScenarios.length > 0;
 
     const chartData = {
         labels: displayScenarios.map(s => {
@@ -139,16 +142,11 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
 
                     <div className="mt-4 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-100 dark:border-indigo-800/30">
                         <div className="flex items-center gap-2 mb-1">
-                            {isTraining && !s.isHistorical && <span className="animate-spin text-xs">🧠</span>}
+                            {(isTraining || !hasAiData) && !s.isHistorical && <span className="animate-spin text-xs">🧠</span>}
                             <p className="text-xs text-indigo-700 dark:text-indigo-300 italic font-medium">
                                 {s.isHistorical ? t('insights.historicalNote', 'Based on your actual driving records.') : t('insights.scenarioDetail', 'This is a theoretical estimate based on your profile.')}
                             </p>
                         </div>
-                        {isTraining && !s.isHistorical && (
-                            <p className="text-[10px] text-indigo-500 mt-1">
-                                {t('insights.stillLearning', 'AI is still learning from your recent trips to improve accuracy.')}
-                            </p>
-                        )}
                     </div>
                 </div>
             </div>
@@ -156,79 +154,110 @@ const RangeInsightsModal: React.FC<RangeInsightsModalProps> = ({ isOpen, onClose
     };
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="bg-white dark:bg-slate-900 w-full sm:max-w-md rounded-t-[2.5rem] sm:rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[90vh] flex flex-col">
-                <div className="relative p-6 pb-0 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-xl">
-                            🧠
+        <ModalPortal>
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+                <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+                <div className="relative bg-white dark:bg-slate-900 w-full max-w-md rounded-[2.5rem] shadow-2xl border border-slate-200 dark:border-slate-800 max-h-[95vh] flex flex-col overflow-hidden" onClick={(e) => e.stopPropagation()}>
+                    <div className="relative p-6 pb-2 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-xl shadow-inner">
+                                🧠
+                            </div>
+                            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                                {t('insights.rangeTitle', 'AI Range Analysis')}
+                            </h2>
                         </div>
-                        <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                            {t('insights.rangeTitle', 'AI Range Analysis')}
-                        </h2>
+                        <button
+                            onClick={onClose}
+                            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
+                        >
+                            <X size={20} className="text-slate-400" />
+                        </button>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors"
-                    >
-                        <X size={20} className="text-slate-400" />
-                    </button>
-                </div>
 
-                <div className="p-4 overflow-y-auto custom-scrollbar">
-                    {selectedScenario ? renderDetailView() : (
-                        <div className="space-y-3">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-700">
-                                <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5 text-sm leading-tight">
-                                    {t('insights.howItWorks', 'How this works')}
-                                </h3>
-                                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-tight">
-                                    {t('insights.aiCheck', 'The AI analyzes your driving history (speed vs efficiency) and seasonality (temperature impact) to predict range more accurately than the standard fixed value.')}
-                                </p>
-                            </div>
+                    <div className="p-4 pt-1 overflow-y-auto custom-scrollbar flex-1">
+                        {selectedScenario ? renderDetailView() : (
+                            <div className="space-y-4">
+                                {/* AI Explanation Section */}
+                                <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-2xl border border-slate-100 dark:border-slate-700">
+                                    <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-0.5 text-sm leading-tight flex items-center gap-2">
+                                        {t('insights.howItWorks', 'How this works')}
+                                        {(isTraining || !hasAiData) && <span className="flex h-2 w-2 rounded-full bg-indigo-500 animate-pulse"></span>}
+                                    </h3>
+                                    <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-tight">
+                                        {(!hasAiData && isTraining)
+                                            ? t('insights.stillLearning', 'AI is still learning from your recent trips to improve accuracy...')
+                                            : t('insights.aiCheck', 'The AI analyzes your driving history (speed vs efficiency) and seasonality (temperature impact) to predict range more accurately.')}
+                                    </p>
+                                </div>
 
-                            <div className="h-40 sm:h-44">
-                                <Bar data={chartData} options={chartOptions} />
-                            </div>
+                                {(!hasAiData && isTraining) ? (
+                                    <div className="h-40 sm:h-44 flex flex-col items-center justify-center space-y-3 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
+                                        <div className="relative">
+                                            <div className="w-12 h-12 rounded-full border-2 border-indigo-100 dark:border-indigo-900/50 flex items-center justify-center text-2xl">
+                                                🧠
+                                            </div>
+                                            <div className="absolute inset-0 border-2 border-indigo-500 rounded-full border-t-transparent animate-spin"></div>
+                                        </div>
+                                        <div className="text-center">
+                                            <p className="text-sm font-bold text-slate-900 dark:text-white">{t('insights.calculating', 'Calculating...')}</p>
+                                            <p className="text-[10px] text-slate-500">{t('insights.learningNote', 'Processing trip data patterns')}</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="h-40 sm:h-44 relative">
+                                        {isTraining && (
+                                            <div className="absolute top-0 right-0 z-10">
+                                                <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-indigo-500 text-[10px] font-bold text-white shadow-lg animate-pulse">
+                                                    <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                                                    {t('insights.updating', 'AI UPDATING')}
+                                                </span>
+                                            </div>
+                                        )}
+                                        <Bar data={chartData} options={chartOptions} />
+                                    </div>
+                                )}
 
-                            <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
-                                <table className="w-full text-xs text-left">
-                                    <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase text-[10px]">
-                                        <tr>
-                                            <th className="px-3 py-1.5">{t('insights.scenario', 'Scenario')}</th>
-                                            <th className="px-3 py-1.5 text-right">{t('stats.efficiency', 'Eff.')}</th>
-                                            <th className="px-3 py-1.5 text-right">{t('stats.estimatedRange', 'Range')}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                                        {[...displayScenarios].sort((a, b) => (a.isHistorical ? 1 : 0) - (b.isHistorical ? 1 : 0)).map((s) => (
-                                            <tr
-                                                key={s.name}
-                                                className="bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
-                                                onClick={() => setSelectedScenario(s.name)}
-                                            >
-                                                <td className="px-3 py-1.5 font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                                                    <div className={`w-2 h-2 rounded-full ${s.name === 'City' ? 'bg-green-500' : s.name === 'Highway' ? 'bg-red-500' : s.isHistorical ? 'bg-slate-500' : 'bg-blue-500'}`}></div>
-                                                    <span className="truncate">
-                                                        {s.isHistorical ? t('insights.historical', 'Historical') : (s.name === 'City' ? t('insights.city', 'City') :
-                                                            s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
-                                                                t('insights.highway', 'Highway')).replace(/\s*\(Combinado\)/gi, '').trim()}
-                                                    </span>
-                                                </td>
-                                                <td className="px-3 py-1.5 text-right text-slate-500 whitespace-nowrap">{s.efficiency.toFixed(1)}</td>
-                                                <td className="px-3 py-1.5 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
-                                                    {s.range} km
-                                                </td>
+                                {/* Detailed Table */}
+                                <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-700">
+                                    <table className="w-full text-xs text-left">
+                                        <thead className="bg-slate-50 dark:bg-slate-800 text-slate-500 uppercase text-[10px]">
+                                            <tr>
+                                                <th className="px-3 py-2">{t('insights.scenario', 'Scenario')}</th>
+                                                <th className="px-3 py-2 text-right">{t('stats.efficiency', 'Eff.')}</th>
+                                                <th className="px-3 py-2 text-right">{t('stats.estimatedRange', 'Range')}</th>
                                             </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                            {[...displayScenarios].sort((a, b) => (a.isHistorical ? 1 : 0) - (b.isHistorical ? 1 : 0)).map((s) => (
+                                                <tr
+                                                    key={s.name}
+                                                    className="bg-white dark:bg-slate-900 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors"
+                                                    onClick={() => setSelectedScenario(s.name)}
+                                                >
+                                                    <td className="px-3 py-2 font-medium text-slate-900 dark:text-white flex items-center gap-2">
+                                                        <div className={`w-2 h-2 rounded-full ${s.name === 'City' ? 'bg-green-500' : s.name === 'Highway' ? 'bg-red-500' : s.isHistorical ? 'bg-slate-500' : 'bg-blue-500'}`}></div>
+                                                        <span className="truncate">
+                                                            {s.isHistorical ? t('insights.historical', 'Historical') : (s.name === 'City' ? t('insights.city', 'City') :
+                                                                s.name === 'Mixed' ? t('insights.mixedScenario', 'Mixed') :
+                                                                    t('insights.highway', 'Highway')).replace(/\s*\(Combinado\)/gi, '').trim()}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-3 py-2 text-right text-slate-500 whitespace-nowrap">{s.range > 0 ? s.efficiency.toFixed(1) : '--'}</td>
+                                                    <td className="px-3 py-2 text-right font-bold text-indigo-600 dark:text-indigo-400 whitespace-nowrap">
+                                                        {s.range > 0 ? `${s.range} km` : '--'}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
-                        </div>
-                    )}
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+        </ModalPortal>
     );
 };
 
