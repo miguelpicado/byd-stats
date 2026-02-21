@@ -107,7 +107,34 @@ export function useVehicleStatus(
             vehicleRef,
             (docSnapshot) => {
                 if (docSnapshot.exists()) {
-                    setVehicleData(docSnapshot.data() as VehicleStatus);
+                    const newData = docSnapshot.data() as VehicleStatus;
+
+                    setVehicleData(prevData => {
+                        // Merge new data with previous, keeping last valid values
+                        const merged = { ...newData };
+
+                        // Keep last valid location if new location is 0,0 (deep sleep)
+                        if (newData.lastLocation?.lat === 0 && newData.lastLocation?.lon === 0) {
+                            if (prevData?.lastLocation && !(prevData.lastLocation.lat === 0 && prevData.lastLocation.lon === 0)) {
+                                logger.info('[useVehicleStatus] Keeping last valid location (new location is 0,0 - deep sleep)');
+                                merged.lastLocation = prevData.lastLocation;
+                            }
+                        }
+
+                        // Keep last valid tire pressure if new pressure is all 0s (deep sleep)
+                        if (newData.tirePressure) {
+                            const allZero = Object.values(newData.tirePressure).every(v => v === 0);
+                            if (allZero && prevData?.tirePressure) {
+                                const prevAllZero = Object.values(prevData.tirePressure).every(v => v === 0);
+                                if (!prevAllZero) {
+                                    logger.info('[useVehicleStatus] Keeping last valid tire pressure (new pressure is all 0s - deep sleep)');
+                                    merged.tirePressure = prevData.tirePressure;
+                                }
+                            }
+                        }
+
+                        return merged;
+                    });
                 } else {
                     setVehicleData(null);
                 }

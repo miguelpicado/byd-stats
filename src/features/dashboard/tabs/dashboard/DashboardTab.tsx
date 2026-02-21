@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { useCar } from '@/context/CarContext';
+import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
 import { AnomalyService } from '@/services/AnomalyService';
 import { TripInsightType } from '@/types';
@@ -19,11 +20,15 @@ const TripInsightsModal = React.lazy(() => import('@components/modals/TripInsigh
 const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
 const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
+const ChargingInsightsModal = React.lazy(() => import('@components/modals/ChargingInsightsModal'));
+const MfgDateModal = React.lazy(() => import('@components/modals/MfgDateModal'));
+const ThermalStressModal = React.lazy(() => import('@components/modals/ThermalStressModal'));
 
 const DashboardTab: React.FC = () => {
     const { t } = useTranslation();
     const { activeCar } = useCar();
-    const { stats, settings, charges, trips, aiSoH, acknowledgedAnomalies = [], deletedAnomalies = [], setAcknowledgedAnomalies, setDeletedAnomalies, aiLoss, aiScenarios, isAiTraining } = useData();
+    const { updateSettings } = useApp();
+    const { stats, settings, charges, trips, aiSoH, aiSoHStats, acknowledgedAnomalies = [], deletedAnomalies = [], setAcknowledgedAnomalies, setDeletedAnomalies, aiLoss, aiScenarios, isAiTraining } = useData();
     const { summary } = stats || {};
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
 
@@ -32,6 +37,9 @@ const DashboardTab: React.FC = () => {
     const [showOdometerModal, setShowOdometerModal] = useState(false);
     const [showHealthModal, setShowHealthModal] = useState(false);
     const [showRangeModal, setShowRangeModal] = useState(false);
+    const [showChargingInsightsModal, setShowChargingInsightsModal] = useState(false);
+    const [showMfgModal, setShowMfgModal] = useState(false);
+    const [showThermalModal, setShowThermalModal] = useState(false);
 
     // Calculate Anomalies for System Status
     const allAnomalies = useMemo(() => {
@@ -51,11 +59,28 @@ const DashboardTab: React.FC = () => {
         ? `${activeAnomalies.length} ${t('dashboard.alert', 'Alerts')}`
         : t('dashboard.normal', 'Normal');
 
+    const handleMfgDateSave = (isoDate: string, displayDate: string) => {
+        updateSettings({
+            mfgDate: isoDate,
+            mfgDateDisplay: displayDate
+        });
+    };
+
+    const handleThermalStressSave = (factor: number) => {
+        updateSettings({
+            thermalStressFactor: factor
+        });
+    };
+
     const handleOpenModal = (modal: string) => {
         switch (modal) {
             case 'generalInfo': // Odo
             case 'general':
-                setShowOdometerModal(true);
+                if (activeCar?.connectorType === 'pybyd' || vehicleStatus?.lastOdometer) {
+                    setInsightType('distance');
+                } else {
+                    setShowOdometerModal(true);
+                }
                 break;
             case 'consumption': // Energy
             case 'energy':
@@ -69,11 +94,10 @@ const DashboardTab: React.FC = () => {
                 setShowHealthModal(true);
                 break;
             case 'range':
-                // Assuming we have a RangeInsightsModal or similar, or just open consumption/insights for now
-                // Looking at OverviewContent, it opens 'range' modal logic or 'energy'
-                // Let's reuse setInsightType if possible or add a specific Range modal state if needed
-                // Step 992 showed RangeInsightsModal availability.
                 setShowRangeModal(true);
+                break;
+            case 'chargingInsights':
+                setShowChargingInsightsModal(true);
                 break;
             default:
                 console.warn('Unknown modal:', modal);
@@ -118,11 +142,14 @@ const DashboardTab: React.FC = () => {
                 <TripInsightsModal
                     isOpen={!!insightType}
                     onClose={() => setInsightType(null)}
-                    type={insightType || 'distance'} // Default to distance if null but open logic prevents it
+                    type={insightType || 'distance'}
                     trips={trips || []}
                     settings={settings}
                     summary={summary || undefined}
                     aiSoH={aiSoH}
+                    aiSoHStats={aiSoHStats}
+                    onMfgDateClick={() => setShowMfgModal(true)}
+                    onThermalStressClick={() => setShowThermalModal(true)}
                 />
                 <OdometerAdjustmentModal
                     isOpen={showOdometerModal}
@@ -144,6 +171,31 @@ const DashboardTab: React.FC = () => {
                     summary={summary || null}
                     isTraining={isAiTraining || false}
                 />
+                <ChargingInsightsModal
+                    isOpen={showChargingInsightsModal}
+                    onClose={() => setShowChargingInsightsModal(false)}
+                    stats={stats}
+                    settings={settings}
+                    charges={charges}
+                    summary={summary || undefined}
+                    trips={trips}
+                />
+                {showMfgModal && (
+                    <MfgDateModal
+                        isOpen={showMfgModal}
+                        onClose={() => setShowMfgModal(false)}
+                        onSave={handleMfgDateSave}
+                        initialValue={settings?.mfgDateDisplay}
+                    />
+                )}
+                {showThermalModal && (
+                    <ThermalStressModal
+                        isOpen={showThermalModal}
+                        onClose={() => setShowThermalModal(false)}
+                        onSave={handleThermalStressSave}
+                        initialValue={settings?.thermalStressFactor || 1.0}
+                    />
+                )}
             </React.Suspense>
         </div>
     );

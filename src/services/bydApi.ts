@@ -160,10 +160,12 @@ export async function bydUnlock(vin: string, pin?: string): Promise<{ success: b
 export async function bydStartClimate(
     vin: string,
     temperature?: number,
-    pin?: string
+    pin?: string,
+    timeSpan?: number,
+    cycleMode?: number
 ): Promise<{ success: boolean }> {
     const callable = httpsCallable<any, { success: boolean }>(functions, 'bydStartClimateV2');
-    const result = await callable({ vin, temperature, pin });
+    const result = await callable({ vin, temperature, pin, timeSpan, cycleMode });
     return result.data;
 }
 
@@ -186,6 +188,15 @@ export async function bydFlashLights(vin: string, pin?: string): Promise<{ succe
 }
 
 /**
+ * Honk horn (find car with sound)
+ */
+export async function bydHonkHorn(vin: string, pin?: string): Promise<{ success: boolean }> {
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydHonkHornV2');
+    const result = await callable({ vin, pin });
+    return result.data;
+}
+
+/**
  * Close windows
  */
 export async function bydCloseWindows(vin: string, pin?: string): Promise<{ success: boolean }> {
@@ -195,18 +206,28 @@ export async function bydCloseWindows(vin: string, pin?: string): Promise<{ succ
 }
 
 /**
- * Control seat climate/heating
- * @param seat 0=driver, 1=passenger
- * @param mode 0=off, 1=low, 2=medium, 3=high
+ * Control seat heating and ventilation
+ * Values: 1=off, 2=low, 3=high
  */
 export async function bydSeatClimate(
     vin: string,
-    seat: number,
-    mode: number,
+    options: {
+        mainHeat?: number;
+        mainVentilation?: number;
+        copilotHeat?: number;
+        copilotVentilation?: number;
+    },
     pin?: string
 ): Promise<{ success: boolean }> {
     const callable = httpsCallable<any, { success: boolean }>(functions, 'bydSeatClimateV2');
-    const result = await callable({ vin, seat, mode, pin });
+    const result = await callable({
+        vin,
+        mainHeat: options.mainHeat,
+        mainVentilation: options.mainVentilation,
+        copilotHeat: options.copilotHeat,
+        copilotVentilation: options.copilotVentilation,
+        pin
+    });
     return result.data;
 }
 
@@ -255,6 +276,13 @@ export interface BydWakeResult {
         isLocked: boolean;
         isOnline: boolean;
         location: { lat: number; lon: number; heading?: number } | null;
+        tirePressure?: {
+            frontLeft: number;
+            frontRight: number;
+            rearLeft: number;
+            rearRight: number;
+            lastTireUpdate?: any;
+        } | null;
     };
     message: string;
 }

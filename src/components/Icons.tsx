@@ -98,9 +98,12 @@ export const Lock = createIcon(<><rect x="3" y="11" width="18" height="11" rx="2
 export const Unlock = createIcon(<><rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" /></>);
 export const Trunk = createIcon(<><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" /><path d="m3.3 7 8.7 5 8.7-5" /><path d="M12 22V12" /></>);
 export const Wheel = createIcon(<><circle cx="12" cy="12" r="10" strokeWidth="2.5" /><circle cx="12" cy="12" r="4" /><line x1="12" y1="2" x2="12" y2="6" /><line x1="12" y1="18" x2="12" y2="22" /><line x1="2" y1="12" x2="6" y2="12" /><line x1="18" y1="12" x2="22" y2="12" /><line x1="4.93" y1="4.93" x2="7.76" y2="7.76" /><line x1="16.24" y1="16.24" x2="19.07" y2="19.07" /><line x1="4.93" y1="19.07" x2="7.76" y2="16.24" /><line x1="16.24" y1="7.76" x2="19.07" y2="4.93" /></>);
+export const TirePressure = createIcon(<><path d="M5.5 6C4.12 7.84 3.5 10 3.5 12c0 4.5 3 7.5 7 8h3c4-.5 7-3.5 7-8 0-2-.62-4.16-2-6" strokeLinecap="round" strokeLinejoin="round" /><line x1="12" y1="8" x2="12" y2="13" strokeLinecap="round" /><circle cx="12" cy="16.5" r="1" fill="currentColor" stroke="none" /><path d="M7 20v2M10.5 20.5v2M13.5 20.5v2M17 20v2" strokeLinecap="round" strokeLinejoin="round" /></>);
 export const Target = createIcon(<><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="6" /><circle cx="12" cy="12" r="2" /></>);
 export const LayoutDashboard = createIcon(<><rect x="3" y="3" width="7" height="9" rx="1" /><rect x="14" y="3" width="7" height="5" rx="1" /><rect x="14" y="12" width="7" height="9" rx="1" /><rect x="3" y="16" width="7" height="5" rx="1" /></>);
 export const Gauge = createIcon(<><circle cx="12" cy="12" r="10" /><path d="M12 6v6l4 3" /></>);
 export const Wind = createIcon(<path d="M9.59 4.59A2 2 0 1 1 11 8H2m10.59 11.41A2 2 0 1 0 14 16H2m15.73-8.27A2.5 2.5 0 1 1 19.5 12H2" />);
+export const Flashlight = createIcon(<><rect x="9" y="8" width="6" height="14" rx="1" /><rect x="8" y="6" width="8" height="3" rx="0.5" /><line x1="12" y1="2" x2="12" y2="5" /><line x1="7" y1="3" x2="9" y2="5" /><line x1="17" y1="3" x2="15" y2="5" /></>);
+export const WindowUp = createIcon(<><rect x="3" y="3" width="18" height="18" rx="2" /><line x1="3" y1="11" x2="21" y2="11" /><polyline points="12 7 12 11 12 11" /><polyline points="9 9 12 7 15 9" /></>);
 
 

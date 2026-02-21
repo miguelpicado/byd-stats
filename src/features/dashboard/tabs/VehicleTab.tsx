@@ -8,8 +8,11 @@ const TripInsightsModal = React.lazy(() => import('@components/modals/TripInsigh
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
 const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
+const MfgDateModal = React.lazy(() => import('@components/modals/MfgDateModal'));
+const ThermalStressModal = React.lazy(() => import('@components/modals/ThermalStressModal'));
 
 import { useData } from '@/providers/DataProvider';
+import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { Summary, Settings, Trip, TripInsightType } from '@/types';
@@ -307,11 +310,11 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
 
       {/* Modals */}
       <React.Suspense fallback={null}>
-        {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={aiScenarios || []} aiLoss={aiLoss} isTraining={isAiTraining} />}
+        {showRangeModal && <RangeInsightsModal isOpen={showRangeModal} onClose={() => setShowRangeModal(false)} aiScenarios={aiScenarios || []} aiLoss={aiLoss} isTraining={isAiTraining} summary={summary || null} />}
         {insightType === 'distance' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="distance" trips={trips} settings={settings} summary={summary || undefined} />}
         {insightType === 'energy' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="energy" trips={trips} settings={settings} summary={summary || undefined} />}
         {insightType === 'efficiency' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="efficiency" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} />}
-        {insightType === 'soh' && <TripInsightsModal isOpen={true} onClose={() => setInsightType(null)} type="soh" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} aiSoHStats={aiSoHStats} onMfgDateClick={() => { }} onThermalStressClick={() => { }} />}
+        {insightType === 'soh' && <TripInsightsModal key={aiSoHStats?.samples || 'loading'} isOpen={true} onClose={() => setInsightType(null)} type="soh" trips={trips} settings={settings} summary={summary || undefined} aiSoH={aiSoH} aiSoHStats={aiSoHStats} onMfgDateClick={() => { }} onThermalStressClick={() => { }} />}
         {showOdometerModal && <OdometerAdjustmentModal isOpen={showOdometerModal} onClose={() => setShowOdometerModal(false)} />}
         {showHealthModal && <HealthReportModal isOpen={showHealthModal} onClose={() => setShowHealthModal(false)} anomalies={activeAnomalies} onAcknowledge={(id) => setAcknowledgedAnomalies([...acknowledgedAnomalies, id])} onDelete={(id) => setDeletedAnomalies([...deletedAnomalies, id])} />}
       </React.Suspense>

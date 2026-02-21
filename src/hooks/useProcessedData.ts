@@ -46,6 +46,8 @@ export interface UseProcessedDataReturn {
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
     findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<SmartChargingResult | null>;
     forceRecalculate: () => void;
+    recalculateSoH: () => Promise<void>;
+    recalculateAutonomy: () => Promise<void>;
 }
 
 
@@ -54,7 +56,8 @@ export const useProcessedData = (
     allTrips: Trip[],
     settings: Settings,
     charges: Charge[],
-    language: string = 'es'
+    language: string = 'es',
+    activeCarId?: string | null
 ): UseProcessedDataReturn => {
     const { } = useTranslation();
     const [data, setData] = useState<ProcessedData | null>(null);
@@ -65,27 +68,30 @@ export const useProcessedData = (
     const [aiScenarios, setAiScenarios] = useState<RangeScenario[]>([]);
     const [aiLoss, setAiLoss] = useState<number | null>(null);
 
-    // AI Cache Persistence
+    // AI Cache Persistence - Scope by activeCarId
+    const aiCacheKey = activeCarId ? `ai_predictions_${activeCarId}` : 'ai_predictions';
     const [aiCache, setAiCache] = useLocalStorage<{
         hash: string;
         scenarios: RangeScenario[];
         loss: number;
-    } | null>('ai_predictions', null);
+    } | null>(aiCacheKey, null);
 
     // AI SoH State
     const [aiSoH, setAiSoH] = useState<number | null>(null);
     const [aiSoHStats, setAiSoHStats] = useState<SoHStats | null>(null);
 
+    const sohCacheKey = activeCarId ? `ai_soh_predictions_${activeCarId}` : 'ai_soh_predictions';
     const [sohCache, setSohCache] = useLocalStorage<{
         hash: string;
         soh: number;
         stats: SoHStats;
-    } | null>('ai_soh_predictions', null);
+    } | null>(sohCacheKey, null);
 
+    const parkingCacheKey = activeCarId ? `ai_parking_predictions_${activeCarId}` : 'ai_parking_predictions';
     const [parkingCache, setParkingCache] = useLocalStorage<{
         hash: string;
         weights: ModelWeight[];
-    } | null>('ai_parking_predictions', null);
+    } | null>(parkingCacheKey, null);
 
 
     // Recalculation Trigger
@@ -97,11 +103,100 @@ export const useProcessedData = (
         setParkingCache(null);
 
         setRecalcTrigger(prev => prev + 1);
-        setRecalcTrigger(prev => prev + 1);
     };
 
     const workerRef = useRef<Comlink.Remote<DataWorkerApi> | null>(null);
     const rawWorkerRef = useRef<Worker | null>(null);
+
+    // --- Explicit Recalculation Triggers ---
+    const recalculateSoH = async () => {
+        if (!workerRef.current || charges.length === 0) return;
+
+        setIsProcessing(true);
+        try {
+            const capacity = Number(settings?.batterySize) || 60;
+            const { predictedSoH } = await workerRef.current.trainSoH(structuredClone(charges), capacity);
+
+            setAiSoH(predictedSoH);
+
+            const stats = await workerRef.current.getSoHStats(structuredClone(charges), capacity);
+            setAiSoHStats(stats);
+
+            const safeStats = { ...stats };
+            if (safeStats.points && safeStats.points.length > 200) {
+                logger.warn(`[useProcessedData] Truncating SoH points from ${safeStats.points.length} to 200 for APK cache`);
+                safeStats.points = safeStats.points.slice(-200);
+                safeStats.trend = safeStats.trend.slice(-200);
+            }
+
+            const chargeHash = `${charges.length}_${charges[0]?.date || ''}`;
+            const sohHash = `${chargeHash}__${capacity}__v9`;
+
+            setSohCache({
+                hash: sohHash,
+                soh: predictedSoH,
+                stats: safeStats
+            });
+
+            logger.info('[useProcessedData] Explicit SoH recalculation completed');
+        } catch (error) {
+            logger.error('[useProcessedData] Error recalculating SoH:', error);
+        } finally {
+            setIsProcessing(false);
+            setRecalcTrigger(prev => prev + 1); // Trigger UI update for main process
+        }
+    };
+
+    const recalculateAutonomy = async () => {
+        if (!workerRef.current || allTrips.length <= 5) return;
+
+        setIsAiTraining(true);
+        try {
+            const { loss } = await workerRef.current.trainModel(allTrips);
+            setAiLoss(loss);
+
+            const capacity = Number(settings?.batterySize) || 60;
+            const soh = Number(settings?.soh) || 100;
+
+            const scenarios = await workerRef.current.getRangeScenarios(capacity, soh);
+            setAiScenarios(scenarios);
+
+            const len = allTrips.length;
+            const lastTs = allTrips[len - 1].start_timestamp;
+            const firstTs = allTrips[0].start_timestamp;
+            const currentHash = `count:${len}|first:${firstTs}|last:${lastTs}|v:2`;
+
+            setAiCache({
+                hash: currentHash,
+                scenarios,
+                loss
+            });
+
+            logger.info('[useProcessedData] Explicit Autonomy recalculation completed');
+        } catch (error) {
+            logger.error('[useProcessedData] Error recalculating Autonomy:', error);
+        } finally {
+            setIsAiTraining(false);
+            // Train parking as a side effect when trips update, but don't block
+            recalculateParking(allTrips);
+        }
+    };
+
+    const recalculateParking = async (trips: Trip[]) => {
+        if (!workerRef.current || trips.length <= 5) return;
+        try {
+            await workerRef.current.trainParking(trips);
+            const weights = await workerRef.current.exportParkingModel();
+            if (weights) {
+                const len = trips.length;
+                const currentHash = `count:${len}|first:${trips[0].start_timestamp}|last:${trips[len - 1].start_timestamp}|v:2`;
+                setParkingCache({ hash: currentHash, weights });
+            }
+        } catch (error) {
+            logger.error('[useProcessedData] Error recalculating Parking:', error);
+        }
+    };
+
 
     useEffect(() => {
         if (!workerRef.current) {
@@ -166,23 +261,26 @@ export const useProcessedData = (
             const sohHash = `${chargeHash}__${processingSettings.batterySize}__v9`;
 
             // Check Cache (Efficiency)
-            let cacheHit = false;
             if (aiCache && aiCache.hash === currentHash && aiCache.scenarios.length > 0) {
                 if (isMounted) {
                     setAiScenarios(aiCache.scenarios);
                     setAiLoss(aiCache.loss);
-                    cacheHit = true;
                 }
             }
 
             // Check SoH Cache
-            let sohCacheHit = false;
             if (sohCache && sohCache.hash === sohHash && sohCache.soh > 0) {
                 if (isMounted) {
                     setAiSoH(sohCache.soh);
                     setAiSoHStats(sohCache.stats);
-                    sohCacheHit = true;
+                    // Apply AI mode
+                    if (processingSettings.sohMode === 'ai') {
+                        processingSettings.soh = sohCache.soh;
+                    }
+                    // logger.debug('[useProcessedData] SoH Cache HIT');
                 }
+            } else {
+                // logger.debug('[useProcessedData] SoH Cache MISS or INVALID', { cacheHash: sohCache?.hash, reqHash: sohHash });
             }
 
             if (workerRef.current) {
@@ -206,41 +304,12 @@ export const useProcessedData = (
 
                     if (isMounted) setData(result);
 
-                    // Train AI Range Model
-                    if (!cacheHit && allTrips.length > 5) {
-                        if (isMounted) setIsAiTraining(true);
-
-                        // Use allTrips for training to be consistent regardless of filters
-                        workerRef.current.trainModel(allTrips).then(({ loss }) => {
-                            if (!isMounted) return;
-                            setAiLoss(loss);
-
-                            const capacity = processingSettings.batterySize || 60;
-                            const soh = processingSettings.soh || 100;
-
-                            workerRef.current?.getRangeScenarios(capacity, soh).then(scenarios => {
-                                if (!isMounted) return;
-                                setAiScenarios(scenarios);
-                                setAiCache({
-                                    hash: currentHash,
-                                    scenarios,
-                                    loss
-                                });
-                                setIsAiTraining(false);
-                            }).catch(() => {
-                                if (isMounted) setIsAiTraining(false);
-                            });
-                        })
-                            .catch(err => {
-                                logger.warn('AI Training error:', err);
-                                if (isMounted) setIsAiTraining(false);
-                            })
-                    }
+                    // We NO LONGER train automatically on miss. We only LOAD cache.
+                    // Recalculations are triggered explicitly via `recalculateAutonomy()` or `recalculateSoH()`
 
                     // Train AI Parking Model
                     // Check local cache for weights
                     const parkingHash = currentHash;
-                    let parkingCacheHit = false;
 
                     if (parkingCache && parkingCache.hash === parkingHash && parkingCache.weights && parkingCache.weights.length > 0) {
                         // Validate Cache Format (v2: { data, shape })
@@ -254,45 +323,17 @@ export const useProcessedData = (
                                 logger.warn('Failed to restore parking model', err);
                                 setParkingCache(null); // Corrupt cache
                             });
-                            parkingCacheHit = true;
                         } else {
                             // Invalid format (legacy) -> Invalidate
                             setParkingCache(null);
                         }
                     }
 
-                    // Train if Miss
-                    if (!parkingCacheHit && allTrips.length > 5) {
-                        workerRef.current.trainParking(allTrips)
-                            .then(async () => {
-                                // Save Model Weights
-                                const weights = await workerRef.current!.exportParkingModel();
-                                if (isMounted && weights) {
-                                    // Weights are now { data: number[], shape: number[] }[] -> Serializable
-                                    setParkingCache({ hash: parkingHash, weights });
-                                }
-                            })
-                            .catch(err => logger.warn('AI Parking Training error:', err));
-                    }
+                    // Parking Training is also explicit now via `recalculateAutonomy` hooks
+                    // But we still attempt to load it from cache if valid
 
-                    // Train AI SoH Model
-                    if (!sohCacheHit && charges.length > 0) {
-                        const capacity = processingSettings.batterySize;
-                        workerRef.current.trainSoH(structuredClone(charges), capacity).then(({ predictedSoH }) => {
-                            if (!isMounted) return;
-                            setAiSoH(predictedSoH);
-
-                            workerRef.current?.getSoHStats(structuredClone(charges), capacity).then(stats => {
-                                if (!isMounted) return;
-                                setAiSoHStats(stats);
-                                setSohCache({
-                                    hash: sohHash,
-                                    soh: predictedSoH,
-                                    stats
-                                });
-                            });
-                        }).catch(err => logger.warn('AI SoH Training error:', err));
-                    }
+                    // NO LONGER Train AI SoH Model automatically
+                    // Triggered explicitly via `recalculateSoH()`
 
                 } catch (e) {
                     logger.error('Worker processing error:', e);
@@ -326,6 +367,8 @@ export const useProcessedData = (
         aiSoHStats,
         predictDeparture,
         findSmartChargingWindows,
-        forceRecalculate: triggerRecalculation
+        forceRecalculate: triggerRecalculation,
+        recalculateSoH,
+        recalculateAutonomy
     };
 };

@@ -8,7 +8,6 @@ import { useLayout } from '@/context/LayoutContext';
 import { Anomaly } from '@/services/AnomalyService';
 import AlertHistoryModal from './AlertHistoryModal';
 import ModalPortal from '../common/ModalPortal';
-import { bydWakeVehicle } from '@/services/bydApi';
 
 interface VehicleFirestoreData {
     isLocked?: boolean;
@@ -76,27 +75,6 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
 
         return () => unsubscribe();
     }, [activeCar?.vin, isNative]);
-
-    // Auto-refresh vehicle data when modal opens
-    useEffect(() => {
-        if (!isNative) return;
-
-        const vin = activeCar?.vin;
-        if (isOpen && vin) {
-            const refreshData = async () => {
-                // setActionLoading('refreshVehicleData');
-                try {
-                    const result = await bydWakeVehicle(vin);
-                    console.log('[HealthReportModal] BYD wake result:', result.isAwake, result.data.soc);
-                } catch (error: unknown) {
-                    console.error('[HealthReportModal] Auto-refresh failed:', error instanceof Error ? error.message : error);
-                } finally {
-                    // setActionLoading(null);
-                }
-            };
-            refreshData();
-        }
-    }, [isOpen, activeCar?.vin, isNative]);
 
     // Persist Tires: If we get new data, save it to the car context for fallback
     useEffect(() => {

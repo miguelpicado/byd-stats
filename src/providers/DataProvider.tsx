@@ -7,7 +7,7 @@ import { ChargesProvider, useChargesContext } from './ChargesProvider';
 import { ModalProvider, useModalContext } from './ModalProvider';
 import { SyncProvider, useSyncContext } from './SyncProvider';
 import { TripsProvider, useTripsContext } from './TripsProvider';
-import { Trip, Charge, ProcessedData, Settings } from '@/types';
+import { Trip, Charge, ProcessedData, Settings, SoHStats } from '@/types';
 import { useConfirmation, ConfirmModalState } from '@hooks/useConfirmation';
 import { ModalsState, OpenModalFn, CloseModalFn } from '@hooks/useModalState';
 import type { UseGoogleSyncReturn } from '@hooks/useGoogleSync';
@@ -51,10 +51,12 @@ export interface DataState {
     aiLoss: number | null;
     isAiTraining: boolean;
     aiSoH: number | null;
-    aiSoHStats: { points: Array<{ x: number; y: number }>; trend: Array<{ x: number; y: number }> } | null;
+    aiSoHStats: SoHStats | null;
     predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
     findSmartChargingWindows: (trips: Trip[], settings: Settings) => Promise<{ windows: unknown[]; weeklyKwh: number; requiredHours: number; hoursFound: number; note?: string } | null>;
     forceRecalculate: () => void;
+    recalculateSoH: () => Promise<void>;
+    recalculateAutonomy: () => Promise<void>;
 
     // Anomalies
     acknowledgedAnomalies: string[];
@@ -194,6 +196,8 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
         predictDeparture: tripsContext.predictDeparture,
         findSmartChargingWindows: tripsContext.findSmartChargingWindows,
         forceRecalculate: tripsContext.forceRecalculate,
+        recalculateSoH: tripsContext.recalculateSoH,
+        recalculateAutonomy: tripsContext.recalculateAutonomy,
 
         acknowledgedAnomalies: tripsContext.acknowledgedAnomalies,
         setAcknowledgedAnomalies: tripsContext.setAcknowledgedAnomalies,

@@ -1,41 +1,33 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Lock, Zap, Wind, Thermometer, AlertTriangle } from '@/components/Icons';
+import { Lock, Unlock, Flashlight, WindowUp, Thermometer } from '@/components/Icons';
 import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
-import { bydLock, bydUnlock, bydStartClimate, bydFlashLights, bydCloseWindows, bydSeatClimate } from '@/services/bydApi';
-import { getAuth } from 'firebase/auth';
+import { useData } from '@/providers/DataProvider';
+import { bydLock, bydUnlock, bydStartClimate, bydStopClimate, bydFlashLights, bydHonkHorn, bydCloseWindows, bydSeatClimate } from '@/services/bydApi';
 import toast from 'react-hot-toast';
 
 const QuickActions: React.FC = () => {
     const { t } = useTranslation();
     const { activeCar } = useCar();
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
+    const { openModal } = useData();
     const [loadingButton, setLoadingButton] = useState<string | null>(null);
-    const [isAuthenticated, setIsAuthenticated] = useState(false);
-
-    // Check Firebase authentication (not Google OAuth)
-    useEffect(() => {
-        const auth = getAuth();
-        const unsubscribe = auth.onAuthStateChanged((user) => {
-            setIsAuthenticated(!!user);
-        });
-        return () => unsubscribe();
-    }, []);
-
     const isLocked = vehicleStatus?.isLocked === true;
     const areWindowsOpen = vehicleStatus?.windows && Object.values(vehicleStatus.windows).some(isOpen => isOpen);
+    const climateActive = vehicleStatus?.climateActive === true;
+
+    // Long press state
+    const flashTimerRef = useRef<NodeJS.Timeout>();
+    const climateTimerRef = useRef<NodeJS.Timeout>();
+    const isFlashLongPress = useRef(false);
+    const isClimateLongPress = useRef(false);
 
     const handleCommand = async (
         command: string,
         fn: (vin: string, ...args: any[]) => Promise<any>,
         ...args: any[]
     ) => {
-        if (!isAuthenticated) {
-            toast.error(t('errors.authRequired', 'Authentication required. Check your connection or refresh.'));
-            return;
-        }
-
         if (!activeCar?.vin) {
             toast.error(t('errors.noVehicle', 'No vehicle selected'));
             return;
@@ -43,9 +35,6 @@ const QuickActions: React.FC = () => {
 
         setLoadingButton(command);
         try {
-            const auth = getAuth();
-            console.log('[QuickActions] Current Auth UID:', auth.currentUser?.uid);
-
             const result = await fn(activeCar.vin, ...args);
             if (result.success) {
                 toast.success(t('messages.commandSuccess', 'Command sent successfully'));
@@ -94,25 +83,69 @@ const QuickActions: React.FC = () => {
         }
     };
 
-    const handleSmartClimate = async () => {
-        // Determine current temp (Interior > Exterior > Default 15)
-        const currentTemp = vehicleStatus?.interiorTemp ?? vehicleStatus?.exteriorTemp ?? 15;
-        const isCold = currentTemp < 20;
+    // Flash: short press = flash lights, long press = honk horn
+    const handleFlashDown = () => {
+        isFlashLongPress.current = false;
+        flashTimerRef.current = setTimeout(() => {
+            isFlashLongPress.current = true;
+            handleCommand('honk', bydHonkHorn);
+        }, 600);
+    };
 
-        if (isCold) {
-            toast(t('messages.heating', 'Heating...'), { icon: '🔥' });
-            await handleCommand('heat', async (vin) => {
-                await bydStartClimate(vin, 22);
-                await bydSeatClimate(vin, 0, 2); // Driver seat heat high
-                return { success: true };
-            });
+    const handleFlashUp = () => {
+        clearTimeout(flashTimerRef.current);
+        if (!isFlashLongPress.current) {
+            handleCommand('flash', bydFlashLights);
+        }
+    };
+
+    const handleFlashLeave = () => {
+        clearTimeout(flashTimerRef.current);
+    };
+
+    // Climate: short press = toggle on/off, long press = open advanced modal
+    const handleClimateDown = () => {
+        isClimateLongPress.current = false;
+        climateTimerRef.current = setTimeout(() => {
+            isClimateLongPress.current = true;
+            openModal('climateControl');
+        }, 600);
+    };
+
+    const handleClimateUp = () => {
+        clearTimeout(climateTimerRef.current);
+        if (!isClimateLongPress.current) {
+            handleClimateToggle();
+        }
+    };
+
+    const handleClimateLeave = () => {
+        clearTimeout(climateTimerRef.current);
+    };
+
+    const handleClimateToggle = async () => {
+        if (climateActive) {
+            await handleCommand('climate_off', bydStopClimate);
         } else {
-            toast(t('messages.cooling', 'Cooling...'), { icon: '❄️' });
-            await handleCommand('cool', async (vin) => {
-                await bydStartClimate(vin, 21);
-                await bydSeatClimate(vin, 0, 0); // Seat off
-                return { success: true };
-            });
+            // Smart climate logic
+            const currentTemp = vehicleStatus?.interiorTemp ?? vehicleStatus?.exteriorTemp ?? 15;
+            const isCold = currentTemp < 20;
+
+            if (isCold) {
+                toast(t('messages.heating', 'Heating...'), { icon: '🔥' });
+                await handleCommand('heat', async (vin) => {
+                    await bydStartClimate(vin, 22);
+                    await bydSeatClimate(vin, 0, 2); // Driver seat heat high
+                    return { success: true };
+                });
+            } else {
+                toast(t('messages.cooling', 'Cooling...'), { icon: '❄️' });
+                await handleCommand('cool', async (vin) => {
+                    await bydStartClimate(vin, 21);
+                    await bydSeatClimate(vin, 0, 0); // Seat off
+                    return { success: true };
+                });
+            }
         }
     };
 
@@ -120,7 +153,7 @@ const QuickActions: React.FC = () => {
         {
             id: 'lock',
             label: isLocked ? t('actions.unlock', 'Unlock') : t('actions.lock', 'Lock'),
-            icon: Lock,
+            icon: isLocked ? Unlock : Lock,
             color: isLocked ? 'bg-green-600' : 'bg-red-600',
             action: handleLock,
             loading: loadingButton === 'lock' || loadingButton === 'undo_lock'
@@ -128,7 +161,7 @@ const QuickActions: React.FC = () => {
         {
             id: 'windows',
             label: t('actions.windows', 'Windows'),
-            icon: Wind,
+            icon: WindowUp,
             color: 'bg-slate-600',
             action: () => handleCommand('windows', bydCloseWindows),
             loading: loadingButton === 'windows'
@@ -136,21 +169,28 @@ const QuickActions: React.FC = () => {
         {
             id: 'flash',
             label: t('actions.flash', 'Flash'),
-            icon: Zap,
+            icon: Flashlight,
             color: 'bg-yellow-600',
-            action: () => handleCommand('flash', bydFlashLights),
-            loading: loadingButton === 'flash'
+            action: () => {}, // Handled by onPointerDown/Up
+            onPointerDown: handleFlashDown,
+            onPointerUp: handleFlashUp,
+            onPointerLeave: handleFlashLeave,
+            loading: loadingButton === 'flash' || loadingButton === 'honk'
         },
         {
-            id: 'heat',
-            label: t('actions.climate', 'Climate'),
+            id: 'climate',
+            label: climateActive ? t('actions.climateOff', 'Stop') : t('actions.climate', 'Climate'),
             icon: Thermometer,
-            color: 'bg-orange-600',
-            action: handleSmartClimate,
-            loading: loadingButton === 'heat' || loadingButton === 'cool'
+            color: climateActive ? 'bg-green-600' : 'bg-orange-600',
+            action: () => {}, // Handled by onPointerDown/Up
+            onPointerDown: handleClimateDown,
+            onPointerUp: handleClimateUp,
+            onPointerLeave: handleClimateLeave,
+            loading: loadingButton === 'heat' || loadingButton === 'cool' || loadingButton === 'climate_off'
         },
     ];
 
+    /*
     const handleTestPin = async () => {
         if (!activeCar?.vin) {
             toast.error('No vehicle selected');
@@ -169,17 +209,7 @@ const QuickActions: React.FC = () => {
             console.error('[QuickActions] PIN test failed:', error);
         }
     };
-
-    if (!isAuthenticated) {
-        return (
-            <div className="w-full shrink-0 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700/50 rounded-xl flex items-center justify-center gap-2">
-                <AlertTriangle className="w-5 h-5 text-amber-500" />
-                <span className="text-sm font-medium text-amber-700 dark:text-amber-400">
-                    {t('errors.authRequired', 'Authentication required (Check Internet/Config)')}
-                </span>
-            </div>
-        );
-    }
+    */
 
     return (
         <div className="grid grid-cols-4 gap-2 w-full shrink-0">
@@ -187,13 +217,16 @@ const QuickActions: React.FC = () => {
                 <button
                     key={action.id}
                     onClick={action.action}
+                    onPointerDown={(action as any).onPointerDown}
+                    onPointerUp={(action as any).onPointerUp}
+                    onPointerLeave={(action as any).onPointerLeave}
                     disabled={!!loadingButton}
                     className={`${action.color} rounded-xl p-2 flex flex-row items-center justify-center gap-2 text-white shadow-lg active:scale-95 transition-transform h-12 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                     {action.loading ? (
                         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                     ) : (
-                        <action.icon className={`w-5 h-5 ${action.id === 'lock' && !isLocked ? 'text-white' : ''}`} />
+                        <action.icon className="w-5 h-5" />
                     )}
                     <span className="text-[10px] font-bold uppercase hidden sm:block">{action.label}</span>
                 </button>

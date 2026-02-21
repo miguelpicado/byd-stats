@@ -14,7 +14,7 @@ export const VehicleSettings: React.FC = () => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCar, updateCar, activeCarId } = useCar();
-    const { stats } = useData();
+    const { stats, aiSoH } = useData();
     const [showMfgModal, setShowMfgModal] = useState(false);
 
     // Get SoH data from summary
@@ -73,7 +73,7 @@ export const VehicleSettings: React.FC = () => {
                     name="insurancePolicy"
                     type="text"
                     value={settings?.insurancePolicy || ''}
-                    onChange={(e) => updateSettings({ ...settings, insurancePolicy: e.target.value })}
+                    onChange={(e) => updateSettings({ insurancePolicy: e.target.value })}
                     placeholder="123456789"
                     className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                 />
@@ -97,7 +97,7 @@ export const VehicleSettings: React.FC = () => {
                 <p className="block text-sm text-slate-600 dark:text-slate-400 mb-1">{t('settings.sohMode')}</p>
 
                 <div className="flex gap-2 p-1 bg-slate-100 dark:bg-slate-700 rounded-xl" role="radiogroup" aria-label={t('settings.sohMode')}>
-                    {(['manual', 'calculated'] as const).map(mode => (
+                    {(['manual', 'calculated', 'ai'] as const).map(mode => (
                         <button
                             key={mode}
                             role="radio"
@@ -113,7 +113,7 @@ export const VehicleSettings: React.FC = () => {
                                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
                                 }`}
                         >
-                            {t(`settings.soh${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
+                            {mode === 'ai' ? 'SoH IA' : t(`settings.soh${mode.charAt(0).toUpperCase() + mode.slice(1)}`)}
                         </button>
                     ))}
                 </div>
@@ -145,11 +145,20 @@ export const VehicleSettings: React.FC = () => {
                             </span>
                         </button>
                     </div>
-                ) : (
+                ) : currentSohMode === 'calculated' ? (
                     <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4 space-y-3 border border-slate-100 dark:border-slate-700/50">
                         <div className="flex justify-between items-center">
                             <span className="text-xs text-slate-500 dark:text-slate-400">{t('settings.estimatedSoh')}</span>
                             <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">{sohData?.estimated_soh || 100}%</span>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="bg-indigo-50 dark:bg-indigo-900/10 rounded-xl p-4 space-y-3 border border-indigo-100 dark:border-indigo-800/30">
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">SoH por Inteligencia Artificial</span>
+                            <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                                {aiSoH?.toFixed(1) || 100}%
+                            </span>
                         </div>
                     </div>
                 )}

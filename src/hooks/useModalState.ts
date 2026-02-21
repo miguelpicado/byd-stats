@@ -24,6 +24,7 @@ export interface ModalsState {
     chargeInsights: boolean;
     chargeInsightsType?: 'kwh' | 'cost' | 'price' | 'count' | 'fuel';
     chargingInsights: boolean;
+    climateControl: boolean;
     healthReport: boolean;
     mfgDate: boolean;
     odometerAdjustment: boolean;
@@ -65,6 +66,7 @@ const useModalState = () => {
         alertHistory: false,
         chargeInsights: false,
         chargingInsights: false,
+        climateControl: false,
         healthReport: false,
         mfgDate: false,
         odometerAdjustment: false,
@@ -171,6 +173,7 @@ const useModalState = () => {
             alertHistory: false,
             chargeInsights: false,
             chargingInsights: false,
+            climateControl: false,
             healthReport: false,
             mfgDate: false,
             odometerAdjustment: false,

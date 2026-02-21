@@ -12,7 +12,7 @@ import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal'
 import HealthReportModal from '@components/modals/HealthReportModal';
 import { MapPin, Zap, Battery, Activity, Fuel, IconProps, AlertTriangle, Clock } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
-import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
+import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData, SoHStats } from '@/types';
 import { AnomalyService, Anomaly } from '@/services/AnomalyService';
 import { useData } from '@/providers/DataProvider';
 
@@ -34,10 +34,7 @@ const PIE_CHART_OPTIONS = {
     }
 };
 
-interface SoHDataPoint {
-    x: number;
-    y: number;
-}
+
 
 interface OverviewContentProps {
     summary: Summary;
@@ -61,7 +58,7 @@ interface OverviewContentProps {
     onRangeClick?: () => void;
     isAiReady?: boolean;
     aiSoH?: number | null;
-    aiSoHStats?: { points: SoHDataPoint[]; trend: SoHDataPoint[] } | null;
+    aiSoHStats?: SoHStats | null;
     charges?: Charge[];
     stats?: ProcessedData;
 }
@@ -94,6 +91,9 @@ const OverviewContent: FC<OverviewContentProps> = ({
 }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical, isNative } = useLayout();
+
+    // Debug: log callbacks received
+    console.log('[OverviewContent] Received callbacks:', { onMfgDateClick, onThermalStressClick });
 
     // Refs to chart instances for manual animation control - typed to match react-chartjs-2 ref expectations
     const lineChartRef = useRef<Chart<'line'>>(null!);

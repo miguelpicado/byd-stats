@@ -158,7 +158,7 @@
         "soh": "Estado de Salud - SoH (%)",
         "sohMode": "Modo de cálculo SoH",
         "sohManual": "Manual",
-        "sohCalculated": "Calculado (LFP)",
+        "sohCalculated": "Calculado",
         "mfgDate": "Fecha de fabricación",
         "units": {
             "km": "km",
@@ -291,7 +291,12 @@
         "initial": "Inicial",
         "final": "Final",
         "energyRecovered": "Energía regenerada",
-        "percentile": "Percentil"
+        "percentile": "Percentil",
+        "tapToDelete": "Click 10 veces para borrar",
+        "confirmDeleteTitle": "¿Borrar viaje?",
+        "confirmDeleteMessage": "Esta acción no se puede deshacer. El viaje se eliminará de todos tus dispositivos.",
+        "tripDeleted": "Viaje eliminado correctamente",
+        "deleteError": "Error al borrar el viaje"
     },
     "dashboard": {
         "rangeInsights": "Análisis de Autonomía IA",
@@ -306,6 +311,21 @@
         "climate": "Clima",
         "mapPlaceholder": "Vista de Mapa",
         "lastUpdated": "Última actualización"
+    },
+    "climate": {
+        "title": "Control de Clima",
+        "noVehicle": "No hay vehículo conectado",
+        "startFailed": "Error al iniciar climatización",
+        "controlFailed": "Error en control de clima",
+        "stopped": "Climatización detenida",
+        "stopFailed": "Error al detener climatización",
+        "stopping": "Deteniendo...",
+        "stopButton": "Detener Clima",
+        "starting": "Iniciando...",
+        "startButton": "Iniciar Clima",
+        "levelOff": "Apagado",
+        "levelLow": "Bajo",
+        "levelHigh": "Alto"
     },
     "actions": {
         "lock": "Bloquear",
@@ -624,6 +644,13 @@
         "chargerTypesCreated": "Nuevos tipos de cargador creados: {{types}}",
         "avgLast10": "Media últimas 10 cargas",
         "avgKwh": "Media kWh",
+        "autoDetectStart": "⚡ Carga detectada - Registrando automáticamente",
+        "autoDetectEnd": "🔋 Carga completada - Abre el modal para revisar",
+        "autoDetectedNote": "Carga detectada automáticamente",
+        "autoRegisterTitle": "🔋 Registrar cargas automáticamente",
+        "autoRegisterDesc": "Detecta y guarda automáticamente las sesiones de carga",
+        "autoRegisterEnabled": "Registro automático activado",
+        "autoRegisterDisabled": "Registro automático desactivado",
         "avgCost": "Coste medio",
         "last10Charges": "Últimas 10 cargas"
     },

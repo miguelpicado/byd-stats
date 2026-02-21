@@ -9,12 +9,9 @@ import StatItem from '../ui/StatItem';
 import ModalPortal from '../common/ModalPortal';
 import SoHExplanationModal, { SoHMetricType } from './SoHExplanationModal';
 import { isStationaryTrip } from '../../core/dataProcessing';
-import { Trip, Settings as SettingsType, Summary } from '../../types'; // Correct import path
+import { Trip, Settings as SettingsType, Summary, SoHStats } from '../../types'; // Correct import path
 
-interface SoHPoint {
-    x: number;
-    y: number;
-}
+
 
 interface TripInsightsModalProps {
     isOpen: boolean;
@@ -26,7 +23,7 @@ interface TripInsightsModalProps {
     onMfgDateClick?: () => void;
     onThermalStressClick?: () => void;
     aiSoH?: number | null;
-    aiSoHStats?: { points: SoHPoint[]; trend: SoHPoint[]; samples: number } | null;
+    aiSoHStats?: SoHStats | null;
 }
 
 /**
@@ -589,17 +586,33 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
 
                         <div className="grid grid-cols-2 gap-2">
                             <button
-                                onClick={onMfgDateClick}
+                                onClick={(e) => {
+                                    console.log('[TripInsightsModal] MfgDate button clicked', { onMfgDateClick });
+                                    e.stopPropagation();
+                                    if (onMfgDateClick) {
+                                        onMfgDateClick();
+                                    } else {
+                                        console.warn('[TripInsightsModal] onMfgDateClick is undefined');
+                                    }
+                                }}
                                 className="flex flex-col items-center justify-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
                             >
                                 <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">{t('settings.mfgDate')}</span>
                                 <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                                    {settings.mfgDateDisplay || '-'}
+                                    {settings?.mfgDateDisplay || '-'}
                                 </span>
                             </button>
 
                             <button
-                                onClick={onThermalStressClick}
+                                onClick={(e) => {
+                                    console.log('[TripInsightsModal] ThermalStress button clicked', { onThermalStressClick });
+                                    e.stopPropagation();
+                                    if (onThermalStressClick) {
+                                        onThermalStressClick();
+                                    } else {
+                                        console.warn('[TripInsightsModal] onThermalStressClick is undefined');
+                                    }
+                                }}
                                 className="flex flex-col items-center justify-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
                             >
                                 <span className="text-[9px] text-slate-400 uppercase tracking-wider mb-0.5">{t('tripInsights.stressFactor', 'Factor Estrés')}</span>

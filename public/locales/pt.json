@@ -175,7 +175,12 @@
         "energyRecovered": "Energia recuperada",
         "percentile": "Percentil",
         "consumptionPerTrip": "Consumo/viagem",
-        "avgDistance": "Distância média"
+        "avgDistance": "Distância média",
+        "tapToDelete": "Clique 10 vezes para eliminar",
+        "confirmDeleteTitle": "Eliminar viagem?",
+        "confirmDeleteMessage": "Esta ação não pode ser revertida. A viagem será removida de todos os seus dispositivos.",
+        "tripDeleted": "Viagem eliminada com sucesso",
+        "deleteError": "Erro ao eliminar a viagem"
     },
     "settings": {
         "title": "Configurações",
@@ -186,7 +191,7 @@
         "soh": "Estado de Saúde - SoH (%)",
         "sohMode": "Modo de cálculo SoH",
         "sohManual": "Manual",
-        "sohCalculated": "Calculado (LFP)",
+        "sohCalculated": "Calculado",
         "mfgDate": "Data de fabricação",
         "mfgDateHint": "Necessária para degradação por tempo",
         "estimatedSoh": "SoH Estimado",
@@ -550,7 +555,14 @@
         "typeElectric": "Elétrica",
         "typeFuel": "Abastecimento",
         "litersCharged": "Litros abastecidos",
-        "pricePerLiter": "Preço por litro"
+        "pricePerLiter": "Preço por litro",
+        "autoDetectStart": "⚡ Carregamento detetado - A registar automaticamente",
+        "autoDetectEnd": "🔋 Carregamento concluído - Abra o modal para rever",
+        "autoDetectedNote": "Carregamento detetado automaticamente",
+        "autoRegisterTitle": "🔋 Registar carregamentos automaticamente",
+        "autoRegisterDesc": "Deteta e guarda automaticamente as sessões de carregamento",
+        "autoRegisterEnabled": "Registo automático ativado",
+        "autoRegisterDisabled": "Registo automático desativado"
     },
     "chargeInsights": {
         "kwhTitle": "Insights de Energia",
@@ -681,6 +693,21 @@
         "keepLocal": "Manter Local",
         "useCloud": "Usar Nuvem",
         "mergeBoth": "Combinar Ambos"
+    },
+    "climate": {
+        "title": "Controlo de Clima",
+        "noVehicle": "Nenhum veículo conectado",
+        "startFailed": "Falha ao iniciar climatização",
+        "controlFailed": "Falha no controlo de clima",
+        "stopped": "Climatização parada",
+        "stopFailed": "Falha ao parar climatização",
+        "stopping": "A parar...",
+        "stopButton": "Parar Clima",
+        "starting": "A iniciar...",
+        "startButton": "Iniciar Clima",
+        "levelOff": "Desligado",
+        "levelLow": "Baixo",
+        "levelHigh": "Alto"
     },
     "faq": {
         "pageTitle": "Perguntas Frequentes",

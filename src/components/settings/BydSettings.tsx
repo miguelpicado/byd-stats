@@ -4,16 +4,11 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
     bydConnect,
     bydDisconnect,
-    bydDiagnostic,
-    bydGetRealtime,
-    bydGetGps,
     BydVehicle,
-    BydRealtime,
-    BydGps,
-    BydDiagnostic,
     bydDebugDump,
 } from '../../services/bydApi';
 import { waitForAuth } from '../../services/firebase';
@@ -46,6 +41,8 @@ interface BydSettingsProps {
 }
 
 export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) => {
+    const { t } = useTranslation();
+
     // Connection state
     const [isConnected, setIsConnected] = useState(false);
     const [connectedVin, setConnectedVin] = useState<string | null>(null);
@@ -62,12 +59,18 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
     const [error, setError] = useState<string | null>(null);
     const [success, setSuccess] = useState<string | null>(null);
 
-    // Diagnostic state
-    const [showDiagnostic, setShowDiagnostic] = useState(false);
-    const [diagnosticData, setDiagnosticData] = useState<BydDiagnostic | null>(null);
-    const [realtimeData, setRealtimeData] = useState<BydRealtime | null>(null);
-    const [gpsData, setGpsData] = useState<BydGps | null>(null);
+    // Auto-register charges setting
+    const [autoRegisterCharges, setAutoRegisterCharges] = useState(() => {
+        const saved = localStorage.getItem('byd_auto_register_charges');
+        return saved === 'true';
+    });
+
+    // Diagnostic state (API Dump easter egg)
     const [debugDump, setDebugDump] = useState<any | null>(null);
+
+    // Easter egg state: 10 taps in 2 seconds
+    const [tapCount, setTapCount] = useState(0);
+    const [tapTimeout, setTapTimeout] = useState<NodeJS.Timeout | null>(null);
 
     // Load saved connection on mount
     useEffect(() => {
@@ -102,7 +105,6 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
 
         try {
             const userId = await waitForAuth() || 'dev-user';
-            toast.success(`Debug: Using UserID = ${userId}`);
 
             const result = await bydConnect(
                 username,
@@ -154,9 +156,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
             setConnectedVin(null);
             setConnectedVehicles([]);
             setIsConnected(false);
-            setDiagnosticData(null);
-            setRealtimeData(null);
-            setGpsData(null);
+            setDebugDump(null);
 
             localStorage.removeItem('byd_connected_vin');
             localStorage.removeItem('byd_connected_vehicles');
@@ -171,69 +171,31 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         }
     };
 
-    // Handle diagnostic
-    const handleDiagnostic = async () => {
-        if (!connectedVin) return;
+    // Easter egg: 10 taps in 2 seconds to show API Dump
+    const handleConnectionTap = () => {
+        const newCount = tapCount + 1;
+        setTapCount(newCount);
 
-        setIsLoading(true);
-        setError(null);
-        setDiagnosticData(null);
+        // Clear existing timeout
+        if (tapTimeout) {
+            clearTimeout(tapTimeout);
+        }
 
-        try {
-            const result = await bydDiagnostic(connectedVin);
-            setDiagnosticData(result);
-            setShowDiagnostic(true);
-        } catch (err: any) {
-            console.error('BYD diagnostic error:', err);
-            setError(err.message || 'Error en diagnóstico');
-        } finally {
-            setIsLoading(false);
+        // Reset after 2 seconds
+        const timeout = setTimeout(() => {
+            setTapCount(0);
+        }, 2000);
+        setTapTimeout(timeout);
+
+        // Trigger API Dump after 10 taps
+        if (newCount >= 10) {
+            setTapCount(0);
+            clearTimeout(timeout);
+            handleDebugDump();
         }
     };
 
-    // Handle realtime fetch
-    const handleGetRealtime = async () => {
-        if (!connectedVin) return;
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const result = await bydGetRealtime(connectedVin);
-            if (result.success) {
-                setRealtimeData(result.data);
-                setSuccess('Datos actualizados');
-            }
-        } catch (err: any) {
-            console.error('BYD realtime error:', err);
-            setError(err.message || 'Error al obtener datos');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Handle GPS fetch
-    const handleGetGps = async () => {
-        if (!connectedVin) return;
-
-        setIsLoading(true);
-        setError(null);
-
-        try {
-            const result = await bydGetGps(connectedVin);
-            if (result.success) {
-                setGpsData(result.data);
-                setSuccess('GPS actualizado');
-            }
-        } catch (err: any) {
-            console.error('BYD GPS error:', err);
-            setError(err.message || 'Error al obtener GPS');
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    // Handle debug dump
+    // Handle debug dump (easter egg)
     const handleDebugDump = async () => {
         if (!connectedVin) return;
 
@@ -245,7 +207,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
             const result = await bydDebugDump(connectedVin);
             if (result.success) {
                 setDebugDump(result.dump);
-                setSuccess('API Dump obtenido correctamente');
+                toast.success('API Dump obtenido correctamente');
             } else {
                 setError('Error al obtener dump');
             }
@@ -276,24 +238,56 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
 
                 {/* Status */}
                 {isConnected && connectedVin && (
-                    <div className="connection-status connected">
-                        <span className="status-icon">✓</span>
-                        <div className="status-info">
-                            <strong>Conectado</strong>
-                            <span className="vin">{connectedVin}</span>
-                            {connectedVehicles.length > 0 && (
-                                <span className="vehicle-name">
-                                    {connectedVehicles[0].name || connectedVehicles[0].model}
-                                </span>
-                            )}
+                    <div className="mb-4">
+                        <div
+                            className="connection-status connected"
+                            style={{ marginBottom: '1rem', cursor: 'pointer', userSelect: 'none' }}
+                            onClick={handleConnectionTap}
+                            title="Toca 10 veces para API Dump"
+                        >
+                            <span className="status-icon">✓</span>
+                            <div className="status-info">
+                                <strong>Conectado</strong>
+                                <span className="vin">{connectedVin}</span>
+                                {connectedVehicles.length > 0 && (
+                                    <span className="vehicle-name">
+                                        {connectedVehicles[0].name || connectedVehicles[0].model}
+                                    </span>
+                                )}
+                            </div>
                         </div>
                         <button
-                            className="btn-disconnect"
+                            className="btn-disconnect w-full"
                             onClick={handleDisconnect}
                             disabled={isLoading}
                         >
                             Desconectar
                         </button>
+
+                        {/* Auto-register charges toggle */}
+                        <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <label className="flex items-center justify-between cursor-pointer select-none">
+                                <div>
+                                    <div className="font-medium text-slate-700 dark:text-slate-200 mb-1">
+                                        {t('charges.autoRegisterTitle')}
+                                    </div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                                        {t('charges.autoRegisterDesc')}
+                                    </div>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={autoRegisterCharges}
+                                    onChange={(e) => {
+                                        const newValue = e.target.checked;
+                                        setAutoRegisterCharges(newValue);
+                                        localStorage.setItem('byd_auto_register_charges', String(newValue));
+                                        toast.success(newValue ? t('charges.autoRegisterEnabled') : t('charges.autoRegisterDisabled'));
+                                    }}
+                                    className="toggle-checkbox w-11 h-6 cursor-pointer"
+                                />
+                            </label>
+                        </div>
                     </div>
                 )}
 
@@ -380,164 +374,35 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                     </div>
                 )}
 
-                {/* Actions when connected */}
-                {isConnected && connectedVin && (
-                    <div className="connected-actions">
-                        <h4>Acciones de prueba</h4>
-
-                        <div className="action-buttons">
-                            <button
-                                className="btn-action"
-                                onClick={handleGetRealtime}
-                                disabled={isLoading}
-                            >
-                                📊 Obtener datos
-                            </button>
-                            <button
-                                className="btn-action"
-                                onClick={handleGetGps}
-                                disabled={isLoading}
-                            >
-                                📍 Obtener GPS
-                            </button>
-                            <button
-                                className="btn-action"
-                                onClick={handleDiagnostic}
-                                disabled={isLoading}
-                            >
-                                🔍 Diagnóstico
-                            </button>
-                            <button
-                                className="btn-action"
-                                onClick={handleDebugDump}
-                                disabled={isLoading}
-                                style={{ borderColor: '#8b5cf6', color: '#7c3aed', background: '#f5f3ff' }}
-                            >
-                                🐞 API Dump
-                            </button>
-                        </div>
-
-                        {/* Realtime data display */}
-                        {realtimeData && (
-                            <div className="data-display">
-                                <h5>Datos del vehículo</h5>
-                                <div className="data-grid">
-                                    <div className="data-item">
-                                        <span className="label">Batería</span>
-                                        <span className="value">{realtimeData.soc}%</span>
-                                    </div>
-                                    <div className="data-item">
-                                        <span className="label">Autonomía</span>
-                                        <span className="value">{realtimeData.range} km</span>
-                                    </div>
-                                    <div className="data-item">
-                                        <span className="label">Odómetro</span>
-                                        <span className="value">{realtimeData.odometer.toLocaleString()} km</span>
-                                    </div>
-                                    <div className="data-item">
-                                        <span className="label">Estado</span>
-                                        <span className="value">
-                                            {realtimeData.isCharging ? '🔌 Cargando' : ''}
-                                            {realtimeData.isLocked ? '🔒' : '🔓'}
-                                            {realtimeData.isOnline ? ' 🟢' : ' 🔴'}
-                                        </span>
-                                    </div>
-                                    {realtimeData.exteriorTemp !== undefined && (
-                                        <div className="data-item">
-                                            <span className="label">Temp. Exterior</span>
-                                            <span className="value">{realtimeData.exteriorTemp}°C</span>
-                                        </div>
-                                    )}
-                                    {realtimeData.interiorTemp !== undefined && (
-                                        <div className="data-item">
-                                            <span className="label">Temp. Interior</span>
-                                            <span className="value">{realtimeData.interiorTemp}°C</span>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* GPS data display */}
-                        {gpsData && (
-                            <div className="data-display">
-                                <h5>Ubicación GPS</h5>
-                                <div className="data-grid">
-                                    <div className="data-item">
-                                        <span className="label">Latitud</span>
-                                        <span className="value">{gpsData.latitude.toFixed(6)}</span>
-                                    </div>
-                                    <div className="data-item">
-                                        <span className="label">Longitud</span>
-                                        <span className="value">{gpsData.longitude.toFixed(6)}</span>
-                                    </div>
-                                    {gpsData.heading !== undefined && (
-                                        <div className="data-item">
-                                            <span className="label">Dirección</span>
-                                            <span className="value">{gpsData.heading}°</span>
-                                        </div>
-                                    )}
-                                </div>
-                                <a
-                                    href={`https://www.google.com/maps?q=${gpsData.latitude},${gpsData.longitude}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="btn-map"
+                {/* API Dump Display (Easter Egg: 10 taps on connected status) */}
+                {isConnected && connectedVin && debugDump && (
+                    <div className="diagnostic-display" style={{ marginTop: '1rem' }}>
+                        <h5>
+                            API Dump (Raw)
+                            <div className="dump-actions">
+                                <button
+                                    className="btn-copy"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(JSON.stringify(debugDump, null, 2));
+                                        toast.success('Dump copiado al portapapeles');
+                                    }}
                                 >
-                                    🗺️ Ver en Google Maps
-                                </a>
+                                    📋 Copiar
+                                </button>
+                                <button
+                                    className="btn-close"
+                                    onClick={() => setDebugDump(null)}
+                                >
+                                    ✕
+                                </button>
                             </div>
-                        )}
-
-                        {/* Full diagnostic display */}
-                        {showDiagnostic && diagnosticData && (
-                            <div className="diagnostic-display">
-                                <h5>
-                                    Diagnóstico Completo
-                                    <button
-                                        className="btn-close"
-                                        onClick={() => setShowDiagnostic(false)}
-                                    >
-                                        ✕
-                                    </button>
-                                </h5>
-                                <pre className="diagnostic-json">
-                                    {JSON.stringify(diagnosticData, null, 2)}
-                                </pre>
-                            </div>
-                        )}
-
-                        {/* API Dump Display */}
-                        {debugDump && (
-                            <div className="diagnostic-display">
-                                <h5>
-                                    API Dump (Raw)
-                                    <div className="dump-actions">
-                                        <button
-                                            className="btn-copy"
-                                            onClick={() => {
-                                                navigator.clipboard.writeText(JSON.stringify(debugDump, null, 2));
-                                                setSuccess('Dump copiado al portapapeles');
-                                            }}
-                                        >
-                                            📋 Copiar
-                                        </button>
-                                        <button
-                                            className="btn-close"
-                                            onClick={() => setDebugDump(null)}
-                                        >
-                                            ✕
-                                        </button>
-                                    </div>
-                                </h5>
-                                <div className="dump-info">
-                                    <small>Guardado en Firestore: <code>bydVehicles/{connectedVin}/debug</code></small>
-                                </div>
-                                <pre className="diagnostic-json">
-                                    {JSON.stringify(debugDump, null, 2)}
-                                </pre>
-                            </div>
-                        )}
+                        </h5>
+                        <div className="dump-info">
+                            <small>Guardado en Firestore: <code>bydVehicles/{connectedVin}/debug</code></small>
+                        </div>
+                        <pre className="diagnostic-json">
+                            {JSON.stringify(debugDump, null, 2)}
+                        </pre>
                     </div>
                 )}
             </div>
@@ -624,6 +489,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                     display: flex;
                     flex-direction: column;
                     gap: 0.25rem;
+                    min-width: 0;
                 }
 
                 .status-info strong {
@@ -638,6 +504,9 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                     font-family: monospace;
                     font-size: 0.8rem;
                     color: #6b7280;
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 }
 
                 .dark .status-info .vin {
@@ -782,6 +651,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 .btn-disconnect {
                     background: #ef4444;
                     color: white;
+                    flex-shrink: 0;
                 }
 
                 .btn-disconnect:hover:not(:disabled) {

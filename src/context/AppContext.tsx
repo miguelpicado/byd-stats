@@ -111,8 +111,16 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 loaded.smartChargingPreferences = [];
             }
 
-            // Merge with defaults
-            setSettings({ ...DEFAULT_SETTINGS, ...loaded });
+            // FIX: Don't merge chargerTypes if user already has custom chargers
+            // Only use DEFAULT_CHARGER_TYPES on first load (no saved chargerTypes)
+            const mergedSettings = { ...DEFAULT_SETTINGS, ...loaded };
+            if (!loaded.chargerTypes || loaded.chargerTypes.length === 0) {
+                // First time: use defaults
+                mergedSettings.chargerTypes = DEFAULT_CHARGER_TYPES;
+            }
+            // else: use loaded chargerTypes (don't mix with defaults)
+
+            setSettings(mergedSettings);
         } catch (e) {
             logger.error('Error loading settings:', e);
             setSettings(DEFAULT_SETTINGS);

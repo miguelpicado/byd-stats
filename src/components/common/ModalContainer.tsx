@@ -31,6 +31,7 @@ const RangeInsightsModalLazy = React.lazy(() => import('../modals/RangeInsightsM
 const SoHExplanationModalLazy = React.lazy(() => import('../modals/SoHExplanationModal'));
 const ThermalStressModalLazy = React.lazy(() => import('../modals/ThermalStressModal'));
 const TripInsightsModalLazy = React.lazy(() => import('../modals/TripInsightsModal'));
+const ClimateControlModalLazy = React.lazy(() => import('../modals/ClimateControlModal'));
 
 const ModalContainer: React.FC = () => {
     const {
@@ -46,7 +47,8 @@ const ModalContainer: React.FC = () => {
         aiLoss,
         aiSoH,
         aiSoHStats,
-        trips
+        trips,
+        isAiTraining
     } = useData();
 
     return (
@@ -114,6 +116,13 @@ const ModalContainer: React.FC = () => {
                 />
             )}
 
+            {modals.climateControl && (
+                <ClimateControlModalLazy
+                    isOpen={modals.climateControl}
+                    onClose={() => closeModal('climateControl')}
+                />
+            )}
+
             {modals.faq && <FAQModalLazy />}
 
             {modals.healthReport && (
@@ -146,6 +155,8 @@ const ModalContainer: React.FC = () => {
                     onClose={() => closeModal('rangeInsights')}
                     aiScenarios={aiScenarios || []}
                     aiLoss={aiLoss}
+                    isTraining={isAiTraining}
+                    summary={stats?.summary || null}
                 />
             )}
 

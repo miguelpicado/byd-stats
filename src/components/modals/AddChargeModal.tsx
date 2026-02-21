@@ -97,33 +97,92 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                 isSOCEstimated: editingCharge.isSOCEstimated || false
             });
         } else {
-            // Defaults for new charge
-            setFormData(prev => ({
-                ...prev,
-                type: isHybrid ? prev.type : 'electric', // Enforce electric if not hybrid
-                date: new Date().toISOString().split('T')[0],
-                time: new Date().toTimeString().slice(0, 5),
-                odometer: stats?.summary?.totalKm || '',
-                kwhCharged: '',
-                totalCost: '',
-                chargerTypeId: chargerTypes[0]?.id || '',
-                pricePerKwh: '',
-                finalPercentage: '',
-                initialPercentage: '',
-                litersCharged: '',
-                pricePerLiter: '',
-                isSOCEstimated: false
-            }));
+            // Check for auto-charge prefilled data
+            const autoChargePrefill = localStorage.getItem('auto_charge_prefill');
+            if (autoChargePrefill) {
+                try {
+                    const prefilled = JSON.parse(autoChargePrefill);
+                    setFormData(prev => ({
+                        ...prev,
+                        ...prefilled,
+                        chargerTypeId: chargerTypes[0]?.id || '',
+                    }));
+
+                    // Clear the prefill data after loading
+                    localStorage.removeItem('auto_charge_prefill');
+                } catch (e) {
+                    console.error('Error loading auto-charge prefill:', e);
+                }
+            } else {
+                // Defaults for new charge
+                setFormData(prev => ({
+                    ...prev,
+                    type: isHybrid ? prev.type : 'electric', // Enforce electric if not hybrid
+                    date: new Date().toISOString().split('T')[0],
+                    time: new Date().toTimeString().slice(0, 5),
+                    odometer: stats?.summary?.totalKm || '',
+                    kwhCharged: '',
+                    totalCost: '',
+                    chargerTypeId: chargerTypes[0]?.id || '',
+                    pricePerKwh: '',
+                    finalPercentage: '',
+                    initialPercentage: '',
+                    litersCharged: '',
+                    pricePerLiter: '',
+                    isSOCEstimated: false
+                }));
+            }
         }
     }, [modals.addCharge, editingCharge, chargerTypes, isHybrid, stats]);
 
     const handleChange = (field: keyof FormData, value: string | number | boolean) => {
-        setFormData(prev => ({
-            ...prev,
-            [field]: value,
-            // If user manually changes initialPercentage, mark as NOT estimated
-            isSOCEstimated: field === 'initialPercentage' ? false : prev.isSOCEstimated
-        }));
+        setFormData(prev => {
+            const updated: Partial<FormData> = {
+                [field]: value,
+                // If user manually changes initialPercentage, mark as NOT estimated
+                isSOCEstimated: field === 'initialPercentage' ? false : prev.isSOCEstimated
+            };
+
+            // Auto-calculate price for ELECTRIC charges
+            if (prev.type === 'electric') {
+                const kwh = parseFloat((field === 'kwhCharged' ? value : prev.kwhCharged).toString()) || 0;
+                const pricePerKwh = parseFloat((field === 'pricePerKwh' ? value : prev.pricePerKwh).toString()) || 0;
+                const totalCost = parseFloat((field === 'totalCost' ? value : prev.totalCost).toString()) || 0;
+
+                if (field === 'kwhCharged' || field === 'pricePerKwh') {
+                    // Calculate total cost from kWh × price/kWh
+                    if (kwh > 0 && pricePerKwh > 0) {
+                        updated.totalCost = (kwh * pricePerKwh).toFixed(2);
+                    }
+                } else if (field === 'totalCost') {
+                    // Calculate price/kWh from total cost ÷ kWh
+                    if (kwh > 0 && totalCost > 0) {
+                        updated.pricePerKwh = (totalCost / kwh).toFixed(3);
+                    }
+                }
+            }
+
+            // Auto-calculate price for FUEL charges
+            if (prev.type === 'fuel') {
+                const liters = parseFloat((field === 'litersCharged' ? value : prev.litersCharged).toString()) || 0;
+                const pricePerLiter = parseFloat((field === 'pricePerLiter' ? value : prev.pricePerLiter).toString()) || 0;
+                const totalCost = parseFloat((field === 'totalCost' ? value : prev.totalCost).toString()) || 0;
+
+                if (field === 'litersCharged' || field === 'pricePerLiter') {
+                    // Calculate total cost from liters × price/liter
+                    if (liters > 0 && pricePerLiter > 0) {
+                        updated.totalCost = (liters * pricePerLiter).toFixed(2);
+                    }
+                } else if (field === 'totalCost') {
+                    // Calculate price/liter from total cost ÷ liters
+                    if (liters > 0 && totalCost > 0) {
+                        updated.pricePerLiter = (totalCost / liters).toFixed(3);
+                    }
+                }
+            }
+
+            return { ...prev, ...updated };
+        });
     };
 
     const getRealKwh = useCallback(() => {
@@ -135,12 +194,11 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
 
     // Auto-estimate Initial SoC when odometer changes
     useEffect(() => {
-        // Only run if not editing an existing charge (or if we want to allow re-estimation? Better safe: only for new or if field is empty/estimated)
-        // Let's run if: electric type AND odometer valid AND (initialPct invalid/empty OR isSOCEstimated)
+        // Only auto-estimate if: electric type AND odometer valid AND (empty OR already estimated)
         if (formData.type !== 'electric' || !formData.odometer) return;
 
-        // Don't overwrite if user manually set it (unless it was already estimated)
-        if (formData.initialPercentage && !formData.isSOCEstimated && !editingCharge) return;
+        // NEVER overwrite if user manually set it (isSOCEstimated = false means user changed it)
+        if (formData.initialPercentage && !formData.isSOCEstimated) return;
 
         const currentOdo = parseFloat(formData.odometer.toString());
         if (isNaN(currentOdo)) return;
@@ -213,6 +271,14 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
         } else {
             // ID is generated by addCharge
             onSave(chargeData as Omit<Charge, 'id'>);
+        }
+
+        // Trigger SoH recalculation in background
+        if ((stats as any)?.recalculateSoH) {
+            (stats as any).recalculateSoH();
+        } else if ((useData as any)().recalculateSoH) {
+            // Fallback if stats object isn't holding it directly
+            (useData as any)().recalculateSoH();
         }
 
         onClose();

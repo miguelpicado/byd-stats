@@ -11,7 +11,7 @@ import { useModalContext } from './ModalProvider';
 import { useDatabase, UseDatabaseReturn } from '@hooks/useDatabase';
 import { useGoogleSync, UseGoogleSyncReturn } from '@hooks/useGoogleSync';
 import { useFileHandling, UseFileHandlingReturn } from '@hooks/useFileHandling';
-import { bydWakeVehicle } from '@/services/bydApi';
+import { useAutoChargeDetection } from '@hooks/useAutoChargeDetection';
 
 interface SyncContextType {
     googleSync: UseGoogleSyncReturn;
@@ -61,29 +61,30 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         carName: activeCar?.name || ''
     });
 
-    // BYD Wake on App Load - wake vehicle when app starts if BYD is connected
-    const hasWokenVehicle = useRef<string | null>(null);
+    // Auto Charge Detection - monitors vehicle status and auto-registers charge sessions
+    // NOTE: Relies on MQTT listener to update Firestore when charging starts/stops
+    // The car automatically sends data to BYD Cloud when charging begins (same as official app)
+    useAutoChargeDetection();
+
+    // Auto-Sync on SoH Calculation
     useEffect(() => {
-        if (!isNative) return;
+        const handleSoHCalculated = (event: CustomEvent) => {
+            const { soh, samples } = event.detail;
+            logger.info(`[SyncProvider] SoH calculated (${soh}%, ${samples} samples), triggering auto-sync...`);
 
-        const vin = activeCar?.vin;
-        // Only wake BYD vehicles (17-char VIN) once per session
-        if (!vin || vin.length !== 17 || hasWokenVehicle.current === vin) return;
+            if (googleSync.isAuthenticated && !googleSync.isSyncing) {
+                googleSync.syncNow(null).then(() => {
+                    logger.info('[SyncProvider] Auto-sync after SoH calculation completed');
+                    toast.success(t('sync.sohSynced', 'SoH actualizado y sincronizado'));
+                }).catch((err) => {
+                    logger.error('[SyncProvider] Auto-sync after SoH failed:', err);
+                });
+            }
+        };
 
-        hasWokenVehicle.current = vin;
-        logger.info(`[SyncProvider] App loaded with BYD vehicle ${vin}, waking...`);
-
-        bydWakeVehicle(vin)
-            .then((result) => {
-                logger.info(`[SyncProvider] BYD wake result: isAwake=${result.isAwake}, SOC=${result.data.soc}%`);
-                if (!result.isAwake) {
-                    logger.warn(`[SyncProvider] Vehicle in deep sleep: ${result.message}`);
-                }
-            })
-            .catch((error) => {
-                logger.error('[SyncProvider] Failed to wake BYD vehicle:', error);
-            });
-    }, [activeCar?.vin, isNative]);
+        window.addEventListener('sohCalculated', handleSoHCalculated as EventListener);
+        return () => window.removeEventListener('sohCalculated', handleSoHCalculated as EventListener);
+    }, [googleSync, t]);
 
     // Auto-Sync Effect
     useEffect(() => {

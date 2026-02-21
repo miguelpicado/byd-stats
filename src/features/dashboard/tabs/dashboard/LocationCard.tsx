@@ -37,7 +37,11 @@ const LocationCard: React.FC<LocationCardProps> = ({ status }) => {
     const { t } = useTranslation();
 
     const location = status?.lastLocation;
-    const hasLocation = location?.lat && location?.lon;
+    // Check if location exists and is not the default 0,0 (invalid GPS position)
+    const hasLocation = location &&
+        typeof location.lat === 'number' &&
+        typeof location.lon === 'number' &&
+        !(location.lat === 0 && location.lon === 0);
 
     // Detect dark mode
     const [isDark, setIsDark] = React.useState(false);
@@ -66,7 +70,15 @@ const LocationCard: React.FC<LocationCardProps> = ({ status }) => {
     return (
         <div className="w-full flex-1 min-h-[120px] bg-white dark:bg-slate-800/40 rounded-2xl border border-slate-200 dark:border-slate-700/30 overflow-hidden relative group shadow-sm dark:shadow-none">
             {hasLocation ? (
-                <div className="h-full w-full relative z-0">
+                <div
+                    className="h-full w-full relative z-0 cursor-pointer"
+                    onClick={() => {
+                        if (location) {
+                            window.open(`https://www.google.com/maps/search/?api=1&query=${location.lat},${location.lon}`, '_blank');
+                        }
+                    }}
+                    title={t('dashboard.openMaps', 'Abrir en Google Maps')}
+                >
                     <MapContainer
                         center={mapCenter}
                         zoom={15}

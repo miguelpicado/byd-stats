@@ -33,6 +33,7 @@ export {
     bydStartClimateV2,
     bydStopClimateV2,
     bydFlashLightsV2,
+    bydHonkHornV2,
     bydCloseWindowsV2,
     bydSeatClimateV2,
     bydBatteryHeatV2,

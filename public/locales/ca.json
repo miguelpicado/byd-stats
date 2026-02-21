@@ -175,7 +175,12 @@
         "energyRecovered": "Energia recuperada",
         "percentile": "Percentil",
         "consumptionPerTrip": "Consum/viatge",
-        "avgDistance": "Distància mitjana"
+        "avgDistance": "Distància mitjana",
+        "tapToDelete": "Fes clic 10 vegades per esborrar",
+        "confirmDeleteTitle": "Esborrar viatge?",
+        "confirmDeleteMessage": "Aquesta acció no es pot desfer. El viatge s'eliminarà de tots els teus dispositius.",
+        "tripDeleted": "Viatge eliminat correctament",
+        "deleteError": "Error en esborrar el viatge"
     },
     "settings": {
         "title": "Configuració",
@@ -186,7 +191,7 @@
         "soh": "Estat de Salut - SoH (%)",
         "sohMode": "Mode de càlcul SoH",
         "sohManual": "Manual",
-        "sohCalculated": "Calculat (LFP)",
+        "sohCalculated": "Calculat",
         "mfgDate": "Data de fabricació",
         "mfgDateHint": "Necessària per a degradació per temps",
         "estimatedSoh": "SoH Estimat",
@@ -553,7 +558,14 @@
         "typeElectric": "Elèctrica",
         "typeFuel": "Repostatge",
         "litersCharged": "Litres repostats",
-        "pricePerLiter": "Preu per litre"
+        "pricePerLiter": "Preu per litre",
+        "autoDetectStart": "⚡ Càrrega detectada - Registrant automàticament",
+        "autoDetectEnd": "🔋 Càrrega completada - Obre el modal per revisar",
+        "autoDetectedNote": "Càrrega detectada automàticament",
+        "autoRegisterTitle": "🔋 Registrar càrregues automàticament",
+        "autoRegisterDesc": "Detecta i desa automàticament les sessions de càrrega",
+        "autoRegisterEnabled": "Registre automàtic activat",
+        "autoRegisterDisabled": "Registre automàtic desactivat"
     },
     "chargeInsights": {
         "kwhTitle": "Insights d'Energia",
@@ -684,6 +696,21 @@
         "keepLocal": "Mantenir Local",
         "useCloud": "Usar Núvol",
         "mergeBoth": "Combinar Ambdós"
+    },
+    "climate": {
+        "title": "Control de Clima",
+        "noVehicle": "No hi ha vehicle connectat",
+        "startFailed": "Error en iniciar climatització",
+        "controlFailed": "Error en control de clima",
+        "stopped": "Climatització aturada",
+        "stopFailed": "Error en aturar climatització",
+        "stopping": "Aturant...",
+        "stopButton": "Aturar Clima",
+        "starting": "Iniciant...",
+        "startButton": "Iniciar Clima",
+        "levelOff": "Apagat",
+        "levelLow": "Baix",
+        "levelHigh": "Alt"
     },
     "faq": {
         "pageTitle": "Preguntes Freqüents",

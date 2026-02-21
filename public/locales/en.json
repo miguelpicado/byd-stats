@@ -145,7 +145,12 @@
         "initial": "Initial",
         "final": "Final",
         "energyRecovered": "Energy recovered",
-        "percentile": "Percentile"
+        "percentile": "Percentile",
+        "tapToDelete": "Click 10 times to delete",
+        "confirmDeleteTitle": "Delete trip?",
+        "confirmDeleteMessage": "This action cannot be undone. The trip will be removed from all your devices.",
+        "tripDeleted": "Trip successfully deleted",
+        "deleteError": "Error deleting trip"
     },
     "dashboard": {
         "rangeInsights": "AI Range Insights",
@@ -160,6 +165,21 @@
         "climate": "Climate",
         "mapPlaceholder": "Map View",
         "lastUpdated": "Last updated"
+    },
+    "climate": {
+        "title": "Climate Control",
+        "noVehicle": "No vehicle connected",
+        "startFailed": "Failed to start climate",
+        "controlFailed": "Climate control failed",
+        "stopped": "Climate stopped",
+        "stopFailed": "Failed to stop climate",
+        "stopping": "Stopping...",
+        "stopButton": "Stop Climate",
+        "starting": "Starting...",
+        "startButton": "Start Climate",
+        "levelOff": "Off",
+        "levelLow": "Low",
+        "levelHigh": "High"
     },
     "actions": {
         "lock": "Lock",
@@ -220,7 +240,7 @@
         "soh": "State of Health - SoH (%)",
         "sohMode": "SoH Calculation Mode",
         "sohManual": "Manual",
-        "sohCalculated": "Calculated (LFP)",
+        "sohCalculated": "Calculated",
         "mfgDate": "Manufacturing Date",
         "mfgDateHint": "Required for calendar aging",
         "estimatedSoh": "Estimated SoH",
@@ -567,7 +587,14 @@
         "avgLast10": "Average last 10 charges",
         "avgKwh": "Avg kWh",
         "avgCost": "Avg Cost",
-        "last10Charges": "Last 10 charges"
+        "last10Charges": "Last 10 charges",
+        "autoDetectStart": "⚡ Charge detected - Automatically registering",
+        "autoDetectEnd": "🔋 Charge completed - Open modal to review",
+        "autoDetectedNote": "Automatically detected charge",
+        "autoRegisterTitle": "🔋 Automatically register charges",
+        "autoRegisterDesc": "Detects and automatically saves charging sessions",
+        "autoRegisterEnabled": "Auto-register enabled",
+        "autoRegisterDisabled": "Auto-register disabled"
     },
     "chargeInsights": {
         "kwhTitle": "Energy Insights",

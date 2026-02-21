@@ -555,12 +555,23 @@ export class BydClient {
                 rearLeft: Number(info.leftRearWindow) === 2,
                 rearRight: Number(info.rightRearWindow) === 2,
             },
-            tirePressure: {
-                frontLeft: this.parseNumber(info.leftFrontTirepressure, 0)!,
-                frontRight: this.parseNumber(info.rightFrontTirepressure, 0)!,
-                rearLeft: this.parseNumber(info.leftRearTirepressure, 0)!,
-                rearRight: this.parseNumber(info.rightRearTirepressure, 0)!,
-            },
+            tirePressure: (() => {
+                const fl = this.parseNumber(info.leftFrontTirepressure);
+                const fr = this.parseNumber(info.rightFrontTirepressure);
+                const rl = this.parseNumber(info.leftRearTirepressure);
+                const rr = this.parseNumber(info.rightRearTirepressure);
+
+                // Only return tire pressure if at least one value is > 0
+                if ((fl ?? 0) > 0 || (fr ?? 0) > 0 || (rl ?? 0) > 0 || (rr ?? 0) > 0) {
+                    return {
+                        frontLeft: fl ?? 0,
+                        frontRight: fr ?? 0,
+                        rearLeft: rl ?? 0,
+                        rearRight: rr ?? 0,
+                    };
+                }
+                return undefined;
+            })(),
             raw: data,
         };
     }
@@ -731,14 +742,22 @@ export class BydClient {
     /**
      * Start climate
      */
-    async startClimate(vin: string, tempCelsius: number = 22, pin?: string): Promise<boolean> {
+    async startClimate(
+        vin: string,
+        tempCelsius: number = 22,
+        pin?: string,
+        options?: { timeSpan?: number; cycleMode?: number }
+    ): Promise<boolean> {
         // BYD uses scale 1-17 where 1=18°C, 17=32°C
         const bydTemp = Math.max(1, Math.min(17, tempCelsius - 17));
+
+        // timeSpan: 1-5 (10/15/20/25/30 minutes)
+        // cycleMode: 1=Exterior, 2=Interior
         const params = {
             mainSettingTemp: String(bydTemp),
             copilotSettingTemp: String(bydTemp),
-            cycleMode: '2',  // Fresh air
-            timeSpan: '15',  // 15 minutes
+            cycleMode: String(options?.cycleMode || 2),  // Default: Interior (fresh air)
+            timeSpan: String(options?.timeSpan || 2),    // Default: 15 minutes
         };
         return this.remoteControl(vin, 'START_CLIMATE', pin, params);
     }
@@ -764,10 +783,31 @@ export class BydClient {
      * @param mode Heat level (0=off, 1=low, 2=medium, 3=high)
      * @param pin Control PIN
      */
-    async seatClimate(vin: string, seat: number, mode: number, pin?: string): Promise<boolean> {
+    /**
+     * Control seat heating and ventilation
+     * pyBYD requires ALL seat parameters to be sent together
+     * Values: 1=off, 2=low, 3=high (0=not applicable)
+     */
+    async seatClimate(
+        vin: string,
+        options: {
+            mainHeat?: number;
+            mainVentilation?: number;
+            copilotHeat?: number;
+            copilotVentilation?: number;
+        },
+        pin?: string
+    ): Promise<boolean> {
         const params = {
-            seatNum: String(seat),  // 0=driver, 1=passenger
-            level: String(mode),    // 0=off, 1=low, 2=medium, 3=high
+            mainHeat: String(options.mainHeat ?? 1),
+            mainVentilation: String(options.mainVentilation ?? 1),
+            copilotHeat: String(options.copilotHeat ?? 1),
+            copilotVentilation: String(options.copilotVentilation ?? 1),
+            // Rear seats not supported for now
+            lrSeatHeat: '1',
+            lrSeatVentilation: '1',
+            rrSeatHeat: '1',
+            rrSeatVentilation: '1',
         };
         return this.remoteControl(vin, 'SEAT_CLIMATE', pin, params);
     }
@@ -848,15 +888,23 @@ export class BydClient {
             throw new Error(`Remote control failed: code=${triggerResponse.code} msg=${errorMsg} payload=${payloadStr.substring(0, 100)}...`);
         }
 
-        // Poll for result
-        const result = await this.pollForResult(
-            '/control/remoteControlResult',
-            { vin, commandType },
-            10,
-            3000
-        );
-
-        return result.controlState === '1';
+        // Poll for result - but trigger success (code=0) already means the command was accepted
+        try {
+            const result = await this.pollForResult(
+                '/control/remoteControlResult',
+                { vin, commandType },
+                5,     // Reduced from 10 to 5 attempts
+                2000   // Reduced from 3000ms to 2000ms (max ~10s total)
+            );
+            const success = result?.controlState === '1' || result?.controlState === 1;
+            console.log(`[remoteControl] Poll result: controlState=${result?.controlState}, success=${success}`);
+            return success;
+        } catch (pollError: any) {
+            // Trigger was accepted (code=0) — command was sent to the car.
+            // Poll timeout just means we couldn't confirm the result, not that it failed.
+            console.log(`[remoteControl] Poll failed but trigger was accepted: ${pollError.message}`);
+            return true; // Optimistic: trigger accepted = command sent
+        }
     }
 
     /*
@@ -1120,9 +1168,10 @@ export class BydClient {
         let lastData: any = null;
 
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
-            // Always wait before polling (give the car time to respond to trigger)
-            console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}/${maxAttempts}, waiting ${delayMs}ms...`);
-            await this.sleep(delayMs);
+            // First attempt: quick check (500ms), subsequent attempts: full delay
+            const waitTime = attempt === 0 ? 500 : delayMs;
+            console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}/${maxAttempts}, waiting ${waitTime}ms...`);
+            await this.sleep(waitTime);
 
             // Refresh random and timeStamp on each poll attempt (as BYD-re does)
             if (rawInner && payload.timeStamp) {
@@ -1147,19 +1196,13 @@ export class BydClient {
                 return response.data;
             }
 
-            // Still processing (note: 1002 in pollForResult means "still processing", NOT session expired)
-            if (code === '1002' || code === '1003') {
+            // Still processing — keep polling
+            // 1002 = "still processing" (NOT session expired in poll context)
+            // 1003 = "still processing"
+            // 1009 = vehicle hasn't responded yet (common for control commands, car may be waking up)
+            if (code === '1002' || code === '1003' || code === '1009') {
+                console.log(`[pollForResult] ${endpoint} attempt ${attempt + 1}: code=${code}, continuing to poll...`);
                 continue;
-            }
-
-            // Vehicle offline/not responding
-            if (code === '1009') {
-                // If we had some data (even zeros), return it rather than throwing
-                if (lastData) {
-                    console.log('[pollForResult] Vehicle went offline, returning last data');
-                    return lastData;
-                }
-                throw new Error('Vehicle offline - car may be asleep. Try again when the car is awake (driving, charging, or recently used).');
             }
 
             // Error

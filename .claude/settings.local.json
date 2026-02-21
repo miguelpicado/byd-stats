@@ -67,7 +67,10 @@
       "Bash(do)",
       "Bash(echo:*)",
       "Bash(gcloud functions delete:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(gh search:*)",
+      "WebFetch(domain:pypi.org)",
+      "Bash(firebase firestore:get:*)"
     ]
   }
 }

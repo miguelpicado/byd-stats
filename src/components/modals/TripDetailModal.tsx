@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { formatDate, formatTime } from '@core/dateUtils';
 import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons';
-import { collection, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs, query, orderBy, doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Trip } from '@/types';
 
@@ -106,29 +106,43 @@ const TripDetailModal: React.FC = () => {
 
     // Handle trip deletion
     const handleDeleteTrip = async () => {
-        if (!trip?.id) return;
+        console.log('[TripDetail] Delete clicked, trip:', trip);
+        console.log('[TripDetail] Trip keys:', trip ? Object.keys(trip) : 'no trip');
+
+        // Try different ID fields
+        const tripId = trip?.id || (trip as any)?._id || (trip as any)?.tripId || `${trip?.date}_${trip?.start_timestamp}`;
+        console.log('[TripDetail] Using tripId:', tripId);
+
+        if (!tripId) {
+            console.error('[TripDetail] No trip ID found');
+            alert('Error: No se encontró el ID del viaje');
+            return;
+        }
 
         try {
-            // Mark as deleted in localStorage
+            console.log('[TripDetail] Saving to localStorage...');
             const deletedTrips = JSON.parse(localStorage.getItem('byd_deleted_trips') || '[]');
-            if (!deletedTrips.includes(trip.id)) {
-                deletedTrips.push(trip.id);
+            if (!deletedTrips.includes(tripId)) {
+                deletedTrips.push(tripId);
                 localStorage.setItem('byd_deleted_trips', JSON.stringify(deletedTrips));
             }
+            console.log('[TripDetail] Saved to localStorage');
 
-            // Delete from Firestore if it's a BYD trip
-            if (trip.source === 'byd' && trip.vehicleId) {
-                const { deleteDoc, doc } = await import('firebase/firestore');
+            if (trip?.source === 'byd' && trip?.vehicleId && trip?.id) {
+                console.log('[TripDetail] Deleting from Firestore...');
                 await deleteDoc(doc(db, 'bydVehicles', trip.vehicleId, 'trips', trip.id));
+                console.log('[TripDetail] Firestore delete OK');
             }
 
-            // Close modal and notify parent to refresh
-            alert('Viaje eliminado correctamente');
+            console.log('[TripDetail] Showing alert...');
+            alert(t('tripDetail.tripDeleted'));
+            console.log('[TripDetail] Closing...');
             onClose();
-            window.location.reload(); // Force refresh to update trip list
+            console.log('[TripDetail] Reloading...');
+            window.location.reload();
         } catch (error) {
-            console.error('Error deleting trip:', error);
-            alert('Error al borrar el viaje');
+            console.error('[TripDetail] Error:', error);
+            alert(`${t('tripDetail.deleteError')}: ${error instanceof Error ? error.message : String(error)}`);
         }
     };
 
@@ -217,7 +231,7 @@ const TripDetailModal: React.FC = () => {
                         <div
                             className="text-right cursor-pointer select-none"
                             onClick={handleScoreClick}
-                            title="Click 10 veces para borrar"
+                            title={t('tripDetail.tapToDelete')}
                         >
                             <p className="text-3xl font-black" style={{ color: details.scoreColor }}>
                                 {details.score.toFixed(1)}
@@ -365,22 +379,22 @@ const TripDetailModal: React.FC = () => {
                     <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" onClick={() => setShowDeleteConfirm(false)}>
                         <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
                         <div className="relative bg-white dark:bg-slate-800 rounded-2xl p-6 max-w-sm w-full border border-slate-200 dark:border-slate-700" onClick={(e) => e.stopPropagation()}>
-                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">¿Borrar viaje?</h3>
+                            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t('tripDetail.confirmDeleteTitle')}</h3>
                             <p className="text-slate-600 dark:text-slate-400 mb-4">
-                                Esta acción no se puede deshacer. El viaje se eliminará de todos tus dispositivos.
+                                {t('tripDetail.confirmDeleteMessage')}
                             </p>
                             <div className="flex gap-3">
                                 <button
                                     onClick={() => setShowDeleteConfirm(false)}
                                     className="flex-1 px-4 py-2 bg-slate-200 dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
                                 >
-                                    Cancelar
+                                    {t('common.cancel')}
                                 </button>
                                 <button
                                     onClick={handleDeleteTrip}
                                     className="flex-1 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                                 >
-                                    Borrar
+                                    {t('common.delete')}
                                 </button>
                             </div>
                         </div>

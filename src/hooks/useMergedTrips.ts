@@ -12,7 +12,8 @@ export const useMergedTrips = (
     localTrips: Trip[],
     settings: Settings,
     vehicleId: string | null, // VIN or ID
-    serverDateRange?: { start: string; end: string }
+    serverDateRange?: { start: string; end: string },
+    recalculateAutonomy?: () => Promise<void>
 ) => {
     // Firebase Trips State (Cumulative)
     const [latestTrips, setLatestTrips] = useState<Trip[]>([]); // Real-time updates
@@ -46,6 +47,12 @@ export const useMergedTrips = (
                     isFirstLoad.current = false;
                     // Trigger first history fetch to set up lastDoc and hasMore properly
                     loadMore();
+                } else if (trips.length > latestTrips.length) {
+                    // If we receive MORE trips than we had, it means a new trip was completed
+                    // Trigger Autonomy Recalculation
+                    if (recalculateAutonomy) {
+                        recalculateAutonomy();
+                    }
                 }
             }, 300);
         }, vehicleId, 20, serverDateRange);

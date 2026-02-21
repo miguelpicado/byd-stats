@@ -138,8 +138,14 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         onCloseOdometerModal={() => setShowOdometerModal(false)}
         insightType={insightType}
         onCloseInsightModal={() => setInsightType(null)}
-        onMfgDateClick={() => setShowMfgModal(true)}
-        onThermalStressClick={() => setShowThermalModal(true)}
+        onMfgDateClick={() => {
+          console.log('[OverviewTab] onMfgDateClick called');
+          setShowMfgModal(true);
+        }}
+        onThermalStressClick={() => {
+          console.log('[OverviewTab] onThermalStressClick called');
+          setShowThermalModal(true);
+        }}
         isActive={isActive}
         onRangeClick={() => setShowRangeModal(true)}
         isAiReady={aiLoss !== null && aiLoss < 0.5} // Simple heuristic for availability
@@ -172,6 +178,7 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
             aiScenarios={aiScenarios}
             aiLoss={aiLoss}
             isTraining={isAiTraining}
+            summary={summary}
           />
         )}
       </React.Suspense>

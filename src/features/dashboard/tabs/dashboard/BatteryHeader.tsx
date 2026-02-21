@@ -29,7 +29,10 @@ const BatteryHeader: React.FC<BatteryHeaderProps> = ({ status, summary, isAiRead
     return (
         <div className="grid grid-cols-4 gap-2 w-full h-12 shrink-0">
             {/* Battery Bar (Col Span 3) */}
-            <div className="col-span-3 relative h-full bg-slate-200 dark:bg-gray-700 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 shadow-sm dark:shadow-none">
+            <div
+                className="col-span-3 relative h-full bg-slate-200 dark:bg-gray-700 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700/50 shadow-sm dark:shadow-none cursor-pointer"
+                onClick={() => onOpenModal && onOpenModal('chargingInsights')}
+            >
                 <div
                     className={`h-full ${getBarColor(soc)} transition-all duration-500 flex items-center justify-end pr-4 text-white dark:text-black font-bold text-lg`}
                     style={{ width: `${soc}%` }}
