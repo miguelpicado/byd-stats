@@ -1248,6 +1248,54 @@ export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request
 // =============================================================================
 
 /**
+ * Clean up orphaned trips (trips marked as in_progress but not linked to activeTripId)
+ * This prevents stale trips from blocking new trip detection
+ */
+async function cleanupOrphanedTrips(vin: string, activeId: string | null): Promise<void> {
+    try {
+        const tripsSnap = await db.collection('bydVehicles').doc(vin).collection('trips')
+            .where('status', '==', 'in_progress')
+            .get();
+
+        if (tripsSnap.empty) return;
+
+        const now = admin.firestore.Timestamp.now();
+        const batch = db.batch();
+        let orphanCount = 0;
+
+        tripsSnap.docs.forEach(doc => {
+            // If there's an active trip ID and this is it, skip
+            if (activeId && doc.id === activeId) return;
+
+            // Close orphaned trip
+            const tripData = doc.data();
+            const startTime = tripData.startDate?.toMillis?.() || tripData.startDate || 0;
+            const ageMinutes = (now.toMillis() - startTime) / 60000;
+
+            // Only close if older than 10 minutes
+            if (ageMinutes > 10) {
+                batch.update(doc.ref, {
+                    status: 'completed',
+                    lastUpdate: now,
+                    orphanedCleanup: true,
+                    cleanupReason: 'orphaned_trip_auto_cleanup'
+                });
+                orphanCount++;
+                console.log(`[cleanupOrphanedTrips] Closing orphaned trip ${doc.id} (age: ${Math.round(ageMinutes)}m)`);
+            }
+        });
+
+        if (orphanCount > 0) {
+            await batch.commit();
+            console.log(`[cleanupOrphanedTrips] ✅ Cleaned up ${orphanCount} orphaned trips for ${vin}`);
+        }
+    } catch (e) {
+        console.error(`[cleanupOrphanedTrips] Error:`, e);
+        // Non-critical, continue
+    }
+}
+
+/**
  * Process vehicle state updates and handle trip detection
  * centralized logic used by both scheduled polling and manual wake
  */
@@ -1286,10 +1334,16 @@ async function processVehicleState(
     const prevOdometer = vehicleData.lastOdometer || 0;
     const activeTripId = vehicleData.activeTripId || null;
 
+    // Cleanup orphaned trips before processing (non-blocking)
+    cleanupOrphanedTrips(vin, activeTripId).catch(err =>
+        console.error('[processVehicleState] Orphan cleanup failed:', err)
+    );
+
     // Calculate movement using odometer
     // IMPORTANT: When prevOdometer is 0 (first poll, no prior data), skip odometer-based detection
+    // BUT allow other indicators (GPS, speed) to compensate
     const odoDelta = prevOdometer > 0 ? (realtime.odometer - prevOdometer) : 0;
-    const hasOdoMovement = odoDelta > 0; // Any increase is movement
+    const hasOdoMovement = prevOdometer > 0 ? (odoDelta > 0) : false;
 
     // Check climate FIRST so we can use it in GPS detection
     // Some models report airConditioningActive, others use remoteClimateStatus
@@ -1307,7 +1361,8 @@ async function processVehicleState(
             const lonDelta = Math.abs(gps.longitude - prevLon);
             gpsDelta = latDelta + lonDelta;
 
-            // Standard tracking threshold (~200m) - sufficient for "active" status persistence
+            // Moderate threshold (~200m) - balanced between sensitivity and GPS drift tolerance
+            // Too low (0.0005) causes false positives in garages/tunnels with poor GPS
             hasGpsMovement = gpsDelta > 0.002;
         }
     }
@@ -1408,24 +1463,24 @@ async function processVehicleState(
     if (!activeTripId && hasMovement) {
         // --- START NEW TRIP ---
         // Allow trip start even if locked (auto-lock while driving)
-        // Prevent trip start only if source is 'wake' (opening app) to avoid ghost trips
-        // NEW: Check GEAR. If Gear=1 (Park), DO NOT start trip.
+        // Allow 'wake' source - if the app is opened while driving, we should detect the trip
+        // Only block if car is explicitly in Park gear
         const isParked = realtime.gear === 1;
-        const canStartTrip = source !== 'wake' && !isParked;
+        const canStartTrip = !isParked;
 
         if (canStartTrip) {
-            // STRICT START RULES to prevent Ghost Trips:
+            // STRICT START RULES to prevent Ghost Trips (UPDATED for better sensitivity):
             // 1. Speed > 0 (Most reliable indicator)
-            // 2. Odometer > 0.1km (Ignore minor rounding noise)
-            // 3. GPS Delta > 0.005 (~550m) (Ignore garage drift)
+            // 2. Odometer > 0.02km (20m - more realistic for 20s polling in city/traffic)
+            // 3. GPS Delta > 0.002 (~200m - balanced between detection and GPS drift)
             // 4. Gear is DRIVE (3) (Explicit intent to move)
             // 5. Gear is NOT PARK (any gear change from P = about to drive)
             // 6. EPB released (parking brake off = about to drive)
             const gearNotPark = realtime.gear !== undefined && realtime.gear !== 1 && realtime.gear !== 0;
             const epbReleased = realtime.parkingBrake !== undefined && realtime.parkingBrake === 0;
             const strictStart = (realtime.speed || 0) > 0 ||
-                odoDelta >= 0.1 ||
-                (hasGpsMovement && gpsDelta > 0.005) ||
+                odoDelta >= 0.02 ||
+                (hasGpsMovement && gpsDelta > 0.002) ||
                 realtime.gear === 3 ||
                 gearNotPark ||
                 epbReleased;
@@ -1457,8 +1512,14 @@ async function processVehicleState(
                 vehicleUpdate.activeTripId = tripRef.id;
                 vehicleUpdate.pollingActive = true;
                 vehicleUpdate.pollingActivatedAt = now;
-                console.log(`[processVehicleState] STARTED trip: ${tripRef.id}`);
+                console.log(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gpsDelta=${gpsDelta.toFixed(6)}, gear=${realtime.gear})`);
+            } else {
+                // Log why trip was blocked
+                console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (strictStart failed): source=${source}, speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gpsDelta=${gpsDelta.toFixed(6)}, gear=${realtime.gear}, epb=${realtime.parkingBrake}, prevOdo=${prevOdometer}`);
             }
+        } else {
+            // Log why trip was blocked (not canStartTrip)
+            console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (canStartTrip=false): isParked=${isParked}, gear=${realtime.gear}, hasMovement=${hasMovement}`);
         }
     } else if (activeTripId && isStationary) {
         // --- STATIONARY / TRIP END LOGIC ---
@@ -1836,11 +1897,18 @@ async function closeTrip(
 
     try {
         await tripRef.update(updateData);
-        console.log(`[closeTrip] CLOSED trip: ${tripId}. Duration: ${durationMinutes}m (trimmed ${trimMinutes}m). Reason: ${stopReason}`);
+        console.log(`[closeTrip] ✅ CLOSED trip: ${tripId}. Distance: ${updateData.distanceKm}km, Duration: ${durationMinutes}m (trimmed ${trimMinutes}m), Electricity: ${electricityKwh}kWh, Reason: ${stopReason}`);
     } catch (dbError: any) {
-        console.error(`[closeTrip] Critical error updating Firestore for trip ${tripId}:`, dbError.message);
+        console.error(`[closeTrip] ❌ Critical error updating Firestore for trip ${tripId}:`, dbError.message);
         // We still want to return and continue so the activeTripId gets cleared in the caller
         // even if this specific trip record update partially failed.
+        // Try to at least mark it as completed to prevent orphaned trips
+        try {
+            await tripRef.update({ status: 'completed', lastUpdate: now, error: dbError.message });
+            console.log(`[closeTrip] ⚠️ Partial recovery: marked trip as completed despite error`);
+        } catch (recoveryError: any) {
+            console.error(`[closeTrip] ❌ Recovery also failed:`, recoveryError.message);
+        }
     }
 }
 
