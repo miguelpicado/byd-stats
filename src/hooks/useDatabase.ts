@@ -40,6 +40,7 @@ export interface UseDatabaseReturn {
     exportDatabase: (trips: Trip[]) => Promise<{ success: boolean; reason?: string; message?: string }>;
     validateFile: (file: File) => boolean;
     setError: (error: string | null) => void;
+    isJsonSyncData: (file: File) => Promise<boolean>;
 }
 
 /**
@@ -89,12 +90,47 @@ export function useDatabase(): UseDatabaseReturn {
         }
     }, []);
 
-    // Process database file (or CSV)
+    // Check if a JSON file is SyncData format
+    const isJsonSyncData = useCallback(async (file: File): Promise<boolean> => {
+        if (!file.name.toLowerCase().endsWith('.json')) return false;
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            // Check if it has the SyncData structure (trips, charges, or settings)
+            return data && typeof data === 'object' &&
+                   (Array.isArray(data.trips) || Array.isArray(data.charges) || data.settings);
+        } catch {
+            return false;
+        }
+    }, []);
+
+    // Process database file (or CSV or JSON)
     const processDB = useCallback(async (file: File, existingTrips: Trip[] = [], merge: boolean = false): Promise<Trip[] | null> => {
         setLoading(true);
         setError(null);
 
         try {
+            // Handle JSON SyncData Import
+            if (file.name.toLowerCase().endsWith('.json')) {
+                const text = await file.text();
+                const data = JSON.parse(text);
+
+                // Check if it's SyncData format
+                if (data && typeof data === 'object' &&
+                    (Array.isArray(data.trips) || Array.isArray(data.charges) || data.settings)) {
+                    // This is a complete SyncData file - return null to signal special handling
+                    // The caller should use importSyncData instead
+                    logger.info('Detected JSON SyncData format - should use importSyncData');
+                    return null;
+                }
+
+                // Otherwise treat as regular JSON trip data
+                if (Array.isArray(data)) {
+                    return data as Trip[];
+                }
+                throw new Error('Formato JSON no reconocido');
+            }
+
             // Handle CSV Import
             if (file.name.toLowerCase().endsWith('.csv')) {
                 const text = await file.text();
@@ -297,7 +333,8 @@ export function useDatabase(): UseDatabaseReturn {
     // Validate file type
     const validateFile = useCallback((file: File) => {
         const fileName = file.name.toLowerCase();
-        if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.csv')) {
+        if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') &&
+            !fileName.endsWith('.csv') && !fileName.endsWith('.json')) {
             return false;
         }
         return true;
@@ -311,7 +348,8 @@ export function useDatabase(): UseDatabaseReturn {
         processDB,
         exportDatabase,
         validateFile,
-        setError
+        setError,
+        isJsonSyncData
     };
 }
 

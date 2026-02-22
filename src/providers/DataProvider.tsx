@@ -80,6 +80,8 @@ export interface DataDispatch {
 
     loadFile: (file: File, merge?: boolean) => Promise<void>;
     exportData: () => Promise<{ success: boolean; reason?: string }>;
+    exportSyncData: () => Promise<{ success: boolean; reason?: string; message?: string }>;
+    importSyncData: (file: File, merge?: boolean) => Promise<void>;
     loadChargeRegistry: (file: File) => Promise<void>;
 
     addCharge: (charge: ChargeData) => Charge;
@@ -234,6 +236,8 @@ const DataProviderContent: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         loadFile: syncContext.loadFile,
         exportData: syncContext.exportData,
+        exportSyncData: syncContext.exportSyncData,
+        importSyncData: syncContext.importSyncData,
 
         setFilterType: filterContext.setFilterType,
         setSelMonth: filterContext.setSelMonth,

@@ -19,6 +19,8 @@ interface SyncContextType {
     fileHandling: UseFileHandlingReturn;
     loadFile: (file: File, merge?: boolean) => Promise<void>;
     exportData: () => Promise<{ success: boolean; reason?: string }>;
+    exportSyncData: () => Promise<{ success: boolean; reason?: string; message?: string }>;
+    importSyncData: (file: File, merge?: boolean) => Promise<void>;
     loadChargeRegistry: (file: File) => Promise<void>;
 }
 
@@ -106,9 +108,191 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         googleSync
     ]);
 
+    const exportData = useCallback(async () => {
+        if (!database.sqlReady) {
+            await database.initSql();
+        }
+        return database.exportDatabase(tripsContext.rawTrips);
+    }, [database, tripsContext.rawTrips]);
+
+    // Export complete SyncData (trips, charges, settings, aiCache) as JSON
+    const exportSyncData = useCallback(async () => {
+        try {
+            const syncData = {
+                trips: tripsContext.rawTrips || [],
+                charges: chargesContext.charges || [],
+                settings: settings,
+                aiCache: {
+                    efficiency: tripsContext.aiScenarios && tripsContext.aiLoss !== null ? {
+                        hash: `count:${tripsContext.rawTrips?.length || 0}`,
+                        scenarios: tripsContext.aiScenarios,
+                        loss: tripsContext.aiLoss
+                    } : undefined,
+                    soh: tripsContext.aiSoH !== null && tripsContext.aiSoHStats ? {
+                        hash: `count:${tripsContext.rawTrips?.length || 0}`,
+                        soh: tripsContext.aiSoH,
+                        stats: tripsContext.aiSoHStats
+                    } : undefined,
+                    parking: undefined // Not stored in context currently
+                }
+            };
+
+            const jsonString = JSON.stringify(syncData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `BYD_Stats_Data_${activeCarId || 'backup'}_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast.success(t('sync.exportSuccess', 'Datos exportados correctamente'));
+            logger.info(`Exported SyncData: ${tripsContext.rawTrips?.length || 0} trips, ${chargesContext.charges?.length || 0} charges`);
+
+            return { success: true };
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            logger.error('Error exporting sync data:', e);
+            toast.error(t('sync.exportFailed', 'Error al exportar datos'));
+            return { success: false, reason: 'error', message: error.message };
+        }
+    }, [tripsContext, chargesContext, settings, activeCarId, t]);
+
+    // Import SyncData from JSON file
+    const importSyncData = useCallback(async (file: File, merge: boolean = true) => {
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+
+            // Validate structure
+            if (!data || typeof data !== 'object') {
+                throw new Error('Formato de archivo inválido');
+            }
+
+            const importedTrips = Array.isArray(data.trips) ? data.trips : [];
+            const importedCharges = Array.isArray(data.charges) ? data.charges : [];
+            const importedSettings = data.settings || {};
+
+            // SAFETY: Show confirmation dialog with data summary
+            const currentTrips = tripsContext.rawTrips?.length || 0;
+            const currentCharges = chargesContext.charges?.length || 0;
+
+            const message = `⚠️ IMPORTANTE - Confirma la importación:\n\n` +
+                `📊 DATOS ACTUALES:\n` +
+                `• Viajes: ${currentTrips}\n` +
+                `• Cargas: ${currentCharges}\n\n` +
+                `📦 DATOS A IMPORTAR:\n` +
+                `• Viajes: ${importedTrips.length}\n` +
+                `• Cargas: ${importedCharges.length}\n\n` +
+                `${merge ? '🔀 Se FUSIONARÁN los datos (sin duplicados)' : '⚠️ Se REEMPLAZARÁN todos los datos actuales'}\n\n` +
+                `¿Continuar con la importación?`;
+
+            if (!confirm(message)) {
+                logger.info('Import cancelled by user');
+                toast.error(t('sync.importCancelled', 'Importación cancelada'));
+                return;
+            }
+
+            logger.info(`[IMPORT START] Current: ${currentTrips} trips, ${currentCharges} charges`);
+            logger.info(`[IMPORT START] Importing: ${importedTrips.length} trips, ${importedCharges.length} charges`);
+
+            let finalTrips = 0;
+            let finalCharges = 0;
+
+            if (merge) {
+                // Merge trips (avoid duplicates by date-timestamp)
+                const tripMap = new Map<string, typeof importedTrips[0]>();
+                (tripsContext.rawTrips || []).forEach(t => tripMap.set(`${t.date}-${t.start_timestamp}`, t));
+                importedTrips.forEach(t => {
+                    const key = `${t.date}-${t.start_timestamp}`;
+                    if (!tripMap.has(key)) {
+                        tripMap.set(key, t);
+                    }
+                });
+                const mergedTrips = Array.from(tripMap.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+                tripsContext.setRawTrips(mergedTrips);
+                finalTrips = mergedTrips.length;
+
+                // Merge charges (avoid duplicates by timestamp)
+                const chargeMap = new Map<string, typeof importedCharges[0]>();
+                (chargesContext.charges || []).forEach(c => {
+                    const key = c.timestamp ? String(c.timestamp) : `${c.date}T${c.time}`;
+                    chargeMap.set(key, c);
+                });
+                importedCharges.forEach(c => {
+                    const key = c.timestamp ? String(c.timestamp) : `${c.date}T${c.time}`;
+                    if (!chargeMap.has(key)) {
+                        chargeMap.set(key, c);
+                    }
+                });
+                const mergedCharges = Array.from(chargeMap.values());
+                chargesContext.replaceCharges(mergedCharges);
+                finalCharges = mergedCharges.length;
+
+                // Merge settings (non-default values from import take precedence)
+                const mergedSettings = { ...settings, ...importedSettings };
+                updateSettings(mergedSettings);
+            } else {
+                // Replace all data
+                tripsContext.setRawTrips(importedTrips);
+                chargesContext.replaceCharges(importedCharges);
+                finalTrips = importedTrips.length;
+                finalCharges = importedCharges.length;
+                if (Object.keys(importedSettings).length > 0) {
+                    updateSettings(importedSettings);
+                }
+            }
+
+            logger.info(`[IMPORT COMPLETE] Final: ${finalTrips} trips, ${finalCharges} charges`);
+            logger.info(`[IMPORT COMPLETE] Delta: ${finalTrips - currentTrips > 0 ? '+' : ''}${finalTrips - currentTrips} trips, ${finalCharges - currentCharges > 0 ? '+' : ''}${finalCharges - currentCharges} charges`);
+
+            toast.success(
+                t('sync.importSuccess', 'Datos importados correctamente') +
+                `\n\nViajes: ${currentTrips} → ${finalTrips} (${finalTrips - currentTrips > 0 ? '+' : ''}${finalTrips - currentTrips})\n` +
+                `Cargas: ${currentCharges} → ${finalCharges} (${finalCharges - currentCharges > 0 ? '+' : ''}${finalCharges - currentCharges})`
+            );
+
+            // SAFETY: Ask before syncing to cloud
+            if (googleSync.isAuthenticated) {
+                const syncConfirm = confirm(
+                    `✅ Importación completada:\n\n` +
+                    `Viajes: ${currentTrips} → ${finalTrips}\n` +
+                    `Cargas: ${currentCharges} → ${finalCharges}\n\n` +
+                    `¿Sincronizar ahora con Google Drive?\n\n` +
+                    `⚠️ Esto sobrescribirá la copia de seguridad en la nube.`
+                );
+
+                if (syncConfirm) {
+                    logger.info('[IMPORT] User confirmed sync to cloud');
+                    setTimeout(() => googleSync.syncNow(null), 1000);
+                } else {
+                    logger.info('[IMPORT] User skipped cloud sync');
+                    toast('ℹ️ Sincronización con Drive omitida. Puedes sincronizar manualmente desde Settings.', { duration: 5000 });
+                }
+            }
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            logger.error('Error importing sync data:', e);
+            toast.error(t('sync.importFailed', 'Error al importar datos: ') + error.message);
+            throw error;
+        }
+    }, [tripsContext, chargesContext, settings, updateSettings, googleSync, t]);
+
     // File Loading
     const loadFile = useCallback(async (file: File, merge: boolean = false) => {
         try {
+            // Check if it's a JSON SyncData file
+            if (file.name.toLowerCase().endsWith('.json')) {
+                const isSyncData = await database.isJsonSyncData(file);
+                if (isSyncData) {
+                    // Use importSyncData for complete data files
+                    await importSyncData(file, merge);
+                    return;
+                }
+            }
+
             if (!database.sqlReady) {
                 await database.initSql();
             }
@@ -125,14 +309,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
             logger.error('Error loading file:', error);
             database.setError(err.message);
         }
-    }, [database, tripsContext.rawTrips, tripsContext.setRawTrips, googleSync]);
-
-    const exportData = useCallback(async () => {
-        if (!database.sqlReady) {
-            await database.initSql();
-        }
-        return database.exportDatabase(tripsContext.rawTrips);
-    }, [database, tripsContext.rawTrips]);
+    }, [database, tripsContext.rawTrips, tripsContext.setRawTrips, googleSync, importSyncData]);
 
     // Logic moved from DataProvider
     const loadChargeRegistry = useCallback(async (file: File) => {
@@ -251,8 +428,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         fileHandling,
         loadFile,
         exportData,
+        exportSyncData,
+        importSyncData,
         loadChargeRegistry
-    }), [googleSync, database, fileHandling, loadFile, exportData, loadChargeRegistry]);
+    }), [googleSync, database, fileHandling, loadFile, exportData, exportSyncData, importSyncData, loadChargeRegistry]);
 
     return (
         <SyncContext.Provider value={value}>

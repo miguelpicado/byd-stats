@@ -4,7 +4,7 @@ import { Trip, Charge, Settings, ChargerType, Car, RangeScenario, SoHStats } fro
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
 const DB_FILENAME = 'byd_stats_data.json';
-const FOLDER_ID = 'appDataFolder';
+const FOLDER_ID = 'appDataFolder'; // Back to appDataFolder for privacy
 
 // ============================================
 // CACHE SYSTEM

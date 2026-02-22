@@ -61,7 +61,7 @@ export function useGoogleAuth() {
             if (Capacitor.isNativePlatform()) {
                 await SocialLogin.initialize({
                     google: {
-                        webClientId: "721727786401-l61n23pt50lq34789851610211116124.apps.googleusercontent.com"
+                        webClientId: "REDACTED_GOOGLE_CLIENT_ID"
                     }
                 }).catch(() => { });
             }

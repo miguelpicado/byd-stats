@@ -1,7 +1,7 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useData } from '../../providers/DataProvider';
-import { Cloud, LogOut, RefreshCw, Database } from '../Icons';
+import { Cloud, LogOut, RefreshCw, Database, Download } from '../Icons';
 
 interface UserProfile {
     name?: string;
@@ -24,8 +24,20 @@ interface GoogleSyncSettingsProps {
 
 const GoogleSyncSettings: React.FC<GoogleSyncSettingsProps> = ({ googleSync }) => {
     const { t } = useTranslation();
-    const { openModal } = useData();
+    const { openModal, exportSyncData } = useData();
     const [imgError, setImgError] = React.useState(false);
+    const [exporting, setExporting] = React.useState(false);
+
+    const handleExport = async () => {
+        setExporting(true);
+        try {
+            await exportSyncData();
+        } catch (err) {
+            console.error('Export failed:', err);
+        } finally {
+            setExporting(false);
+        }
+    };
 
     // Reset error when profile changes
     React.useEffect(() => {
@@ -119,6 +131,24 @@ const GoogleSyncSettings: React.FC<GoogleSyncSettingsProps> = ({ googleSync }) =
                         >
                             <Database className="w-4 h-4 text-slate-500 dark:text-slate-400" />
                             {t('settings.cloudBackups', 'Gestionar Copias en la Nube')}
+                        </button>
+
+                        {/* Export Data Button */}
+                        <button
+                            onClick={handleExport}
+                            disabled={exporting}
+                            className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] ${
+                                exporting
+                                    ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
+                                    : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-600'
+                            }`}
+                        >
+                            {exporting ? (
+                                <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                                <Download className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                            )}
+                            {exporting ? t('sync.exporting', 'Exportando...') : t('settings.exportData', 'Exportar Todos los Datos')}
                         </button>
                     </div>
 
