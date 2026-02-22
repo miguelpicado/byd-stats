@@ -30,6 +30,14 @@ android/.gradle/
 android/local.properties
 android/.idea/
 
+# Android Keystores & Secrets - NEVER COMMIT THESE!
+android/app/*.keystore
+android/app/*.jks
+android/app/google-services.json
+android/app/release-signing.properties
+*.keystore
+*.jks
+
 # Testing
 coverage/
 .gemini/
