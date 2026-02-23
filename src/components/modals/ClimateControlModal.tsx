@@ -1,19 +1,22 @@
 // BYD Stats - Climate Control Modal Component
 // Advanced climate control interface for BYD vehicles
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '@/core/constants';
 import { Thermometer, Wind, Battery } from '../Icons';
 import ModalHeader from '../common/ModalHeader';
-import { useData } from '../../providers/DataProvider';
+import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
+import { useLayout } from '@/context/LayoutContext';
+import { logger } from '@core/logger';
 import {
     bydStartClimate,
     bydStopClimate,
     bydSeatClimate,
-    bydBatteryHeat
+    bydBatteryHeat,
+    bydWakeVehicle
 } from '@/services/bydApi';
 
 interface ClimateControlModalProps {
@@ -34,10 +37,11 @@ interface ClimateSettings {
 
 const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClose }) => {
     const { t } = useTranslation();
-    const { settings } = useData();
-    const vehicleStatus = useVehicleStatus();
-    const connectedVin = settings.bydConnectedVin;
-    const controlPin = settings.bydControlPin;
+    const { activeCar } = useCar();
+    const { isNative } = useLayout();
+    const vehicleStatus = useVehicleStatus(activeCar?.vin);
+    const connectedVin = activeCar?.vin;
+    const controlPin = ''; // Control PIN should be handled by backend
 
     const [isLoading, setIsLoading] = useState(false);
     const [climateSettings, setClimateSettings] = useState<ClimateSettings>({
@@ -70,8 +74,28 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
     ];
 
     const handleStartClimate = async () => {
+        // Validate vehicle connectivity
+        if (!activeCar) {
+            toast.error(t('errors.noVehicle', 'No vehicle selected'));
+            logger.warn('[ClimateControl] No active car selected');
+            return;
+        }
+
         if (!connectedVin) {
-            toast.error(t('climate.noVehicle'));
+            toast.error('Vehicle VIN not available. Please reconnect your BYD account.');
+            logger.error('[ClimateControl] Active car missing VIN');
+            return;
+        }
+
+        if (activeCar.connectorType !== 'pybyd') {
+            toast.error('Climate control requires direct BYD account connection');
+            logger.warn(`[ClimateControl] Car connectorType is ${activeCar.connectorType}, need 'pybyd'`);
+            return;
+        }
+
+        if (!isNative) {
+            toast.error('Climate control only available in the mobile app');
+            logger.warn('[ClimateControl] Climate control attempted in PWA mode');
             return;
         }
 
@@ -79,6 +103,8 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
         try {
             // Convert duration to timeSpan (10/15/20/25/30 min → 1/2/3/4/5)
             const timeSpan = Math.floor(climateSettings.duration / 5) - 1;
+
+            logger.info(`[ClimateControl] Starting climate at ${climateSettings.temperature}°C for ${climateSettings.duration} minutes`);
 
             // Start climate with temperature and options
             const result = await bydStartClimate(
@@ -100,6 +126,7 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                     climateSettings.passengerSeatVent > 1;
 
                 if (hasAnySeatSetting) {
+                    logger.info('[ClimateControl] Applying seat climate settings');
                     await bydSeatClimate(connectedVin, {
                         mainHeat: climateSettings.driverSeatHeat,
                         mainVentilation: climateSettings.driverSeatVent,
@@ -110,36 +137,115 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
 
                 // Apply battery heating if requested
                 if (climateSettings.batteryHeat) {
+                    logger.info('[ClimateControl] Activating battery heating');
                     await bydBatteryHeat(connectedVin, controlPin);
                 }
 
+                // Refresh vehicle state after successful command
+                logger.info('[ClimateControl] Climate started, refreshing vehicle state...');
+                setTimeout(() => {
+                    bydWakeVehicle(connectedVin).catch(err => {
+                        logger.warn('[ClimateControl] Failed to refresh vehicle state:', err);
+                    });
+                }, 1000);
+
                 onClose();
             } else {
-                toast.error(t('climate.startFailed'));
+                toast.error('Climate start failed. Please try again.');
+                logger.error('[ClimateControl] Climate start returned success: false');
             }
         } catch (error: any) {
-            console.error('Climate control error:', error);
-            toast.error(error.message || t('climate.controlFailed'));
+            logger.error('[ClimateControl] Climate control error:', error);
+
+            // Extract error information
+            const errorCode = error.code || 'unknown';
+            const errorMessage = error.message || 'Climate control failed';
+
+            // Create user-friendly error messages
+            let userMessage = errorMessage;
+            if (errorCode === 'functions/internal') {
+                userMessage = 'Backend error. The command may have succeeded despite this error.';
+            } else if (errorCode === 'functions/failed-precondition' && errorMessage.includes('1009')) {
+                userMessage = 'PIN verification failed. Please reconnect your BYD account to update the PIN.';
+            } else if (errorCode === 'functions/unauthenticated') {
+                userMessage = 'Authentication failed. Please reconnect your BYD account.';
+            } else if (errorMessage.includes('timeout')) {
+                userMessage = 'Vehicle not responding. Make sure it\'s online and try again.';
+            }
+
+            toast.error(userMessage, { duration: 6000 });
         } finally {
             setIsLoading(false);
         }
     };
 
     const handleStopClimate = async () => {
-        if (!connectedVin) return;
+        // Validate vehicle connectivity
+        if (!activeCar) {
+            toast.error(t('errors.noVehicle', 'No vehicle selected'));
+            logger.warn('[ClimateControl] No active car selected');
+            return;
+        }
+
+        if (!connectedVin) {
+            toast.error('Vehicle VIN not available. Please reconnect your BYD account.');
+            logger.error('[ClimateControl] Active car missing VIN');
+            return;
+        }
+
+        if (activeCar.connectorType !== 'pybyd') {
+            toast.error('Climate control requires direct BYD account connection');
+            logger.warn(`[ClimateControl] Car connectorType is ${activeCar.connectorType}, need 'pybyd'`);
+            return;
+        }
+
+        if (!isNative) {
+            toast.error('Climate control only available in the mobile app');
+            logger.warn('[ClimateControl] Climate control attempted in PWA mode');
+            return;
+        }
 
         setIsLoading(true);
         try {
+            logger.info('[ClimateControl] Stopping climate');
             const result = await bydStopClimate(connectedVin, controlPin);
+
             if (result.success) {
-                toast.success(t('climate.stopped'));
+                toast.success('Climate stopped successfully');
+
+                // Refresh vehicle state after successful command
+                logger.info('[ClimateControl] Climate stopped, refreshing vehicle state...');
+                setTimeout(() => {
+                    bydWakeVehicle(connectedVin).catch(err => {
+                        logger.warn('[ClimateControl] Failed to refresh vehicle state:', err);
+                    });
+                }, 1000);
+
                 onClose();
             } else {
-                toast.error(t('climate.stopFailed'));
+                toast.error('Climate stop failed. Please try again.');
+                logger.error('[ClimateControl] Climate stop returned success: false');
             }
         } catch (error: any) {
-            console.error('Stop climate error:', error);
-            toast.error(error.message || t('climate.stopFailed'));
+            logger.error('[ClimateControl] Stop climate error:', error);
+
+            // Extract error information
+            const errorCode = error.code || 'unknown';
+            const errorMessage = error.message || 'Climate control failed';
+
+            // Create user-friendly error messages
+            let userMessage = errorMessage;
+            if (errorCode === 'functions/internal') {
+                userMessage = 'Backend error. The command may have succeeded despite this error.';
+            } else if (errorCode === 'functions/failed-precondition' && errorMessage.includes('1009')) {
+                userMessage = 'PIN verification failed. Please reconnect your BYD account to update the PIN.';
+            } else if (errorCode === 'functions/unauthenticated') {
+                userMessage = 'Authentication failed. Please reconnect your BYD account.';
+            } else if (errorMessage.includes('timeout')) {
+                userMessage = 'Vehicle not responding. Make sure it\'s online and try again.';
+            }
+
+            toast.error(userMessage, { duration: 6000 });
         } finally {
             setIsLoading(false);
         }
@@ -154,7 +260,6 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
 
     if (!isOpen) return null;
 
-    const inputClass = "w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-3 py-2.5 border border-slate-200 dark:border-slate-600 text-sm focus:outline-none focus:ring-2 focus:ring-red-500/50";
     const labelClass = "block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2";
     const sectionClass = "mb-6";
 

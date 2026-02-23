@@ -694,6 +694,22 @@
         "useCloud": "Usar Nuvem",
         "mergeBoth": "Combinar Ambos"
     },
+    "dashboard": {
+        "rangeInsights": "Insights de Autonomia IA",
+        "range": "Autonomia",
+        "odo": "Odo",
+        "energy": "Energia",
+        "soh": "SoH",
+        "system": "Sistema",
+        "tires": "Pneus",
+        "windows": "Janelas",
+        "doors": "Portas",
+        "climate": "Clima",
+        "mapPlaceholder": "Vista do Mapa",
+        "lastUpdated": "Última atualização",
+        "updatingLocation": "Atualizando localização...",
+        "openMaps": "Abrir no Google Maps"
+    },
     "climate": {
         "title": "Controlo de Clima",
         "noVehicle": "Nenhum veículo conectado",

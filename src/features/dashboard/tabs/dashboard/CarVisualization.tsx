@@ -2,13 +2,29 @@ import React, { useState } from 'react';
 import { useCar } from '@/context/CarContext';
 import { bydWakeVehicle } from '@/services/bydApi';
 import toast from 'react-hot-toast';
+import { logger } from '@core/logger';
+import type { Trip, Charge } from '@/types';
 
-const CarVisualization: React.FC = () => {
+interface CarVisualizationProps {
+    onForceRefresh?: () => void;
+    trips?: Trip[];
+    charges?: Charge[];
+    recalculateSoH?: () => Promise<void>;
+    recalculateAutonomy?: () => Promise<void>;
+}
+
+const CarVisualization: React.FC<CarVisualizationProps> = ({
+    onForceRefresh,
+    trips = [],
+    charges = [],
+    recalculateSoH,
+    recalculateAutonomy
+}) => {
     const { activeCar } = useCar();
     const [tapCount, setTapCount] = useState(0);
     const [lastTap, setLastTap] = useState(0);
 
-    const handleImageClick = () => {
+    const handleImageClick = async () => {
         const now = Date.now();
         const vin = activeCar?.vin;
 
@@ -17,13 +33,66 @@ const CarVisualization: React.FC = () => {
         } else {
             const newCount = tapCount + 1;
             if (newCount >= 10) {
+                logger.info('[CarVisualization] 10 taps detected - triggering AI recalculation');
+
+                // Wake vehicle if VIN available
                 if (vin) {
-                    toast.promise(bydWakeVehicle(vin), {
-                        loading: 'Waking car...',
-                        success: 'Force update command sent',
-                        error: 'Failed to wake car'
+                    toast.promise(
+                        bydWakeVehicle(vin).then((result) => {
+                            onForceRefresh?.();
+                            return result;
+                        }),
+                        {
+                            loading: 'Waking car and updating location...',
+                            success: 'Vehicle data and location refreshed!',
+                            error: 'Failed to wake car'
+                        }
+                    );
+                } else {
+                    onForceRefresh?.();
+                }
+
+                // Check if we have relevant new data for AI recalculation
+                const hasEnoughCharges = charges.length >= 3;
+                const hasEnoughTrips = trips.length >= 5;
+
+                // Recalculate AI models if we have enough data
+                if (hasEnoughCharges && recalculateSoH) {
+                    logger.info(`[CarVisualization] Recalculating SoH with ${charges.length} charges`);
+                    toast.promise(
+                        recalculateSoH(),
+                        {
+                            loading: 'Recalculating Battery Health (SoH)...',
+                            success: 'SoH AI model updated!',
+                            error: 'Failed to recalculate SoH'
+                        }
+                    );
+                } else if (!hasEnoughCharges) {
+                    logger.warn(`[CarVisualization] Not enough charges for SoH (need 3, have ${charges.length})`);
+                }
+
+                if (hasEnoughTrips && recalculateAutonomy) {
+                    logger.info(`[CarVisualization] Recalculating Autonomy with ${trips.length} trips`);
+                    toast.promise(
+                        recalculateAutonomy(),
+                        {
+                            loading: 'Recalculating Range Analysis...',
+                            success: 'Range AI model updated!',
+                            error: 'Failed to recalculate range'
+                        }
+                    );
+                } else if (!hasEnoughTrips) {
+                    logger.warn(`[CarVisualization] Not enough trips for Autonomy (need 5, have ${trips.length})`);
+                }
+
+                // Show feedback if no AI models were recalculated
+                if (!hasEnoughCharges && !hasEnoughTrips) {
+                    toast('Need more data for AI analysis\n(min: 3 charges, 5 trips)', {
+                        icon: 'ℹ️',
+                        duration: 3000
                     });
                 }
+
                 setTapCount(0);
             } else {
                 setTapCount(newCount);

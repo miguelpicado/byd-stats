@@ -260,16 +260,29 @@ export const useProcessedData = (
             // Version 9: Aligning filters to 3% for both training and stats
             const sohHash = `${chargeHash}__${processingSettings.batterySize}__v9`;
 
-            // Check Cache (Efficiency)
-            if (aiCache && aiCache.hash === currentHash && aiCache.scenarios.length > 0) {
+            // Track if we need to train AI models
+            let needsAutonomyTraining = false;
+            let needsSoHTraining = false;
+
+            // Check Cache (Efficiency/Autonomy)
+            const hasAutonomyCache = aiCache && aiCache.hash === currentHash && aiCache.scenarios.length > 0;
+            if (hasAutonomyCache) {
                 if (isMounted) {
                     setAiScenarios(aiCache.scenarios);
                     setAiLoss(aiCache.loss);
+                    logger.debug('[useProcessedData] Autonomy Cache HIT');
+                }
+            } else {
+                // Cache MISS or data changed - need to train
+                needsAutonomyTraining = allTrips.length >= 5;
+                if (needsAutonomyTraining) {
+                    logger.info(`[useProcessedData] Autonomy Cache MISS - will train with ${allTrips.length} trips`);
                 }
             }
 
             // Check SoH Cache
-            if (sohCache && sohCache.hash === sohHash && sohCache.soh > 0) {
+            const hasSoHCache = sohCache && sohCache.hash === sohHash && sohCache.soh > 0;
+            if (hasSoHCache) {
                 if (isMounted) {
                     setAiSoH(sohCache.soh);
                     setAiSoHStats(sohCache.stats);
@@ -277,10 +290,14 @@ export const useProcessedData = (
                     if (processingSettings.sohMode === 'ai') {
                         processingSettings.soh = sohCache.soh;
                     }
-                    // logger.debug('[useProcessedData] SoH Cache HIT');
+                    logger.debug('[useProcessedData] SoH Cache HIT');
                 }
             } else {
-                // logger.debug('[useProcessedData] SoH Cache MISS or INVALID', { cacheHash: sohCache?.hash, reqHash: sohHash });
+                // Cache MISS or data changed - need to train
+                needsSoHTraining = charges.length >= 3;
+                if (needsSoHTraining) {
+                    logger.info(`[useProcessedData] SoH Cache MISS - will train with ${charges.length} charges`);
+                }
             }
 
             if (workerRef.current) {
@@ -304,36 +321,117 @@ export const useProcessedData = (
 
                     if (isMounted) setData(result);
 
-                    // We NO LONGER train automatically on miss. We only LOAD cache.
-                    // Recalculations are triggered explicitly via `recalculateAutonomy()` or `recalculateSoH()`
+                    // ============================================================
+                    // AUTOMATIC AI TRAINING (when cache is invalid or missing)
+                    // ============================================================
 
-                    // Train AI Parking Model
-                    // Check local cache for weights
+                    // Train Autonomy Model (Range Analysis) if needed
+                    if (needsAutonomyTraining && !isAiTraining) {
+                        setIsAiTraining(true);
+                        logger.info('[useProcessedData] Auto-training Autonomy model...');
+
+                        let capturedLoss = 0;
+                        workerRef.current.trainModel(allTrips)
+                            .then(({ loss }) => {
+                                capturedLoss = loss;
+                                setAiLoss(loss);
+                                return workerRef.current!.getRangeScenarios(
+                                    Number(processingSettings.batterySize) || 60,
+                                    Number(processingSettings.soh) || 100
+                                );
+                            })
+                            .then((scenarios) => {
+                                if (isMounted) {
+                                    setAiScenarios(scenarios);
+                                    setAiCache({
+                                        hash: currentHash,
+                                        scenarios,
+                                        loss: capturedLoss
+                                    });
+                                    logger.info('[useProcessedData] Autonomy model trained and cached');
+                                }
+                            })
+                            .catch((err) => {
+                                logger.error('[useProcessedData] Error training Autonomy:', err);
+                            })
+                            .finally(() => {
+                                if (isMounted) setIsAiTraining(false);
+                                // Train parking model as side effect
+                                if (allTrips.length >= 5) {
+                                    recalculateParking(allTrips);
+                                }
+                            });
+                    }
+
+                    // Train SoH Model if needed
+                    if (needsSoHTraining && !isProcessing) {
+                        logger.info('[useProcessedData] Auto-training SoH model...');
+
+                        let capturedSoH = 100;
+                        workerRef.current.trainSoH(structuredClone(charges), Number(processingSettings.batterySize) || 60)
+                            .then(({ predictedSoH }) => {
+                                capturedSoH = predictedSoH;
+                                if (isMounted) {
+                                    setAiSoH(predictedSoH);
+                                }
+                                return workerRef.current!.getSoHStats(
+                                    structuredClone(charges),
+                                    Number(processingSettings.batterySize) || 60
+                                );
+                            })
+                            .then((stats) => {
+                                if (isMounted) {
+                                    setAiSoHStats(stats);
+
+                                    // Truncate for APK cache
+                                    const safeStats = { ...stats };
+                                    if (safeStats.points && safeStats.points.length > 200) {
+                                        logger.warn(`[useProcessedData] Truncating SoH points from ${safeStats.points.length} to 200 for APK cache`);
+                                        safeStats.points = safeStats.points.slice(-200);
+                                        safeStats.trend = safeStats.trend.slice(-200);
+                                    }
+
+                                    setSohCache({
+                                        hash: sohHash,
+                                        soh: capturedSoH,
+                                        stats: safeStats
+                                    });
+                                    logger.info('[useProcessedData] SoH model trained and cached');
+                                }
+                            })
+                            .catch((err) => {
+                                logger.error('[useProcessedData] Error training SoH:', err);
+                            });
+                    }
+
+                    // Train AI Parking Model (restore from cache or train if needed)
                     const parkingHash = currentHash;
+                    const hasParkingCache = parkingCache && parkingCache.hash === parkingHash &&
+                                          parkingCache.weights && parkingCache.weights.length > 0;
 
-                    if (parkingCache && parkingCache.hash === parkingHash && parkingCache.weights && parkingCache.weights.length > 0) {
+                    if (hasParkingCache) {
                         // Validate Cache Format (v2: { data, shape })
                         const isValid = (parkingCache.weights[0] as any).data && (parkingCache.weights[0] as any).shape;
 
                         if (isValid) {
                             // Restore Model from Cache
                             workerRef.current.importParkingModel(parkingCache.weights).then(() => {
-                                // logger.debug('[AI Parking] Model Restored from Cache');
+                                logger.debug('[AI Parking] Model Restored from Cache');
                             }).catch(err => {
                                 logger.warn('Failed to restore parking model', err);
                                 setParkingCache(null); // Corrupt cache
                             });
                         } else {
-                            // Invalid format (legacy) -> Invalidate
+                            // Invalid format (legacy) -> Invalidate and retrain
                             setParkingCache(null);
+                            if (allTrips.length >= 5) {
+                                recalculateParking(allTrips);
+                            }
                         }
+                    } else if (allTrips.length >= 5) {
+                        // No cache - train parking model
+                        recalculateParking(allTrips);
                     }
-
-                    // Parking Training is also explicit now via `recalculateAutonomy` hooks
-                    // But we still attempt to load it from cache if valid
-
-                    // NO LONGER Train AI SoH Model automatically
-                    // Triggered explicitly via `recalculateSoH()`
 
                 } catch (e) {
                     logger.error('Worker processing error:', e);

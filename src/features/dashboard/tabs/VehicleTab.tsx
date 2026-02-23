@@ -8,11 +8,8 @@ const TripInsightsModal = React.lazy(() => import('@components/modals/TripInsigh
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
 const HealthReportModal = React.lazy(() => import('@components/modals/HealthReportModal'));
 const OdometerAdjustmentModal = React.lazy(() => import('@components/modals/OdometerAdjustmentModal'));
-const MfgDateModal = React.lazy(() => import('@components/modals/MfgDateModal'));
-const ThermalStressModal = React.lazy(() => import('@components/modals/ThermalStressModal'));
 
 import { useData } from '@/providers/DataProvider';
-import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { Summary, Settings, Trip, TripInsightType } from '@/types';
@@ -106,8 +103,13 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
       // Heat: 22ºC + Seat Heat High (Mode 2)
       await handleCommand('Smart Heat', async (vin) => {
         await bydStartClimate(vin, 22);
-        // Driver seat heat
-        await bydSeatClimate(vin, 0, 2);
+        // Driver seat heat high
+        await bydSeatClimate(vin, {
+          mainHeat: 3,
+          mainVentilation: 1,
+          copilotHeat: 1,
+          copilotVentilation: 1
+        });
         return { success: true };
       });
     } else {
@@ -116,7 +118,12 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
       await handleCommand('Smart Cool', async (vin) => {
         await bydStartClimate(vin, 21);
         // Ensure seat heat is off
-        await bydSeatClimate(vin, 0, 0);
+        await bydSeatClimate(vin, {
+          mainHeat: 1,
+          mainVentilation: 1,
+          copilotHeat: 1,
+          copilotVentilation: 1
+        });
         return { success: true };
       });
     }

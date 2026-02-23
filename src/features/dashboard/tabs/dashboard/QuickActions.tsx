@@ -3,68 +3,113 @@ import { useTranslation } from 'react-i18next';
 import { Lock, Unlock, Flashlight, WindowUp, Thermometer } from '@/components/Icons';
 import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
+import { useLayout } from '@/context/LayoutContext';
 import { useData } from '@/providers/DataProvider';
-import { bydLock, bydUnlock, bydStartClimate, bydStopClimate, bydFlashLights, bydHonkHorn, bydCloseWindows, bydSeatClimate } from '@/services/bydApi';
+import { bydLock, bydUnlock, bydStartClimate, bydStopClimate, bydFlashLights, bydHonkHorn, bydCloseWindows, bydSeatClimate, bydWakeVehicle } from '@/services/bydApi';
 import toast from 'react-hot-toast';
+import { logger } from '@core/logger';
 
 const QuickActions: React.FC = () => {
     const { t } = useTranslation();
     const { activeCar } = useCar();
+    const { isNative } = useLayout();
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
     const { openModal } = useData();
     const [loadingButton, setLoadingButton] = useState<string | null>(null);
-    const isLocked = vehicleStatus?.isLocked === true;
+
+    // Optimistic state updates (UI reflects action immediately, then syncs with Firestore)
+    const [optimisticLocked, setOptimisticLocked] = useState<boolean | null>(null);
+    const [optimisticClimate, setOptimisticClimate] = useState<boolean | null>(null);
+
+    // Use optimistic state if available, otherwise fall back to server state
+    const isLocked = optimisticLocked ?? vehicleStatus?.isLocked ?? false;
     const areWindowsOpen = vehicleStatus?.windows && Object.values(vehicleStatus.windows).some(isOpen => isOpen);
-    const climateActive = vehicleStatus?.climateActive === true;
+    const climateActive = optimisticClimate ?? vehicleStatus?.climateActive ?? false;
 
     // Long press state
-    const flashTimerRef = useRef<NodeJS.Timeout>();
-    const climateTimerRef = useRef<NodeJS.Timeout>();
+    const flashTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const climateTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
     const isFlashLongPress = useRef(false);
     const isClimateLongPress = useRef(false);
 
     const handleCommand = async (
         command: string,
         fn: (vin: string, ...args: any[]) => Promise<any>,
+        optimisticUpdate?: () => void,
         ...args: any[]
     ) => {
-        if (!activeCar?.vin) {
+        // Validate vehicle connectivity
+        if (!activeCar) {
             toast.error(t('errors.noVehicle', 'No vehicle selected'));
+            logger.warn('[QuickActions] No active car selected');
+            return;
+        }
+
+        if (!activeCar.vin) {
+            toast.error('Vehicle VIN not available. Please reconnect your BYD account.');
+            logger.error('[QuickActions] Active car missing VIN');
+            return;
+        }
+
+        if (activeCar.connectorType !== 'pybyd') {
+            toast.error('Remote control requires direct BYD account connection');
+            logger.warn(`[QuickActions] Car connectorType is ${activeCar.connectorType}, need 'pybyd'`);
+            return;
+        }
+
+        if (!isNative) {
+            toast.error('Remote control only available in the mobile app');
+            logger.warn('[QuickActions] Remote control attempted in PWA mode');
             return;
         }
 
         setLoadingButton(command);
+
+        // Apply optimistic update immediately for better UX
+        optimisticUpdate?.();
+
         try {
             const result = await fn(activeCar.vin, ...args);
             if (result.success) {
                 toast.success(t('messages.commandSuccess', 'Command sent successfully'));
+
+                // Refresh vehicle state after successful command
+                logger.info(`[QuickActions] Command ${command} succeeded, refreshing vehicle state...`);
+                setTimeout(() => {
+                    bydWakeVehicle(activeCar.vin!).catch(err => {
+                        logger.warn('[QuickActions] Failed to refresh vehicle state:', err);
+                    });
+                }, 1000);
             } else {
                 toast.error(t('messages.commandFailed', 'Command failed'));
+                // Revert optimistic update on failure
+                setOptimisticLocked(null);
+                setOptimisticClimate(null);
             }
         } catch (error: any) {
-            console.error(`[QuickActions] Full error object:`, error);
+            logger.error(`[QuickActions] Command ${command} failed:`, error);
 
-            // Extract all possible error information
+            // Revert optimistic update on error
+            setOptimisticLocked(null);
+            setOptimisticClimate(null);
+
+            // Extract error information
             const errorCode = error.code || 'unknown';
             const errorMessage = error.message || 'Remote control failed';
-            const errorDetails = error.details || null;
-
-            console.error(`[QuickActions] Code: ${errorCode}`);
-            console.error(`[QuickActions] Message: ${errorMessage}`);
-            if (errorDetails) {
-                console.error(`[QuickActions] Details:`, errorDetails);
-            }
 
             // Create user-friendly error messages
             let userMessage = errorMessage;
             if (errorCode === 'functions/internal') {
-                userMessage = 'Backend error. Check Firebase logs for details.';
+                userMessage = 'Backend error. The command may have succeeded despite this error.';
             } else if (errorCode === 'functions/failed-precondition' && errorMessage.includes('1009')) {
                 userMessage = 'PIN verification failed. Please reconnect your BYD account to update the PIN.';
+            } else if (errorCode === 'functions/unauthenticated') {
+                userMessage = 'Authentication failed. Please reconnect your BYD account.';
+            } else if (errorMessage.includes('timeout')) {
+                userMessage = 'Vehicle not responding. Make sure it\'s online and try again.';
             }
 
-            // Show toast with appropriate duration
-            toast.error(userMessage, { duration: 8000 });
+            toast.error(userMessage, { duration: 6000 });
         } finally {
             setLoadingButton(null);
         }
@@ -72,14 +117,22 @@ const QuickActions: React.FC = () => {
 
     const handleLock = async () => {
         if (isLocked) {
-            await handleCommand('undo_lock', bydUnlock);
+            await handleCommand(
+                'undo_lock',
+                bydUnlock,
+                () => setOptimisticLocked(false) // Optimistically unlock
+            );
         } else {
             if (areWindowsOpen) {
                 toast(t('messages.closingWindows', 'Closing windows...'), { icon: '🪟' });
                 await handleCommand('windows', bydCloseWindows);
                 await new Promise(resolve => setTimeout(resolve, 2000));
             }
-            await handleCommand('lock', bydLock);
+            await handleCommand(
+                'lock',
+                bydLock,
+                () => setOptimisticLocked(true) // Optimistically lock
+            );
         }
     };
 
@@ -125,7 +178,11 @@ const QuickActions: React.FC = () => {
 
     const handleClimateToggle = async () => {
         if (climateActive) {
-            await handleCommand('climate_off', bydStopClimate);
+            await handleCommand(
+                'climate_off',
+                bydStopClimate,
+                () => setOptimisticClimate(false) // Optimistically stop climate
+            );
         } else {
             // Smart climate logic
             const currentTemp = vehicleStatus?.interiorTemp ?? vehicleStatus?.exteriorTemp ?? 15;
@@ -133,18 +190,36 @@ const QuickActions: React.FC = () => {
 
             if (isCold) {
                 toast(t('messages.heating', 'Heating...'), { icon: '🔥' });
-                await handleCommand('heat', async (vin) => {
-                    await bydStartClimate(vin, 22);
-                    await bydSeatClimate(vin, 0, 2); // Driver seat heat high
-                    return { success: true };
-                });
+                await handleCommand(
+                    'heat',
+                    async (vin) => {
+                        await bydStartClimate(vin, 22);
+                        await bydSeatClimate(vin, {
+                            mainHeat: 3, // Driver seat heat high
+                            mainVentilation: 1,
+                            copilotHeat: 1,
+                            copilotVentilation: 1
+                        });
+                        return { success: true };
+                    },
+                    () => setOptimisticClimate(true) // Optimistically start climate
+                );
             } else {
                 toast(t('messages.cooling', 'Cooling...'), { icon: '❄️' });
-                await handleCommand('cool', async (vin) => {
-                    await bydStartClimate(vin, 21);
-                    await bydSeatClimate(vin, 0, 0); // Seat off
-                    return { success: true };
-                });
+                await handleCommand(
+                    'cool',
+                    async (vin) => {
+                        await bydStartClimate(vin, 21);
+                        await bydSeatClimate(vin, {
+                            mainHeat: 1, // Seat off
+                            mainVentilation: 1,
+                            copilotHeat: 1,
+                            copilotVentilation: 1
+                        });
+                        return { success: true };
+                    },
+                    () => setOptimisticClimate(true) // Optimistically start climate
+                );
             }
         }
     };

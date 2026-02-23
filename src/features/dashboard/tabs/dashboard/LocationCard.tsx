@@ -1,14 +1,10 @@
-import React, { useMemo, useEffect } from 'react'; // Added useMemo
+import React, { useMemo, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { VehicleStatus } from '@/hooks/useVehicleStatus';
-import { MapPin } from '@/components/Icons'; // Changed imports
+import { MapPin, RefreshCw } from '@/components/Icons';
 import { MapContainer, TileLayer, Marker, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-// ... (imports done)
-
-// ... inside component ...
-
 
 // Fix Leaflet default marker icons (same as in TripMapModal)
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -20,21 +16,42 @@ L.Icon.Default.mergeOptions({
 
 interface LocationCardProps {
     status: VehicleStatus | null;
+    forceRefresh?: number; // Timestamp to trigger refresh
 }
 
-// Component to update map center when location changes
-const MapUpdater: React.FC<{ center: [number, number] }> = ({ center }) => {
+// Component to update map center when location changes and fix size issues
+const MapUpdater: React.FC<{ center: [number, number]; forceRefresh?: number }> = ({ center, forceRefresh }) => {
     const map = useMap();
 
     useEffect(() => {
+        // Fix common Leaflet issue: map not rendering correctly until resize
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 100);
+    }, [map]);
+
+    useEffect(() => {
         map.setView(center, map.getZoom());
+        // Force invalidate size when location updates
+        setTimeout(() => {
+            map.invalidateSize();
+        }, 50);
     }, [center, map]);
+
+    // Force refresh when explicitly requested (e.g., from easter egg)
+    useEffect(() => {
+        if (forceRefresh) {
+            map.invalidateSize();
+            map.setView(center, map.getZoom());
+        }
+    }, [forceRefresh, map, center]);
 
     return null;
 };
 
-const LocationCard: React.FC<LocationCardProps> = ({ status }) => {
+const LocationCard: React.FC<LocationCardProps> = ({ status, forceRefresh }) => {
     const { t } = useTranslation();
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const location = status?.lastLocation;
     // Check if location exists and is not the default 0,0 (invalid GPS position)
@@ -59,6 +76,15 @@ const LocationCard: React.FC<LocationCardProps> = ({ status }) => {
 
         return () => observer.disconnect();
     }, []);
+
+    // Show refreshing indicator when forceRefresh changes
+    useEffect(() => {
+        if (forceRefresh) {
+            setIsRefreshing(true);
+            const timer = setTimeout(() => setIsRefreshing(false), 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [forceRefresh]);
 
     const mapCenter = useMemo(() => {
         if (hasLocation && location) {
@@ -97,11 +123,23 @@ const LocationCard: React.FC<LocationCardProps> = ({ status }) => {
                             }
                             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
                         />
-                        <MapUpdater center={mapCenter} />
+                        <MapUpdater center={mapCenter} forceRefresh={forceRefresh} />
                         <Marker position={mapCenter}>
                             {/* Optional: Add custom icon or just standard marker */}
                         </Marker>
                     </MapContainer>
+
+                    {/* Refreshing overlay */}
+                    {isRefreshing && (
+                        <div className="absolute inset-0 bg-black/20 backdrop-blur-[2px] flex items-center justify-center z-[600] pointer-events-none">
+                            <div className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 flex items-center gap-2 shadow-lg">
+                                <RefreshCw className="w-4 h-4 text-blue-500 animate-spin" />
+                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                                    {t('dashboard.updatingLocation', 'Actualizando ubicación...')}
+                                </span>
+                            </div>
+                        </div>
+                    )}
                     {/* Overlay gradient removed as per user request to avoid obscuring the map */}
                     {/* <div className="absolute inset-0 bg-gradient-to-t from-white/90 via-white/20 dark:from-slate-900/90 dark:via-slate-900/20 to-transparent pointer-events-none z-[400]" /> */}
                 </div>

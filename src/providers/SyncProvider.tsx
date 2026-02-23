@@ -1,10 +1,9 @@
-import { createContext, useContext, useMemo, useCallback, ReactNode, useEffect, useRef } from 'react';
+import { createContext, useContext, useMemo, useCallback, ReactNode, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
 import { logger } from '@core/logger';
 import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
-import { useLayout } from '@/context/LayoutContext';
 import { useTripsContext } from './TripsProvider';
 import { useChargesContext } from './ChargesProvider';
 import { useModalContext } from './ModalProvider';
@@ -36,7 +35,6 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCarId, cars, updateCar, activeCar } = useCar();
-    const { isNative } = useLayout();
 
     // Dependencies
     const tripsContext = useTripsContext();
@@ -204,8 +202,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
             if (merge) {
                 // Merge trips (avoid duplicates by date-timestamp)
                 const tripMap = new Map<string, typeof importedTrips[0]>();
-                (tripsContext.rawTrips || []).forEach(t => tripMap.set(`${t.date}-${t.start_timestamp}`, t));
-                importedTrips.forEach(t => {
+                (tripsContext.rawTrips || []).forEach((t: typeof importedTrips[0]) => tripMap.set(`${t.date}-${t.start_timestamp}`, t));
+                importedTrips.forEach((t: typeof importedTrips[0]) => {
                     const key = `${t.date}-${t.start_timestamp}`;
                     if (!tripMap.has(key)) {
                         tripMap.set(key, t);
@@ -217,11 +215,11 @@ export function SyncProvider({ children }: { children: ReactNode }) {
 
                 // Merge charges (avoid duplicates by timestamp)
                 const chargeMap = new Map<string, typeof importedCharges[0]>();
-                (chargesContext.charges || []).forEach(c => {
+                (chargesContext.charges || []).forEach((c: typeof importedCharges[0]) => {
                     const key = c.timestamp ? String(c.timestamp) : `${c.date}T${c.time}`;
                     chargeMap.set(key, c);
                 });
-                importedCharges.forEach(c => {
+                importedCharges.forEach((c: typeof importedCharges[0]) => {
                     const key = c.timestamp ? String(c.timestamp) : `${c.date}T${c.time}`;
                     if (!chargeMap.has(key)) {
                         chargeMap.set(key, c);

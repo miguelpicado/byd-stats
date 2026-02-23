@@ -70,7 +70,16 @@
       "Bash(done)",
       "Bash(gh search:*)",
       "WebFetch(domain:pypi.org)",
-      "Bash(firebase firestore:get:*)"
+      "Bash(firebase firestore:get:*)",
+      "Bash(git check-ignore:*)",
+      "Bash(npx cap sync:*)",
+      "Bash(./gradlew assembleDebug:*)",
+      "Bash(firebase target:list:*)",
+      "Bash(npm run type-check:*)",
+      "Bash(export GOOGLE_APPLICATION_CREDENTIALS:*)",
+      "Bash(export:*)",
+      "Bash(gcloud auth application-default login:*)",
+      "Bash(GCLOUD_PROJECT=REDACTED_FIREBASE_PROJECT_ID node:*)"
     ]
   }
 }

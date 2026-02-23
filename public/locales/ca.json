@@ -697,6 +697,22 @@
         "useCloud": "Usar Núvol",
         "mergeBoth": "Combinar Ambdós"
     },
+    "dashboard": {
+        "rangeInsights": "Anàlisi d'Autonomia IA",
+        "range": "Autonomia",
+        "odo": "Odo",
+        "energy": "Energia",
+        "soh": "SoH",
+        "system": "Sistema",
+        "tires": "Pneumàtics",
+        "windows": "Finestres",
+        "doors": "Portes",
+        "climate": "Clima",
+        "mapPlaceholder": "Vista del Mapa",
+        "lastUpdated": "Última actualització",
+        "updatingLocation": "Actualitzant ubicació...",
+        "openMaps": "Obrir a Google Maps"
+    },
     "climate": {
         "title": "Control de Clima",
         "noVehicle": "No hi ha vehicle connectat",

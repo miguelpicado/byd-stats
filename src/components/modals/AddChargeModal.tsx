@@ -255,9 +255,15 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
             chargeData.chargerTypeId = formData.chargerTypeId;
             chargeData.pricePerKwh = parseFloat(formData.pricePerKwh.toString()) || 0;
             chargeData.finalPercentage = parseFloat(formData.finalPercentage.toString()) || 0;
-            // Allow 0 as valid percentage
-            const initialHigh = parseFloat(formData.initialPercentage.toString());
-            chargeData.initialPercentage = !isNaN(initialHigh) ? initialHigh : undefined;
+            // Only include initialPercentage if it has a valid value (including 0)
+            // This prevents overwriting existing values with undefined when editing
+            const initialPercentageStr = formData.initialPercentage.toString().trim();
+            if (initialPercentageStr !== '') {
+                const initialHigh = parseFloat(initialPercentageStr);
+                if (!isNaN(initialHigh)) {
+                    chargeData.initialPercentage = initialHigh;
+                }
+            }
 
             chargeData.isSOCEstimated = formData.isSOCEstimated;
         } else {

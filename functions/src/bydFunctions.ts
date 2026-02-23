@@ -1512,6 +1512,7 @@ async function processVehicleState(
                 vehicleUpdate.activeTripId = tripRef.id;
                 vehicleUpdate.pollingActive = true;
                 vehicleUpdate.pollingActivatedAt = now;
+                vehicleUpdate.failedDetectionAttempts = 0; // Reset on success
                 console.log(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gpsDelta=${gpsDelta.toFixed(6)}, gear=${realtime.gear})`);
             } else {
                 // Log why trip was blocked
@@ -1623,10 +1624,30 @@ async function processVehicleState(
         }
     } else {
         // --- IDLE (no trip, no movement) ---
-        // cloudProbeAllVehicles handles detection. Deactivate polling if no trip started.
-        vehicleUpdate.pollingActive = false;
-        vehicleUpdate.stationaryPollCount = 0;
-        console.log(`[processVehicleState] IDLE — no movement detected, deactivating polling`);
+        // CLIMATE GUARD: If climate is active, never deactivate polling.
+        // This handles preconditioning where the user is about to drive.
+        if (isClimateActive) {
+            vehicleUpdate.pollingActive = true;
+            vehicleUpdate.failedDetectionAttempts = 0;
+            console.log(`[processVehicleState] IDLE — Climate active, keeping polling alive for preconditioning.`);
+        } else {
+            // Don't deactivate immediately - give it a few attempts in case car is just starting to move.
+            // Increased to 15 attempts (~5 minutes) to handle loading kids, etc.
+            const failedAttempts = (vehicleData.failedDetectionAttempts || 0) + 1;
+            vehicleUpdate.failedDetectionAttempts = failedAttempts;
+
+            if (failedAttempts >= 15) {
+                // After 15 failed attempts (~5 minutes), deactivate polling
+                vehicleUpdate.pollingActive = false;
+                vehicleUpdate.stationaryPollCount = 0;
+                vehicleUpdate.failedDetectionAttempts = 0;
+                console.log(`[processVehicleState] IDLE — no movement/climate after ${failedAttempts} attempts, deactivating polling`);
+            } else {
+                // Keep polling active for more attempts
+                vehicleUpdate.pollingActive = true;
+                console.log(`[processVehicleState] ⚠️ No movement detected (attempt ${failedAttempts}/15). Keeping polling active for retry.`);
+            }
+        }
     }
 
     await vehicleRef.update(vehicleUpdate);
@@ -2011,29 +2032,34 @@ async function pollActiveTripVehicles() {
 
         if (activeVehicles.empty) return;
 
-        const vehiclesWithTrip: admin.firestore.QueryDocumentSnapshot[] = [];
+        const vehiclesToPoll: admin.firestore.QueryDocumentSnapshot[] = [];
 
         for (const doc of activeVehicles.docs) {
             const data = doc.data();
-            if (data.activeTripId) {
-                vehiclesWithTrip.push(doc);
-            } else {
-                // pollingActive=true but no trip — this shouldn't happen in normal flow.
-                // Safety: deactivate stale polling (no trip started within 2h of activation)
+            // Poll if it has an active trip OR if polling is active (retry/preconditioning phase)
+            if (data.activeTripId || data.pollingActive) {
+                vehiclesToPoll.push(doc);
+            }
+
+            // Safety check for stale polling state
+            if (!data.activeTripId && data.pollingActive) {
                 const pollingActivatedAt = data.pollingActivatedAt?.toMillis() || 0;
                 const twoHoursMs = 2 * 60 * 60 * 1000;
                 if (pollingActivatedAt > 0 && (Date.now() - pollingActivatedAt) > twoHoursMs) {
                     console.log(`[pollActiveTripVehicles] ${doc.id}: Stale polling (${Math.round((Date.now() - pollingActivatedAt) / 60000)}min, no trip) — deactivating`);
                     await db.collection('bydVehicles').doc(doc.id).update({ pollingActive: false });
+                    // Remove from poll list if it was just deactivated
+                    const index = vehiclesToPoll.indexOf(doc);
+                    if (index > -1) vehiclesToPoll.splice(index, 1);
                 }
             }
         }
 
-        if (vehiclesWithTrip.length === 0) return;
+        if (vehiclesToPoll.length === 0) return;
 
-        console.log(`[pollActiveTripVehicles] Polling ${vehiclesWithTrip.length} trip vehicle(s)`);
+        console.log(`[pollActiveTripVehicles] Polling ${vehiclesToPoll.length} vehicle(s) (Trip/Retry/Precon)`);
 
-        const promises = vehiclesWithTrip.map(async (doc) => {
+        const promises = vehiclesToPoll.map(async (doc) => {
             try {
                 await pollVehicleInternal(doc.id, 'polling');
             } catch (e: any) {
@@ -2060,10 +2086,10 @@ async function cloudProbeAllVehicles() {
 
         if (allVehicles.empty) return;
 
-        // Skip vehicles already being tracked (active trip)
+        // Skip vehicles already being tracked (active trip or active polling retry)
         const vehiclesToProbe = allVehicles.docs.filter(doc => {
             const data = doc.data();
-            return !data.activeTripId; // Only probe idle vehicles
+            return !data.activeTripId && !data.pollingActive;
         });
 
         if (vehiclesToProbe.length === 0) return;

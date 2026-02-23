@@ -676,6 +676,22 @@
         "useCloud": "Erabili Hodeia",
         "mergeBoth": "Konbinatu Biak"
     },
+    "dashboard": {
+        "rangeInsights": "AI Autonomia Azterketa",
+        "range": "Autonomia",
+        "odo": "Odo",
+        "energy": "Energia",
+        "soh": "SoH",
+        "system": "Sistema",
+        "tires": "Gurpilak",
+        "windows": "Leihoak",
+        "doors": "Ateak",
+        "climate": "Klima",
+        "mapPlaceholder": "Maparen Ikuspegia",
+        "lastUpdated": "Azken eguneraketa",
+        "updatingLocation": "Kokapena eguneratzen...",
+        "openMaps": "Ireki Google Maps-en"
+    },
     "faq": {
         "pageTitle": "Galdera Arruntak",
         "pageSubtitle": "LAGUNTZA ETA SOPORTEA",

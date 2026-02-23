@@ -310,7 +310,9 @@
         "doors": "Puertas",
         "climate": "Clima",
         "mapPlaceholder": "Vista de Mapa",
-        "lastUpdated": "Última actualización"
+        "lastUpdated": "Última actualización",
+        "updatingLocation": "Actualizando ubicación...",
+        "openMaps": "Abrir en Google Maps"
     },
     "climate": {
         "title": "Control de Clima",

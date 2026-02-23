@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { useCar } from '@/context/CarContext';
 import { useApp } from '@/context/AppContext';
+import { useLayout } from '@/context/LayoutContext';
 import { useData } from '@/providers/DataProvider';
 import { AnomalyService } from '@/services/AnomalyService';
 import { TripInsightType } from '@/types';
@@ -28,9 +29,13 @@ const DashboardTab: React.FC = () => {
     const { t } = useTranslation();
     const { activeCar } = useCar();
     const { updateSettings } = useApp();
-    const { stats, settings, charges, trips, aiSoH, aiSoHStats, acknowledgedAnomalies = [], deletedAnomalies = [], setAcknowledgedAnomalies, setDeletedAnomalies, aiLoss, aiScenarios, isAiTraining } = useData();
+    const { isNative } = useLayout();
+    const { stats, settings, charges, trips, aiSoH, aiSoHStats, acknowledgedAnomalies = [], deletedAnomalies = [], setAcknowledgedAnomalies, setDeletedAnomalies, aiLoss, aiScenarios, isAiTraining, recalculateSoH, recalculateAutonomy } = useData();
     const { summary } = stats || {};
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
+
+    // QuickActions only available for native app with PyBYD connection
+    const showQuickActions = isNative && activeCar?.connectorType === 'pybyd';
 
     // Modal State
     const [insightType, setInsightType] = useState<TripInsightType | null>(null);
@@ -40,6 +45,9 @@ const DashboardTab: React.FC = () => {
     const [showChargingInsightsModal, setShowChargingInsightsModal] = useState(false);
     const [showMfgModal, setShowMfgModal] = useState(false);
     const [showThermalModal, setShowThermalModal] = useState(false);
+
+    // Map refresh state (triggered by easter egg or manual refresh)
+    const [mapRefreshKey, setMapRefreshKey] = useState<number>(0);
 
     // Calculate Anomalies for System Status
     const allAnomalies = useMemo(() => {
@@ -70,6 +78,10 @@ const DashboardTab: React.FC = () => {
         updateSettings({
             thermalStressFactor: factor
         });
+    };
+
+    const handleForceMapRefresh = () => {
+        setMapRefreshKey(Date.now());
     };
 
     const handleOpenModal = (modal: string) => {
@@ -126,16 +138,22 @@ const DashboardTab: React.FC = () => {
             />
 
             {/* Car Image (Visual only) */}
-            <CarVisualization />
+            <CarVisualization
+                onForceRefresh={handleForceMapRefresh}
+                trips={trips}
+                charges={charges}
+                recalculateSoH={recalculateSoH}
+                recalculateAutonomy={recalculateAutonomy}
+            />
 
             {/* Vehicle Control & Status Panel (Tires, Windows, Doors, Climate) */}
             <VehicleStatusPanel status={vehicleStatus} />
 
             {/* Location / Map */}
-            <LocationCard status={vehicleStatus} />
+            <LocationCard status={vehicleStatus} forceRefresh={mapRefreshKey} />
 
-            {/* Quick Actions (Lock, etc.) */}
-            <QuickActions />
+            {/* Quick Actions (Lock, etc.) - Only in APK with PyBYD */}
+            {showQuickActions && <QuickActions />}
 
             {/* Lazy Modals */}
             <React.Suspense fallback={null}>

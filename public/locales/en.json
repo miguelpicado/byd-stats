@@ -164,7 +164,9 @@
         "doors": "Doors",
         "climate": "Climate",
         "mapPlaceholder": "Map View",
-        "lastUpdated": "Last updated"
+        "lastUpdated": "Last updated",
+        "updatingLocation": "Updating location...",
+        "openMaps": "Open in Google Maps"
     },
     "climate": {
         "title": "Climate Control",
