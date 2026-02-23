@@ -73,6 +73,51 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
         { label: t('climate.levelHigh'), value: 3 },
     ];
 
+    const handleSeatSettingChange = async (key: keyof ClimateSettings, value: number) => {
+        // Update local state immediately for UI responsiveness
+        const nextSettings = { ...climateSettings, [key]: value };
+        setClimateSettings(nextSettings);
+
+        if (!connectedVin) return;
+
+        const toastId = toast.loading(t('climate.sendingCommand', 'Sending command...'));
+        try {
+            await bydSeatClimate(connectedVin, {
+                mainHeat: nextSettings.driverSeatHeat,
+                mainVentilation: nextSettings.driverSeatVent,
+                copilotHeat: nextSettings.passengerSeatHeat,
+                copilotVentilation: nextSettings.passengerSeatVent,
+            }, controlPin);
+            toast.success(t('climate.commandSuccess', 'Command successful'), { id: toastId });
+        } catch (error) {
+            logger.error('[ClimateControl] Seat climate failed:', error);
+            toast.error(t('climate.commandFailed', 'Command failed'), { id: toastId });
+            // Revert state on failure
+            setClimateSettings(climateSettings);
+        }
+    };
+
+    const handleBatteryHeatChange = async (active: boolean) => {
+        setClimateSettings(prev => ({ ...prev, batteryHeat: active }));
+
+        if (!connectedVin) return;
+
+        const toastId = toast.loading(t('climate.sendingCommand', 'Sending command...'));
+        try {
+            if (active) {
+                await bydBatteryHeat(connectedVin, controlPin);
+                toast.success(t('climate.commandSuccess', 'Command successful'), { id: toastId });
+            } else {
+                toast.error('Cannot stop battery heating directly via API yet.', { id: toastId });
+                setClimateSettings(prev => ({ ...prev, batteryHeat: true })); // Revert to active
+            }
+        } catch (error) {
+            logger.error('[ClimateControl] Battery heat failed:', error);
+            toast.error(t('climate.commandFailed', 'Command failed'), { id: toastId });
+            setClimateSettings(prev => ({ ...prev, batteryHeat: !active }));
+        }
+    };
+
     const handleStartClimate = async () => {
         // Validate vehicle connectivity
         if (!activeCar) {
@@ -378,7 +423,7 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                                         <button
                                             key={`driver-heat-${value}`}
                                             type="button"
-                                            onClick={() => updateSetting('driverSeatHeat', value)}
+                                            onClick={() => handleSeatSettingChange('driverSeatHeat', value)}
                                             className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
                                                 climateSettings.driverSeatHeat === value
                                                     ? 'bg-orange-500 text-white'
@@ -397,7 +442,7 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                                         <button
                                             key={`driver-vent-${value}`}
                                             type="button"
-                                            onClick={() => updateSetting('driverSeatVent', value)}
+                                            onClick={() => handleSeatSettingChange('driverSeatVent', value)}
                                             className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
                                                 climateSettings.driverSeatVent === value
                                                     ? 'bg-blue-500 text-white'
@@ -423,7 +468,7 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                                         <button
                                             key={`passenger-heat-${value}`}
                                             type="button"
-                                            onClick={() => updateSetting('passengerSeatHeat', value)}
+                                            onClick={() => handleSeatSettingChange('passengerSeatHeat', value)}
                                             className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
                                                 climateSettings.passengerSeatHeat === value
                                                     ? 'bg-orange-500 text-white'
@@ -442,7 +487,7 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                                         <button
                                             key={`passenger-vent-${value}`}
                                             type="button"
-                                            onClick={() => updateSetting('passengerSeatVent', value)}
+                                            onClick={() => handleSeatSettingChange('passengerSeatVent', value)}
                                             className={`py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
                                                 climateSettings.passengerSeatVent === value
                                                     ? 'bg-blue-500 text-white'
@@ -462,7 +507,7 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                         <label className={labelClass}>Battery Heating</label>
                         <button
                             type="button"
-                            onClick={() => updateSetting('batteryHeat', !climateSettings.batteryHeat)}
+                            onClick={() => handleBatteryHeatChange(!climateSettings.batteryHeat)}
                             className={`w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl font-medium text-sm transition-all border-2 ${
                                 climateSettings.batteryHeat
                                     ? 'bg-blue-500/20 border-blue-500 text-blue-700 dark:text-blue-300'

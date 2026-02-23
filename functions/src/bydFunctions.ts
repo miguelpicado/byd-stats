@@ -1593,11 +1593,20 @@ async function processVehicleState(
         } else {
             // Update trip end values while stationary (without closing)
             const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
-            await tripRef.update({
-                endOdometer: realtime.odometer,
-                endSoC: socDecimal,
-                lastUpdate: now
-            });
+            try {
+                await tripRef.update({
+                    endOdometer: realtime.odometer,
+                    endSoC: socDecimal,
+                    lastUpdate: now
+                });
+            } catch (e: any) {
+                console.warn(`[processVehicleState] ⚠️ Failed to update stationary trip ${activeTripId}: ${e.message}`);
+                // If trip doc is missing, clear the activeTripId so we don't get stuck
+                if (e.code === 5 || e.message.includes('NOT_FOUND') || e.message.includes('No document to update')) {
+                    console.log(`[processVehicleState] 🧹 Clearing stale activeTripId ${activeTripId} (doc missing)`);
+                    vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
+                }
+            }
         }
     } else if (activeTripId && hasMovement) {
         // --- MOVING ---
@@ -1621,6 +1630,13 @@ async function processVehicleState(
                 }];
             }
             await tripRef.update(updateData);
+        } else {
+            // Trip document missing but vehicle has activeTripId - CLEAR IT
+            console.log(`[processVehicleState] 🧹 Clearing stale activeTripId ${activeTripId} (doc missing while moving)`);
+            vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
+            
+            // Optionally: Should we force-start a new trip immediately? 
+            // For now, let's just clear it. The NEXT poll (in 20s) will see !activeTripId && hasMovement -> Start Trip.
         }
     } else {
         // --- IDLE (no trip, no movement) ---

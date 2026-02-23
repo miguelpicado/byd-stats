@@ -18,8 +18,8 @@ export interface UserProfile {
 
 export function useGoogleAuth() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-        const token = sessionStorage.getItem('google_access_token');
-        const expiry = sessionStorage.getItem('google_token_expiry');
+        const token = localStorage.getItem('google_access_token');
+        const expiry = localStorage.getItem('google_token_expiry');
         return !!(token && expiry && Date.now() < parseInt(expiry));
     });
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -43,9 +43,9 @@ export function useGoogleAuth() {
 
     const handleLoginSuccess = useCallback(async (accessToken: string) => {
         googleDriveService.setAccessToken(accessToken);
-        sessionStorage.setItem('google_access_token', accessToken);
+        localStorage.setItem('google_access_token', accessToken);
         const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour
-        sessionStorage.setItem('google_token_expiry', expiryTime.toString());
+        localStorage.setItem('google_token_expiry', expiryTime.toString());
 
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);
@@ -66,8 +66,8 @@ export function useGoogleAuth() {
                 }).catch(() => { });
             }
 
-            const token = sessionStorage.getItem('google_access_token');
-            const expiry = sessionStorage.getItem('google_token_expiry');
+            const token = localStorage.getItem('google_access_token');
+            const expiry = localStorage.getItem('google_token_expiry');
 
             if (token && expiry && Date.now() < parseInt(expiry)) {
                 googleDriveService.setAccessToken(token);
@@ -88,7 +88,7 @@ export function useGoogleAuth() {
             logger.error('Web Login Failed:', err);
             setError("Login failed");
         },
-        scope: "https://www.googleapis.com/auth/drive.appdata"
+        scope: "email profile https://www.googleapis.com/auth/drive.appdata"
     });
 
     const login = useCallback(async () => {
@@ -140,14 +140,24 @@ export function useGoogleAuth() {
             if (Capacitor.isNativePlatform()) {
                 try { await SocialLogin.logout({ provider: 'google' }); } catch (ignored) { }
             }
-            sessionStorage.removeItem('google_access_token');
-            sessionStorage.removeItem('google_token_expiry');
+            localStorage.removeItem('google_access_token');
+            localStorage.removeItem('google_token_expiry');
             setIsAuthenticated(false);
             setUserProfile(null);
         } catch (e) {
             logger.error('Logout failed', e);
         }
     }, []);
+
+    // Register unauthorized listener to handle token expiry from Drive Service
+    useEffect(() => {
+        googleDriveService.setOnUnauthorized(() => {
+            logger.warn('[Auth] Session invalidated by Drive Service (401)');
+            logout();
+            setError("Tu sesión de Google ha expirado o es inválida. Por favor, inicia sesión de nuevo.");
+        });
+        return () => googleDriveService.setOnUnauthorized(() => { });
+    }, [logout]);
 
     return {
         isAuthenticated,

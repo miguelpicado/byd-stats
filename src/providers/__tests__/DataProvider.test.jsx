@@ -43,6 +43,14 @@ vi.mock('@/hooks/useConfirmation', () => ({
     useConfirmation: () => ({})
 }));
 
+vi.mock('@/hooks/useVehicleStatus', () => ({
+    useVehicleStatus: () => ({})
+}));
+
+vi.mock('@/hooks/useAutoChargeDetection', () => ({
+    useAutoChargeDetection: () => ({})
+}));
+
 vi.mock('@/hooks/useModalState', () => ({
     default: () => ({
         modals: {},

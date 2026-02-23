@@ -55,10 +55,10 @@ const EstimatedChargeCard: React.FC<EstimatedChargeCardProps> = ({ summary, sett
 
     // Calculate Smart Charging Windows in background (only when data content changes)
     useEffect(() => {
-        if (!tripsCacheKey || !settings || !findSmartChargingWindows) return;
+        if (!settings || !findSmartChargingWindows) return;
 
         setIsCalculating(true);
-        findSmartChargingWindows(trips!, settings)
+        findSmartChargingWindows(trips || [], settings)
             .then(result => {
                 setSmartCharging(result);
                 setIsCalculating(false);

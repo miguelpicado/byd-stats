@@ -1,0 +1,629 @@
+
+> Configure project :app
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Configure project :capacitor-cordova-android-plugins
+WARNING: Using flatDir should be avoided because it doesn't support any meta-data formats.
+
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preReleaseBuild UP-TO-DATE
+> Task :app:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-android:preBuild UP-TO-DATE
+> Task :capacitor-android:preReleaseBuild UP-TO-DATE
+> Task :capacitor-android:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-android:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-android:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capacitor-app:preBuild UP-TO-DATE
+> Task :capacitor-app:preReleaseBuild UP-TO-DATE
+> Task :capacitor-app:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-app:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-app:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:preReleaseBuild UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-cordova-android-plugins:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capacitor-filesystem:preBuild UP-TO-DATE
+> Task :capacitor-filesystem:preReleaseBuild UP-TO-DATE
+> Task :capacitor-filesystem:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-filesystem:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-filesystem:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capacitor-status-bar:preBuild UP-TO-DATE
+> Task :capacitor-status-bar:preReleaseBuild UP-TO-DATE
+> Task :capacitor-status-bar:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capacitor-status-bar:mergeReleaseNativeLibs NO-SOURCE
+> Task :capacitor-status-bar:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :capgo-capacitor-social-login:preBuild UP-TO-DATE
+> Task :capgo-capacitor-social-login:preReleaseBuild UP-TO-DATE
+> Task :capgo-capacitor-social-login:mergeReleaseJniLibFolders UP-TO-DATE
+> Task :capgo-capacitor-social-login:mergeReleaseNativeLibs NO-SOURCE
+> Task :capgo-capacitor-social-login:copyReleaseJniLibsProjectOnly UP-TO-DATE
+> Task :app:mergeReleaseNativeLibs NO-SOURCE
+> Task :app:stripReleaseDebugSymbols NO-SOURCE
+> Task :app:extractReleaseNativeSymbolTables NO-SOURCE
+> Task :app:mergeReleaseNativeDebugMetadata NO-SOURCE
+> Task :capacitor-android:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-android:generateReleaseResources UP-TO-DATE
+> Task :capacitor-android:packageReleaseResources UP-TO-DATE
+> Task :capacitor-android:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-android:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-android:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-android:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-android:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :capacitor-android:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capacitor-app:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-app:generateReleaseResources UP-TO-DATE
+> Task :capacitor-app:packageReleaseResources UP-TO-DATE
+> Task :capacitor-app:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-app:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-app:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-app:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :capacitor-app:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capacitor-filesystem:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :capacitor-filesystem:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-filesystem:generateReleaseResources UP-TO-DATE
+> Task :capacitor-filesystem:packageReleaseResources UP-TO-DATE
+> Task :capacitor-filesystem:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-filesystem:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-filesystem:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-filesystem:compileReleaseKotlin UP-TO-DATE
+> Task :capacitor-filesystem:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-filesystem:compileReleaseJavaWithJavac NO-SOURCE
+> Task :capacitor-filesystem:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capacitor-status-bar:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-status-bar:generateReleaseResources UP-TO-DATE
+> Task :capacitor-status-bar:packageReleaseResources UP-TO-DATE
+> Task :capacitor-status-bar:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-status-bar:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-status-bar:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-status-bar:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-status-bar:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :capacitor-status-bar:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capgo-capacitor-social-login:generateReleaseResValues UP-TO-DATE
+> Task :capgo-capacitor-social-login:generateReleaseResources UP-TO-DATE
+> Task :capgo-capacitor-social-login:packageReleaseResources UP-TO-DATE
+> Task :capgo-capacitor-social-login:processReleaseNavigationResources UP-TO-DATE
+> Task :capgo-capacitor-social-login:parseReleaseLocalResources UP-TO-DATE
+> Task :capgo-capacitor-social-login:generateReleaseRFile UP-TO-DATE
+> Task :capgo-capacitor-social-login:javaPreCompileRelease UP-TO-DATE
+> Task :capgo-capacitor-social-login:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :capgo-capacitor-social-login:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capacitor-android:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateReleaseResValues UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateReleaseResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:packageReleaseResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:processReleaseNavigationResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:parseReleaseLocalResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:generateReleaseRFile UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:compileReleaseJavaWithJavac NO-SOURCE
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToDirRelease UP-TO-DATE
+> Task :app:checkReleaseDuplicateClasses UP-TO-DATE
+> Task :app:javaPreCompileRelease UP-TO-DATE
+> Task :capacitor-android:writeReleaseAarMetadata UP-TO-DATE
+> Task :capacitor-app:writeReleaseAarMetadata UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:writeReleaseAarMetadata UP-TO-DATE
+> Task :capacitor-filesystem:writeReleaseAarMetadata UP-TO-DATE
+> Task :capacitor-status-bar:writeReleaseAarMetadata UP-TO-DATE
+> Task :capgo-capacitor-social-login:writeReleaseAarMetadata UP-TO-DATE
+> Task :app:checkReleaseAarMetadata UP-TO-DATE
+> Task :app:processReleaseNavigationResources UP-TO-DATE
+> Task :app:compileReleaseNavigationResources UP-TO-DATE
+> Task :app:generateReleaseResValues UP-TO-DATE
+> Task :app:processReleaseGoogleServices UP-TO-DATE
+> Task :app:mapReleaseSourceSetPaths UP-TO-DATE
+> Task :app:generateReleaseResources UP-TO-DATE
+> Task :app:mergeReleaseResources UP-TO-DATE
+> Task :app:packageReleaseResources UP-TO-DATE
+> Task :app:parseReleaseLocalResources UP-TO-DATE
+> Task :app:createReleaseCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-android:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-android:processReleaseManifest UP-TO-DATE
+> Task :capacitor-app:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-app:processReleaseManifest UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:processReleaseManifest UP-TO-DATE
+> Task :capacitor-filesystem:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-filesystem:processReleaseManifest UP-TO-DATE
+> Task :capacitor-status-bar:extractDeepLinksRelease UP-TO-DATE
+> Task :capacitor-status-bar:processReleaseManifest UP-TO-DATE
+> Task :capgo-capacitor-social-login:extractDeepLinksRelease UP-TO-DATE
+> Task :capgo-capacitor-social-login:processReleaseManifest UP-TO-DATE
+> Task :app:processReleaseMainManifest UP-TO-DATE
+> Task :app:processReleaseManifest UP-TO-DATE
+> Task :app:processReleaseManifestForPackage UP-TO-DATE
+> Task :capacitor-android:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-app:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-filesystem:compileReleaseLibraryResources UP-TO-DATE
+> Task :capacitor-status-bar:compileReleaseLibraryResources UP-TO-DATE
+> Task :capgo-capacitor-social-login:compileReleaseLibraryResources UP-TO-DATE
+> Task :app:processReleaseResources UP-TO-DATE
+> Task :capacitor-app:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capacitor-filesystem:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capacitor-status-bar:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :capgo-capacitor-social-login:bundleLibCompileToJarRelease UP-TO-DATE
+> Task :app:compileReleaseJavaWithJavac UP-TO-DATE
+> Task :app:dexBuilderRelease UP-TO-DATE
+> Task :app:desugarReleaseFileDependencies UP-TO-DATE
+> Task :app:mergeReleaseStartupProfile UP-TO-DATE
+> Task :app:mergeExtDexRelease UP-TO-DATE
+> Task :app:mergeDexRelease UP-TO-DATE
+> Task :capacitor-android:prepareReleaseArtProfile UP-TO-DATE
+> Task :capacitor-app:prepareReleaseArtProfile UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:prepareReleaseArtProfile UP-TO-DATE
+> Task :capacitor-filesystem:prepareReleaseArtProfile UP-TO-DATE
+> Task :capacitor-status-bar:prepareReleaseArtProfile UP-TO-DATE
+> Task :capgo-capacitor-social-login:prepareReleaseArtProfile UP-TO-DATE
+> Task :app:mergeReleaseArtProfile UP-TO-DATE
+> Task :capacitor-app:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capacitor-filesystem:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capacitor-status-bar:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capgo-capacitor-social-login:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capacitor-android:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:bundleLibRuntimeToJarRelease UP-TO-DATE
+> Task :app:mergeReleaseShaders UP-TO-DATE
+> Task :app:mergeReleaseGlobalSynthetics UP-TO-DATE
+> Task :app:compileReleaseArtProfile UP-TO-DATE
+> Task :app:compileReleaseShaders NO-SOURCE
+> Task :app:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-android:mergeReleaseShaders UP-TO-DATE
+> Task :capacitor-android:compileReleaseShaders NO-SOURCE
+> Task :capacitor-android:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-android:mergeReleaseAssets UP-TO-DATE
+> Task :capacitor-app:mergeReleaseShaders UP-TO-DATE
+> Task :capacitor-app:compileReleaseShaders NO-SOURCE
+> Task :capacitor-app:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-app:mergeReleaseAssets UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeReleaseShaders UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:compileReleaseShaders NO-SOURCE
+> Task :capacitor-cordova-android-plugins:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-cordova-android-plugins:mergeReleaseAssets UP-TO-DATE
+> Task :capacitor-filesystem:mergeReleaseShaders UP-TO-DATE
+> Task :capacitor-filesystem:compileReleaseShaders NO-SOURCE
+> Task :capacitor-filesystem:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-filesystem:mergeReleaseAssets UP-TO-DATE
+> Task :capacitor-status-bar:mergeReleaseShaders UP-TO-DATE
+> Task :capacitor-status-bar:compileReleaseShaders NO-SOURCE
+> Task :capacitor-status-bar:generateReleaseAssets UP-TO-DATE
+> Task :capacitor-status-bar:mergeReleaseAssets UP-TO-DATE
+> Task :capgo-capacitor-social-login:mergeReleaseShaders UP-TO-DATE
+> Task :capgo-capacitor-social-login:compileReleaseShaders NO-SOURCE
+> Task :capgo-capacitor-social-login:generateReleaseAssets UP-TO-DATE
+> Task :capgo-capacitor-social-login:mergeReleaseAssets UP-TO-DATE
+
+> Task :app:mergeReleaseAssets FAILED
+ERROR: [public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js [public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js [public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js [public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js [public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js [public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js [public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js [public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js [public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js [public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js [public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js [public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js [public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js [public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js [public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js [public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js [public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js [public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js [public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js [public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js [public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js [public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js [public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js [public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js [public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css [public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js [public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js [public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js [public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js [public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js [public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js [public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js [public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js [public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js [public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js [public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js [public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js [public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js [public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js [public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js [public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js [public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js [public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js [public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js [public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js [public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js [public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js [public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js [public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js [public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js [public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js [public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js [public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html [public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html [public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json [public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json [public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json [public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json [public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json [public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json [public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json.gz: Resource and asset merger: Duplicate resources
+ERROR: [public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html [public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html.gz: Resource and asset merger: Duplicate resources
+
+[Incubating] Problems report is available at: file:///C:/Users/migue/Github/BYD-Stats/byd-stats/android/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:mergeReleaseAssets'.
+> [public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js	[public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js.gz: Error: Duplicate resources
+  [public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js	[public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js.gz: Error: Duplicate resources
+  [public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js	[public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js.gz: Error: Duplicate resources
+  [public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js	[public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js.gz: Error: Duplicate resources
+  [public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js	[public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js.gz: Error: Duplicate resources
+  [public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js	[public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js.gz: Error: Duplicate resources
+  [public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js	[public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js.gz: Error: Duplicate resources
+  [public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js	[public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js.gz: Error: Duplicate resources
+  [public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js	[public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js.gz: Error: Duplicate resources
+  [public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js	[public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js.gz: Error: Duplicate resources
+  [public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js	[public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js.gz: Error: Duplicate resources
+  [public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js	[public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js.gz: Error: Duplicate resources
+  [public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js	[public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js.gz: Error: Duplicate resources
+  [public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js	[public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js.gz: Error: Duplicate resources
+  [public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js	[public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js.gz: Error: Duplicate resources
+  [public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js	[public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js.gz: Error: Duplicate resources
+  [public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js	[public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js.gz: Error: Duplicate resources
+  [public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js	[public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js.gz: Error: Duplicate resources
+  [public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js	[public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js.gz: Error: Duplicate resources
+  [public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js	[public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js.gz: Error: Duplicate resources
+  [public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js	[public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js.gz: Error: Duplicate resources
+  [public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js	[public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js.gz: Error: Duplicate resources
+  [public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js	[public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js.gz: Error: Duplicate resources
+  [public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js	[public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js.gz: Error: Duplicate resources
+  [public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css	[public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css.gz: Error: Duplicate resources
+  [public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js	[public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js.gz: Error: Duplicate resources
+  [public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js	[public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js.gz: Error: Duplicate resources
+  [public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js	[public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js.gz: Error: Duplicate resources
+  [public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js	[public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js.gz: Error: Duplicate resources
+  [public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js	[public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js.gz: Error: Duplicate resources
+  [public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js	[public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js.gz: Error: Duplicate resources
+  [public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js	[public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js.gz: Error: Duplicate resources
+  [public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js	[public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js.gz: Error: Duplicate resources
+  [public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js	[public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js.gz: Error: Duplicate resources
+  [public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js	[public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js.gz: Error: Duplicate resources
+  [public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js	[public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js.gz: Error: Duplicate resources
+  [public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js	[public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js.gz: Error: Duplicate resources
+  [public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js	[public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js.gz: Error: Duplicate resources
+  [public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js	[public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js.gz: Error: Duplicate resources
+  [public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js	[public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js.gz: Error: Duplicate resources
+  [public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js	[public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js.gz: Error: Duplicate resources
+  [public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js	[public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js.gz: Error: Duplicate resources
+  [public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js	[public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js.gz: Error: Duplicate resources
+  [public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js	[public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js.gz: Error: Duplicate resources
+  [public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js	[public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js.gz: Error: Duplicate resources
+  [public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js	[public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js.gz: Error: Duplicate resources
+  [public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js	[public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js.gz: Error: Duplicate resources
+  [public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js	[public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js.gz: Error: Duplicate resources
+  [public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js	[public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js.gz: Error: Duplicate resources
+  [public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js	[public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js.gz: Error: Duplicate resources
+  [public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js	[public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js.gz: Error: Duplicate resources
+  [public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js	[public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js.gz: Error: Duplicate resources
+  [public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html	[public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html.gz: Error: Duplicate resources
+  [public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html	[public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html.gz: Error: Duplicate resources
+  [public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json	[public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json.gz: Error: Duplicate resources
+  [public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json	[public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json.gz: Error: Duplicate resources
+  [public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json	[public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json.gz: Error: Duplicate resources
+  [public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json	[public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json.gz: Error: Duplicate resources
+  [public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json	[public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json.gz: Error: Duplicate resources
+  [public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json	[public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json.gz: Error: Duplicate resources
+  [public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html	[public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html.gz: Error: Duplicate resources
+
+* Try:
+> Run with --info or --debug option to get more log output.
+> Run with --scan to get full insights.
+> Get more help at https://help.gradle.org.
+
+* Exception is:
+org.gradle.api.tasks.TaskExecutionException: Execution failed for task ':app:mergeReleaseAssets'.
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.lambda$executeIfValid$1(ExecuteActionsTaskExecuter.java:130)
+	at org.gradle.internal.Try$Failure.ifSuccessfulOrElse(Try.java:293)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:128)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.ProblemsTaskPathTrackingTaskExecuter.execute(ProblemsTaskPathTrackingTaskExecuter.java:41)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+Caused by: com.android.build.gradle.tasks.ResourceException: [public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js	[public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js.gz: Error: Duplicate resources
+[public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js	[public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js.gz: Error: Duplicate resources
+[public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js	[public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js.gz: Error: Duplicate resources
+[public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js	[public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js.gz: Error: Duplicate resources
+[public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js	[public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js.gz: Error: Duplicate resources
+[public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js	[public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js.gz: Error: Duplicate resources
+[public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js	[public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js.gz: Error: Duplicate resources
+[public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js	[public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js.gz: Error: Duplicate resources
+[public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js	[public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js.gz: Error: Duplicate resources
+[public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js	[public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js.gz: Error: Duplicate resources
+[public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js	[public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js.gz: Error: Duplicate resources
+[public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js	[public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js.gz: Error: Duplicate resources
+[public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js	[public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js.gz: Error: Duplicate resources
+[public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js	[public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js.gz: Error: Duplicate resources
+[public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js	[public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js.gz: Error: Duplicate resources
+[public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js	[public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js.gz: Error: Duplicate resources
+[public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js	[public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js.gz: Error: Duplicate resources
+[public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js	[public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js.gz: Error: Duplicate resources
+[public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js	[public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js.gz: Error: Duplicate resources
+[public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js	[public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js.gz: Error: Duplicate resources
+[public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js	[public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js.gz: Error: Duplicate resources
+[public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js	[public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js.gz: Error: Duplicate resources
+[public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js	[public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js.gz: Error: Duplicate resources
+[public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js	[public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js.gz: Error: Duplicate resources
+[public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css	[public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css.gz: Error: Duplicate resources
+[public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js	[public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js.gz: Error: Duplicate resources
+[public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js	[public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js.gz: Error: Duplicate resources
+[public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js	[public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js.gz: Error: Duplicate resources
+[public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js	[public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js.gz: Error: Duplicate resources
+[public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js	[public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js.gz: Error: Duplicate resources
+[public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js	[public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js.gz: Error: Duplicate resources
+[public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js	[public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js.gz: Error: Duplicate resources
+[public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js	[public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js.gz: Error: Duplicate resources
+[public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js	[public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js.gz: Error: Duplicate resources
+[public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js	[public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js.gz: Error: Duplicate resources
+[public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js	[public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js.gz: Error: Duplicate resources
+[public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js	[public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js.gz: Error: Duplicate resources
+[public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js	[public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js.gz: Error: Duplicate resources
+[public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js	[public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js.gz: Error: Duplicate resources
+[public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js	[public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js.gz: Error: Duplicate resources
+[public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js	[public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js.gz: Error: Duplicate resources
+[public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js	[public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js.gz: Error: Duplicate resources
+[public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js	[public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js.gz: Error: Duplicate resources
+[public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js	[public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js.gz: Error: Duplicate resources
+[public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js	[public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js.gz: Error: Duplicate resources
+[public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js	[public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js.gz: Error: Duplicate resources
+[public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js	[public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js.gz: Error: Duplicate resources
+[public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js	[public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js.gz: Error: Duplicate resources
+[public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js	[public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js.gz: Error: Duplicate resources
+[public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js	[public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js.gz: Error: Duplicate resources
+[public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js	[public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js.gz: Error: Duplicate resources
+[public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js	[public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js.gz: Error: Duplicate resources
+[public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html	[public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html.gz: Error: Duplicate resources
+[public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html	[public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html.gz: Error: Duplicate resources
+[public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json	[public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json.gz: Error: Duplicate resources
+[public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json	[public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json.gz: Error: Duplicate resources
+[public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json	[public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json.gz: Error: Duplicate resources
+[public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json	[public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json.gz: Error: Duplicate resources
+[public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json	[public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json.gz: Error: Duplicate resources
+[public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json	[public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json.gz: Error: Duplicate resources
+[public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html	[public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html.gz: Error: Duplicate resources
+	at com.android.build.gradle.tasks.MergeSourceSetFolders.doFullTaskAction(MergeSourceSetFolders.kt:173)
+	at com.android.build.gradle.tasks.MergeSourceSetFolders.doTaskAction(MergeSourceSetFolders.kt:122)
+	at com.android.build.gradle.internal.tasks.NewIncrementalTask$taskAction$$inlined$recordTaskAction$1.invoke(BaseTask.kt:82)
+	at com.android.build.gradle.internal.tasks.Blocks.recordSpan(Blocks.java:51)
+	at com.android.build.gradle.internal.tasks.NewIncrementalTask.taskAction(NewIncrementalTask.kt:46)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:103)
+	at org.gradle.internal.reflect.JavaMethod.invoke(JavaMethod.java:125)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.doExecute(IncrementalTaskAction.java:45)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:51)
+	at org.gradle.api.internal.project.taskfactory.IncrementalTaskAction.execute(IncrementalTaskAction.java:26)
+	at org.gradle.api.internal.project.taskfactory.StandardTaskAction.execute(StandardTaskAction.java:29)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$3.run(TaskExecution.java:244)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:30)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$1.execute(DefaultBuildOperationRunner.java:27)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.run(DefaultBuildOperationRunner.java:48)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeAction(TaskExecution.java:229)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeActions(TaskExecution.java:212)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.executeWithPreviousOutputFiles(TaskExecution.java:195)
+	at org.gradle.api.internal.tasks.execution.TaskExecution.execute(TaskExecution.java:162)
+	at org.gradle.internal.execution.steps.ExecuteStep.executeInternal(ExecuteStep.java:105)
+	at org.gradle.internal.execution.steps.ExecuteStep.access$000(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:59)
+	at org.gradle.internal.execution.steps.ExecuteStep$1.call(ExecuteStep.java:56)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:56)
+	at org.gradle.internal.execution.steps.ExecuteStep.execute(ExecuteStep.java:44)
+	at org.gradle.internal.execution.steps.CancelExecutionStep.execute(CancelExecutionStep.java:42)
+	at org.gradle.internal.execution.steps.TimeoutStep.executeWithoutTimeout(TimeoutStep.java:75)
+	at org.gradle.internal.execution.steps.TimeoutStep.execute(TimeoutStep.java:55)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:50)
+	at org.gradle.internal.execution.steps.PreCreateOutputParentsStep.execute(PreCreateOutputParentsStep.java:28)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:67)
+	at org.gradle.internal.execution.steps.RemovePreviousOutputsStep.execute(RemovePreviousOutputsStep.java:37)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:61)
+	at org.gradle.internal.execution.steps.BroadcastChangingOutputsStep.execute(BroadcastChangingOutputsStep.java:26)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:69)
+	at org.gradle.internal.execution.steps.CaptureOutputsAfterExecutionStep.execute(CaptureOutputsAfterExecutionStep.java:46)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:40)
+	at org.gradle.internal.execution.steps.ResolveInputChangesStep.execute(ResolveInputChangesStep.java:29)
+	at org.gradle.internal.execution.steps.BuildCacheStep.executeWithoutCache(BuildCacheStep.java:189)
+	at org.gradle.internal.execution.steps.BuildCacheStep.lambda$execute$1(BuildCacheStep.java:75)
+	at org.gradle.internal.Either$Right.fold(Either.java:175)
+	at org.gradle.internal.execution.caching.CachingState.fold(CachingState.java:62)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:73)
+	at org.gradle.internal.execution.steps.BuildCacheStep.execute(BuildCacheStep.java:48)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:46)
+	at org.gradle.internal.execution.steps.StoreExecutionStateStep.execute(StoreExecutionStateStep.java:35)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.executeBecause(SkipUpToDateStep.java:75)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.lambda$execute$2(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:53)
+	at org.gradle.internal.execution.steps.SkipUpToDateStep.execute(SkipUpToDateStep.java:35)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:37)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsFinishedStep.execute(MarkSnapshottingInputsFinishedStep.java:27)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:49)
+	at org.gradle.internal.execution.steps.ResolveIncrementalCachingStateStep.executeDelegate(ResolveIncrementalCachingStateStep.java:27)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:71)
+	at org.gradle.internal.execution.steps.AbstractResolveCachingStateStep.execute(AbstractResolveCachingStateStep.java:39)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:65)
+	at org.gradle.internal.execution.steps.ResolveChangesStep.execute(ResolveChangesStep.java:36)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:107)
+	at org.gradle.internal.execution.steps.ValidateStep.execute(ValidateStep.java:56)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:64)
+	at org.gradle.internal.execution.steps.AbstractCaptureStateBeforeExecutionStep.execute(AbstractCaptureStateBeforeExecutionStep.java:43)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.executeWithNonEmptySources(AbstractSkipEmptyWorkStep.java:125)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:56)
+	at org.gradle.internal.execution.steps.AbstractSkipEmptyWorkStep.execute(AbstractSkipEmptyWorkStep.java:36)
+	at org.gradle.internal.execution.steps.legacy.MarkSnapshottingInputsStartedStep.execute(MarkSnapshottingInputsStartedStep.java:38)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:36)
+	at org.gradle.internal.execution.steps.LoadPreviousExecutionStateStep.execute(LoadPreviousExecutionStateStep.java:23)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:75)
+	at org.gradle.internal.execution.steps.HandleStaleOutputsStep.execute(HandleStaleOutputsStep.java:41)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.lambda$execute$0(AssignMutableWorkspaceStep.java:35)
+	at org.gradle.api.internal.tasks.execution.TaskExecution$4.withWorkspace(TaskExecution.java:289)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:31)
+	at org.gradle.internal.execution.steps.AssignMutableWorkspaceStep.execute(AssignMutableWorkspaceStep.java:22)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:40)
+	at org.gradle.internal.execution.steps.ChoosePipelineStep.execute(ChoosePipelineStep.java:23)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.lambda$execute$2(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:67)
+	at org.gradle.internal.execution.steps.ExecuteWorkBuildOperationFiringStep.execute(ExecuteWorkBuildOperationFiringStep.java:39)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:46)
+	at org.gradle.internal.execution.steps.IdentityCacheStep.execute(IdentityCacheStep.java:34)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:48)
+	at org.gradle.internal.execution.steps.IdentifyStep.execute(IdentifyStep.java:35)
+	at org.gradle.internal.execution.impl.DefaultExecutionEngine$1.execute(DefaultExecutionEngine.java:64)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.executeIfValid(ExecuteActionsTaskExecuter.java:127)
+	at org.gradle.api.internal.tasks.execution.ExecuteActionsTaskExecuter.execute(ExecuteActionsTaskExecuter.java:116)
+	at org.gradle.api.internal.tasks.execution.ProblemsTaskPathTrackingTaskExecuter.execute(ProblemsTaskPathTrackingTaskExecuter.java:41)
+	at org.gradle.api.internal.tasks.execution.FinalizePropertiesTaskExecuter.execute(FinalizePropertiesTaskExecuter.java:46)
+	at org.gradle.api.internal.tasks.execution.ResolveTaskExecutionModeExecuter.execute(ResolveTaskExecutionModeExecuter.java:51)
+	at org.gradle.api.internal.tasks.execution.SkipTaskWithNoActionsExecuter.execute(SkipTaskWithNoActionsExecuter.java:57)
+	at org.gradle.api.internal.tasks.execution.SkipOnlyIfTaskExecuter.execute(SkipOnlyIfTaskExecuter.java:74)
+	at org.gradle.api.internal.tasks.execution.CatchExceptionTaskExecuter.execute(CatchExceptionTaskExecuter.java:36)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.executeTask(EventFiringTaskExecuter.java:77)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:55)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter$1.call(EventFiringTaskExecuter.java:52)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:210)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$CallableBuildOperationWorker.execute(DefaultBuildOperationRunner.java:205)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:67)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner$2.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:167)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.execute(DefaultBuildOperationRunner.java:60)
+	at org.gradle.internal.operations.DefaultBuildOperationRunner.call(DefaultBuildOperationRunner.java:54)
+	at org.gradle.api.internal.tasks.execution.EventFiringTaskExecuter.execute(EventFiringTaskExecuter.java:52)
+	at org.gradle.execution.plan.LocalTaskNodeExecutor.execute(LocalTaskNodeExecutor.java:42)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:331)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$InvokeNodeExecutorsAction.execute(DefaultTaskExecutionGraph.java:318)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.lambda$execute$0(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.internal.operations.CurrentBuildOperationRef.with(CurrentBuildOperationRef.java:85)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:314)
+	at org.gradle.execution.taskgraph.DefaultTaskExecutionGraph$BuildOperationAwareExecutionAction.execute(DefaultTaskExecutionGraph.java:303)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.execute(DefaultPlanExecutor.java:459)
+	at org.gradle.execution.plan.DefaultPlanExecutor$ExecutorWorker.run(DefaultPlanExecutor.java:376)
+	at org.gradle.internal.concurrent.ExecutorPolicy$CatchAndRecordFailures.onExecute(ExecutorPolicy.java:64)
+	at org.gradle.internal.concurrent.AbstractManagedExecutor$1.run(AbstractManagedExecutor.java:48)
+Caused by: [public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js	[public/assets/AddChargeModal-DqODwrV_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AddChargeModal-DqODwrV_.js.gz: Error: Duplicate resources
+[public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js	[public/assets/AllChargesView-CSAi1SUu.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllChargesView-CSAi1SUu.js.gz: Error: Duplicate resources
+[public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js	[public/assets/AllTripsView-6EE8OjrY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\AllTripsView-6EE8OjrY.js.gz: Error: Duplicate resources
+[public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js	[public/assets/BatteryStatusModal-DcME_xe0.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\BatteryStatusModal-DcME_xe0.js.gz: Error: Duplicate resources
+[public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js	[public/assets/browser-ponyfill-w6Lq2i2K.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\browser-ponyfill-w6Lq2i2K.js.gz: Error: Duplicate resources
+[public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js	[public/assets/CalendarTab-DxVpqxKX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CalendarTab-DxVpqxKX.js.gz: Error: Duplicate resources
+[public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js	[public/assets/capacitor-vendor-CGElMsDE.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\capacitor-vendor-CGElMsDE.js.gz: Error: Duplicate resources
+[public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js	[public/assets/ChargeDetailModal-CVbtLS0h.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeDetailModal-CVbtLS0h.js.gz: Error: Duplicate resources
+[public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js	[public/assets/ChargeInsightsModal-C6DTfS_L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeInsightsModal-C6DTfS_L.js.gz: Error: Duplicate resources
+[public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js	[public/assets/ChargeNotificationModal-wSERkbyN.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargeNotificationModal-wSERkbyN.js.gz: Error: Duplicate resources
+[public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js	[public/assets/ChargesTab-DPhqQ0OK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ChargesTab-DPhqQ0OK.js.gz: Error: Duplicate resources
+[public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js	[public/assets/chart-vendor-ByVtg-sj.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\chart-vendor-ByVtg-sj.js.gz: Error: Duplicate resources
+[public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js	[public/assets/ClimateControlModal-CL0dzxXA.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ClimateControlModal-CL0dzxXA.js.gz: Error: Duplicate resources
+[public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js	[public/assets/CloudBackupsModal-O1gseP7Y.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\CloudBackupsModal-O1gseP7Y.js.gz: Error: Duplicate resources
+[public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js	[public/assets/ConfirmationModal-OtefMtUm.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ConfirmationModal-OtefMtUm.js.gz: Error: Duplicate resources
+[public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js	[public/assets/DatabaseUploadModal-CjC7v7wg.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DatabaseUploadModal-CjC7v7wg.js.gz: Error: Duplicate resources
+[public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js	[public/assets/dataWorker-DYWHdEIk.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\dataWorker-DYWHdEIk.js.gz: Error: Duplicate resources
+[public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js	[public/assets/DayDetailsModal-C16uD1iX.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\DayDetailsModal-C16uD1iX.js.gz: Error: Duplicate resources
+[public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js	[public/assets/EfficiencyTab-9Ofv7nCb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\EfficiencyTab-9Ofv7nCb.js.gz: Error: Duplicate resources
+[public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js	[public/assets/FAQModal-DmjjeEMe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FAQModal-DmjjeEMe.js.gz: Error: Duplicate resources
+[public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js	[public/assets/FaqPage-DmXEg-j1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FaqPage-DmXEg-j1.js.gz: Error: Duplicate resources
+[public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js	[public/assets/FilterModal-BLe-rBHW.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\FilterModal-BLe-rBHW.js.gz: Error: Duplicate resources
+[public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js	[public/assets/HelpModal-BNKcohm_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HelpModal-BNKcohm_.js.gz: Error: Duplicate resources
+[public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js	[public/assets/HistoryTab-DHe0nquY.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\HistoryTab-DHe0nquY.js.gz: Error: Duplicate resources
+[public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css	[public/assets/index-Cc-QsPgJ.css] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-Cc-QsPgJ.css.gz: Error: Duplicate resources
+[public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js	[public/assets/index-DTJD4QF1.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-DTJD4QF1.js.gz: Error: Duplicate resources
+[public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js	[public/assets/index-IcUQ3SWG.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\index-IcUQ3SWG.js.gz: Error: Duplicate resources
+[public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js	[public/assets/LandingPage-CmKswLGO.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LandingPage-CmKswLGO.js.gz: Error: Duplicate resources
+[public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js	[public/assets/LegalContent-kNL_nhGl.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalContent-kNL_nhGl.js.gz: Error: Duplicate resources
+[public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js	[public/assets/LegalModal-DIxNU-aC.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalModal-DIxNU-aC.js.gz: Error: Duplicate resources
+[public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js	[public/assets/LegalPage-lyJZPE4L.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\LegalPage-lyJZPE4L.js.gz: Error: Duplicate resources
+[public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js	[public/assets/MfgDateModal-B4IZoDUd.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\MfgDateModal-B4IZoDUd.js.gz: Error: Duplicate resources
+[public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js	[public/assets/ModalContainer-BNt4Zjye.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ModalContainer-BNt4Zjye.js.gz: Error: Duplicate resources
+[public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js	[public/assets/PatternsTab-DxdMbgmU.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PatternsTab-DxdMbgmU.js.gz: Error: Duplicate resources
+[public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js	[public/assets/PWAManager-B6ud4RQJ.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\PWAManager-B6ud4RQJ.js.gz: Error: Duplicate resources
+[public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js	[public/assets/RangeInsightsModal-yKE-KVYL.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RangeInsightsModal-yKE-KVYL.js.gz: Error: Duplicate resources
+[public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js	[public/assets/react-vendor-B8fQSEDs.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\react-vendor-B8fQSEDs.js.gz: Error: Duplicate resources
+[public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js	[public/assets/RecordsTab-BHDTbdsK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RecordsTab-BHDTbdsK.js.gz: Error: Duplicate resources
+[public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js	[public/assets/RegistryRestoreModal-Bend46-3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\RegistryRestoreModal-Bend46-3.js.gz: Error: Duplicate resources
+[public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js	[public/assets/SettingsModal-CsQwhCQK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SettingsModal-CsQwhCQK.js.gz: Error: Duplicate resources
+[public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js	[public/assets/sql/sql-wasm.min.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\sql\sql-wasm.min.js.gz: Error: Duplicate resources
+[public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js	[public/assets/SyncConflictModal-BwVKTl9m.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\SyncConflictModal-BwVKTl9m.js.gz: Error: Duplicate resources
+[public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js	[public/assets/tensorflowWorker-C4-DiQiw.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\tensorflowWorker-C4-DiQiw.js.gz: Error: Duplicate resources
+[public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js	[public/assets/ThermalStressModal-Bwl7FmA5.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\ThermalStressModal-Bwl7FmA5.js.gz: Error: Duplicate resources
+[public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js	[public/assets/TrendsTab-BzJKAZIb.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TrendsTab-BzJKAZIb.js.gz: Error: Duplicate resources
+[public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js	[public/assets/TripCard-DvRREXn3.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripCard-DvRREXn3.js.gz: Error: Duplicate resources
+[public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js	[public/assets/TripDetailModal-D0g44OV6.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripDetailModal-D0g44OV6.js.gz: Error: Duplicate resources
+[public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js	[public/assets/TripMapModal-BqbX1KwM.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\TripMapModal-BqbX1KwM.js.gz: Error: Duplicate resources
+[public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js	[public/assets/UploadOptionsModal-Bt2MICMK.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\UploadOptionsModal-Bt2MICMK.js.gz: Error: Duplicate resources
+[public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js	[public/assets/useFilteredData-DQPMzcD_.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\useFilteredData-DQPMzcD_.js.gz: Error: Duplicate resources
+[public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js	[public/assets/utils-vendor-CvuBeq6F.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\utils-vendor-CvuBeq6F.js.gz: Error: Duplicate resources
+[public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js	[public/assets/web-BKj3SGIe.js] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\assets\web-BKj3SGIe.js.gz: Error: Duplicate resources
+[public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html	[public/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\index.html.gz: Error: Duplicate resources
+[public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html	[public/legal/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\legal\index.html.gz: Error: Duplicate resources
+[public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json	[public/locales/ca.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\ca.json.gz: Error: Duplicate resources
+[public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json	[public/locales/en.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\en.json.gz: Error: Duplicate resources
+[public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json	[public/locales/es.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\es.json.gz: Error: Duplicate resources
+[public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json	[public/locales/eu.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\eu.json.gz: Error: Duplicate resources
+[public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json	[public/locales/gl.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\gl.json.gz: Error: Duplicate resources
+[public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json	[public/locales/pt.json] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\locales\pt.json.gz: Error: Duplicate resources
+[public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html	[public/privacidad/index.html] C:\Users\migue\Github\BYD-Stats\byd-stats\android\app\src\main\assets\public\privacidad\index.html.gz: Error: Duplicate resources
+	at com.android.ide.common.resources.DataSet.checkItems(DataSet.java:512)
+	at com.android.ide.common.resources.DataSet.loadFromFiles(DataSet.java:273)
+	at com.android.ide.common.resources.DataSet.loadFromFiles(DataSet.java:243)
+	at com.android.build.gradle.tasks.MergeSourceSetFolders.doFullTaskAction(MergeSourceSetFolders.kt:153)
+	... 124 more
+
+
+Deprecated Gradle features were used in this build, making it incompatible with Gradle 9.0.
+
+You can use '--warning-mode all' to show the individual deprecation warnings and determine if they come from your own scripts or plugins.
+
+For more on this, please refer to https://docs.gradle.org/8.14.3/userguide/command_line_interface.html#sec:command_line_warnings in the Gradle documentation.
+
+BUILD FAILED in 2s
+149 actionable tasks: 1 executed, 148 up-to-date

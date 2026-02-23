@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { useApp } from '../context/AppContext';
 import { logger } from '@core/logger';
 
@@ -40,8 +41,8 @@ const ThemeManager = () => {
             }
 
             // 4. Native StatusBar (for Capacitor apps)
-            if (isNative && window.StatusBar) {
-                window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
+            if (isNative) {
+                StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light })
                     .catch((e: unknown) => logger.error('StatusBar error:', e));
             }
         };

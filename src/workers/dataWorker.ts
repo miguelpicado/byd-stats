@@ -39,9 +39,32 @@ async function findSmartChargingWindows(
     let daysActive = 30; // Default
 
     if (trips && trips.length > 0) {
-        // Calculate electricity from SoC if not directly available
+        // Calculate historical efficiency from valid trips
+        let totalValidKm = 0;
+        let totalValidKwh = 0;
+        
+        trips.forEach(t => {
+            if (t.trip && t.trip > 0 && t.electricity && t.electricity > 0) {
+                totalValidKm += t.trip;
+                totalValidKwh += t.electricity;
+            } else if (t.trip && t.trip > 0 && t.start_soc && t.end_soc && settings?.batterySize) {
+                const batterySize = typeof settings.batterySize === 'number'
+                    ? settings.batterySize
+                    : parseFloat(settings.batterySize as string);
+                const socDiff = t.start_soc - t.end_soc;
+                if (socDiff > 0) {
+                    totalValidKm += t.trip;
+                    totalValidKwh += (socDiff / 100) * batterySize;
+                }
+            }
+        });
+
+        // Use historical average if available, otherwise default to 16 kWh/100km
+        const historicalEfficiency = totalValidKm > 50 ? (totalValidKwh / totalValidKm) : 0.16;
+
+        // Calculate electricity from SoC or distance if not directly available
         const tripsWithElectricity = trips.map(t => {
-            if (t.electricity) return t;
+            if (t.electricity && t.electricity > 0) return t;
 
             // Try to calculate from SoC difference
             if (t.start_soc && t.end_soc && settings?.batterySize) {
@@ -49,14 +72,27 @@ async function findSmartChargingWindows(
                     ? settings.batterySize
                     : parseFloat(settings.batterySize as string);
                 const socDiff = t.start_soc - t.end_soc;
-                const calculatedKwh = (socDiff / 100) * batterySize;
-                return { ...t, electricity: calculatedKwh };
+                if (socDiff > 0) {
+                    const calculatedKwh = (socDiff / 100) * batterySize;
+                    return { ...t, electricity: calculatedKwh };
+                }
+            }
+
+            // Fallback: Estimate from distance using historical efficiency
+            if (t.trip && t.trip > 0) {
+                return { ...t, electricity: t.trip * historicalEfficiency };
             }
 
             return t;
         });
 
-        const valid = tripsWithElectricity.filter(t => t.start_timestamp && t.electricity);
+        // Filter out trips without timestamp, without electricity, or with glitched 1970 timestamps
+        const valid = tripsWithElectricity.filter(t => 
+            t.start_timestamp && 
+            t.start_timestamp > 1600000000 && // Ignore glitches from before 2020
+            t.electricity && 
+            t.electricity > 0
+        );
 
         totalKwh = valid.reduce((sum, t) => sum + (t.electricity || 0), 0);
 
@@ -73,7 +109,8 @@ async function findSmartChargingWindows(
     }
 
     const avgWeekly = (totalKwh / Math.max(1, daysActive)) * 7;
-    const targetKwh = avgWeekly * 1.1; // +10% Buffer
+    // Fallback: If no electricity data was found in trips, assume 15kWh weekly minimum to trigger recommendations
+    const targetKwh = Math.max(15, avgWeekly * 1.1); // +10% Buffer
 
     // Charger Speed
     let chargePower = 3.6; // Default to 16A * 230V
@@ -168,24 +205,47 @@ async function findSmartChargingWindows(
                 const start = Math.max(naturalStartMins, slot.start);
                 const end = Math.min(naturalStartMins + naturalDurationMins, slot.end);
 
-                if (end - start > 60) {
-                    // Check overlap with current day valley
-                    let tStart = 0, tEnd = 8 * 60;
-                    if (isWeekendTariff(jsDayIndex)) tEnd = 24 * 60;
+                if (end - start >= 180) { // Require at least 3h of pure parking
+                    let isWeekend = isWeekendTariff(jsDayIndex);
 
-                    const wStart = Math.max(start, tStart);
-                    const wEnd = Math.min(end, tEnd);
+                    // Candidate Blocks
+                    const blocks = isWeekend 
+                        ? [ { s: 0, e: 8 * 60 }, { s: 8 * 60, e: 22 * 60 } ] // Night block and Day block (08:00 to 22:00)
+                        : [ { s: 0, e: 8 * 60 } ]; // Weekday valley only
 
-                    if (wEnd > wStart + 30) {
-                        candidates.push({
-                            day: dayName,
-                            dayIndex: jsDayIndex,
-                            startMins: wStart,
-                            endMins: wEnd,
-                            duration: (wEnd - wStart) / 60,
-                            score: (wEnd - wStart) / 60 * (isWeekendTariff(jsDayIndex) ? 2.0 : 0.5)
-                        });
-                    }
+                    blocks.forEach(block => {
+                        const wStart = Math.max(start, block.s);
+                        const wEnd = Math.min(end, block.e);
+                        const wDuration = (wEnd - wStart) / 60;
+
+                        if (wDuration >= 3) { // Require at least 3h contiguous window
+                            let score = wDuration;
+
+                            // HUGE bonus for full night windows (e.g. 00:00 to 08:00)
+                            if (wStart <= 60 && wEnd >= 7 * 60) {
+                                score += 10; // "Perfect" night window
+                            }
+
+                            // Bonus for Monday early morning (Sunday night) since it's the start of the week
+                            if (jsDayIndex === 1 && wStart <= 60 && wEnd >= 7 * 60) {
+                                score += 20; // Unbeatable priority for Sunday night
+                            }
+
+                            // Weekend day block bonus (convenient daytime charging)
+                            if (isWeekend && wStart >= 8 * 60) {
+                                score += 8; // Good priority for weekend day block
+                            }
+
+                            candidates.push({
+                                day: dayName,
+                                dayIndex: jsDayIndex,
+                                startMins: wStart,
+                                endMins: wEnd,
+                                duration: wDuration,
+                                score: score
+                            });
+                        }
+                    });
                 }
             });
         }
@@ -198,6 +258,12 @@ async function findSmartChargingWindows(
         const exists = deduped.find(d => d.dayIndex === cand.dayIndex && Math.abs(d.startMins - cand.startMins) < 60);
         if (!exists) deduped.push(cand);
     });
+
+    // Fallback: If AI constraints are too strict and no candidates were found, provide safe defaults
+    if (deduped.length === 0) {
+        deduped.push({ day: 'Domingo', dayIndex: 0, startMins: 0, endMins: 480, duration: 8, score: 1 });
+        deduped.push({ day: 'Sábado', dayIndex: 6, startMins: 0, endMins: 480, duration: 8, score: 1 });
+    }
 
     type ChargingPref = { day: string; start: string; end: string; active: boolean };
     if (settings?.smartChargingPreferences && Array.isArray(settings.smartChargingPreferences) && settings.smartChargingPreferences.length > 0) {

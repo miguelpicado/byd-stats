@@ -803,11 +803,12 @@ export class BydClient {
             mainVentilation: String(options.mainVentilation ?? 1),
             copilotHeat: String(options.copilotHeat ?? 1),
             copilotVentilation: String(options.copilotVentilation ?? 1),
-            // Rear seats not supported for now
-            lrSeatHeat: '1',
-            lrSeatVentilation: '1',
-            rrSeatHeat: '1',
-            rrSeatVentilation: '1',
+            // Use 0 (not applicable) for rear seats to prevent API error 1001 on unsupported vehicles
+            lrSeatHeat: '0',
+            lrSeatVentilation: '0',
+            rrSeatHeat: '0',
+            rrSeatVentilation: '0',
+            steeringWheelHeat: '0' // Adding steering wheel heat default as 0
         };
         return this.remoteControl(vin, 'SEAT_CLIMATE', pin, params);
     }

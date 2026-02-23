@@ -10,7 +10,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 
 const Header: React.FC = memo(() => {
     const { t } = useTranslation();
-    const { layoutMode } = useLayout();
+    const { layoutMode, isNative } = useLayout();
     const { trips, openModal, googleSync } = useData();
     const { cars, activeCar, activeCarId, setActiveCarId, addCar } = useCar();
     const [showCarDropdown, setShowCarDropdown] = useState(false);
@@ -136,40 +136,42 @@ const Header: React.FC = memo(() => {
                     <div className="flex items-center gap-2">
                         {/* Sync Status Indicator */}
                         {/* Sync Status Indicator / Button */}
-                        <button
-                            onClick={() => {
-                                if (googleSync.isAuthenticated) {
-                                    googleSync.syncNow();
-                                } else {
-                                    googleSync.login();
-                                }
-                            }}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${!googleSync.isAuthenticated
-                                ? 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
-                                : googleSync.error
-                                    ? 'text-red-500 bg-red-50 dark:bg-red-900/10'
-                                    : googleSync.isSyncing
-                                        ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/10'
-                                        : 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10'
-                                } hover:bg-white dark:hover:bg-slate-800`}
-                            title={
-                                !googleSync.isAuthenticated
-                                    ? t('sync.login', 'Iniciar sesión para sincronizar')
+                        {!isNative && (
+                            <button
+                                onClick={() => {
+                                    if (googleSync.isAuthenticated) {
+                                        googleSync.syncNow();
+                                    } else {
+                                        googleSync.login();
+                                    }
+                                }}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${!googleSync.isAuthenticated
+                                    ? 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
                                     : googleSync.error
-                                        ? t('sync.error', 'Error de sincronización')
+                                        ? 'text-red-500 bg-red-50 dark:bg-red-900/10'
                                         : googleSync.isSyncing
-                                            ? t('sync.syncing', 'Sincronizando...')
-                                            : t('sync.upToDate', 'Sincronizado')
-                            }
-                        >
-                            {googleSync.isSyncing ? (
-                                <RefreshCw className="w-5 h-5 animate-spin" />
-                            ) : googleSync.error ? (
-                                <AlertCircle className="w-5 h-5" />
-                            ) : (
-                                <Cloud className="w-5 h-5" />
-                            )}
-                        </button>
+                                            ? 'text-blue-500 bg-blue-50 dark:bg-blue-900/10'
+                                            : 'text-green-500 hover:bg-green-50 dark:hover:bg-green-900/10'
+                                    } hover:bg-white dark:hover:bg-slate-800`}
+                                title={
+                                    !googleSync.isAuthenticated
+                                        ? t('sync.login', 'Iniciar sesión para sincronizar')
+                                        : googleSync.error
+                                            ? t('sync.error', 'Error de sincronización')
+                                            : googleSync.isSyncing
+                                                ? t('sync.syncing', 'Sincronizando...')
+                                                : t('sync.upToDate', 'Sincronizado')
+                                }
+                            >
+                                {googleSync.isSyncing ? (
+                                    <RefreshCw className="w-5 h-5 animate-spin" />
+                                ) : googleSync.error ? (
+                                    <AlertCircle className="w-5 h-5" />
+                                ) : (
+                                    <Cloud className="w-5 h-5" />
+                                )}
+                            </button>
+                        )}
                         <button
                             onClick={() => openModal('help')}
                             className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"

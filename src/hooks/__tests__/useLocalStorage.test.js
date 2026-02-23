@@ -1,7 +1,7 @@
 // BYD Stats - useLocalStorage Hook Tests
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
-import { useLocalStorage } from '../useLocalStorage';
+import { useLocalStorage, flushWrites } from '../useLocalStorage';
 
 describe('useLocalStorage', () => {
     const TEST_KEY = 'test_key';
@@ -32,6 +32,7 @@ describe('useLocalStorage', () => {
             result.current[1]('updated');
         });
 
+        flushWrites();
         expect(result.current[0]).toBe('updated');
         expect(localStorage.getItem(TEST_KEY)).toBe(JSON.stringify('updated'));
     });
@@ -43,6 +44,7 @@ describe('useLocalStorage', () => {
             result.current[1](prev => prev + 5);
         });
 
+        flushWrites();
         expect(result.current[0]).toBe(15);
     });
 
@@ -53,6 +55,7 @@ describe('useLocalStorage', () => {
             result.current[1]({ count: 5 });
         });
 
+        flushWrites();
         expect(result.current[0]).toEqual({ count: 5 });
         expect(JSON.parse(localStorage.getItem(TEST_KEY))).toEqual({ count: 5 });
     });

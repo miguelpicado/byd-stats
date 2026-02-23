@@ -39,6 +39,7 @@ export default defineConfig({
             '@core': path.resolve(__dirname, './src/core'),
             '@services': path.resolve(__dirname, './src/services'),
             '@features': path.resolve(__dirname, './src/features'),
+            '@tabs': path.resolve(__dirname, './src/features/dashboard/tabs'),
         },
     },
 });

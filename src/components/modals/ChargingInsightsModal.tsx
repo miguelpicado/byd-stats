@@ -1,12 +1,12 @@
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import ModalPortal from '../common/ModalPortal';
 import { X, Zap, Calendar, TrendingUp, Info, ChevronLeft, ChevronRight, Edit, Check, Trash2, Plus } from '../Icons';
 import { ChargingLogic } from '../../core/chargingLogic';
 import { ProcessedData, Settings, Charge, Trip } from '../../types';
 import { useApp } from '../../context/AppContext';
-
+import { useData } from '../../providers/DataProvider';
 
 interface SmartChargingWindow {
     day: string;
@@ -48,11 +48,31 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
 }) => {
     const { t } = useTranslation();
     const { updateSettings } = useApp();
+    const { findSmartChargingWindows } = useData();
     const [view, setView] = useState<InsightView>('main');
 
-    // Use props instead of local state for smart charging
-    const smartCharging = smartChargingProp;
-    const isCalculating = isCalculatingProp;
+    // Local state for when props are not provided (e.g. opened from DashboardTab)
+    const [localSmartCharging, setLocalSmartCharging] = useState<SmartChargingData | null>(null);
+    const [isLocalCalculating, setIsLocalCalculating] = useState(false);
+
+    useEffect(() => {
+        // If we already have the prop, don't recalculate
+        if (smartChargingProp || !isOpen || !findSmartChargingWindows) return;
+
+        setIsLocalCalculating(true);
+        findSmartChargingWindows(_trips || [], settings)
+            .then(result => {
+                setLocalSmartCharging(result as SmartChargingData);
+                setIsLocalCalculating(false);
+            })
+            .catch(() => {
+                setIsLocalCalculating(false);
+            });
+    }, [isOpen, _trips, settings, findSmartChargingWindows, smartChargingProp]);
+
+    // Use props if available, otherwise fallback to local calculation
+    const smartCharging = smartChargingProp || localSmartCharging;
+    const isCalculating = smartChargingProp !== undefined && isCalculatingProp ? isCalculatingProp : isLocalCalculating;
 
     // HITL Editing State
     const [editingId, setEditingId] = useState<string | null>(null);

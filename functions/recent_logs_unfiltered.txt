@@ -1,0 +1,200 @@
+﻿2026-02-21T09:25:01.611083Z ? bydactivetripmonitorv2: [bydActiveTripMonitor] Tick
+
+2026-02-21T09:25:01.704461Z ? bydactivetripmonitorv2: [getBydClientWithSession] Restored session for LGXCH6CD0S2052990 (age: 0.0h)
+
+2026-02-21T09:25:01.751345Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "A36A5A2A9D4FFF8A0CD415B2F5FC13F5" (length=32)
+
+2026-02-21T09:25:01.751766Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /control/smartCharge/homePage
+
+2026-02-21T09:25:01.751871Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"reqTimestamp":"1771665901752","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:01.751973Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&identifier=354251&imeiMD5=F1C9FE0538DF5AAE3F7066E69EEB932B&language=en&reqTimestamp=1771665901752&vin=LGXCH6CD0S2052990&password=FD94BDF03CBB0EAB336C07FE4EAB1869
+
+2026-02-21T09:25:01.752259Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: 8a0fa261e42d3039a82667854344258a
+
+2026-02-21T09:25:01.752368Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: 6rsyqIwh...
+
+2026-02-21T09:25:01.753475Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:01.802560Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 1002, msg: 10:24 02/21, your account is logged in with password from another device. If you didnÔÇÖt do it, your password might have been stolen. Please change your password immediately.
+
+2026-02-21T09:25:01.802651Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Session expired (code 1002), re-logging in and retrying...
+
+2026-02-21T09:25:01.802913Z ? bydactivetripmonitorv2: [pwdLoginKey] password length: 15, firstHash: 0410AA8B5FA06517F11848B5AE9ACA75 (32), secondHash: ED77D7BED8DBF961064C82850EC9ECAB (32)
+
+2026-02-21T09:25:01.803027Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "ED77D7BED8DBF961064C82850EC9ECAB" (length=32)
+
+2026-02-21T09:25:01.805547Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:01.854865Z ? bydactivetripmonitorv2: [postSecure] Received cookies: JSESSIONID=uEk83gyr2_aTgUEARGuBzG4OhxTjwWZOGVdCYec4; path=/
+
+2026-02-21T09:25:01.857243Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "7D99871C5712EBD1BA312C72528AEE2A" (length=32)
+
+2026-02-21T09:25:01.857500Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /control/smartCharge/homePage
+
+2026-02-21T09:25:01.857598Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"reqTimestamp":"1771665901858","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:01.857691Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&identifier=354251&imeiMD5=F1C9FE0538DF5AAE3F7066E69EEB932B&language=en&reqTimestamp=1771665901858&vin=LGXCH6CD0S2052990&password=8AEF0CC12296373F527FB5EA8D291E93
+
+2026-02-21T09:25:01.857782Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: 38ea9edbd19488afc7c3ba6bc58df543
+
+2026-02-21T09:25:01.857876Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: NQxCZvqh...
+
+2026-02-21T09:25:01.858998Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=uEk83gyr2_aTgUEARGuBzG4OhxTjwWZOGVdCYec4
+
+2026-02-21T09:25:01.894978Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 0, msg: SUCCESS
+
+2026-02-21T09:25:01.895158Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Decrypted respondData: {"fullHour":-1,"soc":99,"fullMinute":-1,"vehicleTimeZone":"Europe/Madrid","vin":"LGXCH6CD0S2052990","smartJourneyDto":{"useVehicleTime":"08:40","createTime":"2025-02-18T05:43:26.000+00:00","vin":"LGXC...
+
+2026-02-21T09:25:01.958265Z ? bydactivetripmonitorv2: [cloudProbe] LGXCH6CD0S2052990: SoC=99.0% (prev=99.0%), updateTime=1771665876 (prev=1771665817), charging=false, changed=true, escalate=true
+
+2026-02-21T09:25:01.958350Z ? bydactivetripmonitorv2: [cloudProbe] LGXCH6CD0S2052990: State change detected! Escalating to full poll (will wake T-Box)
+
+2026-02-21T09:25:02.010289Z ? bydactivetripmonitorv2: [getBydClientWithSession] Restored session for LGXCH6CD0S2052990 (age: 0.0h)
+
+2026-02-21T09:25:02.064070Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "A36A5A2A9D4FFF8A0CD415B2F5FC13F5" (length=32)
+
+2026-02-21T09:25:02.064398Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /vehicleInfo/vehicle/vehicleRealTimeRequest
+
+2026-02-21T09:25:02.064502Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"deviceType":"1","energyType":"0","imeiMD5":"EF9C03AE43599180F376FD4B6F63F315","networkType":"wifi","random":"D78466DDDCCF1629E002B3AC4856FDF0","tboxVersion":"3","timeStamp":"1771665902065","version":"323","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:02.064590Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&deviceType=1&energyType=0&identifier=354251&imeiMD5=EF9C03AE43599180F376FD4B6F63F315&language=en&networkType=wifi&random=D78466DDDCCF1629E002B3AC4856FDF0&reqTimestamp=1771665902065&tboxVersion=3&timeStamp=1771665902065&version=323&vin=LGXCH6CD0S2052990&password=FD94BDF03CBB0EAB336C07FE4EAB1869
+
+2026-02-21T09:25:02.064673Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: c45153d1149237d85234922c2db21e99
+
+2026-02-21T09:25:02.064771Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: 6rsyqIwh...
+
+2026-02-21T09:25:02.066329Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:02.086878Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 1002, msg: 10:25 02/21, your account is logged in with password from another device. If you didnÔÇÖt do it, your password might have been stolen. Please change your password immediately.
+
+2026-02-21T09:25:02.086974Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Session expired (code 1002), re-logging in and retrying...
+
+2026-02-21T09:25:02.087216Z ? bydactivetripmonitorv2: [pwdLoginKey] password length: 15, firstHash: 0410AA8B5FA06517F11848B5AE9ACA75 (32), secondHash: ED77D7BED8DBF961064C82850EC9ECAB (32)
+
+2026-02-21T09:25:02.087322Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "ED77D7BED8DBF961064C82850EC9ECAB" (length=32)
+
+2026-02-21T09:25:02.089552Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:02.163267Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "A88B39585C70EC7D338873CD30ED8E39" (length=32)
+
+2026-02-21T09:25:02.163589Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /vehicleInfo/vehicle/vehicleRealTimeRequest
+
+2026-02-21T09:25:02.163671Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"deviceType":"1","energyType":"0","imeiMD5":"EF9C03AE43599180F376FD4B6F63F315","networkType":"wifi","random":"D78466DDDCCF1629E002B3AC4856FDF0","tboxVersion":"3","timeStamp":"1771665902065","version":"323","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:02.163783Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&deviceType=1&energyType=0&identifier=354251&imeiMD5=EF9C03AE43599180F376FD4B6F63F315&language=en&networkType=wifi&random=D78466DDDCCF1629E002B3AC4856FDF0&reqTimestamp=1771665902065&tboxVersion=3&timeStamp=1771665902065&version=323&vin=LGXCH6CD0S2052990&password=3174D2F1EAB51F39670015E8C8EEB23D
+
+2026-02-21T09:25:02.163875Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: bf55fc4e4ffc7ba7ba68be2b9829ae5a
+
+2026-02-21T09:25:02.163975Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: 1CtYxNBM...
+
+2026-02-21T09:25:02.165441Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:02.211613Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 0, msg: SUCCESS
+
+2026-02-21T09:25:02.211904Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Decrypted respondData: {"powerSystem":0,"rightRearTirepressure":0.0,"chargeState":0,"evEndurance":0,"rightFrontTireStatus":0,"totalEnergy":"--","elecPercent":0,"rrSeatVentilationState":0,"upgradeStatus":0,"rightFrontTirepre...
+
+2026-02-21T09:25:02.212108Z ? bydactivetripmonitorv2: [getRealtime] Trigger: requestSerial=98DC09F564BE43F8B903F0A23CAD38D5, onlineState=0
+
+2026-02-21T09:25:02.212213Z ? bydactivetripmonitorv2: [getRealtime] Trigger response keys: identifier,respondData,code,message,data
+
+2026-02-21T09:25:02.212338Z ? bydactivetripmonitorv2: [getRealtime] Trigger data keys: powerSystem,rightRearTirepressure,chargeState,evEndurance,rightFrontTireStatus,totalEnergy,elecPercent,rrSeatVentilationState,upgradeStatus,rightFrontTirepressure,engineStatus,epb,rapidTireLeak,oilPressureSystem,rrThirdHeatState,airRunState,eps,chargingState,waitStatus,leftFrontDoorLock,totalPower,c
+
+2026-02-21T09:25:02.212461Z ? bydactivetripmonitorv2: [getRealtime] Has vehicleInfo: false, Has vehicleStatus: false
+
+2026-02-21T09:25:02.212548Z ? bydactivetripmonitorv2: [getRealtime] Key fields: elecPercent=0, enduranceMileage=0, totalMileageV2=0, onlineState=0
+
+2026-02-21T09:25:02.212823Z ? bydactivetripmonitorv2: [pollForResult] /vehicleInfo/vehicle/vehicleRealTimeResult attempt 1/10, waiting 2000ms...
+
+2026-02-21T09:25:04.214377Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "A88B39585C70EC7D338873CD30ED8E39" (length=32)
+
+2026-02-21T09:25:04.214992Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /vehicleInfo/vehicle/vehicleRealTimeResult
+
+2026-02-21T09:25:04.215129Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"deviceType":"1","energyType":"0","imeiMD5":"EF9C03AE43599180F376FD4B6F63F315","networkType":"wifi","random":"AD705EAC93F125A7E7C065E92CC71D71","requestSerial":"98DC09F564BE43F8B903F0A23CAD38D5","tboxVersion":"3","timeStamp":"1771665904215","version":"323","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:04.215233Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&deviceType=1&energyType=0&identifier=354251&imeiMD5=EF9C03AE43599180F376FD4B6F63F315&language=en&networkType=wifi&random=AD705EAC93F125A7E7C065E92CC71D71&reqTimestamp=1771665904215&requestSerial=98DC09F564BE43F8B903F0A23CAD38D5&tboxVersion=3&timeStamp=1771665904215&version=323&vin=LGXCH6CD0S2052990&password=3174D2F1EAB51F39670015E8C8EEB23D
+
+2026-02-21T09:25:04.215358Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: 7cd0c9d9aa1f5276a86d0abd130bef3b
+
+2026-02-21T09:25:04.215460Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: 1CtYxNBM...
+
+2026-02-21T09:25:04.217237Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:04.322556Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 0, msg: SUCCESS
+
+2026-02-21T09:25:04.323074Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Decrypted respondData: {"powerSystem":0,"rightRearTirepressure":2.9,"chargeState":15,"evEndurance":566,"rightFrontTireStatus":0,"totalEnergy":"17.8kW┬Àh/100km","elecPercent":99,"rrSeatVentilationState":0,"upgradeStatus":0,"r...
+
+2026-02-21T09:25:04.323395Z ? bydactivetripmonitorv2: [pollForResult] /vehicleInfo/vehicle/vehicleRealTimeResult attempt 1: code=0
+
+2026-02-21T09:25:04.323575Z ? bydactivetripmonitorv2: [pollForResult] /vehicleInfo/vehicle/vehicleRealTimeResult data: elecPercent=99, enduranceMileage=566, onlineState=1, time=1771665902
+
+2026-02-21T09:25:04.324268Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "A88B39585C70EC7D338873CD30ED8E39" (length=32)
+
+2026-02-21T09:25:04.324701Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /control/getGpsInfo
+
+2026-02-21T09:25:04.324846Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"reqTimestamp":"1771665904325","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:04.324954Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&identifier=354251&imeiMD5=EF9C03AE43599180F376FD4B6F63F315&language=en&reqTimestamp=1771665904325&vin=LGXCH6CD0S2052990&password=3174D2F1EAB51F39670015E8C8EEB23D
+
+2026-02-21T09:25:04.325308Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: ac3297e44743c7346f63b34c6f801aa6
+
+2026-02-21T09:25:04.325419Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: 1CtYxNBM...
+
+2026-02-21T09:25:04.326927Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:04.368264Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 0, msg: SUCCESS
+
+2026-02-21T09:25:04.368505Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Decrypted respondData: {"requestSerial":"9BED2C1A7E8B4D68B1C3225A94A4B679"}...
+
+2026-02-21T09:25:04.368650Z ? bydactivetripmonitorv2: [getGps] Trigger returned requestSerial: 9BED2C1A7E8B4D68B1C3225A94A4B679
+
+2026-02-21T09:25:04.368815Z ? bydactivetripmonitorv2: [pollForResult] /control/getGpsInfoResult attempt 1/8, waiting 2000ms...
+
+2026-02-21T09:25:06.369859Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "A88B39585C70EC7D338873CD30ED8E39" (length=32)
+
+2026-02-21T09:25:06.370235Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /control/getGpsInfoResult
+
+2026-02-21T09:25:06.370392Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"reqTimestamp":"1771665906371","requestSerial":"9BED2C1A7E8B4D68B1C3225A94A4B679","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:06.370466Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&identifier=354251&imeiMD5=EF9C03AE43599180F376FD4B6F63F315&language=en&reqTimestamp=1771665906371&requestSerial=9BED2C1A7E8B4D68B1C3225A94A4B679&vin=LGXCH6CD0S2052990&password=3174D2F1EAB51F39670015E8C8EEB23D
+
+2026-02-21T09:25:06.370560Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: 8813be741ba3c6c00cfb92c276d807bf
+
+2026-02-21T09:25:06.370649Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: 1CtYxNBM...
+
+2026-02-21T09:25:06.371991Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:06.399582Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 0, msg: SUCCESS
+
+2026-02-21T09:25:06.399898Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Decrypted respondData: {"res":2,"data":{"gpsTimeStamp":1771665903,"latitude":43.34694,"longitude":-8.248803,"direction":186.3000030517578}}...
+
+2026-02-21T09:25:06.400065Z ? bydactivetripmonitorv2: [pollForResult] /control/getGpsInfoResult attempt 1: code=0
+
+2026-02-21T09:25:06.400209Z ? bydactivetripmonitorv2: [pollForResult] /control/getGpsInfoResult data: elecPercent=undefined, enduranceMileage=undefined, onlineState=undefined, time=undefined
+
+2026-02-21T09:25:06.400505Z ? bydactivetripmonitorv2: [aesEncryptHex] keyHex received: "A88B39585C70EC7D338873CD30ED8E39" (length=32)
+
+2026-02-21T09:25:06.400907Z ? bydactivetripmonitorv2: [postAuthenticatedJson] endpoint: /control/smartCharge/homePage
+
+2026-02-21T09:25:06.401018Z ? bydactivetripmonitorv2: [postAuthenticatedJson] innerJson (compact): {"reqTimestamp":"1771665906401","vin":"LGXCH6CD0S2052990"}
+
+2026-02-21T09:25:06.401109Z ? bydactivetripmonitorv2: [postAuthenticatedJson] signString: countryCode=ES&identifier=354251&imeiMD5=EF9C03AE43599180F376FD4B6F63F315&language=en&reqTimestamp=1771665906401&vin=LGXCH6CD0S2052990&password=3174D2F1EAB51F39670015E8C8EEB23D
+
+2026-02-21T09:25:06.401223Z ? bydactivetripmonitorv2: [postAuthenticatedJson] outer.checkcode: 92abaf4bf05f068d1b6abb22ff8e7da1
+
+2026-02-21T09:25:06.401367Z ? bydactivetripmonitorv2: [postAuthenticatedJson] session: 1CtYxNBM...
+
+2026-02-21T09:25:06.402774Z ? bydactivetripmonitorv2: [postSecure] Sending cookies: JSESSIONID=jOjCSFzNAnH9RaoemZ3OE_6-BO3d5l2Pa_PYBdJQ
+
+2026-02-21T09:25:06.436453Z ? bydactivetripmonitorv2: [postAuthenticatedJson] response code: 0, msg: SUCCESS
+
+2026-02-21T09:25:06.436850Z ? bydactivetripmonitorv2: [postAuthenticatedJson] Decrypted respondData: {"fullHour":-1,"soc":99,"fullMinute":-1,"vehicleTimeZone":"Europe/Madrid","vin":"LGXCH6CD0S2052990","smartJourneyDto":{"useVehicleTime":"08:40","createTime":"2025-02-18T05:43:26.000+00:00","vin":"LGXC...
+
+2026-02-21T09:25:06.516391Z ? bydactivetripmonitorv2: [SoC Debug] LGXCH6CD0S2052990 - Realtime: 99 (number), Charging: 99 (number)
+
+2026-02-21T09:25:06.516486Z ? bydactivetripmonitorv2: [processVehicleState] LGXCH6CD0S2052990 (polling): effectiveSoc=99, socDecimal=0.99
+
+2026-02-21T09:25:06.516608Z ? bydactivetripmonitorv2: [processVehicleState] LGXCH6CD0S2052990: odo=12348 (delta=0.00km), move=false, locked=true, climate=false, sleep=false
+
+2026-02-21T09:25:06.516749Z ? bydactivetripmonitorv2: [processVehicleState] IDLE ÔÇö no movement detected, deactivating polling
+

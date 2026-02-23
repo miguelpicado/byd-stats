@@ -49,7 +49,8 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
         editingCharge,
         setEditingCharge,
         stats,
-        charges
+        charges,
+        recalculateSoH
     } = useData();
 
     const onClose = () => {
@@ -254,7 +255,13 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
             chargeData.kwhCharged = parseFloat(formData.kwhCharged.toString()) || 0;
             chargeData.chargerTypeId = formData.chargerTypeId;
             chargeData.pricePerKwh = parseFloat(formData.pricePerKwh.toString()) || 0;
-            chargeData.finalPercentage = parseFloat(formData.finalPercentage.toString()) || 0;
+            const finalPercentageStr = formData.finalPercentage.toString().trim();
+            if (finalPercentageStr !== '') {
+                chargeData.finalPercentage = parseFloat(finalPercentageStr);
+            } else {
+                chargeData.finalPercentage = undefined;
+            }
+
             // Only include initialPercentage if it has a valid value (including 0)
             // This prevents overwriting existing values with undefined when editing
             const initialPercentageStr = formData.initialPercentage.toString().trim();
@@ -263,6 +270,8 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                 if (!isNaN(initialHigh)) {
                     chargeData.initialPercentage = initialHigh;
                 }
+            } else {
+                chargeData.initialPercentage = undefined;
             }
 
             chargeData.isSOCEstimated = formData.isSOCEstimated;
@@ -282,9 +291,9 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
         // Trigger SoH recalculation in background
         if ((stats as any)?.recalculateSoH) {
             (stats as any).recalculateSoH();
-        } else if ((useData as any)().recalculateSoH) {
+        } else if (recalculateSoH) {
             // Fallback if stats object isn't holding it directly
-            (useData as any)().recalculateSoH();
+            recalculateSoH();
         }
 
         onClose();

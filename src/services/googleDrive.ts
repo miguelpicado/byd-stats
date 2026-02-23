@@ -54,6 +54,7 @@ export function invalidateCache(pattern?: string): void {
 }
 
 let accessToken: string | null = null;
+let onUnauthorizedCallback: (() => void) | null = null;
 
 export interface GoogleDriveFile {
     id: string;
@@ -81,6 +82,13 @@ export interface RegistryData {
 export const googleDriveService = {
     // Flag to indicate if service is ready
     isInited: true,
+
+    /**
+     * Set a callback to be called when a 401 Unauthorized error occurs
+     */
+    setOnUnauthorized: (callback: () => void): void => {
+        onUnauthorizedCallback = callback;
+    },
 
     /**
      * Initialize - No-op for fetch implementation, kept for compatibility
@@ -114,12 +122,35 @@ export const googleDriveService = {
     /**
      * Helper for fetch headers
      */
-    _getHeaders: (): HeadersInit => {
+    _getHeaders: (isPost = false): HeadersInit => {
         if (!accessToken) throw new Error("No access token set");
-        return {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
+        const headers: Record<string, string> = {
+            'Authorization': `Bearer ${accessToken}`
         };
+        if (isPost) {
+            headers['Content-Type'] = 'application/json';
+        }
+        return headers;
+    },
+
+    /**
+     * Handle response errors, specifically 401
+     */
+    _handleResponse: async (response: Response, context: string) => {
+        if (response.status === 401) {
+            logger.error(`[Drive] Unauthorized (401) during ${context}. Clearing token.`);
+            accessToken = null;
+            if (onUnauthorizedCallback) {
+                onUnauthorizedCallback();
+            }
+            throw new Error('Google session expired. Please sign in again.');
+        }
+
+        if (!response.ok) {
+            const errorText = await response.text().catch(() => 'Unknown error');
+            throw new Error(`Error during ${context}: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+        return response;
     },
 
     /**
@@ -144,9 +175,7 @@ export const googleDriveService = {
                 headers: googleDriveService._getHeaders()
             });
 
-            if (!response.ok) {
-                throw new Error(`Error listing files: ${response.status} ${response.statusText}`);
-            }
+            await googleDriveService._handleResponse(response, 'listing files');
 
             const data = await response.json();
             const files = data.files as GoogleDriveFile[];
@@ -180,9 +209,7 @@ export const googleDriveService = {
                 headers: googleDriveService._getHeaders()
             });
 
-            if (!response.ok) {
-                throw new Error(`Error listing all files: ${response.status} ${response.statusText}`);
-            }
+            await googleDriveService._handleResponse(response, 'listing all files');
 
             const data = await response.json();
             const files = data.files as GoogleDriveFile[];
@@ -204,9 +231,7 @@ export const googleDriveService = {
                 headers: googleDriveService._getHeaders()
             });
 
-            if (!response.ok) {
-                throw new Error(`Error downloading file: ${response.status} ${response.statusText}`);
-            }
+            await googleDriveService._handleResponse(response, 'downloading file');
 
             const result = await response.json();
 
@@ -249,13 +274,11 @@ export const googleDriveService = {
 
                 const createRes = await fetch(`${DRIVER_API_URL}/files`, {
                     method: 'POST',
-                    headers: googleDriveService._getHeaders(),
+                    headers: googleDriveService._getHeaders(true),
                     body: JSON.stringify(metadata)
                 });
 
-                if (!createRes.ok) {
-                    throw new Error('Failed to create file metadata: ' + await createRes.text());
-                }
+                await googleDriveService._handleResponse(createRes, 'creating file metadata');
                 const createData = await createRes.json();
                 fileId = createData.id;
             }
@@ -265,13 +288,11 @@ export const googleDriveService = {
 
             const updateRes = await fetch(updateUrl, {
                 method: 'PATCH',
-                headers: googleDriveService._getHeaders(),
+                headers: googleDriveService._getHeaders(true),
                 body: fileContent
             });
 
-            if (!updateRes.ok) {
-                throw new Error('Failed to upload file content: ' + await updateRes.text());
-            }
+            await googleDriveService._handleResponse(updateRes, 'uploading file content');
 
             invalidateCache('listFiles');
             invalidateCache('listAllDatabaseFiles');
@@ -295,9 +316,7 @@ export const googleDriveService = {
                 headers: googleDriveService._getHeaders()
             });
 
-            if (!response.ok) {
-                throw new Error(`Error deleting file: ${response.status} ${response.statusText}`);
-            }
+            await googleDriveService._handleResponse(response, 'deleting file');
 
             invalidateCache('listFiles');
             invalidateCache('listAllDatabaseFiles');
@@ -327,7 +346,7 @@ export const googleDriveService = {
             if (files && files.length > 0) {
                 const url = `${DRIVER_API_URL}/files/${files[0].id}?alt=media`;
                 const response = await fetch(url, { headers: googleDriveService._getHeaders() });
-                if (!response.ok) throw new Error('Failed to DL registry');
+                await googleDriveService._handleResponse(response, 'fetching registry');
                 const fileContent = await response.json();
 
                 const registry = {

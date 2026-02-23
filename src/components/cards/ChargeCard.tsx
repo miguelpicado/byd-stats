@@ -53,6 +53,9 @@ const ChargeCard: React.FC<ChargeCardProps> = memo(({ charge, onClick, formatted
     return prevProps.charge.id === nextProps.charge.id &&
         prevProps.charge.kwhCharged === nextProps.charge.kwhCharged &&
         prevProps.charge.totalCost === nextProps.charge.totalCost &&
+        prevProps.charge.initialPercentage === nextProps.charge.initialPercentage &&
+        prevProps.charge.finalPercentage === nextProps.charge.finalPercentage &&
+        prevProps.charge.isSOCEstimated === nextProps.charge.isSOCEstimated &&
         prevProps.formattedDate === nextProps.formattedDate &&
         prevProps.chargerTypeName === nextProps.chargerTypeName;
 });

@@ -1,20 +1,7 @@
-// BYD Stats - useTheme Hook
-
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
+import { StatusBar, Style } from '@capacitor/status-bar';
 import { logger } from '@core/logger';
-
-// Add type definition for StatusBar if needed, or act as if global
-// Assuming window.StatusBar exists in Capacitor context if plugin loaded
-interface StatusBarPlugin {
-    setStyle: (options: { style: string }) => Promise<void>;
-}
-
-declare global {
-    interface Window {
-        StatusBar?: StatusBarPlugin;
-    }
-}
 
 /**
  * Custom hook for managing app theme
@@ -36,8 +23,8 @@ export function useTheme(theme: string) {
             document.documentElement.style.colorScheme = isDark ? 'dark' : 'light';
 
             // 3. Native StatusBar
-            if (isNative && window.StatusBar) {
-                window.StatusBar.setStyle({ style: isDark ? 'DARK' : 'LIGHT' })
+            if (isNative) {
+                StatusBar.setStyle({ style: isDark ? Style.Dark : Style.Light })
                     .catch((e: unknown) => logger.error('StatusBar error:', e));
             }
         };

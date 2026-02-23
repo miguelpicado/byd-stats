@@ -1,7 +1,7 @@
 import React, { Suspense, memo, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle, IconProps } from '@components/Icons';
-import { TAB_PADDING, COMPACT_TAB_PADDING } from '@utils/constants';
+import { TAB_PADDING, COMPACT_TAB_PADDING } from '@core/constants';
 import ErrorBoundary from '@components/common/ErrorBoundary';
 import { Trip, Charge } from '@/types';
 

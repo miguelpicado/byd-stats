@@ -3,6 +3,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React, { Suspense } from 'react';
 import DashboardLayout from '../DashboardLayout';
 
+vi.mock('@/services/bydApi', () => ({
+    getVehicleStatus: vi.fn(),
+    sendCommand: vi.fn(),
+    initBydClient: vi.fn(),
+}));
+
 // Mock dependencies
 const mockT = vi.fn((key) => key);
 vi.mock('react-i18next', () => ({

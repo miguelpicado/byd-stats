@@ -53,16 +53,18 @@ describe('useAppData', () => {
         localStorage.clear();
     });
 
+    const mockSettings = { batterySize: 60, odometerOffset: 0, priceStrategy: 'average', useCalculatedPrice: false };
+
     it('should initialize with empty rawTrips', () => {
-        const { result } = renderHook(() => useAppData());
+        const { result } = renderHook(() => useAppData(mockSettings));
         expect(result.current.rawTrips).toEqual([]);
         expect(result.current.filtered).toEqual([]);
         expect(result.current.data).toBeNull();
     });
 
     it('should update rawTrips', async () => {
-        const { result } = renderHook(() => useAppData());
-        const mockTrips = [{ trip: 10, electricity: 1.0, month: '202501', date: '20250114' }];
+        const { result } = renderHook(() => useAppData(mockSettings));
+        const mockTrips = [{ trip: 10, electricity: 1.0, month: '202501', date: '20250114', source: 'local' }];
 
         act(() => {
             result.current.setRawTrips(mockTrips);
@@ -79,7 +81,7 @@ describe('useAppData', () => {
     });
 
     it('should filter trips by month', async () => {
-        const { result } = renderHook(() => useAppData());
+        const { result } = renderHook(() => useAppData(mockSettings));
         const mockTrips = [
             { trip: 10, month: '202501' },
             { trip: 20, month: '202502' },
@@ -98,7 +100,7 @@ describe('useAppData', () => {
     });
 
     it('should filter trips by date range', async () => {
-        const { result } = renderHook(() => useAppData());
+        const { result } = renderHook(() => useAppData(mockSettings));
         const mockTrips = [
             { trip: 10, date: '20250110' },
             { trip: 20, date: '20250115' },
@@ -119,7 +121,7 @@ describe('useAppData', () => {
     });
 
     it('should extract unique months', async () => {
-        const { result } = renderHook(() => useAppData());
+        const { result } = renderHook(() => useAppData(mockSettings));
         const mockTrips = [
             { trip: 10, month: '202501' },
             { trip: 20, month: '202501' },
@@ -137,7 +139,7 @@ describe('useAppData', () => {
 
     it('should clear data', async () => {
         window.confirm = vi.fn(() => true);
-        const { result } = renderHook(() => useAppData());
+        const { result } = renderHook(() => useAppData(mockSettings));
 
         act(() => {
             result.current.setRawTrips([{ trip: 10 }]);
