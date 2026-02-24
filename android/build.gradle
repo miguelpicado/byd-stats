@@ -1,7 +1,5 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
 buildscript {
-    
+    ext.kotlin_version = '1.9.24'
     repositories {
         google()
         mavenCentral()
@@ -9,10 +7,15 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.13.0'
         classpath 'com.google.gms:google-services:4.4.4'
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
     }
+}
+
+ext {
+    kotlin_version = '1.9.24'
 }
 
 apply from: "variables.gradle"
@@ -21,6 +24,24 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+    }
+    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+        kotlinOptions {
+            freeCompilerArgs += ["-Xskip-metadata-version-check"]
+        }
+    }
+}
+
+subprojects {
+    configurations.all {
+        resolutionStrategy.eachDependency { details ->
+            if (details.requested.group == 'org.jetbrains.kotlin') {
+                details.useVersion '1.9.24'
+            }
+        }
+        // Force specific stdlib version to avoid "Incompatible classes"
+        resolutionStrategy.force "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
+        resolutionStrategy.force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
     }
 }
 

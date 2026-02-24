@@ -1,4 +1,5 @@
 apply plugin: 'com.android.application'
+apply plugin: 'org.jetbrains.kotlin.android'
 
 android {
     namespace = "com.bydstats.app"
@@ -61,6 +62,8 @@ dependencies {
     androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
     androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
     implementation project(':capacitor-cordova-android-plugins')
+    wearApp project(":wear")
+    implementation "com.google.android.gms:play-services-wearable:19.0.0"
 }
 
 apply from: 'capacitor.build.gradle'
