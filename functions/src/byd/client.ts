@@ -90,6 +90,7 @@ export interface BydVehicle {
     brandName: string;
     modelName: string;
     plateNo?: string;
+    totalMileage?: number;
 }
 
 export interface BydRealtime {
@@ -388,6 +389,7 @@ export class BydClient {
             brandName: v.brandName,
             modelName: v.modelName,
             plateNo: v.autoPlate || v.plateNo,
+            totalMileage: this.parseNumber(v.totalMileage),
         }));
     }
 
