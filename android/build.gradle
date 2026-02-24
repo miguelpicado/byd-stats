@@ -39,9 +39,6 @@ subprojects {
                 details.useVersion '1.9.24'
             }
         }
-        // Force specific stdlib version to avoid "Incompatible classes"
-        resolutionStrategy.force "org.jetbrains.kotlin:kotlin-stdlib:1.9.24"
-        resolutionStrategy.force "org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24"
     }
 }
 

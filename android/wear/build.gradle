@@ -70,6 +70,12 @@ dependencies {
     
     implementation "androidx.activity:activity-compose:1.10.0"
     
+    // Icons
+    implementation "androidx.compose.material:material-icons-extended:1.7.8"
+    
     // Play Services Coroutines
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1"
+
+    // Complications
+    implementation "androidx.wear.watchface:watchface-complications-data-source-ktx:1.2.1"
 }

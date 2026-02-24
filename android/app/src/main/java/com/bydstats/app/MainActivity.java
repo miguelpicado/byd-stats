@@ -12,7 +12,14 @@ import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
 import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
 import com.bydstats.app.plugins.FileOpenerPlugin;
+import com.bydstats.app.plugins.WearSyncPlugin;
 
+
+import com.google.android.gms.wearable.PutDataMapRequest;
+import com.google.android.gms.wearable.PutDataRequest;
+import com.google.android.gms.wearable.Wearable;
+import com.google.android.gms.tasks.Task;
+import android.util.Log;
 
 public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
 
@@ -64,6 +71,7 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
     public void onCreate(Bundle savedInstanceState) {
         // Register custom plugins
         registerPlugin(FileOpenerPlugin.class);
+        registerPlugin(WearSyncPlugin.class);
 
         super.onCreate(savedInstanceState);
 

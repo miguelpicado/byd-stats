@@ -4,6 +4,7 @@ import '@/core/chartSetup';
 
 // Hooks
 import { useAppOrchestrator } from '@hooks/useAppOrchestrator';
+import { useWearSync } from '@hooks/useWearSync';
 
 // Components
 import GlobalListeners from '@components/GlobalListeners';
@@ -17,6 +18,9 @@ const AllTripsViewLazy = lazy(() => import('@features/dashboard/AllTripsView'));
 const AllChargesViewLazy = lazy(() => import('@features/dashboard/AllChargesView'));
 
 export default function BYDStatsAnalyzer() {
+  // Real-time synchronization with Wear OS device
+  useWearSync();
+
   // Detailed orchestration state
   const {
     // State

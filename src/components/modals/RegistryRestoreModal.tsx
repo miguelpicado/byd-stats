@@ -38,7 +38,7 @@ const RegistryRestoreModal: React.FC<RegistryRestoreModalProps> = ({ registryCar
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-modal-backdrop">
-            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden flex flex-col animate-modal-content">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden flex flex-col animate-modal-content">
                 {/* Header */}
                 <div className="flex items-center gap-4 p-5 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
                     <div className="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
@@ -55,7 +55,7 @@ const RegistryRestoreModal: React.FC<RegistryRestoreModalProps> = ({ registryCar
                 </div>
 
                 {/* Content */}
-                <div className="p-5 space-y-4">
+                <div className="flex-1 overflow-y-auto min-h-0 p-5 space-y-4 overscroll-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
                     <p className="text-sm text-slate-600 dark:text-slate-300">
                         {t('sync.selectCarToRestore', 'Selecciona el coche que quieres sincronizar con este dispositivo:')}
                     </p>

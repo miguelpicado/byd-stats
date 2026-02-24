@@ -140,7 +140,7 @@ const CloudBackupsModal: React.FC = () => {
                 </div>
 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                <div className="flex-1 overflow-y-auto min-h-0 p-4 space-y-3 overscroll-contain touch-pan-y" style={{ WebkitOverflowScrolling: 'touch' }}>
                     {loading ? (
                         <div className="flex flex-col items-center justify-center py-12 text-slate-500 gap-3">
                             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-current"></div>
