@@ -478,6 +478,36 @@ export class BydClient {
     }
 
     /**
+     * Get cached realtime vehicle data without triggering a wake
+     * Calls the result endpoint directly with no requestSerial to get cloud cache.
+     */
+    async getRealtimeCache(vin: string): Promise<BydRealtime> {
+        const nowMs = Date.now();
+        const randomHex = node_crypto.randomBytes(16).toString('hex').toUpperCase();
+
+        const inner = {
+            deviceType: this.device.deviceType,
+            energyType: '0',
+            imeiMD5: this.device.imeiMD5,
+            networkType: this.device.networkType,
+            random: randomHex,
+            tboxVersion: this.device.tboxVersion,
+            timeStamp: String(nowMs),
+            version: this.device.appInnerVersion,
+            vin,
+        };
+
+        const response = await this.postAuthenticatedJson(
+            '/vehicleInfo/vehicle/vehicleRealTimeResult',
+            inner,
+            true // rawInner
+        );
+
+        // We use the data as-is (last known cache from BYD cloud)
+        return this.parseRealtimeData(response.data || {});
+    }
+
+    /**
      * Check if realtime data has actual values (not stale/cached zeros)
      * Based on BYD-re's isRealtimeDataReady check
      */

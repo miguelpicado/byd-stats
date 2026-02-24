@@ -1390,16 +1390,18 @@ async function processVehicleState(
             offlinePollCount: newOfflineCount
         };
 
-        if (activeTripId && newOfflineCount >= 10) {
-            console.log(`[processVehicleState] Car offline for 10 polls with active trip ${activeTripId} - Force Ending.`);
-            const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
-            await tripRef.update({
-                status: 'completed',
-                endOdometer: prevOdometer,
-                endSoC: vehicleData.lastSoC || 0,
-                lastUpdate: now,
-                forcedEndReason: 'vehicle_offline_timeout'
-            });
+        if (activeTripId && newOfflineCount >= 12) {
+            console.log(`[processVehicleState] Car offline for 12 polls (4 min) with active trip ${activeTripId} - Force Ending with trim.`);
+            
+            // Use the comprehensive closeTrip function to ensure SoC, distance and TRIM are handled correctly
+            // We use prevOdometer and last known SoC from vehicleData as the car is now unreachable
+            const offlineRealtime = {
+                odometer: prevOdometer,
+                soc: (vehicleData.lastSoC || 0) * 100 // closeTrip expects SoC in 0-100 for normalization
+            };
+            
+            await closeTrip(vin, activeTripId, offlineRealtime, vehicleData, 4, 'vehicle_offline_timeout');
+            
             offlineUpdate.activeTripId = admin.firestore.FieldValue.delete();
             offlineUpdate.pollingActive = false;
             offlineUpdate.stationaryPollCount = 0;
@@ -1479,9 +1481,7 @@ async function processVehicleState(
             const gearNotPark = realtime.gear !== undefined && realtime.gear !== 1 && realtime.gear !== 0;
             const epbReleased = realtime.parkingBrake !== undefined && realtime.parkingBrake === 0;
             const strictStart = (realtime.speed || 0) > 0 ||
-                odoDelta >= 0.02 ||
-                (hasGpsMovement && gpsDelta > 0.002) ||
-                realtime.gear === 3 ||
+                odoDelta >= 0.01 ||
                 gearNotPark ||
                 epbReleased;
 
@@ -1513,10 +1513,10 @@ async function processVehicleState(
                 vehicleUpdate.pollingActive = true;
                 vehicleUpdate.pollingActivatedAt = now;
                 vehicleUpdate.failedDetectionAttempts = 0; // Reset on success
-                console.log(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gpsDelta=${gpsDelta.toFixed(6)}, gear=${realtime.gear})`);
+                console.log(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear})`);
             } else {
                 // Log why trip was blocked
-                console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (strictStart failed): source=${source}, speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gpsDelta=${gpsDelta.toFixed(6)}, gear=${realtime.gear}, epb=${realtime.parkingBrake}, prevOdo=${prevOdometer}`);
+                console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (strictStart failed): source=${source}, speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear}, epb=${realtime.parkingBrake}, prevOdo=${prevOdometer}`);
             }
         } else {
             // Log why trip was blocked (not canStartTrip)
@@ -1998,39 +1998,56 @@ async function cloudProbeVehicle(vin: string): Promise<{
     const client = await getBydClientWithSession(vin);
     await logApiCall(vin, 'cloud_probe', false);
 
-    const charging = await client.getChargingStatus(vin);
+    // Triple Silent Check: Parallel fetching of cloud-only (no-wake) data
+    const [charging, realtimeCache, allVehicles] = await Promise.all([
+        client.getChargingStatus(vin),
+        client.getRealtimeCache(vin),
+        client.getVehicles()
+    ]);
+
     const vehicleRef = db.collection('bydVehicles').doc(vin);
     const vehicleDoc = await vehicleRef.get();
     const vehicleData = vehicleDoc.data() || {};
 
-    const prevSoC = vehicleData.lastSoC || 0; // stored as decimal 0.0-1.0
-    const prevCloudUpdateTime = vehicleData.lastCloudUpdateTime || 0;
-    const currentSoC = normalizeSoC(charging.soc); // convert to decimal
-    const cloudUpdateTime = charging.raw?.updateTime || 0;
+    // 1. SoC from Charging Status (normalized to 0-1)
+    const prevSoC = vehicleData.lastSoC || 0;
+    const currentSoC = normalizeSoC(charging.soc);
+    const socChanged = Math.abs(currentSoC - prevSoC) >= 0.005; // Change >= 0.5%
 
-    // Detect changes in cloud data
-    const socChanged = Math.abs(currentSoC - prevSoC) >= 0.005; // ≥0.5% change
-    const updateTimeChanged = cloudUpdateTime > 0 && cloudUpdateTime !== prevCloudUpdateTime;
-    const changed = socChanged || updateTimeChanged;
+    // 2. Odometer from Vehicle List (Reliable No-Wake Odometer)
+    const vehicleInfo = allVehicles.find(v => v.vin === vin);
+    const prevOdo = vehicleData.lastOdometer || 0;
+    const currentOdo = vehicleInfo?.totalMileage || 0;
+    const odoChanged = currentOdo > 0 && currentOdo > prevOdo;
 
-    // Escalate to full poll (wake T-Box) when cloud data changed AND car is NOT just charging.
-    // When updateTime changes without charging, the T-Box activated for some reason
-    // (driving, user opened car, EPB released, gear change, etc.)
-    // The full poll (getRealtime+getGps) gives us speed, gear, EPB, GPS — and
-    // processVehicleState() decides whether to start/continue/end a trip.
+    // 3. Car Timestamp (from Realtime Cache Bypass)
+    // This detects if the car has communicated with the cloud recently (e.g. woke up)
+    const prevCarTime = vehicleData.lastCarTime || 0;
+    const rawData = realtimeCache.raw?.data || realtimeCache.raw || {};
+    const info = rawData.vehicleInfo || rawData.vehicleStatus || rawData;
+    const currentCarTime = Number(info.time) || 0;
+    const carTimeChanged = currentCarTime > 0 && currentCarTime !== prevCarTime;
+
+    // Summary of changes
+    const changed = socChanged || odoChanged || carTimeChanged;
+
+    // Escalate to full poll (wake T-Box) when cloud data changed AND car is NOT charging.
+    // When odometer or timestamp changes without charging, the car is likely being used.
     const shouldEscalate = changed && !charging.isCharging;
 
-    // Always update cloud cache metadata
+    // Update metadata for next comparison
     const cloudUpdate: any = {
         lastCloudProbeTime: admin.firestore.Timestamp.now(),
+        lastSoC: currentSoC,
+        isCharging: charging.isCharging
     };
-    if (cloudUpdateTime > 0) cloudUpdate.lastCloudUpdateTime = cloudUpdateTime;
-    if (charging.soc > 0) cloudUpdate.lastSoC = currentSoC;
-    if (charging.isCharging !== undefined) cloudUpdate.isCharging = charging.isCharging;
+    if (currentOdo > 0) cloudUpdate.lastOdometer = currentOdo;
+    if (currentCarTime > 0) cloudUpdate.lastCarTime = currentCarTime;
+    if (charging.raw?.updateTime) cloudUpdate.lastCloudUpdateTime = charging.raw.updateTime;
 
     await vehicleRef.update(cloudUpdate);
 
-    console.log(`[cloudProbe] ${vin}: SoC=${(currentSoC * 100).toFixed(1)}% (prev=${(prevSoC * 100).toFixed(1)}%), updateTime=${cloudUpdateTime} (prev=${prevCloudUpdateTime}), charging=${charging.isCharging}, changed=${changed}, escalate=${shouldEscalate}`);
+    console.log(`[cloudProbe] ${vin}: SoC=${(currentSoC * 100).toFixed(1)}%, Odo=${currentOdo}km, CarTime=${currentCarTime}, changed=${changed}, escalate=${shouldEscalate} (SoC:${socChanged}, Odo:${odoChanged}, Time:${carTimeChanged})`);
 
     return { changed, shouldEscalate, charging };
 }
