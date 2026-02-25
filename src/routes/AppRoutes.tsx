@@ -5,7 +5,6 @@ import App from '../App';
 // Lazy load pages
 const LegalPage = lazy(() => import('../pages/LegalPage'));
 const FaqPage = lazy(() => import('../pages/FaqPage'));
-const ApkTestPage = lazy(() => import('../pages/ApkTestPage'));
 
 const AppRoutes = () => {
     return (
@@ -14,7 +13,6 @@ const AppRoutes = () => {
                 <Route path="/legal" element={<LegalPage />} />
                 <Route path="/privacidad" element={<LegalPage forcedTab="privacy" />} />
                 <Route path="/faq" element={<FaqPage />} />
-                <Route path="/apk-test" element={<ApkTestPage />} />
                 <Route path="/*" element={<App />} />
             </Routes>
         </Suspense>

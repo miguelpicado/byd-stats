@@ -58,7 +58,8 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         openRegistryModal: modalContext.openRegistryModal,
         isRegistryModalOpen: modalContext.modals?.registryRestore,
         updateCar,
-        carName: activeCar?.name || ''
+        carName: activeCar?.name || '',
+        setActiveCarId: useCar().setActiveCarId
     });
 
     // Auto Charge Detection - monitors vehicle status and auto-registers charge sessions

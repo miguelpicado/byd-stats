@@ -1373,6 +1373,11 @@ async function processVehicleState(
     const hasMovement = hasOdoMovement || hasGpsMovement || hasSpeedMovement;
     const isStationary = !hasMovement;
 
+    // Detect intent to drive even before physical movement
+    const gearNotPark = realtime.gear !== undefined && realtime.gear !== 1 && realtime.gear !== 0;
+    const epbReleased = realtime.parkingBrake !== undefined && realtime.parkingBrake === 0;
+    const isReadyToDrive = gearNotPark || epbReleased || hasSpeedMovement;
+
     // Detect if car is sleeping: realtime returns zeros AND charging also has no data
     const isCarSleeping = realtime.soc === 0 && realtime.range === 0 && realtime.odometer === 0 && effectiveSoc === 0;
 
@@ -1392,16 +1397,16 @@ async function processVehicleState(
 
         if (activeTripId && newOfflineCount >= 12) {
             console.log(`[processVehicleState] Car offline for 12 polls (4 min) with active trip ${activeTripId} - Force Ending with trim.`);
-            
+
             // Use the comprehensive closeTrip function to ensure SoC, distance and TRIM are handled correctly
             // We use prevOdometer and last known SoC from vehicleData as the car is now unreachable
             const offlineRealtime = {
                 odometer: prevOdometer,
                 soc: (vehicleData.lastSoC || 0) * 100 // closeTrip expects SoC in 0-100 for normalization
             };
-            
+
             await closeTrip(vin, activeTripId, offlineRealtime, vehicleData, 4, 'vehicle_offline_timeout');
-            
+
             offlineUpdate.activeTripId = admin.firestore.FieldValue.delete();
             offlineUpdate.pollingActive = false;
             offlineUpdate.stationaryPollCount = 0;
@@ -1462,7 +1467,8 @@ async function processVehicleState(
     // TRIP LOGIC
     // =========================================================================
 
-    if (!activeTripId && hasMovement) {
+    // Iniciamos el flujo de viaje si hay movimiento O si el usuario muestra intención de conducir
+    if (!activeTripId && (hasMovement || isReadyToDrive)) {
         // --- START NEW TRIP ---
         // Allow trip start even if locked (auto-lock while driving)
         // Allow 'wake' source - if the app is opened while driving, we should detect the trip
@@ -1634,7 +1640,7 @@ async function processVehicleState(
             // Trip document missing but vehicle has activeTripId - CLEAR IT
             console.log(`[processVehicleState] 🧹 Clearing stale activeTripId ${activeTripId} (doc missing while moving)`);
             vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
-            
+
             // Optionally: Should we force-start a new trip immediately? 
             // For now, let's just clear it. The NEXT poll (in 20s) will see !activeTripId && hasMovement -> Start Trip.
         }
@@ -1804,8 +1810,13 @@ async function calculateMovingAverageEfficiency(vin: string, limit = 20): Promis
             const data = doc.data();
             // Only use trips with significant distance and electricity to avoid biasing average
             if (data.distanceKm > 0.5 && data.electricity > 0) {
-                totalKwh += data.electricity;
-                totalKm += data.distanceKm;
+                // Filtro de cordura: ignorar viajes con eficiencia < 10 o > 40 kWh/100km
+                // para evitar que los glitches de BYD rompan la media
+                const tripEfficiency = (data.electricity / data.distanceKm) * 100;
+                if (tripEfficiency >= 10 && tripEfficiency <= 40) {
+                    totalKwh += data.electricity;
+                    totalKm += data.distanceKm;
+                }
             }
         });
 
@@ -1852,7 +1863,10 @@ async function closeTrip(
 
     let electricityKwh = 0;
 
-    if (socDelta >= 0.01) {
+    // Multiplicar y redondear para evitar errores de coma flotante (ej. 0.80 - 0.79 = 0.00999999)
+    const socDeltaPercent = Math.round(socDelta * 100);
+
+    if (socDeltaPercent >= 1) {
         // Normal SoC-based calculation
         electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
     } else {
@@ -1866,7 +1880,8 @@ async function closeTrip(
 
     const updateData: any = {
         status: 'completed',
-        type: totalDistance >= 0.5 ? 'trip' : 'idle',
+        // Si no ha recorrido 0.5km pero ha gastado 1% o más de batería, forzamos que sea un 'trip'
+        type: (totalDistance >= 0.5 || socDeltaPercent >= 1) ? 'trip' : 'idle',
         endDate: adjustedEndDate,
         endOdometer: isNaN(realtime.odometer) ? (tripData.startOdometer || 0) : realtime.odometer,
         endSoC: isNaN(socDecimal) ? (tripData.endSoC || 0) : socDecimal,
@@ -2381,7 +2396,9 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
 
             let electricityKwh = 0;
 
-            if (socDelta >= 0.01) {
+            const socDeltaPercent = Math.round(socDelta * 100);
+
+            if (socDeltaPercent >= 1) {
                 // Normal SoC-based calculation
                 electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
             } else {

@@ -7,12 +7,14 @@ interface UseCloudRegistryProps {
     activeCarId: string;
     settings: Settings;
     openRegistryModal: (cars: Car[]) => void;
+    syncFromCloud?: () => Promise<void>;
+    setActiveCarId?: (id: string | null) => void;
 }
 
-export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: UseCloudRegistryProps) {
+export function useCloudRegistry({ activeCarId, settings, openRegistryModal, syncFromCloud, setActiveCarId }: UseCloudRegistryProps) {
 
     // Check Registry for existing cars
-    const checkAndPromptRegistry = useCallback(async (): Promise<boolean> => {
+    const checkAndPromptRegistry = useCallback(async (forcePrompt: boolean = false): Promise<boolean> => {
         if (!googleDriveService.isInited) return false;
 
         try {
@@ -75,7 +77,13 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: U
             }
 
             const isKnown = registry!.cars.some(c => c.id === activeCarId);
-            if (isKnown) return false;
+
+            // If the car is known BUT we have 0 local trips, we still want to prompt to restore.
+            // However, useCloudRegistry doesn't know about local trips directly.
+            // BUT LandingPage only calls handleLoginLink if isLandingPage (0 trips) is true
+            // or we evaluate it in useGoogleSync. For now, let's allow the modal
+            // if we are checking after login on an empty state (handled by caller).
+            if (isKnown && !forcePrompt) return false;
 
             // Sort by lastSync (newest first)
             const sortedCars = [...registry!.cars].sort((a, b) => {
@@ -137,19 +145,35 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: U
                 id: car.id,
                 name: car.name,
                 type: 'ev',
-                isHybrid: false
+                isHybrid: false,
+                model: car.name
             };
 
+            // Update LocalStorage directly so the next load has it
             localStorage.setItem(carsKey, JSON.stringify([restoredCar]));
             localStorage.setItem(activeKey, car.id);
-            window.location.reload();
+
+            // Seamless reload trick: Update the active car ID in context without a full reload
+            if (setActiveCarId) {
+                setActiveCarId(car.id);
+            }
+
+            // Trigger a sync immediately
+            if (syncFromCloud) {
+                logger.info("Triggering cloud sync for restored car to pull data immediately...");
+                await syncFromCloud();
+            } else {
+                logger.warn("No syncFromCloud function provided, falling back to page reload.");
+                window.location.reload();
+            }
+
             return true;
         } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));
             logger.error('Restore failed', error);
             throw error;
         }
-    }, []);
+    }, [setActiveCarId, syncFromCloud]);
 
     return {
         checkAndPromptRegistry,

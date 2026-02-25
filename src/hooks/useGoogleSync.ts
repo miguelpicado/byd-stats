@@ -20,6 +20,7 @@ export interface UseGoogleSyncProps {
     isRegistryModalOpen?: boolean;
     updateCar?: (id: string, updates: Partial<Car>) => void;
     carName?: string;
+    setActiveCarId?: (id: string | null) => void;
 }
 
 export interface UseGoogleSyncReturn {
@@ -56,7 +57,8 @@ export function useGoogleSync({
     totalCars: _totalCars = 1,
     openRegistryModal,
     isRegistryModalOpen: _isRegistryModalOpen = false,
-    updateCar
+    updateCar,
+    setActiveCarId
 }: UseGoogleSyncProps): UseGoogleSyncReturn {
 
     // 1. Auth Hook
@@ -66,7 +68,12 @@ export function useGoogleSync({
     const { checkAndPromptRegistry, updateCloudRegistry, restoreFromRegistry } = useCloudRegistry({
         activeCarId,
         settings,
-        openRegistryModal
+        openRegistryModal,
+        setActiveCarId,
+        syncFromCloud: async () => {
+            // Will trigger a pull from the active car
+            await performSync(null, { forcePull: true });
+        }
     });
 
     // 3. Sync Hook
@@ -99,9 +106,13 @@ export function useGoogleSync({
     const error = authError || syncError;
 
     // Login Success Handler (orchestration)
+    // We wrap it in a useCallback to capture the current localTrips state.
     const handleLoginLink = async (_accessToken: string) => {
         // After login, check registry
-        const modalOpened = await checkAndPromptRegistry();
+        // Force the prompt if the user just logged in and has 0 local trips
+        const isFreshInstall = localTrips.length === 0 && localCharges.length === 0;
+        const modalOpened = await checkAndPromptRegistry(isFreshInstall);
+
         if (!modalOpened) {
             performSync();
         } else {
@@ -112,10 +123,9 @@ export function useGoogleSync({
     // Attach handler to Auth hook
     useEffect(() => {
         onLoginSuccessCallback.current = handleLoginLink;
-    }, [handleLoginLink, onLoginSuccessCallback]);
+    }, [checkAndPromptRegistry, performSync, localTrips.length, localCharges.length, onLoginSuccessCallback]);
 
     // Visibility Auto-Sync
-    // Memoize the value of isAuthenticated and isSyncing by refs to avoid re-binding listener
     const stateRef = useRef({ isAuthenticated, isSyncing, lastSyncTime, isRegistryModalOpen: _isRegistryModalOpen });
     useEffect(() => { stateRef.current = { isAuthenticated, isSyncing, lastSyncTime, isRegistryModalOpen: _isRegistryModalOpen }; }, [isAuthenticated, isSyncing, lastSyncTime, _isRegistryModalOpen]);
 
@@ -138,6 +148,20 @@ export function useGoogleSync({
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
     }, [performSync]);
 
+    // Custom syncNow wrapper to handle the edge case where user is on LandingPage
+    // and clicks "Sync Now" but they actually need to restore a backup.
+    const handleSyncNow = async (newTripsData?: Trip[] | null, options?: { forcePull?: boolean; forcePush?: boolean }) => {
+        const isFreshInstall = localTrips.length === 0 && localCharges.length === 0;
+        if (isFreshInstall && !options?.forcePull && !options?.forcePush && !newTripsData) {
+            logger.info("[Sync] Empty local DB detected on manual sync. Checking registry first...");
+            const modalOpened = await checkAndPromptRegistry(true);
+            if (modalOpened) {
+                return; // Let the user select a backup
+            }
+        }
+        await performSync(newTripsData, options);
+    };
+
     const skipRegistryRestore = async () => {
         logger.info("[Sync] User chose new car/skip restore. Proceeding with sync.");
         await performSync();
@@ -155,7 +179,7 @@ export function useGoogleSync({
         dismissConflict,
         login,
         logout,
-        syncNow: performSync,
+        syncNow: handleSyncNow,
         checkCloudBackups,
         importFromCloud,
         deleteBackup,

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { registerPlugin } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { useCar } from '@/context/CarContext';
 import { useData } from '@/providers/DataProvider';
@@ -9,8 +9,8 @@ import { bydUnlock, bydWakeVehicle, bydFlashLights, bydStartClimate, bydStopClim
 import { toast } from 'react-hot-toast';
 
 interface WearSyncPlugin {
-  syncVehicleData(options: { rangeKm: number; soc: number; vin: string; climateActive: boolean }): Promise<{ success: boolean }>;
-  addListener(eventName: 'onWatchAction', listenerFunc: (data: { action: string }) => void): Promise<any>;
+    syncVehicleData(options: { rangeKm: number; soc: number; vin: string; climateActive: boolean }): Promise<{ success: boolean }>;
+    addListener(eventName: 'onWatchAction', listenerFunc: (data: { action: string }) => void): Promise<any>;
 }
 
 const WearSync = registerPlugin<WearSyncPlugin>('WearSync');
@@ -20,9 +20,9 @@ export const useWearSync = () => {
     const { isNative } = useLayout();
     const { stats, openModal } = useData();
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
-    
-    const lastSyncedRef = useRef<{ soc: number; range: number; vin: string; climate: boolean }>({ 
-        soc: -1, range: -1, vin: '', climate: false 
+
+    const lastSyncedRef = useRef<{ soc: number; range: number; vin: string; climate: boolean }>({
+        soc: -1, range: -1, vin: '', climate: false
     });
 
     const activeCarRef = useRef(activeCar);
@@ -31,13 +31,13 @@ export const useWearSync = () => {
     useEffect(() => { vehicleStatusRef.current = vehicleStatus; }, [vehicleStatus]);
 
     useEffect(() => {
-        if (!isNative) return;
+        if (!Capacitor.isNativePlatform()) return;
 
         console.log("[useWearSync] Registering permanent watch action listener");
         const listener = WearSync.addListener('onWatchAction', async (data) => {
             const currentCar = activeCarRef.current;
             const currentStatus = vehicleStatusRef.current;
-            
+
             console.log(`[useWearSync] Action received: ${data.action} for car: ${currentCar?.vin}`);
             if (!currentCar?.vin) return;
 
@@ -47,7 +47,7 @@ export const useWearSync = () => {
                     const result = await fn();
                     if (result && result.success) {
                         toast.success(`${name} OK`, { id: toastId });
-                        setTimeout(() => bydWakeVehicle(currentCar.vin!).catch(() => {}), 2000);
+                        setTimeout(() => bydWakeVehicle(currentCar.vin!).catch(() => { }), 2000);
                     } else {
                         toast.error(`Fallo: ${result?.message || 'Error'}`, { id: toastId });
                     }
@@ -73,7 +73,7 @@ export const useWearSync = () => {
     }, [isNative]);
 
     useEffect(() => {
-        if (!isNative || !activeCar?.vin) return;
+        if (!Capacitor.isNativePlatform() || !activeCar?.vin) return;
 
         const rawSoC = vehicleStatus?.lastSoC ?? 0;
         const soc = rawSoC <= 1 && rawSoC > 0 ? Math.round(rawSoC * 100) : Math.round(rawSoC);
@@ -81,11 +81,11 @@ export const useWearSync = () => {
         const rangeValue = Math.round(baseRange * (soc / 100));
         const climateActive = !!vehicleStatus?.climateActive;
 
-        if (soc !== lastSyncedRef.current.soc || 
-            rangeValue !== lastSyncedRef.current.range || 
+        if (soc !== lastSyncedRef.current.soc ||
+            rangeValue !== lastSyncedRef.current.range ||
             activeCar.vin !== lastSyncedRef.current.vin ||
             climateActive !== lastSyncedRef.current.climate) {
-            
+
             WearSync.syncVehicleData({
                 rangeKm: rangeValue,
                 soc: soc,
