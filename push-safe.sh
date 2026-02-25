@@ -7,7 +7,7 @@ CURRENT_BRANCH=$(git branch --show-current)
 echo "🔍 Branch actual: $CURRENT_BRANCH"
 
 # Lista de branches privadas que NO deben ir al público
-PRIVATE_BRANCHES=("pybyd-integration" "feat/pybyd" "premium" "private")
+PRIVATE_BRANCHES=("PremiumAPK" "pybyd-integration" "feat/pybyd" "premium" "private")
 
 is_private_branch() {
     for branch in "${PRIVATE_BRANCHES[@]}"; do

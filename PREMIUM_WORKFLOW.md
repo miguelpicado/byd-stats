@@ -12,7 +12,7 @@ Para garantizar que el código Premium nunca se filtre al repositorio público, 
     - Se sincroniza con el repositorio público `miguelpicado/byd-stats`.
     - **PROHIBIDO**: Hacer merge de ramas premium hacia `main`.
 
-2.  **`feat/pybyd-integration` (Premium / APK)**:
+2.  **`PremiumAPK` (Premium / APK)**:
     - Es la rama de producción para la APK.
     - Contiene todo el código de `main` + integraciones privadas (PyBYD, Wear OS, etc.).
     - **SOLO** existe en este repositorio privado.
@@ -36,10 +36,10 @@ Si estás arreglando un bug visual o añadiendo una traducción que sirve para t
 
 ### 2. Mejoras Premium (Solo para la APK)
 Si estás tocando la lógica de PyBYD o comandos remotos:
-1. Trabaja en `feat/pybyd-integration`.
+1. Trabaja en `PremiumAPK`.
 2. Sube los cambios solo al privado:
    ```bash
-   git checkout feat/pybyd-integration
+   git checkout PremiumAPK
    # ... cambios ...
    git add .
    git commit -m "feat: nuevo comando de climatización"
@@ -49,7 +49,7 @@ Si estás tocando la lógica de PyBYD o comandos remotos:
 ### 3. Mantener la APK Actualizada
 Para que tu versión Premium no se quede atrás respecto a las mejoras de la PWA:
 ```bash
-git checkout feat/pybyd-integration
+git checkout PremiumAPK
 git merge main
 # Resolver conflictos si los hay
 git push-safe
@@ -62,7 +62,7 @@ git push-safe
 ### Script `push-safe.sh`
 Este script (ejecutable mediante el alias `git push-safe`) es tu red de seguridad. Antes de cada push:
 1. Comprueba en qué rama estás.
-2. Si la rama contiene palabras clave como `pybyd`, `private` o `premium`, **bloquea** el envío al repositorio público.
+2. Si la rama contiene palabras clave como `PremiumAPK`, `pybyd`, `private` o `premium`, **bloquea** el envío al repositorio público.
 3. Si la rama es pública (`main`), te pide confirmación explícita antes de enviar al repositorio de la comunidad.
 
 ### Aliases Útiles
