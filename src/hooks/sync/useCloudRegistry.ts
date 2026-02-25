@@ -1,13 +1,13 @@
 import { useCallback } from 'react';
 import { logger } from '@core/logger';
 import { googleDriveService, RegistryData } from '@/services/googleDrive';
-import { Car, Settings } from '@/types';
+import { Car, Settings, Trip } from '@/types';
 
 interface UseCloudRegistryProps {
     activeCarId: string;
     settings: Settings;
     openRegistryModal: (cars: Car[]) => void;
-    syncFromCloud?: () => Promise<void>;
+    syncFromCloud?: (newTripsData?: Trip[] | null, options?: { forcePull?: boolean; forcePush?: boolean }) => Promise<void>;
     setActiveCarId?: (id: string | null) => void;
 }
 
@@ -158,10 +158,10 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal, syn
                 setActiveCarId(car.id);
             }
 
-            // Trigger a sync immediately
+            // Trigger a sync immediately using FORCE PULL to override any local defaults
             if (syncFromCloud) {
                 logger.info("Triggering cloud sync for restored car to pull data immediately...");
-                await syncFromCloud();
+                await syncFromCloud(null, { forcePull: true });
             } else {
                 logger.warn("No syncFromCloud function provided, falling back to page reload.");
                 window.location.reload();
