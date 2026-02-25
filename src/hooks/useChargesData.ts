@@ -4,7 +4,7 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { CHARGES_STORAGE_KEY as BASE_CHARGES_KEY } from '@core/constants';
 import { logger } from '@core/logger';
-import { Charge } from '@/types';
+import { Charge, ChargerType } from '@/types';
 
 export interface ChargeData {
     date: string;
@@ -54,7 +54,7 @@ interface UseChargesDataReturn {
  * Hook to manage charging session data
  * Provides CRUD operations with localStorage persistence
  */
-const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn => {
+const useChargesData = (activeCarId: string | null = null, chargerTypes: ChargerType[] = []): UseChargesDataReturn => {
     // specific keys for current car
     const storageKey = activeCarId ? `${BASE_CHARGES_KEY}_${activeCarId}` : null;
 
@@ -230,7 +230,7 @@ const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn
                 'Km Totales',
                 'kWh Facturados',
                 'Precio Total',
-                'Duración (min)',
+                '% Inicial',
                 'Tipo Cargador',
                 'Precio/kWh',
                 '% Final'
@@ -245,19 +245,28 @@ const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn
                 // Handle different charge types (electric vs fuel)
                 const kwh = c.type === 'fuel' ? (c.litersCharged || 0) : (c.kwhCharged || 0);
                 const price = c.totalCost || 0;
-                const duration = 0; // Duration not currently tracked in model, default to 0
-                const type = c.chargerTypeId || (c.type === 'fuel' ? 'Gasolina' : 'Desconocido');
+
+                // Find charger name by resolving ID
+                let typeName = c.type === 'fuel' ? 'Gasolina' : 'Desconocido';
+                if (c.chargerTypeId) {
+                    const charger = chargerTypes.find(ct => ct.id === c.chargerTypeId);
+                    if (charger) typeName = charger.name;
+                }
+
+                // Initial and Final %
+                const initialPct = c.initialPercentage || 0;
+                const finalPct = c.finalPercentage || 0;
+
                 // Cast to any to access pricePerLiter if it exists on Charge or assume dynamic mismatch
                 const priceUnit = c.type === 'fuel' ? (c.pricePerLiter || 0) : (c.pricePerKwh || 0);
-                const finalPct = c.finalPercentage || 0;
 
                 return [
                     dateTime,
                     km,
                     kwh,
                     price,
-                    duration,
-                    type,
+                    initialPct,
+                    typeName,
                     priceUnit,
                     finalPct
                 ].join(',');
