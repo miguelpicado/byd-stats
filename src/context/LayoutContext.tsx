@@ -89,9 +89,17 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         };
 
         checkLayout();
+
+        // ResizeObserver for reliable viewport detection (catches DevTools emulation, PWA changes)
+        const resizeObserver = new ResizeObserver(() => {
+            checkLayout();
+        });
+        resizeObserver.observe(document.documentElement);
+
         window.addEventListener('resize', checkLayout);
         window.addEventListener('orientationchange', checkLayout);
         return () => {
+            resizeObserver.disconnect();
             window.removeEventListener('resize', checkLayout);
             window.removeEventListener('orientationchange', checkLayout);
         };
