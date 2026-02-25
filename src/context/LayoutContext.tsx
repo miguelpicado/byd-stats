@@ -42,10 +42,12 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             const w = window.innerWidth;
             const h = window.innerHeight;
 
-            // Layout Mode Logic
+            // Use pixel dimensions for accurate landscape detection — pure pixel comparison
+            // is the most reliable method across all contexts (PWA, WebView, Desktop browser)
             const isLandscape = w > h;
-            // Tablet is typically > 10 inches (600dp ~ 960px in landscape)
-            // Or smaller tablets > 768px in landscape
+
+            // Horizontal mode only activates on large-enough screens that are also landscape
+            // Threshold: >= 960px wide, OR >= 768px and in landscape
             const isTablet = w >= 960 || (w >= 768 && isLandscape);
 
             let newLayoutMode: 'vertical' | 'horizontal' = 'vertical';
@@ -79,10 +81,20 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             }
         };
 
+        // Run check immediately on mount
         checkLayout();
+
+        // Also listen via ResizeObserver so DevTools emulation and PWA viewport changes
+        // are captured even when the 'resize' event doesn't fire reliably
+        const resizeObserver = new ResizeObserver(() => {
+            checkLayout();
+        });
+        resizeObserver.observe(document.documentElement);
+
         window.addEventListener('resize', checkLayout);
         window.addEventListener('orientationchange', checkLayout);
         return () => {
+            resizeObserver.disconnect();
             window.removeEventListener('resize', checkLayout);
             window.removeEventListener('orientationchange', checkLayout);
         };
