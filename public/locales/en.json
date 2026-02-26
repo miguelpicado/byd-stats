@@ -596,7 +596,11 @@
         "autoRegisterTitle": "🔋 Automatically register charges",
         "autoRegisterDesc": "Detects and automatically saves charging sessions",
         "autoRegisterEnabled": "Auto-register enabled",
-        "autoRegisterDisabled": "Auto-register disabled"
+        "autoRegisterDisabled": "Auto-register disabled",
+        "locationWatchTitle": "Location watch",
+        "locationWatchDesc": "Checks vehicle position every 3 h and alerts if suspicious movement is detected",
+        "locationWatchEnabled": "Location watch enabled",
+        "locationWatchDisabled": "Location watch disabled"
     },
     "chargeInsights": {
         "kwhTitle": "Energy Insights",

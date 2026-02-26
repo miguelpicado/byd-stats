@@ -653,6 +653,10 @@
         "autoRegisterDesc": "Detecta y guarda automáticamente las sesiones de carga",
         "autoRegisterEnabled": "Registro automático activado",
         "autoRegisterDisabled": "Registro automático desactivado",
+        "locationWatchTitle": "Vigilancia de ubicación",
+        "locationWatchDesc": "Comprueba la posición del vehículo cada 3 h y alerta si detecta movimiento sospechoso",
+        "locationWatchEnabled": "Vigilancia de ubicación activada",
+        "locationWatchDisabled": "Vigilancia de ubicación desactivada",
         "avgCost": "Coste medio",
         "last10Charges": "Últimas 10 cargas"
     },

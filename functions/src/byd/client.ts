@@ -642,6 +642,23 @@ export class BydClient {
         return this.parseGpsData(result);
     }
 
+    /**
+     * Get cached GPS location WITHOUT waking the T-Box.
+     * Calls getGpsInfoResult directly (no trigger) to read the last known
+     * position stored in BYD's cloud. Returns the position from when the
+     * car last communicated (last drive, last charge, etc).
+     */
+    async getGpsCache(vin: string): Promise<BydGps> {
+        const response = await this.postAuthenticatedJson(
+            '/control/getGpsInfoResult',
+            { vin }
+        );
+
+        // The result endpoint may return the cached data directly or inside .data
+        const resultData = response.data || response;
+        return this.parseGpsData(resultData);
+    }
+
     private parseGpsData(data: any): BydGps {
         // GPS data can be nested: { res: 2, data: { latitude, longitude, ... } }
         // or flat: { latitude, longitude, ... }
@@ -683,6 +700,40 @@ export class BydClient {
             scheduledCharging: data.timedChargeStatus === '1',
             raw: data,
         };
+    }
+
+    // =========================================================================
+    // HVAC / CLIMATE STATUS (no T-Box wake)
+    // =========================================================================
+
+    /**
+     * Get HVAC/climate status from /control/getStatusNow
+     * This endpoint reads cloud-cached HVAC state WITHOUT waking the T-Box.
+     * Returns acSwitch (0=off, 1=on) and overall status.
+     */
+    async getClimateStatus(vin: string): Promise<{ isClimateActive: boolean; raw?: any }> {
+        try {
+            const response = await this.postAuthenticatedJson(
+                '/control/getStatusNow',
+                { vin }
+            );
+
+            if (String(response.code) !== '0' || !response.data) {
+                return { isClimateActive: false };
+            }
+
+            const data = response.data.statusNow || response.data;
+            const acSwitch = Number(data.acSwitch);
+            const hvacStatus = Number(data.status);
+
+            // acSwitch=1 means AC is on, hvacStatus=2 means HVAC is actively running
+            const isClimateActive = acSwitch === 1 || hvacStatus === 2;
+
+            return { isClimateActive, raw: data };
+        } catch (e: any) {
+            console.error(`[getClimateStatus] Error for ${vin}: ${e.message}`);
+            return { isClimateActive: false };
+        }
     }
 
     // =========================================================================

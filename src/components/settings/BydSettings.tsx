@@ -11,7 +11,8 @@ import {
     BydVehicle,
     bydDebugDump,
 } from '../../services/bydApi';
-import { waitForAuth } from '../../services/firebase';
+import { waitForAuth, db } from '../../services/firebase';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
 
 // Country codes for BYD API
@@ -65,6 +66,9 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         return saved === 'true';
     });
 
+    // Location watch (heartbeat) setting
+    const [heartbeatEnabled, setHeartbeatEnabled] = useState(false);
+
     // Diagnostic state (API Dump easter egg)
     const [debugDump, setDebugDump] = useState<any | null>(null);
 
@@ -91,6 +95,16 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
             }
         }
     }, []);
+
+    // Load heartbeatEnabled from Firestore when connected
+    useEffect(() => {
+        if (!connectedVin) return;
+        getDoc(doc(db, 'bydVehicles', connectedVin)).then((snap) => {
+            if (snap.exists()) {
+                setHeartbeatEnabled(snap.data().heartbeatEnabled === true);
+            }
+        }).catch(() => {});
+    }, [connectedVin]);
 
     // Handle connect
     const handleConnect = async () => {
@@ -283,6 +297,41 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                                         setAutoRegisterCharges(newValue);
                                         localStorage.setItem('byd_auto_register_charges', String(newValue));
                                         toast.success(newValue ? t('charges.autoRegisterEnabled') : t('charges.autoRegisterDisabled'));
+                                    }}
+                                    className="toggle-checkbox w-11 h-6 cursor-pointer"
+                                />
+                            </label>
+                        </div>
+
+                        {/* Location watch (heartbeat) toggle */}
+                        <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <label className="flex items-center justify-between cursor-pointer select-none">
+                                <div>
+                                    <div className="font-medium text-slate-700 dark:text-slate-200 mb-1">
+                                        {t('charges.locationWatchTitle')}
+                                    </div>
+                                    <div className="text-xs text-slate-500 dark:text-slate-400">
+                                        {t('charges.locationWatchDesc')}
+                                    </div>
+                                </div>
+                                <input
+                                    type="checkbox"
+                                    checked={heartbeatEnabled}
+                                    onChange={async (e) => {
+                                        const newValue = e.target.checked;
+                                        setHeartbeatEnabled(newValue);
+                                        if (connectedVin) {
+                                            try {
+                                                await updateDoc(doc(db, 'bydVehicles', connectedVin), {
+                                                    heartbeatEnabled: newValue,
+                                                });
+                                            } catch (err) {
+                                                console.error('Error updating heartbeatEnabled:', err);
+                                                setHeartbeatEnabled(!newValue);
+                                                return;
+                                            }
+                                        }
+                                        toast.success(newValue ? t('charges.locationWatchEnabled') : t('charges.locationWatchDisabled'));
                                     }}
                                     className="toggle-checkbox w-11 h-6 cursor-pointer"
                                 />

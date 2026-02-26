@@ -1094,11 +1094,16 @@ async function processVehicleInfoEvent(event: any): Promise<void> {
     if (range > 0) newState.lastRange = range;
     if (odometer > 0) newState.lastOdometer = odometer;
 
+    // Lock state from MQTT payload (same field names as realtime API)
+    const lockField = data.leftFrontDoorLock ?? data.lockState ?? data.doorLockState;
+    if (lockField !== undefined) {
+        newState.isLocked = Number(lockField) === 2;
+    }
+
     // Update vehicle state
     await vehicleRef.update(newState);
 
-    // Trip detection: check if odometer increased OR if vehicle is unlocked (new trip start condition)
-    // User wants to capture stationary trips (consumption while parked with AC, etc.)
+    // Trip detection: check if odometer increased OR if vehicle is unlocked
     const isUnlocked = newState.isLocked === false;
     // Odometer movement
     const distDelta = (prevState && prevState.lastOdometer < odometer) ? (odometer - prevState.lastOdometer) : 0;
@@ -1151,19 +1156,28 @@ async function createTripFromMqtt(
     newState: any,
     distance: number
 ): Promise<void> {
-    const tripData = {
+    const now = admin.firestore.Timestamp.now();
+    const startLocation = prevState.lastLocation || null;
+    const tripData: any = {
         vin,
         source: 'byd_mqtt-webhook',
-        startTime: prevState.lastMqttUpdate || prevState.lastUpdate,
-        endTime: admin.firestore.Timestamp.now(),
+        status: 'in_progress' as const,
+        startDate: prevState.lastMqttUpdate || prevState.lastUpdate || now,
         distanceKm: distance,
-        startOdometer: prevState.lastOdometer,
-        endOdometer: newState.lastOdometer,
-        startSoC: prevState.lastSoC,
-        endSoC: newState.lastSoC,
-        // energyUsed: (prevState.lastSoC - newState.lastSoC) * 100, // REMOVED: calculated at end of trip
-        createdAt: admin.firestore.Timestamp.now(),
+        startOdometer: prevState.lastOdometer || 0,
+        endOdometer: newState.lastOdometer || 0,
+        startSoC: prevState.lastSoC || 0,
+        endSoC: newState.lastSoC || 0,
+        type: 'unknown',
+        lastUpdate: now,
         vehicleId: vin,
+        points: startLocation ? [{
+            lat: startLocation.lat,
+            lon: startLocation.lon,
+            timestamp: now.toMillis(),
+            type: 'start',
+        }] : [],
+        startLocation,
     };
 
     // Store in trips subcollection
@@ -1172,10 +1186,11 @@ async function createTripFromMqtt(
     // Update parent vehicle doc to track this active trip
     await db.collection('bydVehicles').doc(vin).update({
         activeTripId: tripRef.id,
-        pollingActive: true, // Ensure scheduler tracks it
-        pollingActivatedAt: admin.firestore.Timestamp.now(),
-        lastUpdate: admin.firestore.Timestamp.now(),
-        stationaryPollCount: 0
+        pollingActive: true,
+        pollingActivatedAt: now,
+        lastUpdate: now,
+        stationaryPollCount: 0,
+        failedDetectionAttempts: 0,
     });
 
     console.log(`[createTripFromMqtt] Created trip ${tripRef.id} and activated polling: ${distance.toFixed(1)}km`);
@@ -1304,7 +1319,8 @@ async function processVehicleState(
     realtime: any,
     gps: any,
     charging: any,
-    source: 'polling' | 'wake' | 'mqtt'
+    source: 'polling' | 'wake' | 'mqtt',
+    extra?: { isClimateActive?: boolean; cloudOdoDelta?: boolean; cloudCarTimeChanged?: boolean }
 ): Promise<any> {
     const now = admin.firestore.Timestamp.now();
     const vehicleRef = db.collection('bydVehicles').doc(vin);
@@ -1334,10 +1350,13 @@ async function processVehicleState(
     const prevOdometer = vehicleData.lastOdometer || 0;
     const activeTripId = vehicleData.activeTripId || null;
 
-    // Cleanup orphaned trips before processing (non-blocking)
-    cleanupOrphanedTrips(vin, activeTripId).catch(err =>
-        console.error('[processVehicleState] Orphan cleanup failed:', err)
-    );
+    // Cleanup orphaned trips only when there's no active trip (avoids unnecessary Firestore reads
+    // during every 20s poll while driving). When a trip IS active, orphans can't interfere.
+    if (!activeTripId) {
+        cleanupOrphanedTrips(vin, null).catch(err =>
+            console.error('[processVehicleState] Orphan cleanup failed:', err)
+        );
+    }
 
     // Calculate movement using odometer
     // IMPORTANT: When prevOdometer is 0 (first poll, no prior data), skip odometer-based detection
@@ -1345,9 +1364,9 @@ async function processVehicleState(
     const odoDelta = prevOdometer > 0 ? (realtime.odometer - prevOdometer) : 0;
     const hasOdoMovement = prevOdometer > 0 ? (odoDelta > 0) : false;
 
-    // Check climate FIRST so we can use it in GPS detection
-    // Some models report airConditioningActive, others use remoteClimateStatus
-    const isClimateActive = realtime.airConditioningActive || realtime.remoteClimateStatus === 1 || false;
+    // Climate status comes from the dedicated HVAC endpoint (/control/getStatusNow),
+    // NOT from realtime data (which never included climate fields).
+    const isClimateActive = extra?.isClimateActive || false;
 
     // GPS-based detection if available
     let hasGpsMovement = false;
@@ -1370,7 +1389,11 @@ async function processVehicleState(
     // SPEED-based detection (The most reliable indicator if available)
     const hasSpeedMovement = (realtime.speed || 0) > 0;
 
-    const hasMovement = hasOdoMovement || hasGpsMovement || hasSpeedMovement;
+    // CLOUD ESCALATION context: if the cloud probe already detected odometer increase,
+    // trust that signal even if the T-Box realtime data shows stale values (BYD API delay).
+    const hasCloudOdoMovement = extra?.cloudOdoDelta || false;
+
+    const hasMovement = hasOdoMovement || hasGpsMovement || hasSpeedMovement || hasCloudOdoMovement;
     const isStationary = !hasMovement;
 
     // Detect intent to drive even before physical movement
@@ -1479,17 +1502,17 @@ async function processVehicleState(
         if (canStartTrip) {
             // STRICT START RULES to prevent Ghost Trips (UPDATED for better sensitivity):
             // 1. Speed > 0 (Most reliable indicator)
-            // 2. Odometer > 0.02km (20m - more realistic for 20s polling in city/traffic)
-            // 3. GPS Delta > 0.002 (~200m - balanced between detection and GPS drift)
-            // 4. Gear is DRIVE (3) (Explicit intent to move)
-            // 5. Gear is NOT PARK (any gear change from P = about to drive)
-            // 6. EPB released (parking brake off = about to drive)
+            // 2. Odometer delta >= 10m (realistic for 20s polling in city/traffic)
+            // 3. Gear is NOT PARK (any gear change from P = about to drive)
+            // 4. EPB released (parking brake off = about to drive)
+            // 5. Cloud probe confirmed odometer increase (trusted even if T-Box data is delayed)
             const gearNotPark = realtime.gear !== undefined && realtime.gear !== 1 && realtime.gear !== 0;
             const epbReleased = realtime.parkingBrake !== undefined && realtime.parkingBrake === 0;
             const strictStart = (realtime.speed || 0) > 0 ||
                 odoDelta >= 0.01 ||
                 gearNotPark ||
-                epbReleased;
+                epbReleased ||
+                hasCloudOdoMovement;
 
             if (strictStart) {
                 const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc();
@@ -1519,10 +1542,10 @@ async function processVehicleState(
                 vehicleUpdate.pollingActive = true;
                 vehicleUpdate.pollingActivatedAt = now;
                 vehicleUpdate.failedDetectionAttempts = 0; // Reset on success
-                console.log(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear})`);
+                console.log(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear}, cloudOdo=${hasCloudOdoMovement})`);
             } else {
                 // Log why trip was blocked
-                console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (strictStart failed): source=${source}, speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear}, epb=${realtime.parkingBrake}, prevOdo=${prevOdometer}`);
+                console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (strictStart failed): source=${source}, speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear}, epb=${realtime.parkingBrake}, prevOdo=${prevOdometer}, cloudOdo=${hasCloudOdoMovement}`);
             }
         } else {
             // Log why trip was blocked (not canStartTrip)
@@ -1548,7 +1571,7 @@ async function processVehicleState(
         // Note: To avoid indefinite growth of fields, we can use a single object 'tripStopCounters'
 
         // Check conditions
-        const isClimateOn = realtime.airConditioningActive || realtime.remoteClimateStatus === 1 || false;
+        const isClimateOn = extra?.isClimateActive || false;
         const isLocked = realtime.isLocked;
 
         // Increment counters based on state
@@ -1734,16 +1757,22 @@ export const bydActiveTripMonitorV2 = onSchedule({
 });
 
 /**
- * IDLE HEARTBEAT (Every 2 hours)
- * Checks all vehicles to ensure status is up to date
- * Ignores those already handled by Active Monitor
+ * IDLE HEARTBEAT (Every 3 hours)
+ *
+ * Two responsibilities:
+ * 1. Safety net — cloud-probe idle vehicles in case the 1-min monitor missed a state change.
+ * 2. Location watch (opt-in) — read cached GPS and detect suspicious movement.
+ *    If the car moved >500m without a registered trip, escalate to a full wake
+ *    to get fresh GPS and flag it as a potential theft/tow alert.
+ *
+ * The location watch is enabled per-vehicle via `heartbeatEnabled` in Firestore.
  */
 export const bydIdleHeartbeatV2 = onSchedule({
     schedule: 'every 3 hours',
     region: REGION,
     timeoutSeconds: 300,
 }, async (event) => {
-    console.log('[bydIdleHeartbeat] Starting idle heartbeat for ALL connected vehicles...');
+    console.log('[bydIdleHeartbeat] Starting idle heartbeat...');
     ensureBydInit();
 
     const allVehicles = await db.collection('bydVehicles')
@@ -1755,31 +1784,84 @@ export const bydIdleHeartbeatV2 = onSchedule({
         return;
     }
 
-    console.log(`[bydIdleHeartbeat] Cloud-probing ${allVehicles.docs.length} connected vehicle(s)`);
+    console.log(`[bydIdleHeartbeat] Processing ${allVehicles.docs.length} connected vehicle(s)`);
 
     const promises = allVehicles.docs.map(async (doc) => {
         const vin = doc.id;
         const data = doc.data();
 
         // Skip vehicles with active trips (already being polled by bydActiveTripMonitor)
-        if (data.activeTripId) {
-            console.log(`[bydIdleHeartbeat] Skipping ${vin} (active trip ${data.activeTripId})`);
+        if (data.activeTripId || data.pollingActive) {
+            console.log(`[bydIdleHeartbeat] Skipping ${vin} (active trip/polling)`);
             return;
         }
 
         try {
-            // Cloud probe only — NO T-Box wake
+            // 1. Cloud probe — state change detection (1 API call, no wake)
             const result = await cloudProbeVehicle(vin);
 
-            if (result.changed) {
-                // Something changed since last heartbeat — escalate to full wake for GPS+realtime
+            if (result.shouldEscalate) {
                 console.log(`[bydIdleHeartbeat] ${vin}: State change detected, escalating to full poll (wake)`);
-                await pollVehicleInternal(vin, 'polling');
+                await pollVehicleInternal(vin, 'polling', {
+                    odoChanged: result.odoChanged,
+                    carTimeChanged: result.carTimeChanged,
+                });
+                return; // Full poll already got fresh GPS, no need for location watch
+            }
+
+            if (result.changed && result.isCharging) {
+                console.log(`[bydIdleHeartbeat] ${vin}: Charging activity (cloud-only, no wake)`);
+            }
+
+            // 2. Location watch — only if user enabled it
+            if (!data.heartbeatEnabled) return;
+
+            const client = await getBydClientWithSession(vin);
+            const cachedGps = await client.getGpsCache(vin).catch(() => null);
+
+            if (!cachedGps || cachedGps.latitude === 0) {
+                console.log(`[bydIdleHeartbeat] ${vin}: No cached GPS available`);
+                return;
+            }
+
+            const prevLocation = data.lastLocation;
+            if (!prevLocation) {
+                // First time — just store the location
+                await db.collection('bydVehicles').doc(vin).update({
+                    lastLocation: { lat: cachedGps.latitude, lon: cachedGps.longitude },
+                });
+                console.log(`[bydIdleHeartbeat] ${vin}: Stored initial location`);
+                return;
+            }
+
+            // Calculate distance between cached GPS and last known location
+            const latDelta = Math.abs(cachedGps.latitude - prevLocation.lat);
+            const lonDelta = Math.abs(cachedGps.longitude - prevLocation.lon);
+            // Rough approximation: 0.0045 degrees ≈ 500m at European latitudes
+            const significantMovement = (latDelta + lonDelta) > 0.009;
+
+            if (significantMovement) {
+                // Car moved >~500m without a registered trip — suspicious
+                console.log(`[bydIdleHeartbeat] ⚠️ ${vin}: SUSPICIOUS MOVEMENT detected! GPS delta: lat=${latDelta.toFixed(5)}, lon=${lonDelta.toFixed(5)}. Escalating to full wake.`);
+
+                // Escalate to full wake to get FRESH GPS (cached may be stale)
+                await pollVehicleInternal(vin, 'wake');
+
+                // Flag the alert in Firestore for the app to display
+                await db.collection('bydVehicles').doc(vin).update({
+                    locationAlert: {
+                        type: 'suspicious_movement',
+                        cachedLocation: { lat: cachedGps.latitude, lon: cachedGps.longitude },
+                        previousLocation: prevLocation,
+                        detectedAt: admin.firestore.Timestamp.now(),
+                        dismissed: false,
+                    },
+                });
             } else {
-                console.log(`[bydIdleHeartbeat] ${vin}: No change (cloud-only, no wake)`);
+                console.log(`[bydIdleHeartbeat] ${vin}: Location stable (delta: ${(latDelta + lonDelta).toFixed(5)})`);
             }
         } catch (error: any) {
-            console.error(`[bydIdleHeartbeat] Error probing ${vin}:`, error.message);
+            console.error(`[bydIdleHeartbeat] Error processing ${vin}:`, error.message);
         }
     });
 
@@ -1844,7 +1926,10 @@ async function closeTrip(
     const tripDoc = await tripRef.get();
     const tripData = tripDoc.data();
 
-    if (!tripData) return;
+    if (!tripData || tripData.status === 'completed') {
+        console.log(`[closeTrip] Trip ${tripId} already closed or missing — skipping`);
+        return;
+    }
 
     const totalDistance = realtime.odometer - (tripData.startOdometer || 0);
 
@@ -2008,63 +2093,93 @@ async function logApiCall(vin: string, context: 'trip_poll' | 'trip_start' | 'tr
 async function cloudProbeVehicle(vin: string): Promise<{
     changed: boolean;
     shouldEscalate: boolean;
-    charging: any;
+    isCharging: boolean;
+    odoChanged: boolean;
+    carTimeChanged: boolean;
 }> {
     const client = await getBydClientWithSession(vin);
     await logApiCall(vin, 'cloud_probe', false);
-
-    // Triple Silent Check: Parallel fetching of cloud-only (no-wake) data
-    const [charging, realtimeCache, allVehicles] = await Promise.all([
-        client.getChargingStatus(vin),
-        client.getRealtimeCache(vin),
-        client.getVehicles()
-    ]);
 
     const vehicleRef = db.collection('bydVehicles').doc(vin);
     const vehicleDoc = await vehicleRef.get();
     const vehicleData = vehicleDoc.data() || {};
 
-    // 1. SoC from Charging Status (normalized to 0-1)
-    const prevSoC = vehicleData.lastSoC || 0;
-    const currentSoC = normalizeSoC(charging.soc);
-    const socChanged = Math.abs(currentSoC - prevSoC) >= 0.005; // Change >= 0.5%
+    // PRIMARY PROBE: Single API call — getRealtimeCache reads cloud-cached data without waking T-Box.
+    // Contains SoC (elecPercent), odometer (totalMileageV2), timestamp (time), chargingState, etc.
+    const realtimeCache = await client.getRealtimeCache(vin);
 
-    // 2. Odometer from Vehicle List (Reliable No-Wake Odometer)
-    const vehicleInfo = allVehicles.find(v => v.vin === vin);
-    const prevOdo = vehicleData.lastOdometer || 0;
-    const currentOdo = vehicleInfo?.totalMileage || 0;
-    const odoChanged = currentOdo > 0 && currentOdo > prevOdo;
-
-    // 3. Car Timestamp (from Realtime Cache Bypass)
-    // This detects if the car has communicated with the cloud recently (e.g. woke up)
-    const prevCarTime = vehicleData.lastCarTime || 0;
     const rawData = realtimeCache.raw?.data || realtimeCache.raw || {};
     const info = rawData.vehicleInfo || rawData.vehicleStatus || rawData;
+
+    // 1. SoC (from realtime cache)
+    const prevSoC = vehicleData.lastSoC || 0;
+    const currentSoC = normalizeSoC(realtimeCache.soc);
+    const socChanged = Math.abs(currentSoC - prevSoC) >= 0.005; // Change >= 0.5%
+
+    // 2. Odometer (from realtime cache)
+    const currentOdo = realtimeCache.odometer || 0;
+    const prevOdo = vehicleData.lastOdometer || 0;
+    const odoChanged = currentOdo > 0 && currentOdo > prevOdo;
+
+    // 3. Car Timestamp — detects if the car communicated with the cloud recently
+    const prevCarTime = vehicleData.lastCarTime || 0;
     const currentCarTime = Number(info.time) || 0;
     const carTimeChanged = currentCarTime > 0 && currentCarTime !== prevCarTime;
+
+    // 4. Charging state (from realtime cache — chargingState/chargeState/chargeStatus)
+    const isCharging = realtimeCache.isCharging || false;
 
     // Summary of changes
     const changed = socChanged || odoChanged || carTimeChanged;
 
     // Escalate to full poll (wake T-Box) when cloud data changed AND car is NOT charging.
-    // When odometer or timestamp changes without charging, the car is likely being used.
-    const shouldEscalate = changed && !charging.isCharging;
+    const shouldEscalate = changed && !isCharging;
+
+    // SECONDARY PROBE (on-demand): If charging detected, fetch rich charging data
+    // for monitoring (remainingTime, chargeType, targetSoc). This is the only case
+    // where we make a second API call during idle probing.
+    if (isCharging && changed) {
+        try {
+            const chargingDetail = await client.getChargingStatus(vin);
+            // Store rich charging data for the app to display
+            await vehicleRef.update({
+                chargingDetail: {
+                    soc: normalizeSoC(chargingDetail.soc),
+                    chargeType: chargingDetail.chargeType || null,
+                    remainingMinutes: chargingDetail.remainingMinutes || null,
+                    targetSoc: chargingDetail.targetSoc || null,
+                    scheduledCharging: chargingDetail.scheduledCharging || false,
+                    lastUpdate: admin.firestore.Timestamp.now(),
+                }
+            });
+        } catch (e: any) {
+            console.error(`[cloudProbe] ${vin}: Failed to fetch charging detail: ${e.message}`);
+        }
+    }
 
     // Update metadata for next comparison
+    // CRITICAL: When we're about to escalate to a full poll, do NOT update lastOdometer
+    // or lastSoC here. processVehicleState() needs the PREVIOUS values to calculate
+    // odoDelta and detect movement.
     const cloudUpdate: any = {
         lastCloudProbeTime: admin.firestore.Timestamp.now(),
-        lastSoC: currentSoC,
-        isCharging: charging.isCharging
+        isCharging,
     };
-    if (currentOdo > 0) cloudUpdate.lastOdometer = currentOdo;
     if (currentCarTime > 0) cloudUpdate.lastCarTime = currentCarTime;
-    if (charging.raw?.updateTime) cloudUpdate.lastCloudUpdateTime = charging.raw.updateTime;
+
+    if (!shouldEscalate) {
+        // Only update these when NOT escalating — safe because no full poll will follow
+        if (currentSoC > 0) cloudUpdate.lastSoC = currentSoC;
+        if (currentOdo > 0) cloudUpdate.lastOdometer = currentOdo;
+    }
+    // When shouldEscalate=true, processVehicleState() will update lastOdometer and lastSoC
+    // after using the old values for trip detection
 
     await vehicleRef.update(cloudUpdate);
 
-    console.log(`[cloudProbe] ${vin}: SoC=${(currentSoC * 100).toFixed(1)}%, Odo=${currentOdo}km, CarTime=${currentCarTime}, changed=${changed}, escalate=${shouldEscalate} (SoC:${socChanged}, Odo:${odoChanged}, Time:${carTimeChanged})`);
+    console.log(`[cloudProbe] ${vin}: SoC=${(currentSoC * 100).toFixed(1)}%, Odo=${currentOdo}km, CarTime=${currentCarTime}, charging=${isCharging}, changed=${changed}, escalate=${shouldEscalate} (SoC:${socChanged}, Odo:${odoChanged}, Time:${carTimeChanged})`);
 
-    return { changed, shouldEscalate, charging };
+    return { changed, shouldEscalate, isCharging, odoChanged, carTimeChanged };
 }
 
 /**
@@ -2081,26 +2196,31 @@ async function pollActiveTripVehicles() {
         if (activeVehicles.empty) return;
 
         const vehiclesToPoll: admin.firestore.QueryDocumentSnapshot[] = [];
+        const now = Date.now();
 
         for (const doc of activeVehicles.docs) {
             const data = doc.data();
-            // Poll if it has an active trip OR if polling is active (retry/preconditioning phase)
-            if (data.activeTripId || data.pollingActive) {
-                vehiclesToPoll.push(doc);
-            }
 
-            // Safety check for stale polling state
+            // Safety check for stale polling state (no trip for 2+ hours)
             if (!data.activeTripId && data.pollingActive) {
                 const pollingActivatedAt = data.pollingActivatedAt?.toMillis() || 0;
                 const twoHoursMs = 2 * 60 * 60 * 1000;
-                if (pollingActivatedAt > 0 && (Date.now() - pollingActivatedAt) > twoHoursMs) {
-                    console.log(`[pollActiveTripVehicles] ${doc.id}: Stale polling (${Math.round((Date.now() - pollingActivatedAt) / 60000)}min, no trip) — deactivating`);
+                if (pollingActivatedAt > 0 && (now - pollingActivatedAt) > twoHoursMs) {
+                    console.log(`[pollActiveTripVehicles] ${doc.id}: Stale polling (${Math.round((now - pollingActivatedAt) / 60000)}min, no trip) — deactivating`);
                     await db.collection('bydVehicles').doc(doc.id).update({ pollingActive: false });
-                    // Remove from poll list if it was just deactivated
-                    const index = vehiclesToPoll.indexOf(doc);
-                    if (index > -1) vehiclesToPoll.splice(index, 1);
+                    continue;
                 }
             }
+
+            // Skip if another poll is already in-flight for this vehicle (prevent overlapping polls)
+            // getRealtime can take up to 20s, so a T=0 poll might still be running at T=20
+            const lastPollStarted = data.lastPollStartedAt?.toMillis() || 0;
+            if (lastPollStarted > 0 && (now - lastPollStarted) < 15000) {
+                console.log(`[pollActiveTripVehicles] ${doc.id}: Skipping — previous poll still in-flight (${Math.round((now - lastPollStarted) / 1000)}s ago)`);
+                continue;
+            }
+
+            vehiclesToPoll.push(doc);
         }
 
         if (vehiclesToPoll.length === 0) return;
@@ -2109,6 +2229,10 @@ async function pollActiveTripVehicles() {
 
         const promises = vehiclesToPoll.map(async (doc) => {
             try {
+                // Mark poll start time BEFORE the actual poll to prevent overlap
+                await db.collection('bydVehicles').doc(doc.id).update({
+                    lastPollStartedAt: admin.firestore.Timestamp.now()
+                });
                 await pollVehicleInternal(doc.id, 'polling');
             } catch (e: any) {
                 console.error(`Error polling ${doc.id}: ${e.message}`);
@@ -2148,13 +2272,16 @@ async function cloudProbeAllVehicles() {
                 const result = await cloudProbeVehicle(vin);
 
                 if (result.shouldEscalate) {
-                    // Cloud data changed + not charging → T-Box woke up (driving, user interaction, etc.)
+                    // Cloud data changed + not charging → car is likely being driven
                     // Escalate to full poll for GPS, speed, EPB, gear
                     console.log(`[cloudProbe] ${vin}: State change detected! Escalating to full poll (will wake T-Box)`);
-                    await pollVehicleInternal(vin, 'polling');
-                } else if (result.changed && result.charging.isCharging) {
-                    // Charging started or SoC changed while charging
-                    // No need to wake — cloud data is sufficient for charging tracking
+                    await pollVehicleInternal(vin, 'polling', {
+                        odoChanged: result.odoChanged,
+                        carTimeChanged: result.carTimeChanged,
+                    });
+                } else if (result.changed && result.isCharging) {
+                    // Charging activity detected — rich charging data already fetched
+                    // inside cloudProbeVehicle. No T-Box wake needed.
                     console.log(`[cloudProbe] ${vin}: Charging activity detected (cloud-only, no wake)`);
                 }
                 // If !changed → car is idle, do nothing (no wake, no write beyond cloud metadata)
@@ -2176,7 +2303,7 @@ async function cloudProbeAllVehicles() {
 /**
  * Internal polling function - used by scheduler, manual wake, and mqtt trigger
  */
-async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mqtt'): Promise<any> {
+async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mqtt', escalationContext?: { odoChanged?: boolean; carTimeChanged?: boolean }): Promise<any> {
     const client = await getBydClientWithSession(vin);
 
     // Log that we're about to wake the car
@@ -2198,6 +2325,7 @@ async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mq
 
     const gps = await client.getGps(vin).catch(() => null);
     const charging = await client.getChargingStatus(vin).catch(() => null);
+    const climate = await client.getClimateStatus(vin).catch(() => ({ isClimateActive: false }));
 
     // Save session if refreshed
     const currentSession = client.getSession();
@@ -2212,7 +2340,11 @@ async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mq
     }
 
     // Process state and handle trips
-    return await processVehicleState(vin, realtime, gps, charging, source);
+    return await processVehicleState(vin, realtime, gps, charging, source, {
+        isClimateActive: climate?.isClimateActive || false,
+        cloudOdoDelta: escalationContext?.odoChanged || false,
+        cloudCarTimeChanged: escalationContext?.carTimeChanged || false,
+    });
 }
 
 // =============================================================================

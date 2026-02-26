@@ -565,7 +565,11 @@
         "autoRegisterTitle": "🔋 Registrar càrregues automàticament",
         "autoRegisterDesc": "Detecta i desa automàticament les sessions de càrrega",
         "autoRegisterEnabled": "Registre automàtic activat",
-        "autoRegisterDisabled": "Registre automàtic desactivat"
+        "autoRegisterDisabled": "Registre automàtic desactivat",
+        "locationWatchTitle": "Vigilància d'ubicació",
+        "locationWatchDesc": "Comprova la posició del vehicle cada 3 h i alerta si detecta moviment sospitós",
+        "locationWatchEnabled": "Vigilància d'ubicació activada",
+        "locationWatchDisabled": "Vigilància d'ubicació desactivada"
     },
     "chargeInsights": {
         "kwhTitle": "Insights d'Energia",
