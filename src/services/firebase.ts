@@ -114,7 +114,8 @@ const mapDocToTrip = (doc: DocumentSnapshot<DocumentData>): Trip | null => {
         month: monthStr,
         start_timestamp: startTsSec,
         end_timestamp: endTsSec,
-        trip: data.distanceKm || (data.endOdometer - data.startOdometer) || 0,
+        trip: data.distanceKm || ((data.endOdometer != null && data.startOdometer != null) ? (data.endOdometer - data.startOdometer) : 0),
+
         electricity: data.electricity || data.consumptionKwh || 0, // Prefer 'electricity' field
         duration: durationSec,
         start_soc: data.startSoC || 0,
