@@ -69,3 +69,14 @@ functions/.env
 functions/.env.local
 
 EC_database_Hybrid.db
+
+# Debug and temp files - never commit these
+functions/*.txt
+functions/*.log
+android/build_*.txt
+android/*_error*.txt
+android/*_log*.txt
+tmp_*.txt
+tmp_*.ts
+test_*.ts
+*.local.ts
