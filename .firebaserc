@@ -1,6 +1,6 @@
 {
   "projects": {
-    "default": "byd-stats-app",
+    "default": "REDACTED_FIREBASE_PROJECT_ID",
     "bydstats": "REDACTED_FIREBASE_PROJECT_ID"
   },
   "targets": {},
