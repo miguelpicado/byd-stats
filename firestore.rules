@@ -2,54 +2,92 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // BYD Vehicles - documento principal y subcolecciones
-    // TODO: Añadir reglas de auth para producción
-    match /bydVehicles/{vehicleId} {
-      allow read, write: if true;
 
-      // Trips subcolección
+    // ==========================================================================
+    // BYD VEHICLES
+    // Solo el propietario del vehículo puede leer/escribir su documento.
+    // ==========================================================================
+    match /bydVehicles/{vehicleId} {
+      allow read: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null;
+      allow update, delete: if request.auth != null
+        && resource.data.userId == request.auth.uid;
+
+      // ------------------------------------------------------------------
+      // Credenciales y sesiones — BLOQUEADO desde el cliente.
+      // Solo accesible mediante el Admin SDK (Cloud Functions).
+      // ------------------------------------------------------------------
+      match /private/{doc} {
+        allow read, write: if false;
+      }
+
+      // ------------------------------------------------------------------
+      // Trips — solo el propietario del vehículo
+      // ------------------------------------------------------------------
       match /trips/{tripId} {
-        allow read, write: if true;
-        
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.userId == request.auth.uid;
+
         match /points/{pointId} {
-          allow read, write: if true;
+          allow read, write: if request.auth != null
+            && get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.userId == request.auth.uid;
         }
       }
 
-      // Charges subcolección
+      // ------------------------------------------------------------------
+      // Charges — solo el propietario del vehículo
+      // ------------------------------------------------------------------
       match /charges/{chargeId} {
-        allow read, write: if true;
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.userId == request.auth.uid;
       }
 
-      // Charging Sessions subcolección
+      // ------------------------------------------------------------------
+      // Charging Sessions — solo el propietario del vehículo
+      // ------------------------------------------------------------------
       match /chargingSessions/{sessionId} {
-        allow read, write: if true;
+        allow read, write: if request.auth != null
+          && get(/databases/$(database)/documents/bydVehicles/$(vehicleId)).data.userId == request.auth.uid;
       }
     }
 
-    // Legacy collections
+    // ==========================================================================
+    // USERS
+    // Cada usuario solo puede leer/escribir su propio documento.
+    // ==========================================================================
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // ==========================================================================
+    // LEGACY COLLECTIONS (read-only para migración)
+    // Estas colecciones son antiguas y no deben recibir escrituras nuevas.
+    // Mantener lectura autenticada para no romper clientes existentes.
+    // ==========================================================================
     match /trips/{tripId} {
-      allow read, write: if true;
-      
+      allow read: if request.auth != null;
+      allow write: if false;
+
       match /points/{pointId} {
-        allow read, write: if true;
+        allow read: if request.auth != null;
+        allow write: if false;
       }
     }
 
     match /vehicles/{vehicleId} {
-      allow read, write: if true;
+      allow read: if request.auth != null;
+      allow write: if false;
     }
 
     match /chargeSessions/{sessionId} {
-      allow read, write: if true;
+      allow read: if request.auth != null;
+      allow write: if false;
     }
 
     match /chargeNotifications/{notificationId} {
-      allow read, write: if true;
-    }
-
-    match /users/{userId} {
-      allow read, write: if true;
+      allow read: if request.auth != null;
+      allow write: if false;
     }
   }
 }
