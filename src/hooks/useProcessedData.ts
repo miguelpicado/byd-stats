@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
+
 import * as Comlink from 'comlink';
 import { logger } from '@core/logger';
 import { useLocalStorage } from './useLocalStorage';
@@ -59,7 +59,6 @@ export const useProcessedData = (
     language: string = 'es',
     activeCarId?: string | null
 ): UseProcessedDataReturn => {
-    const { } = useTranslation();
     const [data, setData] = useState<ProcessedData | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [isAiTraining, setIsAiTraining] = useState(false);
@@ -107,6 +106,9 @@ export const useProcessedData = (
 
     const workerRef = useRef<Comlink.Remote<DataWorkerApi> | null>(null);
     const rawWorkerRef = useRef<Worker | null>(null);
+    // Ref-based mutex to prevent double training within a single effect closure.
+    // Using a ref instead of isAiTraining state to avoid stale closure issues.
+    const isTrainingRef = useRef(false);
 
     // --- Explicit Recalculation Triggers ---
     const recalculateSoH = async () => {
@@ -326,7 +328,8 @@ export const useProcessedData = (
                     // ============================================================
 
                     // Train Autonomy Model (Range Analysis) if needed
-                    if (needsAutonomyTraining && !isAiTraining) {
+                    if (needsAutonomyTraining && !isTrainingRef.current) {
+                        isTrainingRef.current = true;
                         setIsAiTraining(true);
                         logger.info('[useProcessedData] Auto-training Autonomy model...');
 
@@ -355,6 +358,7 @@ export const useProcessedData = (
                                 logger.error('[useProcessedData] Error training Autonomy:', err);
                             })
                             .finally(() => {
+                                isTrainingRef.current = false;
                                 if (isMounted) setIsAiTraining(false);
                                 // Train parking model as side effect
                                 if (allTrips.length >= 5) {
@@ -407,7 +411,7 @@ export const useProcessedData = (
                     // Train AI Parking Model (restore from cache or train if needed)
                     const parkingHash = currentHash;
                     const hasParkingCache = parkingCache && parkingCache.hash === parkingHash &&
-                                          parkingCache.weights && parkingCache.weights.length > 0;
+                        parkingCache.weights && parkingCache.weights.length > 0;
 
                     if (hasParkingCache) {
                         // Validate Cache Format (v2: { data, shape })
