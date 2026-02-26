@@ -487,7 +487,8 @@ async function executeControlCommand(
     } else {
         const isNumeric = /^\d+$/.test(controlPin);
         const isUppercase = controlPin === controlPin.toUpperCase();
-        console.log(`[${commandName}] Using PIN: length=${controlPin.length}, isNumeric=${isNumeric}, isUpper=${isUppercase}, rawVal=${controlPin}`);
+        console.log(`[${commandName}] Using PIN: length=${controlPin.length}, isNumeric=${isNumeric}, isUpper=${isUppercase}`);
+
     }
 
     try {
