@@ -33,6 +33,42 @@ function ensureBydInit() {
 }
 
 // =============================================================================
+// AUTH HELPERS
+// =============================================================================
+
+/**
+ * Verify that the caller is authenticated (any logged-in Firebase user).
+ * Throws HttpsError('unauthenticated') if not.
+ */
+function requireAuth(request: CallableRequest): string {
+    if (!request.auth) {
+        throw new HttpsError('unauthenticated', 'Authentication required');
+    }
+    return request.auth.uid;
+}
+
+/**
+ * Verify that the caller is authenticated AND owns the given vehicle.
+ * Reads the bydVehicles/{vin}.userId field from Firestore and compares.
+ * Throws HttpsError('unauthenticated' | 'permission-denied' | 'not-found') on failure.
+ */
+async function requireAuthAndOwnership(request: CallableRequest, vin: string): Promise<string> {
+    const uid = requireAuth(request);
+
+    const vehicleDoc = await db.collection('bydVehicles').doc(vin).get();
+    if (!vehicleDoc.exists) {
+        throw new HttpsError('not-found', `Vehicle ${vin} not found`);
+    }
+
+    const vehicleData = vehicleDoc.data()!;
+    if (vehicleData.userId !== uid) {
+        throw new HttpsError('permission-denied', 'You do not own this vehicle');
+    }
+
+    return uid;
+}
+
+// =============================================================================
 // BYD AUTHENTICATION
 // =============================================================================
 
@@ -41,6 +77,9 @@ function ensureBydInit() {
  * Stores encrypted credentials in Firestore
  */
 export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+    // Auth required — no ownership check yet (vehicle doesn't exist until after connect)
+    requireAuth(request);
+
     const { username, password, countryCode, controlPin, userId } = request.data;
 
     if (!username || !password || !countryCode || !userId) {
@@ -164,6 +203,8 @@ export const bydDisconnectV2 = onCall({ region: REGION }, async (request: Callab
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     try {
         const vehicleRef = db.collection('bydVehicles').doc(vin);
@@ -346,6 +387,8 @@ export const bydGetRealtimeV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     try {
         // Use common polling logic to handle timeouts/sleep gracefully
         // This prevents the 500 error when car is in deep sleep (Code 1008)
@@ -387,6 +430,8 @@ export const bydGetGpsV2 = onCall({ region: REGION }, async (request: CallableRe
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     try {
         const client = await getBydClientWithSession(vin);
@@ -526,6 +571,8 @@ export const bydGetChargingV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     try {
         const client = await getBydClientWithSession(vin);
         const charging = await client.getChargingStatus(vin);
@@ -560,6 +607,8 @@ export const bydLockV2 = onCall({ region: REGION }, async (request: CallableRequ
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     return await executeControlCommand(vin, 'bydLock', async (client, controlPin) => {
         const success = await client.lock(vin, controlPin);
         if (success) {
@@ -581,6 +630,8 @@ export const bydUnlockV2 = onCall({ region: REGION }, async (request: CallableRe
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     return await executeControlCommand(vin, 'bydUnlock', async (client, controlPin) => {
         const success = await client.unlock(vin, controlPin);
@@ -607,6 +658,8 @@ export const bydStartClimateV2 = onCall({ region: REGION }, async (request: Call
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     return await executeControlCommand(vin, 'bydStartClimate', async (client, controlPin) => {
         const options = {
             timeSpan: timeSpan !== undefined ? timeSpan : undefined,
@@ -626,6 +679,8 @@ export const bydStopClimateV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     return await executeControlCommand(vin, 'bydStopClimate', async (client, controlPin) => {
         return await client.stopClimate(vin, controlPin);
     }, pin);
@@ -640,6 +695,8 @@ export const bydFlashLightsV2 = onCall({ region: REGION }, async (request: Calla
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     return await executeControlCommand(vin, 'bydFlashLights', async (client, controlPin) => {
         return await client.flashLights(vin, controlPin);
@@ -656,6 +713,8 @@ export const bydHonkHornV2 = onCall({ region: REGION }, async (request: Callable
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     return await executeControlCommand(vin, 'bydHonkHorn', async (client, controlPin) => {
         return await client.honkHorn(vin, controlPin);
     }, pin);
@@ -670,6 +729,8 @@ export const bydCloseWindowsV2 = onCall({ region: REGION }, async (request: Call
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     return await executeControlCommand(vin, 'bydCloseWindows', async (client, controlPin) => {
         return await client.closeWindows(vin, controlPin);
@@ -686,6 +747,8 @@ export const bydSeatClimateV2 = onCall({ region: REGION }, async (request: Calla
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     return await executeControlCommand(vin, 'bydSeatClimate', async (client, controlPin) => {
         return await client.seatClimate(vin, {
@@ -707,6 +770,8 @@ export const bydBatteryHeatV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     return await executeControlCommand(vin, 'bydBatteryHeat', async (client, controlPin) => {
         return await client.batteryHeat(vin, controlPin);
     }, pin);
@@ -726,6 +791,8 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     try {
         const client = await getBydClientWithSession(vin);
@@ -982,6 +1049,8 @@ export const bydDiagnosticV2 = onCall({ region: REGION }, async (request: Callab
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     try {
         const client = await getBydClientWithSession(vin);
 
@@ -1207,6 +1276,8 @@ export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request
     if (!vin) {
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     ensureBydInit();
 
@@ -2359,6 +2430,8 @@ export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
+    await requireAuthAndOwnership(request, vin);
+
     console.log(`[bydWakeVehicle] Triggering live poll for ${vin}...`);
 
     try {
@@ -2489,6 +2562,8 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
     if (!vin || !tripId) {
         throw new HttpsError('invalid-argument', 'Missing VIN or Trip ID');
     }
+
+    await requireAuthAndOwnership(request, vin);
 
     console.log(`[bydFixTrip] Fixing trip ${tripId} for ${vin}...`);
 
@@ -2632,14 +2707,7 @@ export const bydDebugV2 = onCall({ region: REGION }, async (request: CallableReq
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    // Verify ownership (context.auth is required for production, allow bypass if local/testing)
-    // Verify ownership (context.auth is required for production, allow bypass if local/testing)
-    // NOTE: Temporarily disabled to allow localhost debugging without Auth domain setup
-    /*
-    if (!context.auth && process.env.FUNCTIONS_EMULATOR !== 'true') {
-        throw new HttpsError('unauthenticated', 'User must be authenticated');
-    }
-    */
+    await requireAuthAndOwnership(request, vin);
 
     console.log(`[bydDebug] Generating diagnostic dump for ${vin}...`);
 
