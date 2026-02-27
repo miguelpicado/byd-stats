@@ -343,7 +343,8 @@
         "loadChargeRegistry": "Carrega el registre de recàrregues",
         "clearView": "Neteja la vista actual",
         "exportTrips": "Exporta els trajectes",
-        "exportCharges": "Exporta les recàrregues"
+        "exportCharges": "Exporta les recàrregues",
+        "exportAll": "Exportar tot"
     },
     "filter": {
         "title": "Filtra les dades",

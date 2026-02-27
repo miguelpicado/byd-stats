@@ -271,7 +271,8 @@
         "loadChargeRegistry": "Load charge registry",
         "clearView": "Clear current data",
         "exportTrips": "Export trips",
-        "exportCharges": "Export charges"
+        "exportCharges": "Export charges",
+        "exportAll": "Export all"
     },
     "filter": {
         "title": "Filter data",
