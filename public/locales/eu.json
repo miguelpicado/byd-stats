@@ -226,7 +226,8 @@
         "loadChargeRegistry": "Kargatu kargen erregistroa",
         "clearView": "Garbitu uneko ikuspegia",
         "exportTrips": "Esportatu bidaiak",
-        "exportCharges": "Kargak esportatu"
+        "exportCharges": "Kargak esportatu",
+        "exportAll": "Dena esportatu"
     },
     "filter": {
         "title": "Datuak iragazi",
@@ -344,7 +345,12 @@
         "tableNotFound": "Taula ez da aurkitu",
         "noDataFound": "Daturik gabe",
         "noDataToExport": "Ez dago esportatzeko daturik",
-        "exportError": "Errorea datu-basea esportatzean"
+        "exportError": "Errorea datu-basea esportatzean",
+        "sqlLoadFailed": "Errorea SQL.js kargatzean",
+        "csvEmpty": "CSV hutsik edo formatu okerra",
+        "noData": "Daturik gabe",
+        "jsonFormatUnknown": "JSON formatu ezezaguna",
+        "importingError": "Errorea inportatzean"
     },
     "legal": {
         "pageTitle": "Dokumentazio Legala",

@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 
+import { logger } from '@core/logger';
 import { googleDriveService, SyncData } from '@/services/googleDrive';
 import { Trip, Charge, Settings, Car } from '@/types';
 
@@ -74,18 +75,25 @@ export function useDriveSync({
     }, []);
 
     const performSync = useCallback(async (newTripsData: Trip[] | null = null, options: { forcePull?: boolean; forcePush?: boolean } = {}) => {
+        logger.info("[Sync] --- Starting performSync ---", { forcePull: options.forcePull, forcePush: options.forcePush });
         if (!navigator.onLine) {
+            logger.warn("[Sync] Offline, skipping sync.");
             setError("Sin conexión a Internet");
             return;
         }
-        if (!googleDriveService.isInited) return;
+        if (!googleDriveService.isInited) {
+            logger.warn("[Sync] Drive Service NOT inited, skipping.");
+            return;
+        }
 
         setIsSyncing(true);
         setError(null);
 
         try {
             const targetFilename = getTargetFilename();
+            logger.info(`[Sync] Listing files for: ${targetFilename}`);
             const files = await googleDriveService.listFiles(targetFilename);
+            logger.info(`[Sync] Found ${files?.length || 0} files.`);
 
             let fileId: string | null = null;
             let legacyImport = false;
@@ -94,23 +102,31 @@ export function useDriveSync({
                 // Heuristic: Use largest file
                 files.sort((a, b) => parseInt(b.size || '0') - parseInt(a.size || '0'));
                 fileId = files[0].id;
+                logger.info(`[Sync] Selected fileId: ${fileId}`);
 
                 // Cleanup duplicates
                 if (files.length > 1) {
+                    logger.info(`[Sync] Cleaning up ${files.length - 1} duplicates.`);
                     files.slice(1).forEach(f => googleDriveService.deleteFile(f.id).catch(console.error));
                 }
             } else if (localTrips.length === 0 && !newTripsData) {
+                logger.info("[Sync] No specific car file found, looking for legacy file...");
                 // Legacy recovery
                 const legacyFiles = await googleDriveService.listFiles('byd_stats_data.json');
                 if (legacyFiles && legacyFiles.length > 0) {
                     fileId = legacyFiles[0].id;
                     legacyImport = true;
+                    logger.info(`[Sync] Found legacy fileId: ${fileId}`);
                 }
             }
 
             let remoteData: SyncData = { trips: [], settings: {} as Settings, charges: [] };
             if (fileId) {
+                logger.info("[Sync] Downloading file...");
                 remoteData = await googleDriveService.downloadFile(fileId);
+                logger.info(`[Sync] Downloaded ${remoteData.trips?.length || 0} trips.`);
+            } else {
+                logger.info("[Sync] No remote file found to download.");
             }
 
             const currentTrips = newTripsData || localTrips;
@@ -135,16 +151,34 @@ export function useDriveSync({
             if (currentTrips.length > 0 && remoteData.trips.length > 0 && !options.forcePull && !options.forcePush) {
                 const conflict = detectConflict(localDataToMerge, remoteData);
                 if (conflict) {
+                    logger.warn("[Sync] Conflict detected, stopping for user resolution.");
                     setPendingConflict({ ...conflict, fileId: fileId! });
                     setIsSyncing(false);
                     return;
                 }
             }
 
+            // Safety guard: if forcePull yields no remote data and local is also empty,
+            // there is nothing to restore. Abort to avoid uploading empty data and
+            // corrupting a Drive file that may have valid data under a different scope.
+            if (options.forcePull && remoteData.trips.length === 0 && currentTrips.length === 0) {
+                logger.warn("[Sync] Force-pull returned 0 trips and local is also empty. Aborting to prevent data corruption.");
+                setError("No se encontraron datos en la nube para este coche. Comprueba que el fichero en Drive no está vacío.");
+                setIsSyncing(false);
+                return;
+            }
+
             let merged: SyncData;
-            if (options.forcePull) merged = remoteData;
-            else if (options.forcePush) merged = localDataToMerge;
-            else merged = googleDriveService.mergeData(localDataToMerge, remoteData);
+            if (options.forcePull) {
+                logger.info("[Sync] Strategy: Force Pull (Cloud wins)");
+                merged = remoteData;
+            } else if (options.forcePush) {
+                logger.info("[Sync] Strategy: Force Push (Local wins)");
+                merged = localDataToMerge;
+            } else {
+                logger.info("[Sync] Strategy: Merge (Intelligent union)");
+                merged = googleDriveService.mergeData(localDataToMerge, remoteData);
+            }
 
             setLocalTrips(merged.trips);
             setSettings(merged.settings);
@@ -161,7 +195,9 @@ export function useDriveSync({
                 localStorage.setItem('ai_parking_predictions', JSON.stringify(merged.aiCache.parking));
             }
 
+            logger.info("[Sync] Uploading merged data...");
             const uploadResult = await googleDriveService.uploadFile(merged, legacyImport ? null : fileId, targetFilename);
+            logger.info("[Sync] Upload complete.", { fileId: uploadResult.id });
 
             if (updateCar && merged.settings?.carModel && activeCarId) {
                 updateCar(activeCarId, { name: merged.settings.carModel });
@@ -170,15 +206,18 @@ export function useDriveSync({
             setLastSyncTime(new Date());
 
             // Trigger Registry Update
+            logger.info("[Sync] Updating cloud registry...");
             await updateCloudRegistry(uploadResult.id);
+            logger.info("[Sync] --- ALL DONE ---");
 
         } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));
+            logger.error("[Sync] Error in performSync:", error);
             setError(error.message || "Error de sincronización");
         } finally {
             setIsSyncing(false);
         }
-    }, [localTrips, settings, localCharges, activeCarId, updateCloudRegistry, getTargetFilename, detectConflict]);
+    }, [localTrips, settings, localCharges, activeCarId, updateCar, updateCloudRegistry, getTargetFilename, detectConflict]);
 
     const resolveConflict = useCallback(async (resolution: 'local' | 'cloud' | 'merge') => {
         if (!pendingConflict) return;

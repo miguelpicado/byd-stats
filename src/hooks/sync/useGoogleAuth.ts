@@ -42,30 +42,27 @@ export function useGoogleAuth() {
     }, []);
 
     const handleLoginSuccess = useCallback(async (accessToken: string) => {
+        logger.info('[Auth] Login successful, processing token...');
         googleDriveService.setAccessToken(accessToken);
         localStorage.setItem('google_access_token', accessToken);
         const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour
         localStorage.setItem('google_token_expiry', expiryTime.toString());
 
-        setIsAuthenticated(true);
-        await fetchUserProfile(accessToken);
-
+        // Trigger callback FIRST to establish locks before React re-renders
         if (onLoginSuccessCallback.current) {
             onLoginSuccessCallback.current(accessToken);
         }
+
+        setIsAuthenticated(true);
+        // Fetch profile in the background, no need to await and block
+        fetchUserProfile(accessToken).catch(e => logger.error('[Auth] Profile fetch error', e));
     }, [fetchUserProfile]);
 
     // Handle initial auth check
     useEffect(() => {
         const checkAuth = async () => {
-            if (Capacitor.isNativePlatform()) {
-                await SocialLogin.initialize({
-                    google: {
-                        webClientId: "REDACTED_GOOGLE_CLIENT_ID"
-                    }
-                }).catch(() => { });
-            }
-
+            // Restore token from localStorage IMMEDIATELY so Drive operations work
+            // This must happen BEFORE SocialLogin.initialize() which can be slow on native
             const token = localStorage.getItem('google_access_token');
             const expiry = localStorage.getItem('google_token_expiry');
 
@@ -73,8 +70,19 @@ export function useGoogleAuth() {
                 googleDriveService.setAccessToken(token);
                 setIsAuthenticated(true);
                 fetchUserProfile(token);
-                // Trigger success callback for initial load if needed?
-                // Usually we just set state. Consumers watch isAuthenticated.
+            }
+
+            // Initialize SocialLogin for future login operations (doesn't block Drive API)
+            if (Capacitor.isNativePlatform()) {
+                const clientId = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID;
+                logger.info('[Auth] Initializing SocialLogin with clientId:', clientId);
+                await SocialLogin.initialize({
+                    google: {
+                        webClientId: clientId
+                    }
+                }).catch((err) => {
+                    logger.error('[Auth] SocialLogin initialization failed:', err);
+                });
             }
         };
         checkAuth();
@@ -95,10 +103,14 @@ export function useGoogleAuth() {
         const isNative = Capacitor.isNativePlatform();
         if (isNative) {
             try {
+                logger.info('[Auth] Starting native Google login...');
                 const result = await SocialLogin.login({
                     provider: 'google',
                     options: { scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata'] }
                 });
+                
+                logger.info('[Auth] Native login result:', JSON.stringify(result));
+
                 const resultAny = result as Record<string, unknown>;
                 const resultObj = resultAny.result as Record<string, unknown> | undefined;
                 const accessTokenObj = resultAny.accessToken as Record<string, unknown> | string | undefined;
@@ -118,7 +130,9 @@ export function useGoogleAuth() {
                     getTokenString(resultAccessToken) ||
                     getTokenString(resultObj?.accessToken) ||
                     getTokenString(accessTokenObj) ||
-                    getTokenString(resultAny.accessToken);
+                    getTokenString(resultAny.accessToken) ||
+                    getTokenString(resultAny.token) ||
+                    (resultObj && getTokenString(resultObj.token));
 
                 if (accessToken) {
                     await handleLoginSuccess(accessToken);

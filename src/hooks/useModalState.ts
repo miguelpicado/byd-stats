@@ -137,7 +137,14 @@ const useModalState = () => {
             // State update happens in popstate listener
         }
 
-        setModals(prev => ({ ...prev, [name]: false }));
+        setModals(prev => {
+            const update: Partial<ModalsState> = { [name]: false };
+            // Clean up associated data when closing registry modal
+            if (name === 'registryRestore') {
+                update.registryCars = [];
+            }
+            return { ...prev, ...update };
+        });
     }, []);
 
     /**

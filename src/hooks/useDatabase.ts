@@ -1,6 +1,7 @@
 // BYD Stats - useDatabase Hook
 
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { logger } from '@core/logger';
 import { toast } from 'react-hot-toast';
 import { Trip } from '@/types';
@@ -47,6 +48,7 @@ export interface UseDatabaseReturn {
  * Custom hook for database operations
  */
 export function useDatabase(): UseDatabaseReturn {
+    const { t } = useTranslation();
     const [sqlReady, setSqlReady] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -84,11 +86,11 @@ export function useDatabase(): UseDatabaseReturn {
             }
             return false;
         } catch (e) {
-            setError('Error cargando SQL.js');
+            setError(t('errors.sqlLoadFailed'));
             logger.error('SQL.js load error:', e);
             throw e;
         }
-    }, []);
+    }, [t]);
 
     // Check if a JSON file is SyncData format
     const isJsonSyncData = useCallback(async (file: File): Promise<boolean> => {
@@ -128,7 +130,7 @@ export function useDatabase(): UseDatabaseReturn {
                 if (Array.isArray(data)) {
                     return data as Trip[];
                 }
-                throw new Error('Formato JSON no reconocido');
+                throw new Error(t('errors.jsonFormatUnknown'));
             }
 
             // Handle CSV Import
@@ -136,7 +138,7 @@ export function useDatabase(): UseDatabaseReturn {
                 const text = await file.text();
                 const lines = text.split(/\r?\n/).filter(l => l.trim());
 
-                if (lines.length < 2) throw new Error('CSV vacío o formato incorrecto');
+                if (lines.length < 2) throw new Error(t('errors.csvEmpty'));
 
                 const rows = lines.slice(1).map((line, _index) => {
                     // Method from DataProvider.jsx (loadChargeRegistry)
@@ -224,16 +226,16 @@ export function useDatabase(): UseDatabaseReturn {
 
             // Handle SQLite Import (Existing Logic)
             if (!window.SQL) {
-                setError('SQL no está listo');
+                setError(t('errors.sqlNotReady'));
                 return null;
             }
 
             const buf = await file.arrayBuffer();
             const db = new window.SQL.Database(new Uint8Array(buf));
-            const t = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='EnergyConsumption'");
+            const t_sql = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='EnergyConsumption'");
 
-            if (!t.length || !t[0].values.length) {
-                throw new Error('Tabla no encontrada');
+            if (!t_sql.length || !t_sql[0].values.length) {
+                throw new Error(t('errors.tableNotFound'));
             }
 
             const res = db.exec("SELECT * FROM EnergyConsumption WHERE is_deleted = 0 ORDER BY date, start_timestamp");
@@ -257,11 +259,11 @@ export function useDatabase(): UseDatabaseReturn {
                     return rows;
                 }
             } else {
-                throw new Error('Sin datos');
+                throw new Error(t('errors.noData'));
             }
         } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));
-            const msg = `Error importando: ${error.message}`;
+            const msg = `${t('errors.importingError')}: ${error.message}`;
             toast.error(msg);
             setError(error.message);
             logger.error('Database/File processing error:', e);
@@ -269,7 +271,7 @@ export function useDatabase(): UseDatabaseReturn {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [t]);
 
     // Export database
     const exportDatabase = useCallback(async (trips: Trip[]) => {

@@ -6,6 +6,8 @@ import AppRoutes from './routes/AppRoutes';
 import ThemeManager from './components/ThemeManager';
 import './i18n';
 
+console.log('[APP] --- JS BOOTSTRAP START ---');
+
 const rootElement = document.getElementById('root');
 if (rootElement) {
   createRoot(rootElement).render(

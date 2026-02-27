@@ -270,7 +270,8 @@
         "loadChargeRegistry": "Carregar registre de càrregues",
         "clearView": "Netejar vista actual",
         "exportTrips": "Exportar viatges",
-        "exportCharges": "Exportar càrregues"
+        "exportCharges": "Exportar càrregues",
+        "exportAll": "Exportar tot"
     },
     "filter": {
         "title": "Filtrar dades",
@@ -388,7 +389,12 @@
         "tableNotFound": "Taula no trobada",
         "noDataFound": "Sense dades",
         "noDataToExport": "No hi ha dades per exportar",
-        "exportError": "Error a l'exportar la base de dades"
+        "exportError": "Error a l'exportar la base de datos",
+        "sqlLoadFailed": "Error carregant SQL.js",
+        "csvEmpty": "CSV buit o format incorrecte",
+        "noData": "Sense dades",
+        "jsonFormatUnknown": "Format JSON no reconegut",
+        "importingError": "Error important"
     },
     "legal": {
         "pageTitle": "Documentació Legal",

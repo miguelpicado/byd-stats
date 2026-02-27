@@ -4,5 +4,5 @@
     <string name="title_activity_main">BYD Stats</string>
     <string name="package_name">com.bydstats.app</string>
     <string name="custom_url_scheme">com.bydstats.app</string>
-    <string name="server_client_id">407339918856-6vmd7ijqjgk435hp0a6jnc9bphhogljf.apps.googleusercontent.com</string>
+    <string name="server_client_id">REDACTED_GOOGLE_CLIENT_ID</string>
 </resources>

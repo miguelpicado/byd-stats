@@ -105,11 +105,15 @@ export function useGoogleSync({
     // Combined Error State
     const error = authError || syncError;
 
+    // Guard ref to prevent double-triggering registry check (callback + useEffect)
+    const registryCheckTriggered = useRef(false);
+
     // Login Success Handler (orchestration)
-    // We wrap it in a useCallback to capture the current localTrips state.
     const handleLoginLink = async (_accessToken: string) => {
-        // After login, check registry
-        // Force the prompt if the user just logged in and has 0 local trips
+        // Prevent double-trigger with the mount useEffect below
+        if (registryCheckTriggered.current) return;
+        registryCheckTriggered.current = true;
+
         const isFreshInstall = localTrips.length === 0 && localCharges.length === 0;
         const modalOpened = await checkAndPromptRegistry(isFreshInstall);
 
@@ -124,6 +128,67 @@ export function useGoogleSync({
     useEffect(() => {
         onLoginSuccessCallback.current = handleLoginLink;
     }, [checkAndPromptRegistry, performSync, localTrips.length, localCharges.length, onLoginSuccessCallback]);
+
+    // On mount (or auth transition): handle pending restore OR show registry modal
+    // Uses null to distinguish "first mount" from "was false"
+    const prevAuthRef = useRef<boolean | null>(null);
+    useEffect(() => {
+        const isFirstMount = prevAuthRef.current === null;
+        const wasNotAuthenticated = prevAuthRef.current === false;
+        prevAuthRef.current = isAuthenticated;
+
+        if (!isAuthenticated) return;
+        if (!(isFirstMount || wasNotAuthenticated)) return;
+
+        // Case 1: Pending restore after reload — force-pull data for the (now correct) activeCarId
+        const pendingRestore = localStorage.getItem('byd_pending_restore');
+        if (pendingRestore) {
+            logger.info("[Sync] Pending restore flag FOUND. Clearing and scheduling pull...");
+            localStorage.removeItem('byd_pending_restore');
+            
+            const timer = setTimeout(async () => {
+                logger.info("[Sync] Executing scheduled force-pull for restored car...");
+                try {
+                    await performSync(null, { forcePull: true });
+                    logger.info("[Sync] Post-restore force-pull complete.");
+                } catch (err) {
+                    logger.error("[Sync] Post-restore force-pull FAILED", err);
+                }
+            }, 1000);
+            return () => clearTimeout(timer);
+        }
+
+        // Case 2: Authenticated with empty data — show registry modal
+        // Skip if handleLoginLink already triggered the check (popup login path)
+        if (registryCheckTriggered.current) return;
+        const isFreshInstall = localTrips.length === 0 && localCharges.length === 0;
+        if (isFreshInstall) {
+            registryCheckTriggered.current = true;
+            logger.info("[Sync] Auth detected with empty data. Checking registry...");
+            
+            let executed = false;
+            const timer = setTimeout(async () => {
+                executed = true;
+                try {
+                    const modalOpened = await checkAndPromptRegistry(true);
+                    if (!modalOpened) {
+                        performSync();
+                    }
+                } catch (err) {
+                    logger.error("[Sync] Post-auth registry check failed", err);
+                    registryCheckTriggered.current = false;
+                }
+            }, 1000);
+            
+            return () => {
+                clearTimeout(timer);
+                if (!executed) {
+                    // Free the lock if the effect was cleaned up before execution
+                    registryCheckTriggered.current = false;
+                }
+            };
+        }
+    }, [isAuthenticated, localTrips.length, localCharges.length, checkAndPromptRegistry, performSync]);
 
     // Visibility Auto-Sync
     const stateRef = useRef({ isAuthenticated, isSyncing, lastSyncTime, isRegistryModalOpen: _isRegistryModalOpen });

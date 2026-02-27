@@ -1,10 +1,19 @@
+/**
+ * Google Drive Sync Service
+ * 
+ * Provides an interface for cloud synchronization using the Google Drive API (appDataFolder).
+ * Handles:
+ * 1. Data Serialization: Transforming local state (trips, charges, settings) to JSON for storage.
+ * 2. Sync & Merge Flow: Comparing local vs. cloud timestamps and performing intelligent data merges to avoid data loss.
+ * 3. Cache Management: Reducing API calls through a short-lived internal cache.
+ */
 import { logger } from '@core/logger';
 import { Trip, Charge, Settings, ChargerType, Car, RangeScenario, SoHStats } from '@/types';
 
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
 const DB_FILENAME = 'byd_stats_data.json';
-const FOLDER_ID = 'appDataFolder'; // Back to appDataFolder for privacy
+const FOLDER_ID = 'appDataFolder';
 
 // ============================================
 // CACHE SYSTEM
@@ -123,20 +132,28 @@ export const googleDriveService = {
      * Helper for fetch headers
      */
     _getHeaders: (isPost = false): HeadersInit => {
-        if (!accessToken) throw new Error("No access token set");
+        if (!accessToken) {
+            logger.warn("[Drive API] No access token available for headers!");
+            throw new Error("No access token set");
+        }
         const headers: Record<string, string> = {
+            'Authorization': `Bearer ${accessToken.substring(0, 10)}...`
+        };
+        // Real headers for fetch (we log a redacted version above)
+        const realHeaders: Record<string, string> = {
             'Authorization': `Bearer ${accessToken}`
         };
         if (isPost) {
-            headers['Content-Type'] = 'application/json';
+            realHeaders['Content-Type'] = 'application/json';
         }
-        return headers;
+        return realHeaders;
     },
 
     /**
      * Handle response errors, specifically 401
      */
     _handleResponse: async (response: Response, context: string) => {
+        logger.debug(`[Drive API] Response from ${context}: ${response.status} ${response.statusText}`);
         if (response.status === 401) {
             logger.error(`[Drive] Unauthorized (401) during ${context}. Clearing token.`);
             accessToken = null;
@@ -148,6 +165,7 @@ export const googleDriveService = {
 
         if (!response.ok) {
             const errorText = await response.text().catch(() => 'Unknown error');
+            logger.error(`[Drive API] Error during ${context}:`, { status: response.status, text: errorText });
             throw new Error(`Error during ${context}: ${response.status} ${response.statusText} - ${errorText}`);
         }
         return response;
@@ -168,11 +186,15 @@ export const googleDriveService = {
                 }
             }
 
-            const query = `name = '${filename}'`;
-            const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=10&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
+            const query = `name = '${filename}' and '${FOLDER_ID}' in parents and trashed = false`;
+            const url = `${DRIVER_API_URL}/files?spaces=appDataFolder&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=10&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
 
+            logger.debug(`[Drive API] Fetching: ${url}`);
             const response = await fetch(url, {
                 headers: googleDriveService._getHeaders()
+            }).catch(err => {
+                logger.error("[Drive API] Fetch NETWORK ERROR:", err);
+                throw err;
             });
 
             await googleDriveService._handleResponse(response, 'listing files');
@@ -182,7 +204,7 @@ export const googleDriveService = {
             setCache(cacheKey, files);
             return files;
         } catch (error) {
-            logger.error('Error listing files', error);
+            logger.error('[Drive API] listFiles failed', error);
             throw error;
         }
     },
@@ -202,8 +224,8 @@ export const googleDriveService = {
                 }
             }
 
-            const query = `name contains 'byd_stats_data' and mimeType = 'application/json'`;
-            const url = `${DRIVER_API_URL}/files?spaces=${FOLDER_ID}&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=20&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
+            const query = `name contains 'byd_stats_data' and mimeType = 'application/json' and '${FOLDER_ID}' in parents and trashed = false`;
+            const url = `${DRIVER_API_URL}/files?spaces=appDataFolder&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=20&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
 
             const response = await fetch(url, {
                 headers: googleDriveService._getHeaders()

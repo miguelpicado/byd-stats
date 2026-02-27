@@ -76,6 +76,37 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal, syn
                 }
             }
 
+            // Validate registry cars against actual Drive files to remove stale entries
+            try {
+                const actualFiles = await googleDriveService.listAllDatabaseFiles({ forceRefresh: true });
+                const actualFileNames = new Set(actualFiles.map(f => f.name));
+
+                const validCars = registry!.cars.filter(car => {
+                    const expectedFile = car.id === 'legacy'
+                        ? 'byd_stats_data.json'
+                        : `byd_stats_data_${car.id}.json`;
+                    return actualFileNames.has(expectedFile);
+                });
+
+                if (validCars.length === 0) {
+                    logger.info("[Sync] Registry had entries but no matching files found. Cleaning up.");
+                    await googleDriveService.updateRegistry({ cars: [], lastUpdated: new Date().toISOString() });
+                    return false;
+                }
+
+                if (validCars.length !== registry!.cars.length) {
+                    logger.info(`[Sync] Cleaned registry: ${registry!.cars.length} → ${validCars.length} cars`);
+                    registry!.cars = validCars;
+                    try {
+                        await googleDriveService.updateRegistry(registry!);
+                    } catch (persistErr) {
+                        logger.warn("[Sync] Failed to persist cleaned registry", persistErr);
+                    }
+                }
+            } catch (validationErr) {
+                logger.warn("[Sync] Registry validation failed, proceeding with unvalidated registry", validationErr);
+            }
+
             const isKnown = registry!.cars.some(c => c.id === activeCarId);
 
             // If the car is known BUT we have 0 local trips, we still want to prompt to restore.
@@ -138,8 +169,6 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal, syn
     const restoreFromRegistry = useCallback(async (car: Pick<Car, 'id' | 'name'>) => {
         try {
             logger.info("Restoring from registry car:", car.id);
-            const carsKey = 'byd_cars';
-            const activeKey = 'byd_active_car_id';
 
             const restoredCar = {
                 id: car.id,
@@ -149,23 +178,16 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal, syn
                 model: car.name
             };
 
-            // Update LocalStorage directly so the next load has it
-            localStorage.setItem(carsKey, JSON.stringify([restoredCar]));
-            localStorage.setItem(activeKey, car.id);
+            // Persist to localStorage so the reload picks up the correct car
+            localStorage.setItem('byd_cars', JSON.stringify([restoredCar]));
+            localStorage.setItem('byd_active_car_id', car.id);
 
-            // Seamless reload trick: Update the active car ID in context without a full reload
-            if (setActiveCarId) {
-                setActiveCarId(car.id);
-            }
+            // Flag for post-reload: triggers a force-pull with the correct activeCarId
+            localStorage.setItem('byd_pending_restore', 'true');
 
-            // Trigger a sync immediately using FORCE PULL to override any local defaults
-            if (syncFromCloud) {
-                logger.info("Triggering cloud sync for restored car to pull data immediately...");
-                await syncFromCloud(null, { forcePull: true });
-            } else {
-                logger.warn("No syncFromCloud function provided, falling back to page reload.");
-                window.location.reload();
-            }
+            // Reload guarantees all hooks re-initialize with the correct car ID.
+            // Without reload, performSync would use the OLD activeCarId from its closure.
+            window.location.reload();
 
             return true;
         } catch (e) {
@@ -173,7 +195,7 @@ export function useCloudRegistry({ activeCarId, settings, openRegistryModal, syn
             logger.error('Restore failed', error);
             throw error;
         }
-    }, [setActiveCarId, syncFromCloud]);
+    }, []);
 
     return {
         checkAndPromptRegistry,

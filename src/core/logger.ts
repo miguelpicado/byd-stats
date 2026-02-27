@@ -15,9 +15,8 @@ export const LOG_LEVELS = {
     ERROR: LogLevel.ERROR
 };
 
-// Default levels based on environment
-// @ts-ignore
-const DEFAULT_LEVEL = import.meta.env?.PROD ? LogLevel.ERROR : LogLevel.WARN;
+// Default levels based on environment — silent in production builds
+const DEFAULT_LEVEL = import.meta.env.PROD ? LogLevel.ERROR + 1 : LogLevel.INFO;
 
 /**
  * Leveled logger that filters output based on environment
@@ -47,7 +46,7 @@ export const logger = {
      */
     info: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.INFO) {
-            console.info('[INFO]', ...args);
+            console.log('[INFO]', ...args);
         }
     },
 
@@ -56,7 +55,7 @@ export const logger = {
      */
     warn: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.WARN) {
-            console.warn('[WARN]', ...args);
+            console.log('[WARN]', ...args);
         }
     },
 
@@ -65,7 +64,7 @@ export const logger = {
      */
     error: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.ERROR) {
-            console.error('[ERROR]', ...args);
+            console.log('[ERROR]', ...args);
         }
     }
 };

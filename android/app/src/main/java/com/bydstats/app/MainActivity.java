@@ -21,6 +21,9 @@ import com.google.android.gms.wearable.Wearable;
 import com.google.android.gms.tasks.Task;
 import android.util.Log;
 
+import android.webkit.ConsoleMessage;
+import android.webkit.WebChromeClient;
+
 public class MainActivity extends BridgeActivity implements ModifiedMainActivityForSocialLoginPlugin {
 
 
@@ -69,11 +72,25 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d("BYD_STATS_NATIVE", "--- NATIVE ONCREATE START ---");
         // Register custom plugins
         registerPlugin(FileOpenerPlugin.class);
         registerPlugin(WearSyncPlugin.class);
 
         super.onCreate(savedInstanceState);
+
+        // Force console logs to logcat
+        if (this.bridge != null) {
+            this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
+                @Override
+                public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
+                    Log.d("JS_CONSOLE", consoleMessage.message() + " -- From line "
+                            + consoleMessage.lineNumber() + " of "
+                            + consoleMessage.sourceId());
+                    return true;
+                }
+            });
+        }
 
         // Enable WebView debugging for troubleshooting
         WebView.setWebContentsDebuggingEnabled(true);

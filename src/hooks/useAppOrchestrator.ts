@@ -1,3 +1,11 @@
+/**
+ * useAppOrchestrator Hook
+ * 
+ * Acting as the central brain of the application, this orchestrator coordinates complex 
+ * multi-step state flows, navigation, modal management, and high-level actions.
+ * It integrates multiple lower-level hooks and contexts (App, Layout, Data, Sync)
+ * to provide a unified interface for the main App component.
+ */
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import useAppVersion from '@hooks/useAppVersion';
@@ -63,13 +71,6 @@ export const useAppOrchestrator = () => {
     const [allTripsSortOrder, setAllTripsSortOrder] = useState('desc');
     const allTripsScrollRef = useRef(null);
 
-    // All Charges View State
-    const [allChargesFilterType, setAllChargesFilterType] = useState('all');
-    const [allChargesMonth, setAllChargesMonth] = useState('');
-    const [allChargesDateFrom, setAllChargesDateFrom] = useState('');
-    const [allChargesDateTo, setAllChargesDateTo] = useState('');
-    const [allChargesSortBy, setAllChargesSortBy] = useState('date');
-    const [allChargesSortOrder, setAllChargesSortOrder] = useState('desc');
     const allChargesScrollRef = useRef(null);
 
     // Initial load effect
@@ -195,14 +196,6 @@ export const useAppOrchestrator = () => {
             dateTo: allTripsDateTo, setDateTo: setAllTripsDateTo,
             sortBy: allTripsSortBy, setSortBy: setAllTripsSortBy,
             sortOrder: allTripsSortOrder, setSortOrder: setAllTripsSortOrder
-        },
-        allChargesState: {
-            filterType: allChargesFilterType, setFilterType: setAllChargesFilterType,
-            month: allChargesMonth, setMonth: setAllChargesMonth,
-            dateFrom: allChargesDateFrom, setDateFrom: setAllChargesDateFrom,
-            dateTo: allChargesDateTo, setDateTo: setAllChargesDateTo,
-            sortBy: allChargesSortBy, setSortBy: setAllChargesSortBy,
-            sortOrder: allChargesSortOrder, setSortOrder: setAllChargesSortOrder
         },
 
         // Modal Helpers

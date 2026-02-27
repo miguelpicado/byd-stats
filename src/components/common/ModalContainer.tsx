@@ -70,8 +70,17 @@ const ModalContainer: React.FC = () => {
             {modals.registryRestore && (
                 <RegistryRestoreModalLazy
                     registryCars={modals.registryCars}
-                    onRestore={async (car) => { await googleSync.restoreFromRegistry(car); }}
-                    onSkip={googleSync.skipRegistryRestore}
+                    onRestore={async (car) => {
+                        try {
+                            await googleSync.restoreFromRegistry(car);
+                        } finally {
+                            closeModal('registryRestore');
+                        }
+                    }}
+                    onSkip={() => {
+                        closeModal('registryRestore');
+                        googleSync.skipRegistryRestore();
+                    }}
                 />
             )}
 

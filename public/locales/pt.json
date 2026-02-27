@@ -267,7 +267,8 @@
         "loadChargeRegistry": "Carregar registo de carregamentos",
         "clearView": "Limpar vista atual",
         "exportTrips": "Exportar viagens",
-        "exportCharges": "Exportar carregamentos"
+        "exportCharges": "Exportar carregamentos",
+        "exportAll": "Exportar tudo"
     },
     "filter": {
         "title": "Filtrar dados",
@@ -385,7 +386,12 @@
         "tableNotFound": "Tabela não encontrada",
         "noDataFound": "Sem dados",
         "noDataToExport": "Não há dados para exportar",
-        "exportError": "Erro ao exportar a base de dados"
+        "exportError": "Erro ao exportar a base de dados",
+        "sqlLoadFailed": "Erro ao carregar SQL.js",
+        "csvEmpty": "CSV vazio ou formato incorreto",
+        "noData": "Sem dados",
+        "jsonFormatUnknown": "Formato JSON não reconhecido",
+        "importingError": "Erro ao importar"
     },
     "legal": {
         "pageTitle": "Documentação Legal",

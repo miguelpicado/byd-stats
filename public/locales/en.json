@@ -311,7 +311,8 @@
         "loadChargeRegistry": "Load charge registry",
         "clearView": "Clear current data",
         "exportTrips": "Export trips",
-        "exportCharges": "Export charges"
+        "exportCharges": "Export charges",
+        "exportAll": "Export all"
     },
     "filter": {
         "title": "Filter data",
@@ -428,7 +429,12 @@
         "tableNotFound": "Table not found",
         "noDataFound": "No data",
         "noDataToExport": "No data to export",
-        "exportError": "Error exporting database"
+        "exportError": "Error exporting database",
+        "sqlLoadFailed": "Error loading SQL.js",
+        "csvEmpty": "CSV empty or incorrect format",
+        "noData": "No data",
+        "jsonFormatUnknown": "Unrecognized JSON format",
+        "importingError": "Error importing"
     },
     "historyMod": {
         "title": "Trip History",

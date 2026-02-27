@@ -598,9 +598,6 @@ export const bydGetChargingV2 = onCall({ region: REGION }, async (request: Calla
 /**
  * Lock vehicle
  */
-/**
- * Lock vehicle
- */
 export const bydLockV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     const { vin, pin } = request.data;
 
@@ -646,9 +643,6 @@ export const bydUnlockV2 = onCall({ region: REGION }, async (request: CallableRe
     }, pin);
 });
 
-/**
- * Start climate
- */
 /**
  * Start climate
  */
@@ -1787,19 +1781,9 @@ async function processVehicleState(
 // =============================================================================
 
 /**
- * Scheduled function that runs every minute
- * Polls all BYD vehicles that have pollingActive = true
- */
-/**
- * Scheduled function that runs every minute
- * Polls all BYD vehicles that have pollingActive = true
- * 
- * UPDATED: Runs a loop to poll active trips every 20 seconds
- */
-/**
  * MONITOR ACTIVE TRIPS (Every 1 minute)
  * Queries ONLY vehicles with activeTripId or pollingActive=true
- * Loops 3 times (0s, 20s, 40s) to provide high-res tracking
+ * Loops 3 times (0s, 20s, 40s) to provide high-resolution tracking.
  */
 export const bydActiveTripMonitorV2 = onSchedule({
     schedule: 'every 1 minutes',

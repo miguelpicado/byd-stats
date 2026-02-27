@@ -358,7 +358,8 @@
         "loadChargeRegistry": "Cargar registro de cargas",
         "clearView": "Limpiar datos actuales",
         "exportTrips": "Exportar viajes",
-        "exportCharges": "Exportar cargas"
+        "exportCharges": "Exportar cargas",
+        "exportAll": "Exportar todo"
     },
     "filter": {
         "title": "Filtrar datos",
@@ -486,7 +487,12 @@
         "tableNotFound": "Tabla no encontrada",
         "noDataFound": "Sin datos",
         "noDataToExport": "No hay datos para exportar",
-        "exportError": "Error al exportar la base de datos"
+        "exportError": "Error al exportar la base de datos",
+        "sqlLoadFailed": "Error cargando SQL.js",
+        "csvEmpty": "CSV vacío o formato incorrecto",
+        "noData": "Sin datos",
+        "jsonFormatUnknown": "Formato JSON no reconocido",
+        "importingError": "Error importando"
     },
     "historyMod": {
         "title": "Historial de viajes",

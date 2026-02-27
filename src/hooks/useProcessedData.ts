@@ -1,3 +1,12 @@
+/**
+ * useProcessedData Hook
+ * 
+ * This hook manages the main data processing pipeline for the application.
+ * It coordinates:
+ * 1. Data Processing: Delegating heavy computations (trips, charges, stats) to a Web Worker.
+ * 2. AI & Machine Learning: Training and running inference for autonomy (Range), battery State of Health (SoH), and parking prediction.
+ * 3. Caching: Persisting processed results and AI model weights to LocalStorage to ensure near-instant loads.
+ */
 import { useState, useEffect, useRef } from 'react';
 
 import * as Comlink from 'comlink';
