@@ -42,6 +42,11 @@ export const useAppOrchestrator = () => {
         googleSync,
         filtered, // { trips, stats }
 
+        loadFile,
+        exportData,
+        exportSyncData,
+        importSyncData,
+
         // Modal State (Global)
         modals,
         openModal,
@@ -89,6 +94,17 @@ export const useAppOrchestrator = () => {
 
     // Handlers
     const processDB = useCallback(async (file: File, merge = false) => {
+        // Handle JSON SyncData files specifically
+        if (file.name.toLowerCase().endsWith('.json')) {
+            const isSyncData = await database.isJsonSyncData(file);
+            if (isSyncData) {
+                await importSyncData(file, merge);
+                closeModal('upload');
+                closeModal('history');
+                return;
+            }
+        }
+
         const trips = await processDBHook(file, merge ? rawTrips : [], merge);
         if (trips) {
             setRawTrips(trips);
@@ -98,7 +114,7 @@ export const useAppOrchestrator = () => {
             closeModal('upload');
             closeModal('history');
         }
-    }, [processDBHook, rawTrips, googleSync, closeModal, setRawTrips]);
+    }, [database, importSyncData, processDBHook, rawTrips, googleSync, closeModal, setRawTrips]);
 
     const exportDatabase = useCallback(async () => {
         const success = await exportDBHook(filtered);

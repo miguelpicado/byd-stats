@@ -114,53 +114,57 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         return database.exportDatabase(tripsContext.rawTrips);
     }, [database, tripsContext.rawTrips]);
 
-        // Export complete SyncData (trips, charges, settings, aiCache) as JSON
-        const exportSyncData = useCallback(() => {
-            try {
-                const syncData = {
-                    trips: tripsContext.rawTrips || [],
-                    charges: chargesContext.charges || [],
-                    settings: settings,
-                    aiCache: {
-                        efficiency: tripsContext.aiScenarios && tripsContext.aiLoss !== null ? {
-                            hash: `count:${tripsContext.rawTrips?.length || 0}`,
-                            scenarios: tripsContext.aiScenarios,
-                            loss: tripsContext.aiLoss
-                        } : undefined,
-                        soh: tripsContext.aiSoH !== null && tripsContext.aiSoHStats ? {
-                            hash: `count:${tripsContext.rawTrips?.length || 0}`,
-                            soh: tripsContext.aiSoH,
-                            stats: tripsContext.aiSoHStats
-                        } : undefined,
-                        parking: undefined // Not stored in context currently
-                    }
-                };
-    
-                const jsonString = JSON.stringify(syncData, null, 2);
-                const blob = new Blob([jsonString], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `BYD_Stats_Data_${activeCarId || 'backup'}_${new Date().toISOString().slice(0, 10)}.json`;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                
-                // Increased delay to 1s for better mobile support
-                setTimeout(() => URL.revokeObjectURL(url), 1000);
-    
-                toast.success(t('sync.exportSuccess', 'Datos exportados correctamente'));
-                logger.info(`Exported SyncData: ${tripsContext.rawTrips?.length || 0} trips, ${chargesContext.charges?.length || 0} charges`);
-    
-                return { success: true };
-            } catch (e) {
-                const error = e instanceof Error ? e : new Error(String(e));
-                logger.error('Error exporting sync data:', e);
-                toast.error(t('sync.exportFailed', 'Error al exportar datos'));
-                return { success: false, reason: 'error', message: error.message };
-            }
-        }, [tripsContext, chargesContext, settings, activeCarId, t]);
-    // Import SyncData from JSON file
+            // Export complete SyncData (trips, charges, settings, aiCache) as JSON
+            const exportSyncData = useCallback(() => {
+                try {
+                    const syncData = {
+                        trips: tripsContext.rawTrips || [],
+                        charges: chargesContext.charges || [],
+                        settings: settings,
+                        aiCache: {
+                            efficiency: tripsContext.aiScenarios && tripsContext.aiLoss !== null ? {
+                                hash: `count:${tripsContext.rawTrips?.length || 0}`,
+                                scenarios: tripsContext.aiScenarios,
+                                loss: tripsContext.aiLoss
+                            } : undefined,
+                            soh: tripsContext.aiSoH !== null && tripsContext.aiSoHStats ? {
+                                hash: `count:${tripsContext.rawTrips?.length || 0}`,
+                                soh: tripsContext.aiSoH,
+                                stats: tripsContext.aiSoHStats
+                            } : undefined,
+                            parking: undefined
+                        }
+                    };
+        
+                    const jsonString = JSON.stringify(syncData, null, 2);
+                    const fileName = `BYD_Stats_Data_${activeCarId || 'backup'}_${new Date().toISOString().slice(0, 10)}.json`;
+                    
+                    // Standard Web Download approach
+                    const blob = new Blob([jsonString], { type: 'application/json' });
+                    const url = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    
+                    link.href = url;
+                    link.setAttribute('download', fileName);
+                    link.style.display = 'none';
+                    
+                    document.body.appendChild(link);
+                    link.click();
+                    
+                    // Cleanup with a much safer delay
+                    setTimeout(() => {
+                        document.body.removeChild(link);
+                        window.URL.revokeObjectURL(url);
+                    }, 5000); // 5 seconds is very safe
+        
+                    toast.success(t('sync.exportSuccess', 'Datos exportados correctamente'));
+                    return { success: true };
+                } catch (e) {
+                    console.error('Export Error:', e);
+                    toast.error(t('sync.exportFailed', 'Error al exportar datos'));
+                    return { success: false };
+                }
+            }, [tripsContext, chargesContext, settings, activeCarId, t]);    // Import SyncData from JSON file
     const importSyncData = useCallback(async (file: File, merge: boolean = true) => {
         try {
             const text = await file.text();

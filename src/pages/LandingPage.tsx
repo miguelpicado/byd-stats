@@ -43,7 +43,7 @@ const LandingPage = ({
         const f = e.dataTransfer.files[0];
         if (f) {
             const fileName = f.name.toLowerCase();
-            if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+            if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.json')) {
                 toast.error(t('errors.invalidFile'));
                 return;
             }
@@ -55,7 +55,7 @@ const LandingPage = ({
         const f = e.target.files?.[0];
         if (f) {
             const fileName = f.name.toLowerCase();
-            if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg')) {
+            if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.json')) {
                 toast.error(t('errors.invalidFile'));
                 e.target.value = '';
                 return;
@@ -90,7 +90,7 @@ const LandingPage = ({
                 )}
 
                 <div
-                    className={`border-2 border-dashed rounded-3xl text-center transition-all cursor-pointer ${isCompact ? 'p-6' : 'p-8 sm:p-12'}`}
+                    className={`relative border-2 border-dashed rounded-3xl text-center transition-all cursor-pointer ${isCompact ? 'p-6' : 'p-8 sm:p-12'}`}
                     style={{
                         borderColor: dragOver ? BYD_RED : '#475569',
                         backgroundColor: dragOver ? 'rgba(234,0,41,0.1)' : 'transparent'
@@ -98,13 +98,12 @@ const LandingPage = ({
                     onDragOver={(e) => { if (sqlReady && !isNative) { e.preventDefault(); setDragOver(true); } }}
                     onDragLeave={() => !isNative && setDragOver(false)}
                     onDrop={(e) => !isNative && sqlReady && handleDrop(e)}
-                    onClick={() => sqlReady && document.getElementById('fileInput')?.click()}
                 >
                     <input
                         id="fileInput"
                         type="file"
-                        accept="*/*,image/*,.db,.jpg,.jpeg"
-                        className="hidden"
+                        accept="*/*,image/*,.db,.jpg,.jpeg,.json"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         onChange={handleFileChange}
                         disabled={!sqlReady}
                         aria-label={t('landing.clickToSelect')}
