@@ -262,7 +262,8 @@
         "loadChargeRegistry": "Cargar rexistro de cargas",
         "clearView": "Limpar vista actual",
         "exportTrips": "Exportar viaxes",
-        "exportCharges": "Exportar cargas"
+        "exportCharges": "Exportar cargas",
+        "exportAll": "Exportar todo"
     },
     "filter": {
         "title": "Filtrar datos",

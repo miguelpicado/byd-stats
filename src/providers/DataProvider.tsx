@@ -77,6 +77,7 @@ export interface DataDispatch {
 
     loadFile: (file: File, merge?: boolean) => Promise<void>;
     exportData: () => Promise<{ success: boolean; reason?: string }>;
+    exportSyncData: () => Promise<{ success: boolean; reason?: string; message?: string }>;
     loadChargeRegistry: (file: File) => Promise<void>;
 
     addCharge: (charge: any) => any;
@@ -251,6 +252,46 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return database.exportDatabase(rawTrips);
     }, [database, rawTrips]);
 
+    const exportSyncData = useCallback(async () => {
+        try {
+            const syncData = {
+                trips: rawTrips || [],
+                charges: charges || [],
+                settings,
+                aiCache: {
+                    efficiency: aiScenarios && aiLoss !== null ? {
+                        hash: `count:${rawTrips?.length || 0}`,
+                        scenarios: aiScenarios,
+                        loss: aiLoss
+                    } : undefined,
+                    soh: aiSoH !== null && aiSoHStats ? {
+                        hash: `count:${rawTrips?.length || 0}`,
+                        soh: aiSoH,
+                        stats: aiSoHStats
+                    } : undefined,
+                    parking: undefined
+                }
+            };
+            const jsonString = JSON.stringify(syncData, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `BYD_Stats_Data_${activeCarId || 'backup'}_${new Date().toISOString().slice(0, 10)}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            toast.success(t('sync.exportSuccess', 'Datos exportados correctamente'));
+            return { success: true };
+        } catch (e) {
+            const error = e instanceof Error ? e : new Error(String(e));
+            logger.error('Error exporting sync data:', e);
+            toast.error(t('sync.exportFailed', 'Error al exportar datos'));
+            return { success: false, reason: 'error', message: error.message };
+        }
+    }, [rawTrips, charges, settings, activeCarId, aiScenarios, aiLoss, aiSoH, aiSoHStats, t]);
+
     const loadChargeRegistry = useCallback(async (file: File) => {
         try {
             const text = await file.text();
@@ -396,6 +437,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
         loadFile,
         exportData,
+        exportSyncData,
         loadChargeRegistry,
 
         setFilterType,
@@ -408,7 +450,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }), [
         setRawTrips, replaceCharges, restChargesData,
         confirmation,
-        loadFile, exportData, loadChargeRegistry,
+        loadFile, exportData, exportSyncData, loadChargeRegistry,
         setFilterType, setSelMonth, setDateFrom, setDateTo,
         modalState.openModal, modalState.closeModal
     ]);

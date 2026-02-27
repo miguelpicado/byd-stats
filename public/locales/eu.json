@@ -226,7 +226,8 @@
         "loadChargeRegistry": "Kargatu kargen erregistroa",
         "clearView": "Garbitu uneko ikuspegia",
         "exportTrips": "Esportatu bidaiak",
-        "exportCharges": "Kargak esportatu"
+        "exportCharges": "Kargak esportatu",
+        "exportAll": "Dena esportatu"
     },
     "filter": {
         "title": "Datuak iragazi",
