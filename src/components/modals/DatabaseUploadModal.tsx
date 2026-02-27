@@ -21,6 +21,7 @@ const DatabaseUploadModal: React.FC = () => {
         database,
         loadFile,
         exportData,
+        exportSyncData,
         clearData,
         replaceCharges,
         loadChargeRegistry,
@@ -186,6 +187,18 @@ const DatabaseUploadModal: React.FC = () => {
                                 >
                                     <FileText className="w-4 h-4" />
                                     {t('upload.exportCharges')}
+                                </button>
+                            )}
+
+                            {/* 6. Export all (SyncData JSON: trips + charges + settings + aiCache) */}
+                            {(hasData || hasCharges) && (
+                                <button
+                                    onClick={() => { exportSyncData(); onClose(); }}
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                    style={{ backgroundColor: '#6366f1' }}
+                                >
+                                    <Download className="w-4 h-4" />
+                                    {t('upload.exportAll')}
                                 </button>
                             )}
                         </div>
