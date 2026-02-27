@@ -193,7 +193,11 @@ const DatabaseUploadModal: React.FC = () => {
                             {/* 6. Export all (SyncData JSON: trips + charges + settings + aiCache) */}
                             {(hasData || hasCharges) && (
                                 <button
-                                    onClick={() => { exportSyncData(); onClose(); }}
+                                    onClick={() => { 
+                                        exportSyncData(); 
+                                        // Brief delay before closing modal to ensure download is registered
+                                        setTimeout(() => onClose(), 100);
+                                    }}
                                     className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
                                     style={{ backgroundColor: '#6366f1' }}
                                 >
