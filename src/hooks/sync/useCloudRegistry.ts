@@ -11,7 +11,7 @@ interface UseCloudRegistryProps {
     setActiveCarId?: (id: string | null) => void;
 }
 
-export function useCloudRegistry({ activeCarId, settings, openRegistryModal, syncFromCloud, setActiveCarId }: UseCloudRegistryProps) {
+export function useCloudRegistry({ activeCarId, settings, openRegistryModal }: UseCloudRegistryProps) {
 
     // Check Registry for existing cars
     const checkAndPromptRegistry = useCallback(async (forcePrompt: boolean = false): Promise<boolean> => {

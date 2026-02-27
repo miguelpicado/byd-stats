@@ -1,0 +1,4 @@
+
+> byd-stats@2.1.0 type-check
+> tsc --noEmit
+

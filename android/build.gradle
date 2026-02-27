@@ -1,5 +1,5 @@
 buildscript {
-    ext.kotlin_version = '1.9.24'
+    ext.kotlin_version = '2.1.0'
     repositories {
         google()
         mavenCentral()
@@ -15,32 +15,14 @@ buildscript {
 }
 
 ext {
-    kotlin_version = '1.9.24'
+    // Already defined in buildscript, but keeping local reference for variables.gradle if needed
 }
 
 apply from: "variables.gradle"
+apply from: "capacitor.build.gradle"
 
-allprojects {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
-        kotlinOptions {
-            freeCompilerArgs += ["-Xskip-metadata-version-check"]
-        }
-    }
-}
-
-subprojects {
-    configurations.all {
-        resolutionStrategy.eachDependency { details ->
-            if (details.requested.group == 'org.jetbrains.kotlin') {
-                details.useVersion '1.9.24'
-            }
-        }
-    }
-}
+// tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { ... }
+// resolutionStrategy ...
 
 task clean(type: Delete) {
     delete rootProject.buildDir

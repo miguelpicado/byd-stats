@@ -136,9 +136,6 @@ export const googleDriveService = {
             logger.warn("[Drive API] No access token available for headers!");
             throw new Error("No access token set");
         }
-        const headers: Record<string, string> = {
-            'Authorization': `Bearer ${accessToken.substring(0, 10)}...`
-        };
         // Real headers for fetch (we log a redacted version above)
         const realHeaders: Record<string, string> = {
             'Authorization': `Bearer ${accessToken}`

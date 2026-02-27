@@ -69,6 +69,10 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
     // Location watch (heartbeat) setting
     const [heartbeatEnabled, setHeartbeatEnabled] = useState(false);
 
+    // ABRP token setting
+    const [abrpToken, setAbrpToken] = useState('');
+    const [abrpSaving, setAbrpSaving] = useState(false);
+
     // Diagnostic state (API Dump easter egg)
     const [debugDump, setDebugDump] = useState<any | null>(null);
 
@@ -96,15 +100,32 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         }
     }, []);
 
-    // Load heartbeatEnabled from Firestore when connected
+    // Load heartbeatEnabled and abrpToken from Firestore when connected
     useEffect(() => {
         if (!connectedVin) return;
         getDoc(doc(db, 'bydVehicles', connectedVin)).then((snap) => {
             if (snap.exists()) {
                 setHeartbeatEnabled(snap.data().heartbeatEnabled === true);
+                setAbrpToken(snap.data().abrpUserToken || '');
             }
-        }).catch(() => {});
+        }).catch(() => { });
     }, [connectedVin]);
+
+    const handleSaveAbrpToken = async () => {
+        if (!connectedVin) return;
+        setAbrpSaving(true);
+        try {
+            await updateDoc(doc(db, 'bydVehicles', connectedVin), {
+                abrpUserToken: abrpToken.trim(),
+            });
+            toast.success(abrpToken.trim() ? 'Token ABRP guardado' : 'Token ABRP eliminado');
+        } catch (err: any) {
+            console.error('Error saving ABRP token:', err);
+            toast.error('Error al guardar el token');
+        } finally {
+            setAbrpSaving(false);
+        }
+    };
 
     // Handle connect
     const handleConnect = async () => {
@@ -336,6 +357,38 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                                     className="toggle-checkbox w-11 h-6 cursor-pointer"
                                 />
                             </label>
+                        </div>
+
+                        {/* ABRP Integration */}
+                        <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <div className="font-medium text-slate-700 dark:text-slate-200 mb-1">
+                                ABRP — A Better Route Planner
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mb-3">
+                                Introduce tu token de ABRP para enviar telemetría en tiempo real.
+                                Encuéntralo en ABRP → Perfil → «Link car».
+                            </div>
+                            <div className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={abrpToken}
+                                    onChange={(e) => setAbrpToken(e.target.value)}
+                                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                                    className="flex-1 px-3 py-2 text-sm bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded-lg text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-blue-500"
+                                />
+                                <button
+                                    onClick={handleSaveAbrpToken}
+                                    disabled={abrpSaving}
+                                    className="px-3 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded-lg disabled:opacity-50 transition-colors"
+                                >
+                                    {abrpSaving ? '...' : 'Guardar'}
+                                </button>
+                            </div>
+                            {abrpToken && (
+                                <div className="mt-2 text-xs text-green-600 dark:text-green-400">
+                                    ✓ Telemetría ABRP activa
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

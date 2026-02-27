@@ -10,6 +10,7 @@ import android.webkit.WebView;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import com.getcapacitor.BridgeActivity;
+import io.capawesome.capacitorjs.plugins.filepicker.FilePickerPlugin;
 import ee.forgr.capacitor.social.login.ModifiedMainActivityForSocialLoginPlugin;
 import com.bydstats.app.plugins.FileOpenerPlugin;
 import com.bydstats.app.plugins.WearSyncPlugin;
@@ -76,6 +77,7 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
         // Register custom plugins
         registerPlugin(FileOpenerPlugin.class);
         registerPlugin(WearSyncPlugin.class);
+        registerPlugin(FilePickerPlugin.class);
 
         super.onCreate(savedInstanceState);
 

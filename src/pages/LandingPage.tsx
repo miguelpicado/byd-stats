@@ -3,11 +3,8 @@ import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 import { BYD_RED } from '../components/Icons'; // Assuming BYD_RED is exported from Icons or another constant file
 import { Upload, Cloud } from '../components/Icons';
-
-// Note: BYD_RED might be in constants, let's check imports in App.jsx.
-// App.jsx imports { ..., BYD_RED } from './components/Icons';
-// But usually constants are in utils/constants.js. 
-// However, assuming App.jsx import is correct for now.
+import { FilePicker } from '@capawesome/capacitor-file-picker';
+import { Filesystem } from '@capacitor/filesystem';
 
 interface GoogleSyncState {
     isAuthenticated: boolean;
@@ -36,6 +33,55 @@ const LandingPage = ({
 }: LandingPageProps) => {
     const { t } = useTranslation();
     const [dragOver, setDragOver] = useState(false);
+
+    // -- NATIVE FILE PICKER LOGIC --
+    const handleNativeFilePick = async () => {
+        try {
+            const result = await FilePicker.pickFiles({
+                types: ['*/*'],
+                readData: false, // Use path instead of base64 to avoid bridge size limits
+            });
+
+            const file = result.files[0];
+            if (!file) { toast('Sin fichero seleccionado'); return; }
+
+            // Validate file name
+            const fileName = (file.name || '').toLowerCase();
+            if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.json') && !fileName.endsWith('.csv')) {
+                toast.error(t('errors.invalidFile'));
+                return;
+            }
+
+            // Read the file using its path/blob
+            let processedFile: File;
+            if (file.blob) {
+                processedFile = new File([file.blob], file.name, { type: file.mimeType || 'application/octet-stream' });
+            } else if (file.data) {
+                const blob = await (await fetch(`data:${file.mimeType || 'application/octet-stream'};base64,${file.data}`)).blob();
+                processedFile = new File([blob], file.name, { type: file.mimeType || 'application/octet-stream' });
+            } else if (file.path) {
+                // readData: false returns a content:// URI on Android
+                // Use Capacitor Filesystem to read the file via the native bridge
+                const readResult = await Filesystem.readFile({ path: file.path });
+                const base64Data = readResult.data as string;
+                const response = await fetch(`data:${file.mimeType || 'application/octet-stream'};base64,${base64Data}`);
+                const blob = await response.blob();
+                processedFile = new File([blob], file.name, { type: file.mimeType || 'application/octet-stream' });
+            } else {
+                toast.error('No se pudo leer el archivo (sin datos)');
+                return;
+            }
+
+            await onFileProcess(processedFile, false);
+
+        } catch (e: unknown) {
+            const msg = e instanceof Error ? e.message : String(e);
+            // Ignore user-cancelled picker (no error to show)
+            if (msg.toLowerCase().includes('cancel') || msg.toLowerCase().includes('dismiss')) return;
+            toast.error(`Error: ${msg}`);
+        }
+    };
+
 
     const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
         e.preventDefault();
@@ -98,16 +144,27 @@ const LandingPage = ({
                     onDragOver={(e) => { if (sqlReady && !isNative) { e.preventDefault(); setDragOver(true); } }}
                     onDragLeave={() => !isNative && setDragOver(false)}
                     onDrop={(e) => !isNative && sqlReady && handleDrop(e)}
+                    onClick={() => {
+                        if (!sqlReady) return;
+                        if (isNative) {
+                            handleNativeFilePick();
+                        } else {
+                            document.getElementById('fileInput')?.click();
+                        }
+                    }}
                 >
-                    <input
-                        id="fileInput"
-                        type="file"
-                        accept="*/*,image/*,.db,.jpg,.jpeg,.json"
-                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                        onChange={handleFileChange}
-                        disabled={!sqlReady}
-                        aria-label={t('landing.clickToSelect')}
-                    />
+                    {/* The web file input is only used for the PWA now */}
+                    {!isNative && (
+                         <input
+                            id="fileInput"
+                            type="file"
+                            accept="*/*,image/*,.db,.jpg,.jpeg,.json"
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                            onChange={handleFileChange}
+                            disabled={!sqlReady}
+                            aria-label={t('landing.clickToSelect')}
+                        />
+                    )}
                     <div
                         className={`${isCompact ? 'w-12 h-12 mb-4' : 'w-16 h-16 mb-6'} rounded-2xl mx-auto flex items-center justify-center`}
                         style={{ backgroundColor: dragOver ? BYD_RED : '#334155' }}

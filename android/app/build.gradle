@@ -61,8 +61,9 @@ dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.9.0')
     implementation 'com.google.firebase:firebase-functions'
     implementation 'com.google.firebase:firebase-auth'
-    wearApp project(":wear")
+// wearApp project(":wear")
     implementation "com.google.android.gms:play-services-wearable:19.0.0"
+    implementation project(':capawesome-capacitor-file-picker')
 }
 
 apply from: 'capacitor.build.gradle'

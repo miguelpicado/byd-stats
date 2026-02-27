@@ -4,7 +4,6 @@ import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { useCar } from '@/context/CarContext';
 import { useData } from '@/providers/DataProvider';
 import { useLayout } from '@/context/LayoutContext';
-import { logger } from '@core/logger';
 import { bydUnlock, bydWakeVehicle, bydFlashLights, bydStartClimate, bydStopClimate } from '@/services/bydApi';
 import { toast } from 'react-hot-toast';
 
@@ -18,7 +17,7 @@ const WearSync = registerPlugin<WearSyncPlugin>('WearSync');
 export const useWearSync = () => {
     const { activeCar } = useCar();
     const { isNative } = useLayout();
-    const { stats, openModal } = useData();
+    const { stats } = useData();
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
 
     const lastSyncedRef = useRef<{ soc: number; range: number; vin: string; climate: boolean }>({

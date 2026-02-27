@@ -42,9 +42,6 @@ export const useAppOrchestrator = () => {
         googleSync,
         filtered, // { trips, stats }
 
-        loadFile,
-        exportData,
-        exportSyncData,
         importSyncData,
 
         // Modal State (Global)

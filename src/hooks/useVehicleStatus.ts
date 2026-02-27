@@ -18,6 +18,12 @@ export interface VehicleStatus {
     activeChargeSessionId?: string;
     lastOdometer?: number;
 
+    // Telemetry & Driving
+    lastPower?: number;
+    lastSpeed?: number;
+    lastGear?: number;
+    epbStatus?: number;
+
     // Trip status
     activeTripId?: string;
     pollingActive?: boolean;

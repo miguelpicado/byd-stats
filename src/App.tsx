@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from 'react';
+import { Toaster } from 'react-hot-toast';
 import { BYD_RED } from '@components/Icons';
 import '@/core/chartSetup';
 
@@ -108,6 +109,9 @@ export default function BYDStatsAnalyzer() {
 
         {/* ModalCoordinator - centralized modal handling with lazy loading context support */}
         <ModalCoordinator />
+
+        {/* Toaster needed here - MainLayout (which has its own Toaster) is not rendered on landing page */}
+        <Toaster position="bottom-center" toastOptions={{ duration: 4000, style: { background: 'rgba(15,23,42,0.9)', color: '#fff', borderRadius: '16px', padding: '12px 20px', fontSize: '14px' } }} />
 
         {/* Extracted Footer */}
         <LandingFooter appVersion={appVersion} />
