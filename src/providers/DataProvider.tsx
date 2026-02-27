@@ -225,9 +225,60 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return () => clearTimeout(timer);
     }, [rawTrips?.length, charges?.length, settings, googleSync.isAuthenticated, modalState?.modals?.registryRestore]);
 
+    const importSyncData = useCallback(async (file: File, merge: boolean = false) => {
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+
+            if (data.settings) {
+                updateSettings(data.settings);
+            }
+
+            if (data.trips && Array.isArray(data.trips)) {
+                if (merge) {
+                    const map = new Map<string, Trip>();
+                    rawTrips.forEach(t => map.set(`${t.date}-${t.start_timestamp}`, t));
+                    data.trips.forEach((t: Trip) => map.set(`${t.date}-${t.start_timestamp}`, t));
+                    setRawTrips(Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+                } else {
+                    setRawTrips(data.trips);
+                }
+            }
+
+            if (data.charges && Array.isArray(data.charges)) {
+                if (merge) {
+                    const map = new Map<string, Charge>();
+                    charges.forEach(c => map.set(c.id, c));
+                    data.charges.forEach((c: Charge) => map.set(c.id, c));
+                    replaceCharges(Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || '')));
+                } else {
+                    replaceCharges(data.charges);
+                }
+            }
+
+            toast.success(t('sync.importSuccess', 'Datos importados correctamente'));
+            
+            if (googleSync.isAuthenticated) {
+                googleSync.syncNow(null);
+            }
+        } catch (e) {
+            logger.error('Error importing sync data:', e);
+            toast.error(t('sync.importFailed', 'Error al importar datos'));
+        }
+    }, [rawTrips, charges, updateSettings, setRawTrips, replaceCharges, googleSync, t]);
+
     // 9. File Loading Functions
     const loadFile = useCallback(async (file: File, merge: boolean = false) => {
         try {
+            // Check if it's a JSON SyncData file
+            if (file.name.toLowerCase().endsWith('.json')) {
+                const isSyncData = await database.isJsonSyncData(file);
+                if (isSyncData) {
+                    await importSyncData(file, merge);
+                    return;
+                }
+            }
+
             if (!database.sqlReady) {
                 await database.initSql();
             }
@@ -243,7 +294,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             logger.error('Error loading file:', error);
             database.setError(error.message);
         }
-    }, [database, rawTrips, setRawTrips, googleSync]);
+    }, [database, rawTrips, setRawTrips, googleSync, importSyncData]);
 
     const exportData = useCallback(async () => {
         if (!database.sqlReady) {
@@ -438,6 +489,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         loadFile,
         exportData,
         exportSyncData,
+        importSyncData,
         loadChargeRegistry,
 
         setFilterType,
@@ -450,7 +502,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }), [
         setRawTrips, replaceCharges, restChargesData,
         confirmation,
-        loadFile, exportData, exportSyncData, loadChargeRegistry,
+        loadFile, exportData, exportSyncData, importSyncData, loadChargeRegistry,
         setFilterType, setSelMonth, setDateFrom, setDateTo,
         modalState.openModal, modalState.closeModal
     ]);

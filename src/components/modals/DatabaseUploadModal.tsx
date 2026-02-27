@@ -92,20 +92,19 @@ const DatabaseUploadModal: React.FC = () => {
                                 <input
                                     type="file"
                                     id="uploadMerge"
-                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv,.json"
                                     className="hidden"
                                     onChange={(e) => handleFileChange(e, true)}
                                     disabled={!sqlReady}
                                 />
-                                <button
-                                    onClick={() => document.getElementById('uploadMerge')?.click()}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                <label
+                                    htmlFor="uploadMerge"
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
                                     style={{ backgroundColor: '#10B981' }} // Emerald/Green for safe action (merge)
-                                    disabled={!sqlReady}
                                 >
                                     <Upload className="w-4 h-4" />
                                     {t('upload.loadMerge')}
-                                </button>
+                                </label>
                             </div>
 
                             {/* 2. Load charge registry (CSV) - ELECTRIC BLUE */}
@@ -117,14 +116,14 @@ const DatabaseUploadModal: React.FC = () => {
                                     className="hidden"
                                     onChange={handleChargeRegistryChange}
                                 />
-                                <button
-                                    onClick={() => document.getElementById('uploadChargeRegistry')?.click()}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                <label
+                                    htmlFor="uploadChargeRegistry"
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
                                     style={{ backgroundColor: ELECTRIC_BLUE }}
                                 >
                                     <FileText className="w-4 h-4" />
                                     {t('upload.loadChargeRegistry')}
-                                </button>
+                                </label>
                             </div>
 
                             {/* 3. Load NEW (Replace) - RED */}
@@ -132,20 +131,19 @@ const DatabaseUploadModal: React.FC = () => {
                                 <input
                                     type="file"
                                     id="uploadNew"
-                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv"
+                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv,.json"
                                     className="hidden"
                                     onChange={(e) => handleFileChange(e, false)}
                                     disabled={!sqlReady}
                                 />
-                                <button
-                                    onClick={() => document.getElementById('uploadNew')?.click()}
-                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2"
+                                <label
+                                    htmlFor="uploadNew"
+                                    className="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 cursor-pointer"
                                     style={{ backgroundColor: '#EF4444' }} // Red for dangerous action (replace)
-                                    disabled={!sqlReady}
                                 >
                                     <Database className="w-4 h-4" />
                                     {t('upload.loadNew')}
-                                </button>
+                                </label>
                             </div>
 
                             {/* 3. Delete Car (Replace Clear Data) */}
