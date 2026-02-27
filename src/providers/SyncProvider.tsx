@@ -145,7 +145,9 @@ export function SyncProvider({ children }: { children: ReactNode }) {
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            
+            // Small delay before revoking to ensure download starts on mobile
+            setTimeout(() => URL.revokeObjectURL(url), 100);
 
             toast.success(t('sync.exportSuccess', 'Datos exportados correctamente'));
             logger.info(`Exported SyncData: ${tripsContext.rawTrips?.length || 0} trips, ${chargesContext.charges?.length || 0} charges`);
