@@ -54,6 +54,12 @@ const GoogleSyncSettings: React.FC<GoogleSyncSettingsProps> = ({ googleSync }) =
                 {t('settings.googleDrive')}
             </h4>
 
+            {googleSync.error && !googleSync.isAuthenticated && (
+                <div className="mb-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-xs text-red-600 dark:text-red-400 break-all">
+                    {googleSync.error}
+                </div>
+            )}
+
             {!googleSync.isAuthenticated ? (
                 <button
                     onClick={googleSync.login}
@@ -137,11 +143,10 @@ const GoogleSyncSettings: React.FC<GoogleSyncSettingsProps> = ({ googleSync }) =
                         <button
                             onClick={handleExport}
                             disabled={exporting}
-                            className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] ${
-                                exporting
+                            className={`w-full py-3 px-4 rounded-xl text-sm font-medium transition-all flex items-center justify-center gap-2 shadow-sm active:scale-[0.98] ${exporting
                                     ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 cursor-not-allowed'
                                     : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-600'
-                            }`}
+                                }`}
                         >
                             {exporting ? (
                                 <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" />

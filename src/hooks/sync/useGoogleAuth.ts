@@ -4,6 +4,7 @@ import { Capacitor } from '@capacitor/core';
 import { SocialLogin } from '@capgo/capacitor-social-login';
 import { logger } from '@core/logger';
 import { googleDriveService } from '@/services/googleDrive';
+import { toast } from 'react-hot-toast';
 
 export interface UserProfile {
     id: string;
@@ -95,6 +96,7 @@ export function useGoogleAuth() {
         onError: (err) => {
             logger.error('Web Login Failed:', err);
             setError("Login failed");
+            toast.error("Web Login failed");
         },
         scope: "email profile https://www.googleapis.com/auth/drive.appdata"
     });
@@ -108,7 +110,7 @@ export function useGoogleAuth() {
                     provider: 'google',
                     options: { scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata'] }
                 });
-                
+
                 logger.info('[Auth] Native login result:', JSON.stringify(result));
 
                 const resultAny = result as Record<string, unknown>;
@@ -136,12 +138,17 @@ export function useGoogleAuth() {
 
                 if (accessToken) {
                     await handleLoginSuccess(accessToken);
+                    toast.success("Sesión iniciada correctamente");
                 } else {
-                    setError("Error: No Access Token received.");
+                    const msg = "Error: No Access Token received. Result: " + JSON.stringify(result);
+                    setError(msg);
+                    toast.error(msg);
                 }
             } catch (e) {
                 const error = e instanceof Error ? e : new Error(String(e));
-                setError(error.message || "Error al iniciar sesión con Google");
+                const msg = error.message || "Error al iniciar sesión con Google";
+                setError(msg);
+                toast.error(msg);
             }
         } else {
             webLogin();
