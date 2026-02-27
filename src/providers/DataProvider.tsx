@@ -252,7 +252,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return database.exportDatabase(rawTrips);
     }, [database, rawTrips]);
 
-    const exportSyncData = useCallback(async () => {
+    const exportSyncData = useCallback(() => {
         try {
             const syncData = {
                 trips: rawTrips || [],
