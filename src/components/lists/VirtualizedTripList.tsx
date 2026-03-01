@@ -36,6 +36,8 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({
     });
 
     // Detect end of scroll
+    const endReachedTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
     useEffect(() => {
         if (!scrollElement || !onEndReached) return;
 
@@ -43,12 +45,18 @@ const VirtualizedTripList: FC<VirtualizedTripListProps> = memo(({
             const { scrollTop, scrollHeight, clientHeight } = scrollElement;
             // Trigger when within 200px of bottom
             if (scrollHeight - scrollTop - clientHeight < 200) {
-                onEndReached();
+                if (endReachedTimeout.current) clearTimeout(endReachedTimeout.current);
+                endReachedTimeout.current = setTimeout(() => {
+                    onEndReached();
+                }, 300);
             }
         };
 
         scrollElement.addEventListener('scroll', handleScroll);
-        return () => scrollElement.removeEventListener('scroll', handleScroll);
+        return () => {
+            scrollElement.removeEventListener('scroll', handleScroll);
+            if (endReachedTimeout.current) clearTimeout(endReachedTimeout.current);
+        };
     }, [scrollElement, onEndReached]);
 
     return (

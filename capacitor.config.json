@@ -7,7 +7,7 @@
     "hostname": "localhost"
   },
   "android": {
-    "allowMixedContent": true,
+    "allowMixedContent": false,
     "backgroundColor": "#0f172a"
   },
   "plugins": {}

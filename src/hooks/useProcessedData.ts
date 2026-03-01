@@ -39,6 +39,9 @@ interface DataWorkerApi {
     exportParkingModel(): Promise<ModelWeight[] | null>;
     importParkingModel(weights: ModelWeight[]): Promise<void>;
 
+    exportEfficiencyModel(): Promise<{ weights: ModelWeight[]; normData: { mean: number[]; variance: number[] } } | null>;
+    importEfficiencyModel(data: { weights: ModelWeight[]; normData: { mean: number[]; variance: number[] } }): Promise<void>;
+
     predictDeparture(startTime: number): Promise<{ departureTime: number; duration: number } | null>;
 
     findSmartChargingWindows(trips: Trip[], settings: Settings): Promise<SmartChargingResult>;
@@ -101,6 +104,12 @@ export const useProcessedData = (
         weights: ModelWeight[];
     } | null>(parkingCacheKey, null);
 
+    const efficiencyCacheKey = activeCarId ? `ai_efficiency_predictions_${activeCarId}` : 'ai_efficiency_predictions';
+    const [efficiencyCache, setEfficiencyCache] = useLocalStorage<{
+        hash: string;
+        data: { weights: ModelWeight[]; normData: { mean: number[]; variance: number[] } };
+    } | null>(efficiencyCacheKey, null);
+
 
     // Recalculation Trigger
     const [recalcTrigger, setRecalcTrigger] = useState(0);
@@ -109,6 +118,7 @@ export const useProcessedData = (
         setAiCache(null);
         setSohCache(null);
         setParkingCache(null);
+        setEfficiencyCache(null);
 
         setRecalcTrigger(prev => prev + 1);
     };
@@ -188,8 +198,24 @@ export const useProcessedData = (
             logger.error('[useProcessedData] Error recalculating Autonomy:', error);
         } finally {
             setIsAiTraining(false);
-            // Train parking as a side effect when trips update, but don't block
+            // Train side effect models when trips update, but don't block
             recalculateParking(allTrips);
+            recalculateEfficiency(allTrips);
+        }
+    };
+
+    const recalculateEfficiency = async (trips: Trip[]) => {
+        if (!workerRef.current || trips.length <= 5) return;
+        try {
+            await workerRef.current.trainModel(trips); // This triggers trainEfficiency in worker
+            const modelData = await workerRef.current.exportEfficiencyModel();
+            if (modelData) {
+                const len = trips.length;
+                const currentHash = `count:${len}|first:${trips[0].start_timestamp}|last:${trips[len - 1].start_timestamp}|v:2`;
+                setEfficiencyCache({ hash: currentHash, data: modelData });
+            }
+        } catch (error) {
+            logger.error('[useProcessedData] Error recalculating Efficiency:', error);
         }
     };
 
@@ -369,9 +395,10 @@ export const useProcessedData = (
                             .finally(() => {
                                 isTrainingRef.current = false;
                                 if (isMounted) setIsAiTraining(false);
-                                // Train parking model as side effect
+                                // Train side-effect models
                                 if (allTrips.length >= 5) {
                                     recalculateParking(allTrips);
+                                    recalculateEfficiency(allTrips);
                                 }
                             });
                     }
@@ -424,7 +451,8 @@ export const useProcessedData = (
 
                     if (hasParkingCache) {
                         // Validate Cache Format (v2: { data, shape })
-                        const isValid = (parkingCache.weights[0] as any).data && (parkingCache.weights[0] as any).shape;
+                        const w0 = parkingCache.weights[0] as Record<string, unknown>;
+                        const isValid = w0 && 'data' in w0 && w0.data && 'shape' in w0 && w0.shape;
 
                         if (isValid) {
                             // Restore Model from Cache
@@ -444,6 +472,31 @@ export const useProcessedData = (
                     } else if (allTrips.length >= 5) {
                         // No cache - train parking model
                         recalculateParking(allTrips);
+                    }
+
+                    // RESTORE AI EFFICIENCY MODEL
+                    // The autonomy scenarios calculate logic also depends on this model
+                    const hasEfficiencyCache = efficiencyCache && efficiencyCache.hash === currentHash &&
+                        efficiencyCache.data && efficiencyCache.data.weights && efficiencyCache.data.normData;
+
+                    if (hasEfficiencyCache && !needsAutonomyTraining) { // Only restore if scenarios didn't force a retrain
+                        const ew0 = efficiencyCache.data.weights[0] as Record<string, unknown>;
+                        const isValid = ew0 && 'data' in ew0 && ew0.data && efficiencyCache.data.normData.mean;
+
+                        if (isValid) {
+                            workerRef.current.importEfficiencyModel(efficiencyCache.data).then(() => {
+                                logger.debug('[AI Efficiency] Model Restored from Cache');
+                            }).catch(err => {
+                                logger.warn('Failed to restore efficiency model', err);
+                                setEfficiencyCache(null);
+                            });
+                        } else {
+                            setEfficiencyCache(null);
+                            if (allTrips.length >= 5) recalculateEfficiency(allTrips);
+                        }
+                    } else if (allTrips.length >= 5 && !needsAutonomyTraining) {
+                        // Needed if scenarios were cached but model weight export wasn't
+                        recalculateEfficiency(allTrips);
                     }
 
                 } catch (e) {

@@ -92,9 +92,6 @@ const OverviewContent: FC<OverviewContentProps> = ({
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical, isNative } = useLayout();
 
-    // Debug: log callbacks received
-    console.log('[OverviewContent] Received callbacks:', { onMfgDateClick, onThermalStressClick });
-
     // Refs to chart instances for manual animation control - typed to match react-chartjs-2 ref expectations
     const lineChartRef = useRef<Chart<'line'>>(null!);
     const pieChartRef = useRef<Chart<'pie'>>(null!);

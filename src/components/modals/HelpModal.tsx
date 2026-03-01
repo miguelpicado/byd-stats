@@ -5,12 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Plus, HelpCircle, Bug, GitHub, Mail, Shield, Heart } from '../Icons';
 import { BYD_RED } from '@core/constants';
-import { useData } from '../../providers/DataProvider';
+import { logger } from '@core/logger';
+import { useModals } from '@/hooks/useModals';
 
 const HelpModal: React.FC = () => {
     const { t } = useTranslation();
     const navigate = useNavigate();
-    const { modals, closeModal, openModal } = useData();
+    const { modals, closeModal, openModal } = useModals();
     const [appVersion, setAppVersion] = useState('v1.2');
 
     const isOpen = modals.help;
@@ -29,7 +30,7 @@ const HelpModal: React.FC = () => {
                         }
                     }
                 } catch (error) {
-
+                    logger.warn('Failed to fetch app version:', error);
                 }
             };
 

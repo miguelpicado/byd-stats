@@ -104,7 +104,6 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
             currentTires.backRight !== newTires.backRight;
 
         if (hasChanged) {
-            console.log('[HealthReportModal] Persisting new tire pressure data to car context');
             updateCar(activeCarId, { tires: newTires });
         }
     }, [vehicleData, activeCar?.tires, activeCarId, updateCar]);

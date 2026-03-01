@@ -4,7 +4,9 @@
 // Polyfill requestAnimationFrame for Worker context — TF.js model.fit()
 // uses it internally via CustomCallback.nextFrame to yield between batches.
 if (typeof requestAnimationFrame === 'undefined') {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Web Worker lacks requestAnimationFrame; polyfill via globalThis
     (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => setTimeout(cb, 0);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Web Worker lacks cancelAnimationFrame; polyfill via globalThis
     (globalThis as any).cancelAnimationFrame = (id: number) => clearTimeout(id);
 }
 
@@ -26,7 +28,6 @@ async function ensureTensorFlow() {
         // CPU is fine for the small models used here (< 1000 params each).
         await tf.setBackend('cpu');
         await tf.ready();
-        console.log('[TF Worker] TensorFlow loaded, backend:', tf.getBackend());
     }
     return tf;
 }
@@ -40,6 +41,7 @@ let efficiencyNormData: {
     variance: number[];
 } | null = null;
 let efficiencyTrained = false;
+let lastTrainingSize = 0;
 
 let parkingModel: Sequential | null = null;
 
@@ -49,14 +51,98 @@ let sohNormData: { mean: number; variance: number } | null = null;
 // ============================================================
 // Efficiency Model (from EfficiencyModel.ts)
 // ============================================================
+
+// Efficiency model training constants
+const SPEED_MIN = 15;
+const SPEED_MAX = 160;
+const EFFICIENCY_MIN = 5;
+const EFFICIENCY_MAX = 40;
+
+const SYNTHETIC_ANCHORS = [
+    { speed: 30, distance: 15, eff: 14.5, count: 500 },
+    { speed: 80, distance: 35, eff: 17.5, count: 500 },
+    { speed: 100, distance: 100, eff: 23.5, count: 500 },
+] as const;
+
+// ============================================================
+// IndexedDB helpers — used only inside the Worker context
+// ============================================================
+
+async function saveModelToIDB(model: Sequential, key: string): Promise<void> {
+    await model.save(`indexeddb://${key}`);
+}
+
+async function loadModelFromIDB(key: string): Promise<Sequential | null> {
+    try {
+        if (!tf) return null;
+        return await tf.loadLayersModel(`indexeddb://${key}`) as Sequential;
+    } catch {
+        return null;
+    }
+}
+
+function openNormDB(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open('byd-tf-meta', 1);
+        req.onupgradeneeded = (e) => {
+            (e.target as IDBOpenDBRequest).result.createObjectStore('meta');
+        };
+        req.onsuccess = (e) => resolve((e.target as IDBOpenDBRequest).result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function saveNormToIDB(norm: { mean: number[]; variance: number[] }): Promise<void> {
+    try {
+        const db = await openNormDB();
+        await new Promise<void>((res, rej) => {
+            const tx = db.transaction('meta', 'readwrite');
+            tx.objectStore('meta').put(norm, 'efficiency-norm');
+            tx.oncomplete = () => { db.close(); res(); };
+            tx.onerror = () => { db.close(); rej(tx.error); };
+        });
+    } catch { /* non-fatal: prediction falls back to default */ }
+}
+
+async function loadNormFromIDB(): Promise<{ mean: number[]; variance: number[] } | null> {
+    try {
+        const db = await openNormDB();
+        return await new Promise<{ mean: number[]; variance: number[] } | null>((res, rej) => {
+            const tx = db.transaction('meta', 'readonly');
+            const req = tx.objectStore('meta').get('efficiency-norm');
+            req.onsuccess = () => { db.close(); res((req.result as { mean: number[]; variance: number[] }) ?? null); };
+            req.onerror = () => { db.close(); rej(req.error); };
+        });
+    } catch { return null; }
+}
+
 async function trainEfficiency(trips: Trip[]): Promise<{ loss: number; samples: number }> {
     const tfLib = await ensureTensorFlow();
 
+    if (trips.length < 5) return { loss: 0, samples: 0 };
+
+    // 1. In-session: skip if the model is already trained on the same data
+    if (efficiencyModel && efficiencyTrained && trips.length === lastTrainingSize) {
+        return { loss: 0, samples: trips.length };
+    }
+
+    // 2. Cross-session: try to restore from IndexedDB
+    const [cached, cachedNorm] = await Promise.all([
+        loadModelFromIDB('efficiency-model'),
+        loadNormFromIDB(),
+    ]);
+    if (cached && cachedNorm) {
+        efficiencyModel = cached;
+        efficiencyNormData = cachedNorm;
+        efficiencyTrained = true;
+        lastTrainingSize = trips.length;
+        return { loss: 0, samples: trips.length };
+    }
+
+    // 3. No cache — train from scratch
     efficiencyModel = null;
     efficiencyNormData = null;
     efficiencyTrained = false;
-
-    if (trips.length < 5) return { loss: 0, samples: 0 };
 
     const features: number[][] = [];
     const labels: number[][] = [];
@@ -72,21 +158,15 @@ async function trainEfficiency(trips: Trip[]): Promise<{ loss: number; samples: 
         const efficiency = (kwh * 100) / distance;
 
         // Outlier filtering
-        if (isNaN(speed) || speed > 160 || speed < 15) return;
-        if (isNaN(efficiency) || efficiency > 40 || efficiency < 5) return;
+        if (isNaN(speed) || speed > SPEED_MAX || speed < SPEED_MIN) return;
+        if (isNaN(efficiency) || efficiency > EFFICIENCY_MAX || efficiency < EFFICIENCY_MIN) return;
 
         features.push([Math.pow(speed, 2), distance]);
         labels.push([efficiency]);
     });
 
     // Synthetic Anchor Points
-    const anchors = [
-        { speed: 30, distance: 15, eff: 14.5, count: 500 },
-        { speed: 80, distance: 35, eff: 17.5, count: 500 },
-        { speed: 100, distance: 100, eff: 23.5, count: 500 }
-    ];
-
-    anchors.forEach(anchor => {
+    SYNTHETIC_ANCHORS.forEach(anchor => {
         for (let i = 0; i < anchor.count; i++) {
             features.push([Math.pow(anchor.speed, 2), anchor.distance]);
             labels.push([anchor.eff]);
@@ -140,6 +220,12 @@ async function trainEfficiency(trips: Trip[]): Promise<{ loss: number; samples: 
 
     efficiencyTrained = true;
     const loss = history.history.loss[history.history.loss.length - 1] as number;
+
+    // 4. Persist to IndexedDB for future sessions (non-blocking on failure)
+    await saveModelToIDB(efficiencyModel!, 'efficiency-model');
+    await saveNormToIDB(efficiencyNormData!);
+    lastTrainingSize = trips.length;
+
     return { loss, samples: features.length };
 }
 
@@ -159,6 +245,7 @@ function predictEfficiency(speed: number, distance: number = 50): number {
         });
 
         const inputTensor = tf!.tensor2d([normalizedInput]);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TF.js predict() returns Tensor|Tensor[]; cast needed to call dataSync()
         const output = efficiencyModel!.predict(inputTensor) as any;
         const prediction = output.dataSync()[0];
 
@@ -274,6 +361,7 @@ function predictDeparture(startTime: number): { departureTime: number; duration:
         ]];
 
         const inputTensor = tf!.tensor2d(input);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TF.js predict() returns Tensor|Tensor[]; cast needed to call dataSync()
         const output = parkingModel!.predict(inputTensor) as any;
         const duration = Math.max(0.5, output.dataSync()[0]);
 
@@ -308,8 +396,6 @@ async function trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ l
         // Relaxed from 5% to 3% to include more samples for training
         return kwh > 0 && start >= 0 && end > start && (end - start) >= 3;
     });
-
-    console.log(`[TF Worker] Training SoH with ${validCharges.length}/${charges.length} charges. (Filter: >3% delta, >0 kWh)`);
 
     if (validCharges.length < 3) {
         if (charges.length > 0) {
@@ -354,8 +440,6 @@ async function trainSoH(charges: Charge[], nominalCapacity: number): Promise<{ l
         labels.push(impliedCapacity);
         impliedCapacities.push({ cap: impliedCapacity, weight: percentAddedDecimal });
     });
-
-    console.log(`[TF Worker] After capacity sanity filter: ${features.length} samples (rejected ${rejectedByCapacity} with capacity outside ${(nominalCapacity * 0.5).toFixed(1)}-${(nominalCapacity * 1.5).toFixed(1)} kWh)`);
 
     if (features.length < 3) {
         console.warn(`[TF Worker] Too few samples after sanity filter (${features.length}). Need at least 3.`);
@@ -431,6 +515,7 @@ function sohPredictInternal(days: number): number {
     return tf.tidy(() => {
         const { mean, variance } = sohNormData!;
         const normalizedInput = (days - mean) / (Math.sqrt(variance) + 1e-6);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any -- TF.js predict() returns Tensor|Tensor[]; cast needed to call dataSync()
         const output = sohModel!.predict(tf!.tensor2d([normalizedInput], [1, 1])) as any;
         return output.dataSync()[0];
     });
@@ -440,8 +525,6 @@ interface SoHPoint { x: string; y: number; cap: number }
 interface SoHTrend { x: string; y: number }
 
 function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHPoint[]; trend: SoHTrend[]; samples: number } {
-    console.log(`[TF Worker] getSoHStats called with ${charges.length} charges, capacity: ${nominalCapacity}`);
-
     if (!sohModel) {
         console.warn('[TF Worker] getSoHStats: No SoH model available');
         return { points: [], trend: [], samples: 0 };
@@ -455,8 +538,6 @@ function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHP
         // Aligned with trainSoH (3% delta) to ensure consistent sample reporting
         return kwh > 0 && start >= 0 && end > start && (end - start) >= 3;
     }).sort((a, b) => a.date.localeCompare(b.date));
-
-    console.log(`[TF Worker] getSoHStats: ${validCharges.length} valid charges`);
 
     if (validCharges.length === 0) {
         console.warn('[TF Worker] getSoHStats: No valid charges');
@@ -477,8 +558,6 @@ function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHP
         };
     }).filter((p): p is SoHPoint => p !== null && p.cap > nominalCapacity * 0.5 && p.cap < nominalCapacity * 1.5);
 
-    console.log(`[TF Worker] getSoHStats: Generated ${points.length} points after capacity filter`);
-
     const trend = points.map(p => {
         const days = (new Date(p.x).getTime() - firstDate) / (1000 * 3600 * 24);
         const predCap = sohPredictInternal(days);
@@ -488,7 +567,6 @@ function getSoHStats(charges: Charge[], nominalCapacity: number): { points: SoHP
         };
     });
 
-    console.log(`[TF Worker] getSoHStats: Returning ${points.length} samples`);
     return { points, trend, samples: points.length };
 }
 
@@ -560,8 +638,42 @@ const api = {
         const tensors = weights.map(w => tfLib.tensor(w.data, w.shape));
         parkingModel.setWeights(tensors);
         tensors.forEach((t) => t.dispose());
+    },
 
-        console.debug('[TF Worker] Parking model restored from cache.');
+    async exportEfficiencyModel(): Promise<{ weights: { data: number[], shape: number[] }[]; normData: { mean: number[], variance: number[] } } | null> {
+        if (!efficiencyModel || !efficiencyNormData) return null;
+        return {
+            weights: efficiencyModel.getWeights().map((w) => ({
+                data: Array.from(w.dataSync() as Float32Array),
+                shape: w.shape as number[]
+            })),
+            normData: efficiencyNormData
+        };
+    },
+
+    async importEfficiencyModel(data: { weights: { data: number[], shape: number[] }[]; normData: { mean: number[], variance: number[] } }): Promise<void> {
+        const tfLib = await ensureTensorFlow();
+        if (!data || !data.weights || !data.normData) return;
+
+        efficiencyModel = tfLib.sequential();
+        efficiencyModel.add(tfLib.layers.dense({
+            units: 1,
+            inputShape: [2],
+            activation: 'linear',
+            useBias: true
+        }));
+
+        efficiencyModel.compile({
+            optimizer: tfLib.train.adam(0.1),
+            loss: 'meanSquaredError'
+        });
+
+        const tensors = data.weights.map(w => tfLib.tensor(w.data, w.shape));
+        efficiencyModel.setWeights(tensors);
+        tensors.forEach((t) => t.dispose());
+
+        efficiencyNormData = data.normData;
+        efficiencyTrained = true;
     },
 
     trainSoH,

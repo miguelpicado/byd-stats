@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
         devOptions: {
           enabled: false
         },
-        includeAssets: ['favicon.png', 'app_icon_v2.png', 'app_logo.png', 'byd_logo.png'],
+        includeAssets: ['app_icon_v2.png', 'byd_logo.png'],
         manifest: {
           name: 'BYD Stats',
           short_name: 'BYD Stats',
@@ -68,8 +68,7 @@ export default defineConfig(({ mode }) => {
                 'application/x-sqlite3': ['.db', '.sqlite', '.sqlite3'],
                 'application/vnd.sqlite3': ['.db', '.sqlite', '.sqlite3'],
                 'application/octet-stream': ['.db']
-              },
-              launch_type: 'single-client'
+              }
             }
           ]
         },
@@ -87,7 +86,6 @@ export default defineConfig(({ mode }) => {
         '@': path.resolve(__dirname, './src'),
         '@components': path.resolve(__dirname, './src/components'),
         '@hooks': path.resolve(__dirname, './src/hooks'),
-        '@utils': path.resolve(__dirname, './src/core'),
         '@core': path.resolve(__dirname, './src/core'),
         '@features': path.resolve(__dirname, './src/features'),
         '@tabs': path.resolve(__dirname, './src/features/dashboard/tabs'),
@@ -98,6 +96,7 @@ export default defineConfig(({ mode }) => {
       format: 'es' // Fix for vite-plugin-pwa - IIFE not supported in newer Vite
     },
     build: {
+      sourcemap: false,
       rollupOptions: {
         external: ['fs', 'path', 'crypto'], // Externalize node built-ins
         output: {
@@ -106,21 +105,24 @@ export default defineConfig(({ mode }) => {
             'chart-vendor': ['chart.js', 'react-chartjs-2'],
             'utils-vendor': ['i18next', 'react-i18next', 'i18next-browser-languagedetector', 'i18next-http-backend'],
             'capacitor-vendor': ['@capacitor/core', '@capacitor/app', '@capacitor/filesystem', '@capacitor/status-bar'],
+            'tensorflow-vendor': [
+              '@tensorflow/tfjs',
+              '@tensorflow/tfjs-core',
+              '@tensorflow/tfjs-backend-cpu',
+              '@tensorflow/tfjs-backend-webgl',
+              '@tensorflow/tfjs-converter',
+              '@tensorflow/tfjs-data',
+              '@tensorflow/tfjs-layers',
+            ],
           }
         }
       },
-      chunkSizeWarningLimit: 1000 // Increase limit slightly to avoid warnings for reasonable chunks
+      chunkSizeWarningLimit: 500,
     },
     // Strip all console.* calls and debugger statements from production bundles
     esbuild: mode === 'production' ? { drop: ['console', 'debugger'] } : {},
     optimizeDeps: {
       exclude: ['fs'] // Exclude fs from optimization
     },
-    test: {
-      globals: true,
-      environment: 'jsdom',
-      setupFiles: './src/setupTests.js',
-      css: false,
-    }
   }
 })

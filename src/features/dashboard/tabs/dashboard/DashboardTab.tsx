@@ -137,13 +137,15 @@ const DashboardTab: React.FC = () => {
                 onOpenModal={handleOpenModal}
             />
 
-            {/* Car Image (Visual only) */}
+            {/* Car Image + Charging Overlay */}
             <CarVisualization
                 onForceRefresh={handleForceMapRefresh}
                 trips={trips}
                 charges={charges}
                 recalculateSoH={recalculateSoH}
                 recalculateAutonomy={recalculateAutonomy}
+                vehicleStatus={vehicleStatus}
+                batteryCapacityKwh={settings?.batterySize ?? 60.48}
             />
 
             {/* Vehicle Control & Status Panel (Tires, Windows, Doors, Climate) */}

@@ -119,7 +119,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                 abrpUserToken: abrpToken.trim(),
             });
             toast.success(abrpToken.trim() ? 'Token ABRP guardado' : 'Token ABRP eliminado');
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Error saving ABRP token:', err);
             toast.error('Error al guardar el token');
         } finally {
@@ -170,9 +170,9 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
             } else {
                 setError('No se encontraron vehículos en la cuenta');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('BYD connect error:', err);
-            setError(err.message || 'Error al conectar con BYD');
+            setError(err instanceof Error ? err.message : 'Error al conectar con BYD');
         } finally {
             setIsLoading(false);
         }
@@ -198,9 +198,9 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
 
             setSuccess('Desconectado correctamente');
             onConnectionChange?.(false);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('BYD disconnect error:', err);
-            setError(err.message || 'Error al desconectar');
+            setError(err instanceof Error ? err.message : 'Error al desconectar');
         } finally {
             setIsLoading(false);
         }
@@ -246,9 +246,9 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
             } else {
                 setError('Error al obtener dump');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('BYD dump error:', err);
-            setError(err.message || 'Error al obtener dump');
+            setError(err instanceof Error ? err.message : 'Error al obtener dump');
         } finally {
             setIsLoading(false);
         }

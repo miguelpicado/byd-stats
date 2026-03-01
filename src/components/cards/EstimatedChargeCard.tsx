@@ -17,7 +17,7 @@ interface EstimatedChargeCardProps {
     trips?: Trip[];
 }
 
-const EstimatedChargeCard: React.FC<EstimatedChargeCardProps> = ({ summary, settings, stats, charges, trips }) => {
+const EstimatedChargeCard: React.FC<EstimatedChargeCardProps> = React.memo(({ summary, settings, stats, charges, trips }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
     const { findSmartChargingWindows } = useData();
@@ -95,6 +95,6 @@ const EstimatedChargeCard: React.FC<EstimatedChargeCardProps> = ({ summary, sett
             />
         </>
     );
-};
+});
 
 export default EstimatedChargeCard;

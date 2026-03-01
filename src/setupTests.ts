@@ -43,6 +43,15 @@ if (!window.URL.createObjectURL) {
     window.URL.createObjectURL = vi.fn();
 }
 
+// Mock ResizeObserver (not implemented in jsdom)
+if (!global.ResizeObserver) {
+    global.ResizeObserver = class ResizeObserver {
+        observe() { }
+        unobserve() { }
+        disconnect() { }
+    } as any;
+}
+
 // Cleanup after each test
 import { cleanup } from '@testing-library/react';
 import { afterEach } from 'vitest';

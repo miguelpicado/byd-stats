@@ -73,7 +73,7 @@ const Header: React.FC = memo(() => {
                     {/* Logo y título */}
                     <div className="flex items-center gap-2 sm:gap-3">
                         <img
-                            src="app_logo.png"
+                            src="app_icon_v2.png"
                             className={`${layoutMode === 'horizontal' ? 'h-10 w-auto' : 'w-12 sm:w-16 md:w-20'} object-contain`}
                             alt="BYD Logo"
                         />

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useCallback } from 'react';
 import StatCard from '@components/ui/StatCard';
 import LiveVehicleStatus from '@components/cards/LiveVehicleStatus';
 import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
@@ -41,9 +41,9 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
   const [showHealthModal, setShowHealthModal] = useState(false);
   const [loadingButton, setLoadingButton] = useState<string | null>(null);
 
-  const handleCardClick = (type: TripInsightType) => {
+  const handleCardClick = useCallback((type: TripInsightType) => {
     setInsightType(type);
-  };
+  }, []);
 
   const handleCommand = async (
     command: string,
@@ -63,8 +63,8 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
       } else {
         toast.error(`${command} failed`);
       }
-    } catch (error: any) {
-      toast.error(`Error: ${error.message || 'Unknown error'}`);
+    } catch (error: unknown) {
+      toast.error(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setLoadingButton(null);
     }
@@ -129,7 +129,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
     }
   };
 
-  const handleLocate = () => handleCommand('Locate', bydFlashLights);
+  const handleLocate = useCallback(() => handleCommand('Locate', bydFlashLights), [activeCar?.vin, isNative]);
 
   // Calculate system health anomalies
   const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies } = useData();
@@ -149,6 +149,21 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
 
   const isAiReady = aiLoss !== null && aiLoss < 0.5;
 
+  const navigateToHistory = useCallback(() => {
+    window.location.hash = 'history';
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, []);
+
+  const navigateToCharges = useCallback(() => {
+    window.location.hash = 'charges';
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  }, []);
+
+  const handleOpenBatteryStatus = useCallback(() => openModal('batteryStatus'), [openModal]);
+  const handleShowRangeModal = useCallback(() => setShowRangeModal(true), []);
+  const handleShowHealthModal = useCallback(() => setShowHealthModal(true), []);
+  const handleAddCharge = useCallback(() => openModal('addCharge'), [openModal]);
+
   if (!summary) {
     return <div className="text-center py-12 text-slate-500">No data available</div>;
   }
@@ -158,7 +173,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
       <div className="space-y-4">
         {/* Row 1: SoC Actual + Autonomía */}
         <div className={`grid grid-cols-2 gap-3 sm:gap-4`}>
-          <LiveVehicleStatus onClick={() => openModal('batteryStatus')} />
+          <LiveVehicleStatus onClick={handleOpenBatteryStatus} />
           <StatCard
             isVerticalMode={isVertical}
             isLarger={isLargerCard}
@@ -168,7 +183,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
             value={summary.estimatedRange}
             unit="km"
             color={isAiReady ? "bg-indigo-500/20 text-indigo-400" : "bg-amber-500/20 text-amber-400"}
-            onClick={() => setShowRangeModal(true)}
+            onClick={handleShowRangeModal}
           />
         </div>
 
@@ -247,7 +262,7 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
               ? "bg-red-500/20 text-red-500"
               : (warningAnomalies > 0 ? "bg-amber-500/20 text-amber-500" : "bg-emerald-500/20 text-emerald-500")}
             sub={hasAnomalies ? 'Ver detalles' : 'Todo correcto'}
-            onClick={() => setShowHealthModal(true)}
+            onClick={handleShowHealthModal}
           />
         </div>
 
@@ -286,27 +301,21 @@ const VehicleTab: React.FC<VehicleTabProps> = ({
         {/* Row 6: Navigation Buttons (Trips, Charges, New Charge) */}
         <div className={`grid grid-cols-3 gap-3 sm:gap-4`}>
           <button
-            onClick={() => {
-              window.location.hash = 'history';
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            }}
+            onClick={navigateToHistory}
             className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-slate-500/20 text-slate-400 hover:bg-slate-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
           >
             <Navigation className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="text-xs sm:text-sm font-medium">Viajes</span>
           </button>
           <button
-            onClick={() => {
-              window.location.hash = 'charges';
-              window.dispatchEvent(new PopStateEvent('popstate'));
-            }}
+            onClick={navigateToCharges}
             className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
           >
             <Battery className="w-5 h-5 sm:w-6 sm:h-6" />
             <span className="text-xs sm:text-sm font-medium">Cargas</span>
           </button>
           <button
-            onClick={() => openModal('addCharge')}
+            onClick={handleAddCharge}
             className="flex flex-col items-center justify-center gap-2 p-3 sm:p-4 rounded-lg bg-cyan-500/20 text-cyan-400 hover:bg-cyan-500/30 transition-colors min-h-[100px] sm:min-h-[120px]"
           >
             <Plus className="w-5 h-5 sm:w-6 sm:h-6" />

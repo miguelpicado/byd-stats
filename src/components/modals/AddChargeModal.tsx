@@ -289,12 +289,7 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
         }
 
         // Trigger SoH recalculation in background
-        if ((stats as any)?.recalculateSoH) {
-            (stats as any).recalculateSoH();
-        } else if (recalculateSoH) {
-            // Fallback if stats object isn't holding it directly
-            recalculateSoH();
-        }
+        recalculateSoH?.();
 
         onClose();
     };

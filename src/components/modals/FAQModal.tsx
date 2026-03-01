@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { HelpCircle, ChevronDown, ChevronUp } from '../Icons';
 import ModalHeader from '../common/ModalHeader';
 import { BYD_RED } from '@core/constants';
-import { useData } from '../../providers/DataProvider';
+import { useModals } from '@/hooks/useModals';
 
 interface FAQItemProps {
     title: string;
@@ -39,7 +39,7 @@ const FAQItem: React.FC<FAQItemProps> = ({ title, content }) => {
 
 const FAQModal: React.FC = () => {
     const { t } = useTranslation();
-    const { modals, closeModal } = useData();
+    const { modals, closeModal } = useModals();
 
     const isOpen = modals.faq;
     const onClose = () => closeModal('faq');

@@ -9,6 +9,12 @@ export default defineConfig({
         globals: true,
         environment: 'jsdom',
         setupFiles: ['./src/setupTests.ts'],
+        exclude: [
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/.{idea,git,cache,output,temp}/**',
+            'functions/lib/**',
+        ],
         coverage: {
             provider: 'v8',
             reporter: ['text', 'html', 'lcov'],
@@ -20,13 +26,14 @@ export default defineConfig({
                 '**/*.test.tsx',
                 'src/i18n/',
                 'src/locales/',
+                'functions/lib/**',
             ],
             thresholds: {
                 global: {
-                    statements: 60,
-                    branches: 50,
-                    functions: 60,
-                    lines: 60,
+                    statements: 70,
+                    branches: 70,
+                    functions: 70,
+                    lines: 70,
                 },
             },
         },

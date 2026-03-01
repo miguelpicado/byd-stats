@@ -74,6 +74,19 @@ export interface VehicleStatus {
         heading?: number;
     };
 
+    // Charging detail (from cloudProbeVehicle)
+    chargingDetail?: {
+        soc: number;
+        chargeType?: string | null;
+        remainingMinutes?: number | null;
+        targetSoc?: number | null;
+        initialSoC?: number | null;
+        chargingStartTime?: Timestamp;
+        estimatedPowerKw?: number | null;
+        scheduledCharging?: boolean;
+        lastUpdate?: Timestamp;
+    };
+
     // Metadata
     lastUpdate?: Timestamp;
 }

@@ -2,14 +2,14 @@ import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
-import { useData } from '@/providers/DataProvider';
+import { useChargesContextData } from '@/hooks/useChargesContext';
 import { Charge } from '@/types';
 
 export const PriceSettings: React.FC = () => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
     const { activeCar } = useCar();
-    const { charges } = useData();
+    const { charges } = useChargesContextData();
 
     // Calculate average electricity and fuel prices
     const { avgElectricPrice, avgFuelPrice, electricStats, fuelStats } = useMemo(() => {

@@ -76,7 +76,7 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
 
     // Compute display values using normalize utility
     const soc = normalizeSoCToPercent(vehicleData?.lastSoC);
-    const isCharging = vehicleData?.chargingActive === true || (vehicleData as any)?.isCharging === true;
+    const isCharging = vehicleData?.chargingActive === true || ('isCharging' in (vehicleData ?? {}) && (vehicleData as { isCharging?: boolean })?.isCharging === true);
     const isConnected = !!statusId;
     const hasData = vehicleData !== null;
     const isTripping = vehicleData?.activeTripId != null;

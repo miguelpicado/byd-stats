@@ -42,7 +42,7 @@ async function findSmartChargingWindows(
         // Calculate historical efficiency from valid trips
         let totalValidKm = 0;
         let totalValidKwh = 0;
-        
+
         trips.forEach(t => {
             if (t.trip && t.trip > 0 && t.electricity && t.electricity > 0) {
                 totalValidKm += t.trip;
@@ -87,10 +87,10 @@ async function findSmartChargingWindows(
         });
 
         // Filter out trips without timestamp, without electricity, or with glitched 1970 timestamps
-        const valid = tripsWithElectricity.filter(t => 
-            t.start_timestamp && 
+        const valid = tripsWithElectricity.filter(t =>
+            t.start_timestamp &&
             t.start_timestamp > 1600000000 && // Ignore glitches from before 2020
-            t.electricity && 
+            t.electricity &&
             t.electricity > 0
         );
 
@@ -181,20 +181,31 @@ async function findSmartChargingWindows(
         await tf.trainParking(trips);
     }
 
-    // We simulate hour by hour for 7 days
+    // Generar todas las fechas de simulacion primero
+    const simDates: number[] = [];
     for (let d = 0; d < 7; d++) {
-        const jsDayIndex = (1 + d) % 7; // Mon(1) -> Sun(0)
-        const dayName = days[jsDayIndex];
-
-        // Probe every 3 hours to "discover" stay windows
         for (let h = 0; h < 24; h += 3) {
             const simDate = new Date(startOfWeek);
             simDate.setDate(simDate.getDate() + d);
             simDate.setHours(h, 0, 0, 0);
+            simDates.push(simDate.getTime());
+        }
+    }
 
-            // Delegate to TF worker
-            const prediction = await tf.predictDeparture(simDate.getTime());
-            if (!prediction || prediction.duration < 1.5) continue;
+    // Predecir en paralelo (batch de 56 llamadas)
+    const predictions = await Promise.all(
+        simDates.map(ts => tf.predictDeparture(ts))
+    );
+
+    // Procesar resultados
+    for (let i = 0; i < simDates.length; i++) {
+        const prediction = predictions[i];
+        if (!prediction || prediction.duration < 1.5) continue;
+
+        const d = Math.floor(i / 8);
+        const h = (i % 8) * 3;
+        const jsDayIndex = (1 + d) % 7; // Mon(1) -> Sun(0)
+        const dayName = days[jsDayIndex];
 
             const naturalStartMins = h * 60;
             const naturalDurationMins = prediction.duration * 60;
@@ -209,9 +220,9 @@ async function findSmartChargingWindows(
                     let isWeekend = isWeekendTariff(jsDayIndex);
 
                     // Candidate Blocks
-                    const blocks = isWeekend 
-                        ? [ { s: 0, e: 8 * 60 }, { s: 8 * 60, e: 22 * 60 } ] // Night block and Day block (08:00 to 22:00)
-                        : [ { s: 0, e: 8 * 60 } ]; // Weekday valley only
+                    const blocks = isWeekend
+                        ? [{ s: 0, e: 8 * 60 }, { s: 8 * 60, e: 22 * 60 }] // Night block and Day block (08:00 to 22:00)
+                        : [{ s: 0, e: 8 * 60 }]; // Weekday valley only
 
                     blocks.forEach(block => {
                         const wStart = Math.max(start, block.s);
@@ -248,7 +259,6 @@ async function findSmartChargingWindows(
                     });
                 }
             });
-        }
     }
 
     // 4. Merge & Apply HITL
@@ -302,6 +312,18 @@ async function findSmartChargingWindows(
     const selected: typeof candidates = [];
     let gatheredKwh = 0;
 
+    const occupiedSlots = new Set<string>();
+
+    function getSlotKeys(dayIndex: number, start: number, end: number): string[] {
+        const keys: string[] = [];
+        let t = Math.floor(start / 30) * 30;
+        while (t < end) {
+            keys.push(`${dayIndex}_${t}`);
+            t += 30;
+        }
+        return keys;
+    }
+
     while (gatheredKwh < targetKwh) {
         let bestCand = null;
         let maxEffectiveScore = -1;
@@ -309,10 +331,8 @@ async function findSmartChargingWindows(
         for (const cand of deduped) {
             if (selected.includes(cand)) continue;
 
-            const hasOverlap = selected.some(s =>
-                s.dayIndex === cand.dayIndex &&
-                Math.max(s.startMins, cand.startMins) < Math.min(s.endMins, cand.endMins)
-            );
+            const candidateSlots = getSlotKeys(cand.dayIndex, cand.startMins, cand.endMins);
+            const hasOverlap = candidateSlots.some(s => occupiedSlots.has(s));
             if (hasOverlap) continue;
 
             // Contiguity Bonus
@@ -341,6 +361,7 @@ async function findSmartChargingWindows(
 
         if (!bestCand) break;
         selected.push(bestCand);
+        getSlotKeys(bestCand.dayIndex, bestCand.startMins, bestCand.endMins).forEach(s => occupiedSlots.add(s));
         gatheredKwh += bestCand.duration * chargePower;
     }
 
@@ -443,6 +464,16 @@ const api = {
     async importParkingModel(weights: { data: number[]; shape: number[] }[]) {
         const tf = await getTfWorker();
         return tf.importParkingModel(weights);
+    },
+
+    async exportEfficiencyModel() {
+        const tf = await getTfWorker();
+        return tf.exportEfficiencyModel();
+    },
+
+    async importEfficiencyModel(data: { weights: { data: number[]; shape: number[] }[]; normData: { mean: number[]; variance: number[] } }) {
+        const tf = await getTfWorker();
+        return tf.importEfficiencyModel(data);
     },
 
     async dispose() {

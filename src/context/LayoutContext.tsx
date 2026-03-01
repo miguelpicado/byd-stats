@@ -76,15 +76,15 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
                 // Apply dense scale for compact mode
                 if (isCompactSize) {
-                    document.documentElement.style.fontSize = '13.5px';
+                    document.documentElement.classList.add('compact-mode');
                 } else {
-                    document.documentElement.style.fontSize = '';
+                    document.documentElement.classList.remove('compact-mode');
                 }
             } else {
                 // In vertical mode, strictly disable these
                 setIsFullscreenBYD(false);
                 setIsCompact(false);
-                document.documentElement.style.fontSize = '';
+                document.documentElement.classList.remove('compact-mode');
             }
         };
 
@@ -96,11 +96,9 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
         resizeObserver.observe(document.documentElement);
 
-        window.addEventListener('resize', checkLayout);
         window.addEventListener('orientationchange', checkLayout);
         return () => {
             resizeObserver.disconnect();
-            window.removeEventListener('resize', checkLayout);
             window.removeEventListener('orientationchange', checkLayout);
         };
     }, []);
@@ -112,7 +110,7 @@ export const LayoutProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         const searchParams = new URLSearchParams(window.location.search);
         const isModeApk = searchParams.get('mode') === 'apk' || window.location.href.includes('mode=apk');
         // Initial detection
-        const isNativeDetected = isModeApk || (window as any).Capacitor?.isNativePlatform();
+        const isNativeDetected = isModeApk || window.Capacitor?.isNativePlatform() === true;
 
         return {
             layoutMode,

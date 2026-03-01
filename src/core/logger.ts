@@ -46,7 +46,7 @@ export const logger = {
      */
     info: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.INFO) {
-            console.log('[INFO]', ...args);
+            console.info('[INFO]', ...args);
         }
     },
 
@@ -55,7 +55,7 @@ export const logger = {
      */
     warn: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.WARN) {
-            console.log('[WARN]', ...args);
+            console.warn('[WARN]', ...args);
         }
     },
 
@@ -64,7 +64,7 @@ export const logger = {
      */
     error: (...args: unknown[]) => {
         if (logger._currentLevel <= LogLevel.ERROR) {
-            console.log('[ERROR]', ...args);
+            console.error('[ERROR]', ...args);
         }
     }
 };

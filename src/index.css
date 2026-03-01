@@ -67,6 +67,10 @@ body,
   animation: modalScaleIn 300ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
+body.modal-open {
+  overflow: hidden;
+}
+
 /* Logic for backdrop blur transition */
 .backdrop-blur-sm {
   backdrop-filter: blur(4px);
@@ -146,3 +150,8 @@ html:not(.dark) button {
 .leaflet-bar a {
   color: #333 !important;
 }
+/* Compact mode font scaling */
+.compact-mode {
+  font-size: 13.5px;
+}
+

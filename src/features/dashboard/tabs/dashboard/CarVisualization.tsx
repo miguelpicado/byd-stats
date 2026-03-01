@@ -4,6 +4,8 @@ import { bydWakeVehicle } from '@/services/bydApi';
 import toast from 'react-hot-toast';
 import { logger } from '@core/logger';
 import type { Trip, Charge } from '@/types';
+import type { VehicleStatus } from '@/hooks/useVehicleStatus';
+import ChargingOverlay from './ChargingOverlay';
 
 interface CarVisualizationProps {
     onForceRefresh?: () => void;
@@ -11,6 +13,8 @@ interface CarVisualizationProps {
     charges?: Charge[];
     recalculateSoH?: () => Promise<void>;
     recalculateAutonomy?: () => Promise<void>;
+    vehicleStatus?: VehicleStatus | null;
+    batteryCapacityKwh?: number;
 }
 
 const CarVisualization: React.FC<CarVisualizationProps> = ({
@@ -18,7 +22,9 @@ const CarVisualization: React.FC<CarVisualizationProps> = ({
     trips = [],
     charges = [],
     recalculateSoH,
-    recalculateAutonomy
+    recalculateAutonomy,
+    vehicleStatus,
+    batteryCapacityKwh = 0
 }) => {
     const { activeCar } = useCar();
     const [tapCount, setTapCount] = useState(0);
@@ -101,6 +107,9 @@ const CarVisualization: React.FC<CarVisualizationProps> = ({
         setLastTap(now);
     };
 
+    // Match LiveVehicleStatus detection: check both fields (Firestore may have either)
+    const isCharging = vehicleStatus?.chargingActive === true || ('isCharging' in (vehicleStatus ?? {}) && (vehicleStatus as { isCharging?: boolean })?.isCharging === true);
+
     return (
         <div
             className="w-full h-52 relative flex items-center justify-center py-1 shrink-0 cursor-pointer"
@@ -109,7 +118,7 @@ const CarVisualization: React.FC<CarVisualizationProps> = ({
             <img
                 src="/assets/byd_seal.png?t=1"
                 alt="BYD Seal 2024"
-                className="w-full h-full object-contain select-none scale-[0.8] relative z-10"
+                className={`w-full h-full object-contain select-none scale-[0.8] relative z-0 transition-all duration-500 ${isCharging ? 'blur-[2px] opacity-30' : ''}`}
                 onError={(e) => {
                     e.currentTarget.parentElement?.classList.add('border-2', 'border-red-500');
                     console.error('Image failed to load:', e.currentTarget.src);
@@ -117,11 +126,18 @@ const CarVisualization: React.FC<CarVisualizationProps> = ({
             />
             {/* Ground shadow */}
             <div
-                className="absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] h-6 rounded-[50%] blur-sm opacity-60"
+                className={`absolute bottom-6 left-1/2 -translate-x-1/2 w-[85%] h-6 rounded-[50%] blur-sm transition-opacity duration-500 ${isCharging ? 'opacity-20' : 'opacity-60'}`}
                 style={{
                     background: 'radial-gradient(ellipse at center, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.4) 30%, rgba(0,0,0,0.1) 60%, transparent 80%)'
                 }}
             />
+            {/* Charging overlay */}
+            {isCharging && vehicleStatus && (
+                <ChargingOverlay
+                    vehicleStatus={vehicleStatus}
+                    batteryCapacityKwh={batteryCapacityKwh}
+                />
+            )}
         </div>
     );
 };

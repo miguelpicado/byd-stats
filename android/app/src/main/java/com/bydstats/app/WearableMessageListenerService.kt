@@ -1,6 +1,7 @@
 package com.bydstats.app
 
 import android.util.Log
+import com.bydstats.app.BuildConfig
 import com.google.android.gms.wearable.MessageEvent
 import com.google.android.gms.wearable.WearableListenerService
 
@@ -42,41 +43,69 @@ class WearableMessageListenerService : WearableListenerService() {
         }
     }
 
+    private fun getSecurePrefs(): android.content.SharedPreferences {
+        return try {
+            val masterKey = androidx.security.crypto.MasterKey.Builder(this)
+                .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+                .build()
+            androidx.security.crypto.EncryptedSharedPreferences.create(
+                this,
+                "WearSyncPrefs",
+                masterKey,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+            )
+        } catch (e: Exception) {
+            Log.e("WearableService", "EncryptedSharedPreferences unavailable, falling back", e)
+            getSharedPreferences("WearSyncPrefs", android.content.Context.MODE_PRIVATE)
+        }
+    }
+
     private fun handleNativeAction(action: String) {
-        val prefs = getSharedPreferences("WearSyncPrefs", android.content.Context.MODE_PRIVATE)
+        val prefs = getSecurePrefs()
         val vin = prefs.getString("last_vin", null)
-        
+
         if (vin == null) {
             Log.e("WearableService", "NATIVE ACTION FAILED: No VIN stored")
             return
         }
 
         val auth = FirebaseAuth.getInstance()
-        var user = auth.currentUser
-        
-        if (user == null) {
-            Log.w("WearableService", "Auth user is null, waiting 500ms...")
-            Thread.sleep(500)
-            user = auth.currentUser
-        }
+        val user = auth.currentUser
 
         if (user == null) {
-            Log.e("WearableService", "NATIVE ACTION FAILED: User still null after wait")
+            Log.w("WearableService", "Auth user is null, waiting 500ms...")
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                val retriedUser = auth.currentUser
+                if (retriedUser == null) {
+                    Log.e("WearableService", "NATIVE ACTION FAILED: User still null after wait")
+                    return@postDelayed
+                }
+                triggerCloudFunction(action, vin, retriedUser)
+            }, 500)
             return
         }
 
-        val functionName = when(action) {
+        triggerCloudFunction(action, vin, user)
+    }
+
+    private fun triggerCloudFunction(
+        action: String,
+        vin: String,
+        user: com.google.firebase.auth.FirebaseUser
+    ) {
+        val functionName = when (action) {
             "unlock" -> "bydUnlockV2"
             "flash" -> "bydFlashLightsV2"
             "climate" -> "bydStartClimateV2"
             else -> return
         }
 
-        Log.i("WearableService", "Triggering native $action ($functionName) for VIN: $vin (User: ${user.uid})")
-        
+        if (BuildConfig.DEBUG) Log.i("WearableService", "Triggering native $action ($functionName) for VIN: ***${vin.takeLast(4)} (User: ${user.uid.take(8)}...)")
+
         val functions = FirebaseFunctions.getInstance("europe-west1")
         val data = hashMapOf<String, Any>("vin" to vin)
-        
+
         // For climate, we need to provide a temperature if we use startClimateV2
         if (action == "climate") {
             data["temperature"] = 21

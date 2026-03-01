@@ -313,7 +313,7 @@ export function useDatabase(): UseDatabaseReturn {
             stmt.free();
 
             const data = db.export();
-            const blob = new Blob([data as any], { type: 'application/x-sqlite3' });
+            const blob = new Blob([data as BlobPart], { type: 'application/x-sqlite3' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;

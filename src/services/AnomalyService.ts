@@ -17,21 +17,24 @@ export const AnomalyService = {
     checkSystemHealth: (data: ProcessedData, settings: Settings, charges: Charge[], trips: Trip[]): Anomaly[] => {
         const anomalies: Anomaly[] = [];
 
+        // Sort once so sub-methods receive pre-ordered data without re-sorting
+        const sortedTrips = [...trips].sort((a, b) => a.start_timestamp - b.start_timestamp);
+        const sortedCharges = [...charges].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
         // 1. Battery Health Check
         const batteryAnomalies = checkBatteryHealth(data);
         anomalies.push(...batteryAnomalies);
 
         // 2. Phantom Drain Check
-        // Use provided trips list
-        const drainAnomalies = AnomalyService.analyzePhantomDrain(trips, settings);
+        const drainAnomalies = AnomalyService.analyzePhantomDrain(sortedTrips, settings);
         anomalies.push(...drainAnomalies);
 
         // 3. Charging Efficiency Check
-        const chargeAnomalies = AnomalyService.analyzeCharges(charges, settings, trips);
+        const chargeAnomalies = AnomalyService.analyzeCharges(sortedCharges, settings, sortedTrips);
         anomalies.push(...chargeAnomalies);
 
         // 4. Tire/Efficiency Health
-        const tireAnomalies = AnomalyService.analyzeTireHealth(trips, data.summary);
+        const tireAnomalies = AnomalyService.analyzeTireHealth(sortedTrips, data.summary);
         anomalies.push(...tireAnomalies);
 
         return anomalies;
@@ -41,8 +44,7 @@ export const AnomalyService = {
         const anomalies: Anomaly[] = [];
         const batteryCapacity = parseFloat(settings.batterySize.toString()) || 60; // Default 60kWh
 
-        // Sort by date desc
-        const recentCharges = [...charges].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+        const recentCharges = charges.slice(0, 5);
 
         recentCharges.forEach(charge => {
             if (charge.kwhCharged > 0 && charge.initialPercentage !== undefined && charge.finalPercentage !== undefined) {
@@ -68,14 +70,10 @@ export const AnomalyService = {
 
                         chargeTime = new Date(y, m, d, h, min).getTime();
 
-                        // Find gap in trips
-                        // Sort trips by start time
-                        const sortedTrips = [...trips].sort((a, b) => a.start_timestamp - b.start_timestamp);
-
-                        // Find trip ending BEFORE charge
-                        for (let i = 0; i < sortedTrips.length; i++) {
-                            const t = sortedTrips[i];
-                            const nextT = sortedTrips[i + 1];
+                        // Find gap in trips (trips is expected to be pre-sorted by start_timestamp)
+                        for (let i = 0; i < trips.length; i++) {
+                            const t = trips[i];
+                            const nextT = trips[i + 1];
 
                             // Check if charge happened after this trip
                             if (t.end_timestamp < chargeTime && (!nextT || nextT.start_timestamp > chargeTime)) {
@@ -139,14 +137,11 @@ export const AnomalyService = {
 
     analyzePhantomDrain: (trips: Trip[], settings: Settings): Anomaly[] => {
         const anomalies: Anomaly[] = [];
-        // Sort trips chronologically
-        const sortedTrips = [...trips].sort((a, b) => a.start_timestamp - b.start_timestamp);
-
         const batteryCapacity = parseFloat(settings.batterySize.toString()) || 60;
 
-        for (let i = 0; i < sortedTrips.length - 1; i++) {
-            const currentTrip = sortedTrips[i];
-            const nextTrip = sortedTrips[i + 1];
+        for (let i = 0; i < trips.length - 1; i++) {
+            const currentTrip = trips[i];
+            const nextTrip = trips[i + 1];
 
             // Gap between trips
             const gapMs = nextTrip.start_timestamp - currentTrip.end_timestamp;

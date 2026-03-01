@@ -522,6 +522,7 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
                                                         tension: 0.4
                                                     }
                                                 ]
+                                            // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Mixed scatter+line datasets require cast; use Chart instead of Line for full type safety
                                             } as any}
                                         />
                                     )}
@@ -587,13 +588,8 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
                         <div className="grid grid-cols-2 gap-2">
                             <button
                                 onClick={(e) => {
-                                    console.log('[TripInsightsModal] MfgDate button clicked', { onMfgDateClick });
                                     e.stopPropagation();
-                                    if (onMfgDateClick) {
-                                        onMfgDateClick();
-                                    } else {
-                                        console.warn('[TripInsightsModal] onMfgDateClick is undefined');
-                                    }
+                                    onMfgDateClick?.();
                                 }}
                                 className="flex flex-col items-center justify-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
                             >
@@ -605,13 +601,8 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
 
                             <button
                                 onClick={(e) => {
-                                    console.log('[TripInsightsModal] ThermalStress button clicked', { onThermalStressClick });
                                     e.stopPropagation();
-                                    if (onThermalStressClick) {
-                                        onThermalStressClick();
-                                    } else {
-                                        console.warn('[TripInsightsModal] onThermalStressClick is undefined');
-                                    }
+                                    onThermalStressClick?.();
                                 }}
                                 className="flex flex-col items-center justify-center p-2 bg-slate-50 dark:bg-slate-800 rounded-lg border border-dashed border-slate-200 dark:border-slate-700 hover:border-slate-400 transition-colors"
                             >

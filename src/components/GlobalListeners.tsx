@@ -100,12 +100,12 @@ const GlobalListeners = ({ activeTab }: { activeTab: string }) => {
     // Lock body scroll when modal is open
     useEffect(() => {
         if (isAnyModalOpen) {
-            document.body.style.overflow = 'hidden';
+            document.body.classList.add('modal-open');
         } else {
-            document.body.style.overflow = '';
+            document.body.classList.remove('modal-open');
         }
         return () => {
-            document.body.style.overflow = '';
+            document.body.classList.remove('modal-open');
         };
     }, [isAnyModalOpen]);
 

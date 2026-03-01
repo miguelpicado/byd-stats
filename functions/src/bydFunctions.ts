@@ -69,6 +69,34 @@ async function requireAuthAndOwnership(request: CallableRequest, vin: string): P
 }
 
 // =============================================================================
+// RATE LIMITING
+// =============================================================================
+
+/**
+ * Enforces per-user, per-action rate limiting using Firestore.
+ * Uses a sliding window of 60 seconds.
+ * Throws HttpsError('resource-exhausted') when the limit is exceeded.
+ */
+async function checkRateLimit(uid: string, action: string, maxPerMinute: number = 10): Promise<void> {
+    const ref = db.collection('rateLimits').doc(`${uid}_${action}`);
+    const now = Date.now();
+    const windowMs = 60_000;
+
+    const doc = await ref.get();
+    const data = doc.data();
+
+    if (data && data.count >= maxPerMinute && (now - data.windowStart) < windowMs) {
+        throw new HttpsError('resource-exhausted', 'Rate limit exceeded. Try again later.');
+    }
+
+    if (!data || (now - data.windowStart) >= windowMs) {
+        await ref.set({ count: 1, windowStart: now });
+    } else {
+        await ref.update({ count: data.count + 1 });
+    }
+}
+
+// =============================================================================
 // BYD AUTHENTICATION
 // =============================================================================
 
@@ -78,7 +106,8 @@ async function requireAuthAndOwnership(request: CallableRequest, vin: string): P
  */
 export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
     // Auth required — no ownership check yet (vehicle doesn't exist until after connect)
-    requireAuth(request);
+    const uid = requireAuth(request);
+    await checkRateLimit(uid, 'bydConnectV2', 3);
 
     const { username, password, countryCode, controlPin, userId } = request.data;
 
@@ -204,7 +233,8 @@ export const bydDisconnectV2 = onCall({ region: REGION }, async (request: Callab
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydDisconnectV2', 3);
 
     try {
         const vehicleRef = db.collection('bydVehicles').doc(vin);
@@ -387,7 +417,8 @@ export const bydGetRealtimeV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydGetRealtimeV2', 10);
 
     try {
         // Use common polling logic to handle timeouts/sleep gracefully
@@ -431,7 +462,8 @@ export const bydGetGpsV2 = onCall({ region: REGION }, async (request: CallableRe
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydGetGpsV2', 10);
 
     try {
         const client = await getBydClientWithSession(vin);
@@ -572,7 +604,8 @@ export const bydGetChargingV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydGetChargingV2', 10);
 
     try {
         const client = await getBydClientWithSession(vin);
@@ -605,7 +638,8 @@ export const bydLockV2 = onCall({ region: REGION }, async (request: CallableRequ
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydLockV2', 5);
 
     return await executeControlCommand(vin, 'bydLock', async (client, controlPin) => {
         const success = await client.lock(vin, controlPin);
@@ -629,7 +663,8 @@ export const bydUnlockV2 = onCall({ region: REGION }, async (request: CallableRe
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydUnlockV2', 5);
 
     return await executeControlCommand(vin, 'bydUnlock', async (client, controlPin) => {
         const success = await client.unlock(vin, controlPin);
@@ -653,7 +688,8 @@ export const bydStartClimateV2 = onCall({ region: REGION }, async (request: Call
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydStartClimateV2', 5);
 
     return await executeControlCommand(vin, 'bydStartClimate', async (client, controlPin) => {
         const options = {
@@ -674,7 +710,8 @@ export const bydStopClimateV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydStopClimateV2', 5);
 
     return await executeControlCommand(vin, 'bydStopClimate', async (client, controlPin) => {
         return await client.stopClimate(vin, controlPin);
@@ -691,7 +728,8 @@ export const bydFlashLightsV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydFlashLightsV2', 5);
 
     return await executeControlCommand(vin, 'bydFlashLights', async (client, controlPin) => {
         return await client.flashLights(vin, controlPin);
@@ -708,7 +746,8 @@ export const bydHonkHornV2 = onCall({ region: REGION }, async (request: Callable
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydHonkHornV2', 5);
 
     return await executeControlCommand(vin, 'bydHonkHorn', async (client, controlPin) => {
         return await client.honkHorn(vin, controlPin);
@@ -725,7 +764,8 @@ export const bydCloseWindowsV2 = onCall({ region: REGION }, async (request: Call
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydCloseWindowsV2', 5);
 
     return await executeControlCommand(vin, 'bydCloseWindows', async (client, controlPin) => {
         return await client.closeWindows(vin, controlPin);
@@ -743,7 +783,8 @@ export const bydSeatClimateV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydSeatClimateV2', 5);
 
     return await executeControlCommand(vin, 'bydSeatClimate', async (client, controlPin) => {
         return await client.seatClimate(vin, {
@@ -765,7 +806,8 @@ export const bydBatteryHeatV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydBatteryHeatV2', 5);
 
     return await executeControlCommand(vin, 'bydBatteryHeat', async (client, controlPin) => {
         return await client.batteryHeat(vin, controlPin);
@@ -787,7 +829,8 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydPollVehicle', 10);
 
     try {
         const client = await getBydClientWithSession(vin);
@@ -1045,7 +1088,8 @@ export const bydDiagnosticV2 = onCall({ region: REGION }, async (request: Callab
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydDiagnosticV2', 10);
 
     try {
         const client = await getBydClientWithSession(vin);
@@ -1096,11 +1140,35 @@ export const bydMqttWebhook = onRequest({ region: REGION }, async (req, res) => 
     }
 
     try {
+        // Validar tamaño del payload (max 1MB) — antes de deserializar cualquier campo
+        const bodySize = JSON.stringify(req.body).length;
+        if (bodySize > 1_048_576) {
+            res.status(413).send('Payload too large');
+            return;
+        }
+
         const { source, timestamp, event } = req.body;
 
-        if (!event) {
-            res.status(400).send('Missing event data');
+        // Validar estructura del body
+        if (!event || typeof event !== 'object') {
+            res.status(400).send('Missing or invalid event data');
             return;
+        }
+
+        // Validar VIN si presente (debe ser string de exactamente 17 caracteres)
+        if (event.vin && (typeof event.vin !== 'string' || event.vin.length !== 17)) {
+            res.status(400).send('Invalid VIN format');
+            return;
+        }
+
+        // Validar timestamp (no más de 5 minutos de antigüedad para evitar replay attacks)
+        if (timestamp) {
+            const eventTime = new Date(timestamp).getTime();
+            const now = Date.now();
+            if (isNaN(eventTime) || Math.abs(now - eventTime) > 5 * 60 * 1000) {
+                res.status(400).send('Invalid or expired timestamp');
+                return;
+            }
         }
 
         console.log(`[bydMqttWebhook] Received ${event.event} event for VIN ${event.vin} from ${source} at ${timestamp}`);
@@ -1273,7 +1341,8 @@ export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydGetMqttCredentialsV2', 10);
 
     ensureBydInit();
 
@@ -1695,6 +1764,7 @@ async function processVehicleState(
     } else if (activeTripId && hasMovement) {
         // --- MOVING ---
         vehicleUpdate.stationaryPollCount = 0;
+        vehicleUpdate.tripStopCounters = { gps: 0, climateOff: 0, lockedOff: 0, parked: 0 };
         const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
         const tripDoc = await tripRef.get();
         if (tripDoc.exists) {
@@ -2148,27 +2218,106 @@ async function cloudProbeVehicle(vin: string): Promise<{
     // Escalate to full poll (wake T-Box) when cloud data changed AND car is NOT charging.
     const shouldEscalate = changed && !isCharging;
 
-    // Store rich charging data when charging is detected
-    if (isCharging && changed) {
+    // Store rich charging data — ALWAYS update during charging, not just when changed.
+    // This ensures the overlay never shows stale data and ABRP gets every-minute telemetry.
+    const wasCharging = vehicleData.chargingActive === true || vehicleData.isCharging === true;
+    if (isCharging) {
         try {
-            await vehicleRef.update({
-                chargingDetail: {
-                    soc: currentSoC,
-                    chargeType: charging.chargeType || null,
-                    remainingMinutes: charging.remainingMinutes || null,
-                    targetSoc: charging.targetSoc || null,
-                    scheduledCharging: charging.scheduledCharging || false,
-                    lastUpdate: admin.firestore.Timestamp.now(),
-                }
-            });
+            const now = admin.firestore.Timestamp.now();
 
-            // Enviar telemetría ABRP durante la carga
+            // Capture initial SoC and start time on first detection
+            const initialSoC = (!wasCharging)
+                ? currentSoC
+                : (vehicleData.chargingDetail?.initialSoC ?? currentSoC);
+
+            const chargingStartTime = (!wasCharging)
+                ? now
+                : (vehicleData.chargingDetail?.chargingStartTime ?? now);
+
+            // Estimate instantaneous charging power from consecutive SoC probes
+            // power = (socDelta * batteryCapacity) / timeDeltaHours
+            let estimatedPowerKw: number | null = null;
+            const prevDetailSoC = vehicleData.chargingDetail?.soc ?? null;
+            const prevDetailUpdate = vehicleData.chargingDetail?.lastUpdate?.toMillis?.() ?? null;
+            if (prevDetailSoC != null && prevDetailUpdate != null && currentSoC > prevDetailSoC) {
+                const batteryCapacity = vehicleData.lastBatteryCapacity || 60;
+                const socDelta = currentSoC - prevDetailSoC;
+                const timeDeltaHours = (Date.now() - prevDetailUpdate) / 1000 / 3600;
+                if (timeDeltaHours > 0) {
+                    estimatedPowerKw = Math.round((socDelta * batteryCapacity / timeDeltaHours) * 10) / 10;
+                }
+            }
+            // Keep last known power estimate if we can't compute it this probe
+            if (estimatedPowerKw === null) {
+                estimatedPowerKw = vehicleData.chargingDetail?.estimatedPowerKw ?? null;
+            }
+
+            const chargingDetail: Record<string, any> = {
+                soc: currentSoC,
+                chargeType: charging.chargeType || null,
+                remainingMinutes: charging.remainingMinutes || null,
+                targetSoc: charging.targetSoc || null,
+                initialSoC,
+                chargingStartTime,
+                scheduledCharging: charging.scheduledCharging || false,
+                lastUpdate: now,
+            };
+            if (estimatedPowerKw !== null) chargingDetail.estimatedPowerKw = estimatedPowerKw;
+
+            await vehicleRef.update({ chargingDetail });
+
+            // Enviar telemetría ABRP SIEMPRE durante la carga (no solo cuando changed=true)
             const abrpToken = vehicleData.abrpUserToken as string | undefined;
             if (abrpToken && abrpToken.trim()) {
-                await sendAbrpTelemetry(vin, abrpToken.trim(), { soc: currentSoC * 100, isCharging: true }, null, charging);
+                const abrpRealtime: any = { soc: currentSoC * 100, isCharging: true };
+                if (estimatedPowerKw != null) abrpRealtime.power = -estimatedPowerKw; // negative = charging convention
+                await sendAbrpTelemetry(vin, abrpToken.trim(), abrpRealtime, null, charging);
             }
         } catch (e: any) {
             console.error(`[cloudProbe] ${vin}: Failed to store charging detail or send ABRP: ${e.message}`);
+        }
+    }
+
+    // Detect charging→idle transition and record a completed charge session
+    if (wasCharging && !isCharging) {
+        try {
+            const detail = vehicleData.chargingDetail || {};
+            const startSoC: number = detail.initialSoC ?? 0;
+            const endSoC: number = currentSoC;
+            const startTimeMs: number = detail.chargingStartTime?.toMillis?.() ?? (detail.lastUpdate?.toMillis?.() ?? Date.now());
+            const durationMinutes = (Date.now() - startTimeMs) / 1000 / 60;
+            const socGain = endSoC - startSoC;
+
+            if (socGain >= 0.01 && durationMinutes >= 5) {
+                const batteryCapacity: number = vehicleData.lastBatteryCapacity || 60;
+                const kwhCharged = Math.round(socGain * batteryCapacity * 10) / 10;
+                const durationHours = durationMinutes / 60;
+                const estimatedPowerKw = Math.round((kwhCharged / durationHours) * 10) / 10;
+
+                const autoChargeRef = db.collection('bydVehicles').doc(vin).collection('autoCharges').doc();
+                await autoChargeRef.set({
+                    id: autoChargeRef.id,
+                    startSoC,
+                    endSoC,
+                    startTime: admin.firestore.Timestamp.fromMillis(startTimeMs),
+                    endTime: admin.firestore.Timestamp.now(),
+                    durationMinutes: Math.round(durationMinutes),
+                    kwhCharged,
+                    estimatedPowerKw,
+                    chargeType: detail.chargeType || null,
+                    odometer: vehicleData.lastOdometer || 0,
+                    status: 'pending_review',
+                    createdAt: admin.firestore.Timestamp.now(),
+                });
+                console.log(`[cloudProbe] ${vin}: ✅ Auto charge recorded ${autoChargeRef.id} — SoC ${(startSoC * 100).toFixed(0)}%→${(endSoC * 100).toFixed(0)}%, ${kwhCharged}kWh, ~${estimatedPowerKw}kW, ${Math.round(durationMinutes)}min`);
+            } else {
+                console.log(`[cloudProbe] ${vin}: Charge ended but too small to record (gain=${(socGain * 100).toFixed(1)}%, ${Math.round(durationMinutes)}min)`);
+            }
+
+            // Clear stale chargingDetail now that charging is done
+            await vehicleRef.update({ chargingDetail: admin.firestore.FieldValue.delete() });
+        } catch (e: any) {
+            console.error(`[cloudProbe] ${vin}: Failed to record auto charge: ${e.message}`);
         }
     }
 
@@ -2447,7 +2596,8 @@ export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: Calla
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydWakeVehicleV2', 10);
 
     console.log(`[bydWakeVehicle] Triggering live poll for ${vin}...`);
 
@@ -2580,7 +2730,8 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
         throw new HttpsError('invalid-argument', 'Missing VIN or Trip ID');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydFixTripV2', 10);
 
     console.log(`[bydFixTrip] Fixing trip ${tripId} for ${vin}...`);
 
@@ -2724,7 +2875,8 @@ export const bydDebugV2 = onCall({ region: REGION }, async (request: CallableReq
         throw new HttpsError('invalid-argument', 'Missing VIN');
     }
 
-    await requireAuthAndOwnership(request, vin);
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydDebugV2', 10);
 
     console.log(`[bydDebug] Generating diagnostic dump for ${vin}...`);
 

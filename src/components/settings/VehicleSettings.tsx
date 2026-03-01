@@ -24,7 +24,6 @@ export const VehicleSettings: React.FC = () => {
     const handleBatterySave = async () => {
         if (!activeCar?.vin) return;
         try {
-            console.log(`Syncing battery capacity for ${activeCar.vin}: ${settings.batterySize}`);
             const vehicleRef = doc(db, 'bydVehicles', activeCar.vin);
             await updateDoc(vehicleRef, {
                 batteryCapacity: settings.batterySize

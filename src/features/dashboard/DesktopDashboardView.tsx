@@ -136,7 +136,7 @@ const DesktopDashboardView = memo(({
                                         hourly={hourly}
                                         summary={summary}
                                         patternsSpacing={parseFloat(patternsSpacing)}
-                                        patternsChartHeight={patternsChartHeight as any}
+                                        patternsChartHeight={patternsChartHeight}
                                         isActive={isActive}
                                     />
                                 </ErrorBoundary>
@@ -147,7 +147,7 @@ const DesktopDashboardView = memo(({
                                         summary={summary}
                                         monthly={monthly}
                                         effScatter={effScatter}
-                                        largeChartHeight={largeChartHeight as any}
+                                        largeChartHeight={largeChartHeight}
                                         isActive={isActive}
                                     />
                                 </ErrorBoundary>

@@ -59,18 +59,18 @@ export function useLayoutMode(): LayoutModeInfo {
         checkCompact();
         checkFullscreenBYD();
 
-        window.addEventListener('resize', updateLayoutMode);
-        window.addEventListener('resize', checkCompact);
-        window.addEventListener('resize', checkFullscreenBYD);
-        window.addEventListener('orientationchange', updateLayoutMode);
-        window.addEventListener('orientationchange', checkFullscreenBYD);
+        const handleResize = () => {
+            updateLayoutMode();
+            checkCompact();
+            checkFullscreenBYD();
+        };
+
+        window.addEventListener('resize', handleResize);
+        window.addEventListener('orientationchange', handleResize);
 
         return () => {
-            window.removeEventListener('resize', updateLayoutMode);
-            window.removeEventListener('resize', checkCompact);
-            window.removeEventListener('resize', checkFullscreenBYD);
-            window.removeEventListener('orientationchange', updateLayoutMode);
-            window.removeEventListener('orientationchange', checkFullscreenBYD);
+            window.removeEventListener('resize', handleResize);
+            window.removeEventListener('orientationchange', handleResize);
         };
     }, []);
 

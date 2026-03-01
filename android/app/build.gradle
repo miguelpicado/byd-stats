@@ -1,9 +1,23 @@
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.android'
 
+// Load signing credentials from local.properties (gitignored, never committed)
+// Strips the UTF-8 BOM that Windows PowerShell adds when writing files
+def localProps = new Properties()
+def localPropsFile = rootProject.file('local.properties')
+if (localPropsFile.exists()) {
+    def content = localPropsFile.getText('UTF-8')
+    if (content.startsWith('\uFEFF')) content = content.substring(1) // strip BOM
+    localProps.load(new StringReader(content))
+}
+
 android {
     namespace = "com.bydstats.app"
     compileSdk = rootProject.ext.compileSdkVersion
+    buildFeatures {
+        buildConfig true
+    }
+
     defaultConfig {
         applicationId "com.bydstats.app"
         minSdkVersion rootProject.ext.minSdkVersion
@@ -11,6 +25,11 @@ android {
         versionCode 7
         versionName "1.6.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Google OAuth Client ID - injected at build time, never hardcoded in source
+        def googleClientId = System.getenv('GOOGLE_CLIENT_ID') ?: localProps.getProperty('GOOGLE_CLIENT_ID') ?: ''
+        resValue "string", "server_client_id", googleClientId
+        buildConfigField "String", "SERVER_CLIENT_ID", "\"${googleClientId}\""
     }
 
     signingConfigs {
@@ -21,22 +40,21 @@ android {
             keyPassword "android"
         }
         release {
-            storeFile file("release.jks")
-            storePassword "android"
-            keyAlias "androidreleasekey"
-            keyPassword "android"
+            def keystoreFile = System.getenv('KEYSTORE_FILE') ?: localProps.getProperty('KEYSTORE_FILE') ?: "release.jks"
+            storeFile file(keystoreFile)
+            storePassword System.getenv('KEYSTORE_PASSWORD') ?: localProps.getProperty('KEYSTORE_PASSWORD') ?: ""
+            keyAlias System.getenv('KEY_ALIAS') ?: localProps.getProperty('KEY_ALIAS') ?: "androidreleasekey"
+            keyPassword System.getenv('KEY_PASSWORD') ?: localProps.getProperty('KEY_PASSWORD') ?: ""
         }
     }
 
     buildTypes {
         release {
-            minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            if (System.getenv('KEYSTORE_FILE') || file("release.jks").exists()) {
-                signingConfig signingConfigs.release
-            } else {
-                signingConfig signingConfigs.debug
-            }
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+            def hasReleaseKey = System.getenv('KEYSTORE_FILE') || System.getenv('KEYSTORE_PASSWORD') || file("release.jks").exists()
+            signingConfig hasReleaseKey ? signingConfigs.release : signingConfigs.debug
         }
     }
 }
@@ -64,6 +82,7 @@ dependencies {
 // wearApp project(":wear")
     implementation "com.google.android.gms:play-services-wearable:19.0.0"
     implementation project(':capawesome-capacitor-file-picker')
+    implementation "androidx.security:security-crypto:1.1.0-alpha06"
 }
 
 apply from: 'capacitor.build.gradle'

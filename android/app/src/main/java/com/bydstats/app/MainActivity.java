@@ -81,8 +81,8 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
 
         super.onCreate(savedInstanceState);
 
-        // Force console logs to logcat
-        if (this.bridge != null) {
+        // Forward JS console logs to logcat only in debug builds
+        if (BuildConfig.DEBUG && this.bridge != null) {
             this.bridge.getWebView().setWebChromeClient(new WebChromeClient() {
                 @Override
                 public boolean onConsoleMessage(ConsoleMessage consoleMessage) {
@@ -94,8 +94,8 @@ public class MainActivity extends BridgeActivity implements ModifiedMainActivity
             });
         }
 
-        // Enable WebView debugging for troubleshooting
-        WebView.setWebContentsDebuggingEnabled(true);
+        // WebView remote debugging — only in debug builds
+        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG);
 
         // Configure status bar
         configureStatusBar();

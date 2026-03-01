@@ -179,7 +179,7 @@ export const subscribeToTrips = (
     // Always order by startDate desc
     const optimizedQuery = query(
         tripsCollection,
-        ...(constraints as any),
+        ...constraints,
         orderBy('startDate', 'desc'),
         limit(maxTrips)
     );
@@ -247,8 +247,8 @@ export const fetchTripsPage = async (
         : collection(db, 'trips');
 
     const q = cursor
-        ? query(tripsCollection, ...(constraints as any), startAfter(cursor))
-        : query(tripsCollection, ...(constraints as any));
+        ? query(tripsCollection, ...constraints, startAfter(cursor))
+        : query(tripsCollection, ...constraints);
 
     const snapshot = await getDocs(q);
     const trips: Trip[] = [];

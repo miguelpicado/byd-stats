@@ -4,6 +4,7 @@ import { Bar as BarJS, Line as LineJS } from 'react-chartjs-2';
 import { Navigation, Clock, TrendingUp, BYD_RED, MapPin } from '@components/Icons';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
+import { createLineChartOptions, defaultGridConfig } from '@/core/chartDefaults';
 import { useLayout } from '@/context/LayoutContext';
 import { Trip, Summary, MonthlyData, DailyData, Settings } from '@/types';
 
@@ -23,23 +24,18 @@ const COMPACT_SPACE_Y = 'space-y-3';
 const BAR_CHART_OPTIONS = {
   maintainAspectRatio: false,
   scales: {
-    y: { beginAtZero: true, position: 'left' as const, border: { dash: [] }, ticks: { color: BYD_RED }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
+    y: { beginAtZero: true, position: 'left' as const, border: { dash: [] }, ticks: { color: BYD_RED }, grid: defaultGridConfig },
     y1: { beginAtZero: true, position: 'right' as const, border: { dash: [] }, ticks: { color: '#06b6d4' }, grid: { drawOnChartArea: false } },
     x: { border: { dash: [] }, grid: { display: false } }
   },
   plugins: { legend: { display: true, position: 'top' as const, labels: { boxWidth: 10, usePointStyle: true, font: { size: 10 } } } }
 };
 
-const LINE_CHART_OPTIONS = {
-  maintainAspectRatio: false,
-  interaction: { mode: 'index' as const, intersect: false },
+const LINE_CHART_OPTIONS = createLineChartOptions({
   scales: {
-    y: { beginAtZero: true, border: { dash: [] }, grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } },
-    x: { border: { dash: [] }, grid: { display: false }, ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
-  },
-  plugins: { legend: { display: false } },
-  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 5 } }
-};
+    x: { ticks: { maxRotation: 45, minRotation: 45, font: { size: 9 } } }
+  }
+});
 
 /**
  * Trends tab showing insights and long-term trends

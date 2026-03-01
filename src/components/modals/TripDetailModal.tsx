@@ -106,12 +106,9 @@ const TripDetailModal: React.FC = () => {
 
     // Handle trip deletion
     const handleDeleteTrip = async () => {
-        console.log('[TripDetail] Delete clicked, trip:', trip);
-        console.log('[TripDetail] Trip keys:', trip ? Object.keys(trip) : 'no trip');
-
         // Try different ID fields
-        const tripId = trip?.id || (trip as any)?._id || (trip as any)?.tripId || `${trip?.date}_${trip?.start_timestamp}`;
-        console.log('[TripDetail] Using tripId:', tripId);
+        const tripAlt = trip as (typeof trip & { _id?: string; tripId?: string }) | undefined;
+        const tripId = trip?.id || tripAlt?._id || tripAlt?.tripId || `${trip?.date}_${trip?.start_timestamp}`;
 
         if (!tripId) {
             console.error('[TripDetail] No trip ID found');
@@ -120,25 +117,18 @@ const TripDetailModal: React.FC = () => {
         }
 
         try {
-            console.log('[TripDetail] Saving to localStorage...');
             const deletedTrips = JSON.parse(localStorage.getItem('byd_deleted_trips') || '[]');
             if (!deletedTrips.includes(tripId)) {
                 deletedTrips.push(tripId);
                 localStorage.setItem('byd_deleted_trips', JSON.stringify(deletedTrips));
             }
-            console.log('[TripDetail] Saved to localStorage');
 
             if (trip?.source === 'byd' && trip?.vehicleId && trip?.id) {
-                console.log('[TripDetail] Deleting from Firestore...');
                 await deleteDoc(doc(db, 'bydVehicles', trip.vehicleId, 'trips', trip.id));
-                console.log('[TripDetail] Firestore delete OK');
             }
 
-            console.log('[TripDetail] Showing alert...');
             alert(t('tripDetail.tripDeleted'));
-            console.log('[TripDetail] Closing...');
             onClose();
-            console.log('[TripDetail] Reloading...');
             window.location.reload();
         } catch (error) {
             console.error('[TripDetail] Error:', error);
@@ -152,8 +142,6 @@ const TripDetailModal: React.FC = () => {
             if (!trip?.id) return;
 
             try {
-                console.log(`[TripDetail] Loading points for trip ${trip.id} (Source: ${trip.source}, VIN: ${trip.vehicleId})...`);
-
                 let points: Array<{ lat: number; lon: number; timestamp: number }> = [];
 
                 // 1. Determine Trip Reference
@@ -172,7 +160,6 @@ const TripDetailModal: React.FC = () => {
                 if (tripDoc.exists()) {
                     const data = tripDoc.data();
                     if (Array.isArray(data.points) && data.points.length > 0) {
-                        console.log(`[TripDetail] Found ${data.points.length} points in document field.`);
                         points = data.points;
                     }
                 }
@@ -184,12 +171,10 @@ const TripDetailModal: React.FC = () => {
                     const pointsSnap = await getDocs(pointsQuery);
 
                     if (!pointsSnap.empty) {
-                        console.log(`[TripDetail] Found ${pointsSnap.size} points in subcollection.`);
                         points = pointsSnap.docs.map(doc => doc.data() as { lat: number; lon: number; timestamp: number });
                     }
                 }
 
-                console.log(`[TripDetail] Setting ${points.length} trip points`);
                 setTripPoints(points);
             } catch (error) {
                 console.error('[TripDetail] Error loading GPS points:', error);
@@ -197,12 +182,11 @@ const TripDetailModal: React.FC = () => {
         };
 
         if (trip?.id) {
-            console.log(`[TripDetail] Loading GPS points for trip ${trip.id}`);
             loadGpsPoints();
         } else {
             console.warn('[TripDetail] No trip ID available');
         }
-    }, [trip?.id]);
+    }, [trip?.id, trip?.source, trip?.vehicleId]);
 
     if (!isOpen || !trip) return null;
 
@@ -249,7 +233,6 @@ const TripDetailModal: React.FC = () => {
                     <div
                         className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors"
                         onClick={() => {
-                            console.log('[TripDetail] GPS clicked. Trip Data:', trip);
                             setShowMap(true);
                         }}
                     >

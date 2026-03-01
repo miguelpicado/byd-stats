@@ -24,20 +24,20 @@ export const useWearSync = () => {
         soc: -1, range: -1, vin: '', climate: false
     });
 
-    const activeCarRef = useRef(activeCar);
-    const vehicleStatusRef = useRef(vehicleStatus);
+    const syncTimeout = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
+    const activeCarRef = useRef<typeof activeCar | undefined>(activeCar);
+    const vehicleStatusRef = useRef<typeof vehicleStatus | undefined>(vehicleStatus);
     useEffect(() => { activeCarRef.current = activeCar; }, [activeCar]);
     useEffect(() => { vehicleStatusRef.current = vehicleStatus; }, [vehicleStatus]);
 
     useEffect(() => {
         if (!Capacitor.isNativePlatform()) return;
 
-        console.log("[useWearSync] Registering permanent watch action listener");
         const listener = WearSync.addListener('onWatchAction', async (data) => {
             const currentCar = activeCarRef.current;
             const currentStatus = vehicleStatusRef.current;
 
-            console.log(`[useWearSync] Action received: ${data.action} for car: ${currentCar?.vin}`);
             if (!currentCar?.vin) return;
 
             const performAction = async (name: string, fn: () => Promise<any>) => {
@@ -46,12 +46,12 @@ export const useWearSync = () => {
                     const result = await fn();
                     if (result && result.success) {
                         toast.success(`${name} OK`, { id: toastId });
-                        setTimeout(() => bydWakeVehicle(currentCar.vin!).catch(() => { }), 2000);
+                        setTimeout(() => bydWakeVehicle(currentCar.vin!).catch((err) => { if (import.meta.env.DEV) console.warn('Vehicle wake failed:', err); }), 2000);
                     } else {
                         toast.error(`Fallo: ${result?.message || 'Error'}`, { id: toastId });
                     }
-                } catch (error: any) {
-                    toast.error(`Error: ${error.message}`, { id: toastId });
+                } catch (error: unknown) {
+                    toast.error(`Error: ${error instanceof Error ? error.message : String(error)}`, { id: toastId });
                 }
             };
 
@@ -85,14 +85,17 @@ export const useWearSync = () => {
             activeCar.vin !== lastSyncedRef.current.vin ||
             climateActive !== lastSyncedRef.current.climate) {
 
-            WearSync.syncVehicleData({
-                rangeKm: rangeValue,
-                soc: soc,
-                vin: activeCar.vin,
-                climateActive: climateActive
-            }).then(() => {
-                lastSyncedRef.current = { soc, range: rangeValue, vin: activeCar.vin!, climate: climateActive };
-            });
+            if (syncTimeout.current) clearTimeout(syncTimeout.current);
+            syncTimeout.current = setTimeout(() => {
+                WearSync.syncVehicleData({
+                    rangeKm: rangeValue,
+                    soc: soc,
+                    vin: activeCar.vin!,
+                    climateActive: climateActive
+                }).then(() => {
+                    lastSyncedRef.current = { soc, range: rangeValue, vin: activeCar.vin!, climate: climateActive };
+                });
+            }, 2000);
         }
     }, [vehicleStatus, stats?.summary?.estimatedRange, isNative, activeCar?.vin]);
 };

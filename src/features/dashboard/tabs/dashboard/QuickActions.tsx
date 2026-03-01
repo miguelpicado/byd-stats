@@ -4,7 +4,7 @@ import { Lock, Unlock, Flashlight, WindowUp, Thermometer } from '@/components/Ic
 import { useCar } from '@/context/CarContext';
 import { useVehicleStatus } from '@/hooks/useVehicleStatus';
 import { useLayout } from '@/context/LayoutContext';
-import { useData } from '@/providers/DataProvider';
+import { useModals } from '@/hooks/useModals';
 import { bydLock, bydUnlock, bydStartClimate, bydStopClimate, bydFlashLights, bydHonkHorn, bydCloseWindows, bydSeatClimate, bydWakeVehicle } from '@/services/bydApi';
 import toast from 'react-hot-toast';
 import { logger } from '@core/logger';
@@ -14,7 +14,7 @@ const QuickActions: React.FC = () => {
     const { activeCar } = useCar();
     const { isNative } = useLayout();
     const vehicleStatus = useVehicleStatus(activeCar?.vin);
-    const { openModal } = useData();
+    const { openModal } = useModals();
     const [loadingButton, setLoadingButton] = useState<string | null>(null);
 
     // Optimistic state updates (UI reflects action immediately, then syncs with Firestore)
@@ -86,7 +86,7 @@ const QuickActions: React.FC = () => {
                 setOptimisticLocked(null);
                 setOptimisticClimate(null);
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error(`[QuickActions] Command ${command} failed:`, error);
 
             // Revert optimistic update on error
@@ -94,8 +94,8 @@ const QuickActions: React.FC = () => {
             setOptimisticClimate(null);
 
             // Extract error information
-            const errorCode = error.code || 'unknown';
-            const errorMessage = error.message || 'Remote control failed';
+            const errorCode = error instanceof Error && 'code' in error ? (error as Error & { code: string }).code : 'unknown';
+            const errorMessage = error instanceof Error ? error.message : 'Remote control failed';
 
             // Create user-friendly error messages
             let userMessage = errorMessage;
@@ -224,7 +224,19 @@ const QuickActions: React.FC = () => {
         }
     };
 
-    const actions = [
+    interface Action {
+        id: string;
+        label: string;
+        icon: React.ElementType;
+        color: string;
+        action: () => void;
+        loading: boolean;
+        onPointerDown?: React.PointerEventHandler<HTMLButtonElement>;
+        onPointerUp?: React.PointerEventHandler<HTMLButtonElement>;
+        onPointerLeave?: React.PointerEventHandler<HTMLButtonElement>;
+    }
+
+    const actions: Action[] = [
         {
             id: 'lock',
             label: isLocked ? t('actions.unlock', 'Unlock') : t('actions.lock', 'Lock'),
@@ -246,7 +258,7 @@ const QuickActions: React.FC = () => {
             label: t('actions.flash', 'Flash'),
             icon: Flashlight,
             color: 'bg-yellow-600',
-            action: () => {}, // Handled by onPointerDown/Up
+            action: () => { }, // Handled by onPointerDown/Up
             onPointerDown: handleFlashDown,
             onPointerUp: handleFlashUp,
             onPointerLeave: handleFlashLeave,
@@ -257,7 +269,7 @@ const QuickActions: React.FC = () => {
             label: climateActive ? t('actions.climateOff', 'Stop') : t('actions.climate', 'Climate'),
             icon: Thermometer,
             color: climateActive ? 'bg-green-600' : 'bg-orange-600',
-            action: () => {}, // Handled by onPointerDown/Up
+            action: () => { }, // Handled by onPointerDown/Up
             onPointerDown: handleClimateDown,
             onPointerUp: handleClimateUp,
             onPointerLeave: handleClimateLeave,
@@ -278,7 +290,7 @@ const QuickActions: React.FC = () => {
             // Try to call a simple command to test PIN
             const result = await bydFlashLights(activeCar.vin);
             toast.success('PIN is configured correctly!', { id: 'pin-test' });
-            console.log('[QuickActions] PIN test result:', result);
+            logger.debug('[QuickActions] PIN test result:', result);
         } catch (error: any) {
             toast.error(`PIN test failed: ${error.message}`, { id: 'pin-test', duration: 8000 });
             console.error('[QuickActions] PIN test failed:', error);
@@ -292,9 +304,9 @@ const QuickActions: React.FC = () => {
                 <button
                     key={action.id}
                     onClick={action.action}
-                    onPointerDown={(action as any).onPointerDown}
-                    onPointerUp={(action as any).onPointerUp}
-                    onPointerLeave={(action as any).onPointerLeave}
+                    onPointerDown={action.onPointerDown}
+                    onPointerUp={action.onPointerUp}
+                    onPointerLeave={action.onPointerLeave}
                     disabled={!!loadingButton}
                     className={`${action.color} rounded-xl p-2 flex flex-row items-center justify-center gap-2 text-white shadow-lg active:scale-95 transition-transform h-12 disabled:opacity-50 disabled:cursor-not-allowed`}
                 >

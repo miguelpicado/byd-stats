@@ -8,7 +8,9 @@
         "shell": "npm run build && firebase functions:shell",
         "start": "npm run shell",
         "deploy": "firebase deploy --only functions",
-        "logs": "firebase functions:log"
+        "logs": "firebase functions:log",
+        "test": "vitest run",
+        "test:watch": "vitest"
     },
     "engines": {
         "node": "20"
@@ -25,7 +27,8 @@
         "@types/node": "^20.19.33",
         "@types/node-fetch": "^2.6.11",
         "firebase-functions-test": "^3.1.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.0.0",
+        "vitest": "^4.0.17"
     },
     "private": true
 }

@@ -40,11 +40,19 @@ public class FileOpenerPlugin extends Plugin {
                 return;
             }
 
+            final long MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             int nRead;
+            long totalRead = 0;
             byte[] data = new byte[16384];
 
             while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+                totalRead += nRead;
+                if (totalRead > MAX_FILE_SIZE) {
+                    inputStream.close();
+                    call.reject("File too large. Maximum size is 50MB.");
+                    return;
+                }
                 buffer.write(data, 0, nRead);
             }
 

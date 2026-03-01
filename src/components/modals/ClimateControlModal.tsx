@@ -199,12 +199,12 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                 toast.error('Climate start failed. Please try again.');
                 logger.error('[ClimateControl] Climate start returned success: false');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[ClimateControl] Climate control error:', error);
 
             // Extract error information
-            const errorCode = error.code || 'unknown';
-            const errorMessage = error.message || 'Climate control failed';
+            const errorCode = error instanceof Error && 'code' in error ? (error as Error & { code: string }).code : 'unknown';
+            const errorMessage = error instanceof Error ? error.message : 'Climate control failed';
 
             // Create user-friendly error messages
             let userMessage = errorMessage;
@@ -271,12 +271,12 @@ const ClimateControlModal: React.FC<ClimateControlModalProps> = ({ isOpen, onClo
                 toast.error('Climate stop failed. Please try again.');
                 logger.error('[ClimateControl] Climate stop returned success: false');
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             logger.error('[ClimateControl] Stop climate error:', error);
 
             // Extract error information
-            const errorCode = error.code || 'unknown';
-            const errorMessage = error.message || 'Climate control failed';
+            const errorCode = error instanceof Error && 'code' in error ? (error as Error & { code: string }).code : 'unknown';
+            const errorMessage = error instanceof Error ? error.message : 'Climate control failed';
 
             // Create user-friendly error messages
             let userMessage = errorMessage;

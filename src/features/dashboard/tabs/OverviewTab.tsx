@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+// import removed
 import { BYD_RED } from '@components/Icons';
 import OverviewContent from './OverviewContent';
 // Lazy load modals
@@ -7,15 +8,10 @@ const ThermalStressModal = React.lazy(() => import('@components/modals/ThermalSt
 const RangeInsightsModal = React.lazy(() => import('@components/modals/RangeInsightsModal'));
 import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
+import { createLineChartOptions } from '@/core/chartDefaults';
 import { Summary, MonthlyData, Settings, Trip, TripInsightType } from '@/types';
 
-// Static chart options that don't change
-const LINE_CHART_OPTIONS_BASE = {
-  maintainAspectRatio: false,
-  interaction: { mode: 'index', intersect: false },
-  plugins: { legend: { display: false } },
-  elements: { line: { tension: 0.4 }, point: { hitRadius: 20, hoverRadius: 6 } }
-};
+// Using createLineChartOptions below instead of LINE_CHART_OPTIONS_BASE
 
 interface TripDistItem {
   range: string;
@@ -80,11 +76,9 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
     });
   };
 
-  const lineChartOptionsHorizontal = useMemo(() => ({
-    ...LINE_CHART_OPTIONS_BASE,
+  const lineChartOptionsHorizontal = useMemo(() => createLineChartOptions({
     scales: {
       y: {
-        beginAtZero: true,
         border: { display: false, dash: [] },
         grid: { color: 'rgba(203, 213, 225, 0.3)', tickBorderDash: [3, 3] }
       },
@@ -93,7 +87,7 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         grid: { display: false }
       }
     }
-  }) as any, []);
+  }), []);
 
   // Memoize chart data
   const lineChartData = useMemo(() => ({
@@ -139,11 +133,9 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         insightType={insightType}
         onCloseInsightModal={() => setInsightType(null)}
         onMfgDateClick={() => {
-          console.log('[OverviewTab] onMfgDateClick called');
           setShowMfgModal(true);
         }}
         onThermalStressClick={() => {
-          console.log('[OverviewTab] onThermalStressClick called');
           setShowThermalModal(true);
         }}
         isActive={isActive}

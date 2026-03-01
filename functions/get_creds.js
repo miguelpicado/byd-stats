@@ -1,9 +1,15 @@
 const admin = require('firebase-admin');
 const crypto = require('crypto');
+require('dotenv').config();
 
 const app = admin.initializeApp({ projectId: 'REDACTED_FIREBASE_PROJECT_ID' });
 const db = admin.firestore();
-const ENCRYPTION_KEY = 'd0a5edbd5edc9a1bb954e16cdb4c9391673081a5e0e44554018b4fbd08889661';
+const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
+
+if (!ENCRYPTION_KEY) {
+    console.error('ERROR: TOKEN_ENCRYPTION_KEY is not set. Add it to functions/.env');
+    process.exit(1);
+}
 
 async function main() {
     const vehiclesSnapshot = await db.collection('bydVehicles').limit(1).get();

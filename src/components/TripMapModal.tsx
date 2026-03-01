@@ -1,17 +1,8 @@
 import React from 'react';
-import { MapContainer, TileLayer, Polyline, Marker, Popup } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-
-// Fix Leaflet default marker icons
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
 import type { Trip } from '@/types';
+
+// Lazy load the Map component
+const LazyTripMap = React.lazy(() => import('@components/maps/TripMap'));
 
 interface TripMapModalProps {
     trip: Trip;
@@ -24,8 +15,7 @@ export const TripMapModal: React.FC<TripMapModalProps> = ({ trip, points, onClos
         return null;
     }
 
-    const pathCoords = points.map(p => [p.lat, p.lon] as [number, number]);
-    const center = pathCoords[Math.floor(pathCoords.length / 2)] || [41.3879, 2.1699];
+
 
     return (
         <div className="mt-3 w-full overflow-hidden">
@@ -40,25 +30,9 @@ export const TripMapModal: React.FC<TripMapModalProps> = ({ trip, points, onClos
             </div>
 
             <div className="rounded-xl overflow-hidden w-full">
-                <MapContainer center={center} zoom={13} style={{ height: '300px', width: '100%' }}>
-                    <TileLayer
-                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                    />
-                    <Polyline positions={pathCoords} color="#2196F3" weight={4} opacity={0.7} />
-                    <Marker position={pathCoords[0]}>
-                        <Popup>
-                            <strong>Inicio</strong><br />
-                            {new Date((trip.start_timestamp || 0) * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                        </Popup>
-                    </Marker>
-                    <Marker position={pathCoords[pathCoords.length - 1]}>
-                        <Popup>
-                            <strong>Fin</strong><br />
-                            {new Date(((trip.start_timestamp || 0) + (trip.duration || 0)) * 1000).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
-                        </Popup>
-                    </Marker>
-                </MapContainer>
+                <React.Suspense fallback={<div className="h-[300px] w-full bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-slate-400">Cargando mapa...</div>}>
+                    <LazyTripMap trip={trip} points={points} />
+                </React.Suspense>
             </div>
         </div>
     );

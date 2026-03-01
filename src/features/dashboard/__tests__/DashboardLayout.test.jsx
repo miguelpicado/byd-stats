@@ -123,6 +123,10 @@ vi.mock('@/components/common/FloatingActionButton', () => ({
 }));
 
 describe('DashboardLayout', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
     const tabs = [
         { id: 'overview', label: 'Overview' },
         { id: 'trends', label: 'Trends' },

@@ -5,6 +5,7 @@ import type { TooltipItem, ChartOptions, ChartDataset } from 'chart.js';
 import { Battery, Zap, MapPin, TrendingUp, Fuel, BYD_RED } from '@components/Icons';
 import StatCard from '@components/ui/StatCard';
 import ChartCard from '@components/ui/ChartCard';
+import { createLineChartOptions, defaultGridConfig } from '@/core/chartDefaults';
 import { useLayout } from '@/context/LayoutContext';
 import { Summary, MonthlyData } from '@/types';
 
@@ -18,13 +19,7 @@ interface EfficiencyTabProps {
 
 const COMPACT_SPACE_Y = 'space-y-3';
 
-// Static base options for line chart
-const LINE_CHART_BASE = {
-  maintainAspectRatio: false,
-  interaction: { mode: 'index' as const, intersect: false },
-  plugins: { legend: { display: false } },
-  elements: { point: { hitRadius: 20, hoverRadius: 6 } }
-};
+// Using createLineChartOptions inline below instead of LINE_CHART_BASE
 
 // Static scatter chart tick callback
 const scatterTickCallback = function (value: string | number) {
@@ -101,8 +96,7 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
 
   // Memoize line chart options (depends on efficiencyYAxis and hybrid mode)
   const lineChartOptions = useMemo((): ChartOptions<'line'> => {
-    const options: ChartOptions<'line'> = {
-      ...LINE_CHART_BASE,
+    const options = createLineChartOptions({
       plugins: {
         legend: { display: hasHybridData, position: 'top' as const, labels: { usePointStyle: true, boxWidth: 6 } }
       },
@@ -115,13 +109,17 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
           min: efficiencyYAxis.min,
           max: efficiencyYAxis.max,
           border: { dash: [] },
-          grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false } as any,
+          grid: defaultGridConfig,
           ticks: { font: { size: 10 }, color: '#10b981' },
           title: { display: hasHybridData, text: 'kWh/100km', color: '#10b981', font: { size: 10 } }
         },
-        x: { border: { dash: [] }, grid: { display: false }, ticks: { font: { size: 10 } } }
+        x: {
+          border: { dash: [] },
+          grid: { display: false },
+          ticks: { font: { size: 10 } }
+        }
       }
-    };
+    });
 
     // Add second Y-axis for fuel efficiency if hybrid
     if (hasHybridData && options.scales) {
@@ -161,7 +159,7 @@ const EfficiencyTab: FC<EfficiencyTabProps> = React.memo(({
       y: {
         title: { display: true, text: t('stats.efficiency'), font: { size: 10 } },
         border: { dash: [] },
-        grid: { color: 'rgba(203, 213, 225, 0.3)', borderDash: [3, 3], drawBorder: false },
+        grid: defaultGridConfig,
         ticks: { font: { size: 10 } }
       }
     },

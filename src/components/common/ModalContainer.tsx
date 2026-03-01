@@ -1,5 +1,6 @@
 import React, { Suspense } from 'react';
 import { useData } from '../../providers/DataProvider';
+import type { SoHMetricType } from '../modals/SoHExplanationModal';
 
 // Lazy loaded modals
 const SettingsModalLazy = React.lazy(() => import('../modals/SettingsModal'));
@@ -173,7 +174,7 @@ const ModalContainer: React.FC = () => {
                 <SoHExplanationModalLazy
                     isOpen={modals.sohExplanation}
                     onClose={() => closeModal('sohExplanation')}
-                    type={modals.sohExplanationType as any}
+                    type={(modals.sohExplanationType as SoHMetricType) ?? null}
                 />
             )}
 

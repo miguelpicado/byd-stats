@@ -103,8 +103,8 @@ nano .env
 
 Contenido del `.env`:
 ```env
-WEBHOOK_SECRET=7c33412face5c1f44b1396f8569f4eb9
-TOKEN_ENCRYPTION_KEY=d0a5edbd5edc9a1bb954e16cdb4c9391673081a5e0e44554018b4fbd08889661
+WEBHOOK_SECRET=<generate with: openssl rand -hex 16>
+TOKEN_ENCRYPTION_KEY=<generate with: openssl rand -hex 32>
 ```
 
 Guardar: `Ctrl+O`, `Enter`, `Ctrl+X`

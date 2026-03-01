@@ -192,13 +192,13 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         setAcknowledgedAnomalies,
         deletedAnomalies,
         setDeletedAnomalies
-    } as any), [
+    }), [
         allTrips, setRawTrips, tripHistory, setTripHistory,
         filteredTrips, months, hasMore, isLoadingMore, loadMore,
         processed,
         clearData, saveToHistory, loadFromHistory, clearHistory,
         acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
-    ] as any);
+    ]);
 
     return (
         <TripsContext.Provider value={value}>

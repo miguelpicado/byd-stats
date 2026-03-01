@@ -5,6 +5,7 @@ import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
 import com.getcapacitor.annotation.CapacitorPlugin;
+import com.bydstats.app.BuildConfig;
 import com.bydstats.app.MainActivity;
 
 import com.google.android.gms.wearable.PutDataMapRequest;
@@ -71,11 +72,26 @@ public class WearSyncPlugin extends Plugin {
             return;
         }
 
-        // Persist VIN for background service use
+        // Persist VIN for background service use (encrypted)
         if (vin != null) {
-            android.content.SharedPreferences prefs = getContext().getSharedPreferences("WearSyncPrefs", Context.MODE_PRIVATE);
-            prefs.edit().putString("last_vin", vin).apply();
-            Log.d("WearSync", "VIN persisted for background use: " + vin);
+            try {
+                androidx.security.crypto.MasterKey masterKey = new androidx.security.crypto.MasterKey.Builder(getContext())
+                    .setKeyScheme(androidx.security.crypto.MasterKey.KeyScheme.AES256_GCM)
+                    .build();
+                android.content.SharedPreferences prefs = androidx.security.crypto.EncryptedSharedPreferences.create(
+                    getContext(),
+                    "WearSyncPrefs",
+                    masterKey,
+                    androidx.security.crypto.EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
+                    androidx.security.crypto.EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM
+                );
+                prefs.edit().putString("last_vin", vin).apply();
+                if (BuildConfig.DEBUG) Log.d("WearSync", "VIN persisted (encrypted) for background use");
+            } catch (Exception e) {
+                Log.e("WearSync", "EncryptedSharedPreferences unavailable, falling back", e);
+                android.content.SharedPreferences prefs = getContext().getSharedPreferences("WearSyncPrefs", Context.MODE_PRIVATE);
+                prefs.edit().putString("last_vin", vin).apply();
+            }
         }
 
         try {
