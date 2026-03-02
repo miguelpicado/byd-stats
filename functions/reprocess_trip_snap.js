@@ -2,8 +2,11 @@ const admin = require('firebase-admin');
 // Use the compiled JS file
 require('dotenv').config();
 
-// Hardcode API Key BEFORE requiring googleMaps
-process.env.GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY || 'AIzaSyCmBJK1DIsykLj8poFHkwN1DWu3Kfuiwhc';
+// Require API Key BEFORE requiring googleMaps
+if (!process.env.GOOGLE_MAPS_API_KEY) {
+    console.error('[CRITICAL] GOOGLE_MAPS_API_KEY environment variable is not set. Exiting.');
+    process.exit(1);
+}
 
 // Use the compiled JS file
 const { snapToRoads, calculatePathDistanceKm } = require('./lib/googleMaps.js');

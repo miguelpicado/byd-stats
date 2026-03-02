@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { logger } from '@core/logger';
 import { googleDriveService, SyncData } from '@/services/googleDrive';
 import { Trip, Charge, Settings, Car } from '@/types';
+import { secureGet, secureSet } from '@/utils/secureStorage';
 
 export interface ConflictDifference {
     label: string;
@@ -133,9 +134,9 @@ export function useDriveSync({
             const currentCharges = localCharges || [];
 
             // Read AI caches from localStorage for cloud sync
-            const aiCacheStr = localStorage.getItem('ai_predictions');
-            const sohCacheStr = localStorage.getItem('ai_soh_predictions');
-            const parkingCacheStr = localStorage.getItem('ai_parking_predictions');
+            const aiCacheStr = await secureGet('ai_predictions');
+            const sohCacheStr = await secureGet('ai_soh_predictions');
+            const parkingCacheStr = await secureGet('ai_parking_predictions');
 
             const localDataToMerge: SyncData = {
                 trips: currentTrips,
@@ -186,13 +187,13 @@ export function useDriveSync({
 
             // Write merged AI caches to localStorage
             if (merged.aiCache?.efficiency) {
-                localStorage.setItem('ai_predictions', JSON.stringify(merged.aiCache.efficiency));
+                await secureSet('ai_predictions', JSON.stringify(merged.aiCache.efficiency));
             }
             if (merged.aiCache?.soh) {
-                localStorage.setItem('ai_soh_predictions', JSON.stringify(merged.aiCache.soh));
+                await secureSet('ai_soh_predictions', JSON.stringify(merged.aiCache.soh));
             }
             if (merged.aiCache?.parking) {
-                localStorage.setItem('ai_parking_predictions', JSON.stringify(merged.aiCache.parking));
+                await secureSet('ai_parking_predictions', JSON.stringify(merged.aiCache.parking));
             }
 
             logger.info("[Sync] Uploading merged data...");
@@ -259,13 +260,13 @@ export function useDriveSync({
 
             // Write merged AI caches to localStorage
             if (merged.aiCache?.efficiency) {
-                localStorage.setItem('ai_predictions', JSON.stringify(merged.aiCache.efficiency));
+                await secureSet('ai_predictions', JSON.stringify(merged.aiCache.efficiency));
             }
             if (merged.aiCache?.soh) {
-                localStorage.setItem('ai_soh_predictions', JSON.stringify(merged.aiCache.soh));
+                await secureSet('ai_soh_predictions', JSON.stringify(merged.aiCache.soh));
             }
             if (merged.aiCache?.parking) {
-                localStorage.setItem('ai_parking_predictions', JSON.stringify(merged.aiCache.parking));
+                await secureSet('ai_parking_predictions', JSON.stringify(merged.aiCache.parking));
             }
 
             const targetFilename = getTargetFilename();

@@ -888,5 +888,12 @@
                 "impact": "Es normal tener menos muestras que cargas totales. Cuantas más muestras de calidad (cargas profundas) tengas, más preciso será el cálculo del SoH Real."
             }
         }
+    },
+    "error": {
+        "boundary": {
+            "title": "Algo salió mal",
+            "message": "La aplicación ha encontrado un error inesperado.",
+            "reload": "Recargar página"
+        }
     }
 }

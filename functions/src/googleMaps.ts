@@ -30,12 +30,10 @@ export async function snapToRoads(points: LatLng[]): Promise<LatLng[]> {
     }
 
     if (points.length < 2) {
-        console.log('[snapToRoads] Not enough points to snap');
         return points;
     }
 
     try {
-        console.log(`[snapToRoads] Processing ${points.length} points...`);
         const snappedPoints: LatLng[] = [];
         // Google Maps limit is 100 points
         const chunkSize = 100;
@@ -43,8 +41,6 @@ export async function snapToRoads(points: LatLng[]): Promise<LatLng[]> {
         for (let i = 0; i < points.length; i += chunkSize) {
             const chunk = points.slice(i, i + chunkSize);
             const path = chunk.map(p => `${p.lat},${p.lon}`).join('|');
-
-            console.log(`[snapToRoads] Requesting chunk ${i / chunkSize + 1}, path length: ${chunk.length}`);
 
             try {
                 const response = await axios.get('https://roads.googleapis.com/v1/snapToRoads', {
@@ -56,8 +52,6 @@ export async function snapToRoads(points: LatLng[]): Promise<LatLng[]> {
                 });
 
                 if (response.data && response.data.snappedPoints && response.data.snappedPoints.length > 0) {
-                    console.log(`[snapToRoads] Chunk ${i / chunkSize + 1} success. Received ${response.data.snappedPoints.length} snapped points.`);
-
                     let lastKnownTimestamp = chunk[0].timestamp || Date.now();
 
                     // First pass: map to intermediate structure
@@ -118,7 +112,6 @@ export async function snapToRoads(points: LatLng[]): Promise<LatLng[]> {
             }
         }
 
-        console.log(`[snapToRoads] Finished. Input: ${points.length} -> Output: ${snappedPoints.length}`);
         return snappedPoints.length > 0 ? snappedPoints : points;
 
     } catch (error: any) {

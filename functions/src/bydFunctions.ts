@@ -1118,7 +1118,10 @@ export const bydDiagnosticV2 = onCall({ region: REGION }, async (request: Callab
 // MQTT WEBHOOK (receives events from Raspberry Pi listener)
 // =============================================================================
 
-const WEBHOOK_SECRET = process.env.BYD_WEBHOOK_SECRET || 'change-me-in-production';
+const WEBHOOK_SECRET = process.env.BYD_WEBHOOK_SECRET;
+if (!WEBHOOK_SECRET) {
+    console.error('[CRITICAL] BYD_WEBHOOK_SECRET environment variable is not set. Webhook endpoint will reject all requests.');
+}
 
 /**
  * Webhook endpoint for MQTT listener
@@ -1128,6 +1131,11 @@ export const bydMqttWebhook = onRequest({ region: REGION }, async (req, res) => 
     // Only allow POST
     if (req.method !== 'POST') {
         res.status(405).send('Method not allowed');
+        return;
+    }
+
+    if (!WEBHOOK_SECRET) {
+        res.status(503).send('Webhook not configured');
         return;
     }
 

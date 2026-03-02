@@ -451,7 +451,7 @@ export const useProcessedData = (
 
                     if (hasParkingCache) {
                         // Validate Cache Format (v2: { data, shape })
-                        const w0 = parkingCache.weights[0] as Record<string, unknown>;
+                        const w0 = parkingCache.weights[0] as unknown as Record<string, unknown>;
                         const isValid = w0 && 'data' in w0 && w0.data && 'shape' in w0 && w0.shape;
 
                         if (isValid) {
@@ -480,7 +480,7 @@ export const useProcessedData = (
                         efficiencyCache.data && efficiencyCache.data.weights && efficiencyCache.data.normData;
 
                     if (hasEfficiencyCache && !needsAutonomyTraining) { // Only restore if scenarios didn't force a retrain
-                        const ew0 = efficiencyCache.data.weights[0] as Record<string, unknown>;
+                        const ew0 = efficiencyCache.data.weights[0] as unknown as Record<string, unknown>;
                         const isValid = ew0 && 'data' in ew0 && ew0.data && efficiencyCache.data.normData.mean;
 
                         if (isValid) {

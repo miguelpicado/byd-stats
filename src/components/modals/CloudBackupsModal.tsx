@@ -8,7 +8,7 @@ interface DriveFile {
     id: string;
     name: string;
     modifiedTime: string;
-    size: number;
+    size: string | number | undefined;
 }
 
 /**
@@ -97,8 +97,9 @@ const CloudBackupsModal: React.FC = () => {
         }
     };
 
-    const formatSize = (bytes: number) => {
-        if (!bytes) return '0 B';
+    const formatSize = (bytesInput: string | number | undefined) => {
+        const bytes = Number(bytesInput);
+        if (!bytes || isNaN(bytes)) return '0 B';
         const k = 1024;
         const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));

@@ -11,7 +11,9 @@ import { useDatabase, UseDatabaseReturn } from '@hooks/useDatabase';
 import { useGoogleSync, UseGoogleSyncReturn } from '@hooks/useGoogleSync';
 import { useFileHandling, UseFileHandlingReturn } from '@hooks/useFileHandling';
 import { useAutoChargeDetection } from '@hooks/useAutoChargeDetection';
-import { bydWakeVehicle } from '@/services/bydApi';
+import { useVehicleWakeup } from '@hooks/sync/useVehicleWakeup';
+import { useSoHAutoSync } from '@hooks/sync/useSoHAutoSync';
+import { parseChargeRegistry } from '@/utils/parseChargeRegistry';
 
 interface SyncContextType {
     googleSync: UseGoogleSyncReturn;
@@ -69,55 +71,10 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     useAutoChargeDetection();
 
     // Wake vehicle on app open to get fresh status (tires, windows, doors, position, SoC)
-    // 1-hour cooldown to avoid excessive API calls
-    useEffect(() => {
-        const vin = activeCar?.vin;
-        if (!vin) return;
-
-        const COOLDOWN_KEY = 'byd_last_wake_timestamp';
-        const COOLDOWN_MS = 60 * 60 * 1000; // 1 hour
-
-        const lastWake = parseInt(localStorage.getItem(COOLDOWN_KEY) || '0', 10);
-        const now = Date.now();
-
-        if (now - lastWake < COOLDOWN_MS) {
-            logger.info(`[SyncProvider] Wake skipped — cooldown active (${Math.round((COOLDOWN_MS - (now - lastWake)) / 60000)}min remaining)`);
-            return;
-        }
-
-        logger.info(`[SyncProvider] Waking vehicle ${vin} on app open...`);
-        localStorage.setItem(COOLDOWN_KEY, String(now));
-
-        bydWakeVehicle(vin)
-            .then((result) => {
-                logger.info(`[SyncProvider] Wake on open: success=${result.success}, SoC=${result.data?.socPercent}%`);
-            })
-            .catch((err) => {
-                logger.error('[SyncProvider] Wake on open failed:', err);
-                // Reset timestamp so next open can retry
-                localStorage.removeItem(COOLDOWN_KEY);
-            });
-    }, [activeCar?.vin]); // eslint-disable-line react-hooks/exhaustive-deps
+    useVehicleWakeup(activeCar || null);
 
     // Auto-Sync on SoH Calculation
-    useEffect(() => {
-        const handleSoHCalculated = (event: CustomEvent) => {
-            const { soh, samples } = event.detail;
-            logger.info(`[SyncProvider] SoH calculated (${soh}%, ${samples} samples), triggering auto-sync...`);
-
-            if (googleSync.isAuthenticated && !googleSync.isSyncing) {
-                googleSync.syncNow(null).then(() => {
-                    logger.info('[SyncProvider] Auto-sync after SoH calculation completed');
-                    toast.success(t('sync.sohSynced', 'SoH actualizado y sincronizado'));
-                }).catch((err) => {
-                    logger.error('[SyncProvider] Auto-sync after SoH failed:', err);
-                });
-            }
-        };
-
-        window.addEventListener('sohCalculated', handleSoHCalculated as EventListener);
-        return () => window.removeEventListener('sohCalculated', handleSoHCalculated as EventListener);
-    }, [googleSync, t]);
+    useSoHAutoSync(googleSync);
 
     // Auto-Sync Effect
     useEffect(() => {
@@ -350,87 +307,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
     // Logic moved from DataProvider
     const loadChargeRegistry = useCallback(async (file: File) => {
         try {
-            const text = await file.text();
-            const lines = text.split('\n').filter(line => line.trim());
-
-            if (lines.length < 2) {
-                toast.error(t('errors.noDataFound'));
-                return;
-            }
-
-            const chargesArray: Array<{
-                date: string;
-                time: string;
-                odometer: number;
-                kwhCharged: number;
-                totalCost: number;
-                chargerTypeId: string | undefined;
-                pricePerKwh: number;
-                finalPercentage: number;
-            }> = [];
-            const newChargerTypes: Array<{
-                id: string;
-                name: string;
-                speedKw: number;
-                efficiency: number;
-            }> = [];
-            const existingChargerNames = new Set(
-                (settings.chargerTypes || []).map(ct => ct.name.toLowerCase())
-            );
-
-            for (let i = 1; i < lines.length; i++) {
-                const line = lines[i];
-                const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
-
-                if (!values || values.length < 8) continue;
-                const [fechaHora, kmTotales, kwhFacturados, precioTotal, , tipoCargador, precioKw, porcentajeFinal] = values;
-
-                if (!fechaHora || !fechaHora.match(/^\d{4}-\d{2}-\d{2}/)) break;
-
-                const dateMatch = fechaHora.match(/(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
-                if (!dateMatch) continue;
-
-                const date = dateMatch[1];
-                const time = dateMatch[2];
-
-                let chargerTypeId: string | null = null;
-                const chargerName = tipoCargador?.trim();
-
-                if (chargerName) {
-                    const existing = (settings.chargerTypes || []).find(
-                        ct => ct.name.toLowerCase() === chargerName.toLowerCase()
-                    );
-
-                    if (existing) {
-                        chargerTypeId = existing.id;
-                    } else if (!existingChargerNames.has(chargerName.toLowerCase())) {
-                        const newId = `csv_${Date.now()}_${i}`;
-                        newChargerTypes.push({
-                            id: newId,
-                            name: chargerName,
-                            speedKw: 11,
-                            efficiency: 1
-                        });
-                        chargerTypeId = newId;
-                        existingChargerNames.add(chargerName.toLowerCase());
-                    } else {
-                        chargerTypeId = newChargerTypes.find(
-                            ct => ct.name.toLowerCase() === chargerName.toLowerCase()
-                        )?.id || null;
-                    }
-                }
-
-                chargesArray.push({
-                    date,
-                    time,
-                    odometer: parseFloat(kmTotales) || 0,
-                    kwhCharged: parseFloat(kwhFacturados) || 0,
-                    totalCost: parseFloat(precioTotal) || 0,
-                    chargerTypeId: chargerTypeId || '',
-                    pricePerKwh: parseFloat(precioKw) || 0,
-                    finalPercentage: parseFloat(porcentajeFinal) || 0
-                });
-            }
+            const { chargesArray, newChargerTypes } = await parseChargeRegistry(file, settings);
 
             if (newChargerTypes.length > 0) {
                 const updatedChargerTypes = [...(settings.chargerTypes || []), ...newChargerTypes];
@@ -454,7 +331,12 @@ export function SyncProvider({ children }: { children: ReactNode }) {
             }
         } catch (error) {
             logger.error('Error loading charge registry:', error);
-            toast.error(t('errors.processingFile') || 'Error processing file');
+            const errMsg = error instanceof Error ? error.message : 'Error processing file';
+            if (errMsg === 'errors.noDataFound') {
+                toast.error(t(errMsg));
+            } else {
+                toast.error(t('errors.processingFile') || 'Error processing file');
+            }
         }
     }, [settings, updateSettings, chargesContext, googleSync, t]);
 

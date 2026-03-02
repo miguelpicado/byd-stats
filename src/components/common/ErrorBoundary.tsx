@@ -1,4 +1,5 @@
 import React, { ReactNode, Component } from 'react';
+import i18next from 'i18next';
 
 interface ErrorBoundaryProps {
     children: ReactNode;
@@ -46,8 +47,8 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                 return this.props.fallback;
             }
 
-            const title = this.props.title || "Algo salió mal";
-            const message = this.props.message || "La aplicación ha encontrado un error inesperado.";
+            const title = this.props.title || i18next.t('error.boundary.title', 'Something went wrong');
+            const message = this.props.message || i18next.t('error.boundary.message', 'The application encountered an unexpected error.');
 
             // Standard fallback UI
             return (
@@ -105,7 +106,7 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
                                 <path d="M1 20v-6h6"></path>
                                 <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                             </svg>
-                            Recargar página
+                            {i18next.t('error.boundary.reload', 'Reload page')}
                         </button>
                     </div>
                 </div>

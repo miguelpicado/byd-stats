@@ -20,7 +20,7 @@ vi.mock('@core/logger', () => ({
     logger: { info: vi.fn(), error: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
-const mockActiveCarId = vi.fn<[], string | null>(() => 'car-test');
+const mockActiveCarId = vi.fn<() => string | null>(() => 'car-test');
 
 vi.mock('@/context/CarContext', () => ({
     useCar: () => ({ activeCarId: mockActiveCarId() }),

@@ -5,6 +5,7 @@ import { SocialLogin } from '@capgo/capacitor-social-login';
 import { logger } from '@core/logger';
 import { googleDriveService } from '@/services/googleDrive';
 import { toast } from 'react-hot-toast';
+import { secureGet, secureSet, secureRemove } from '@/utils/secureStorage';
 
 export interface UserProfile {
     id: string;
@@ -19,6 +20,7 @@ export interface UserProfile {
 
 export function useGoogleAuth() {
     const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+        // Fallback for initial state. The real check is async below.
         const token = localStorage.getItem('google_access_token');
         const expiry = localStorage.getItem('google_token_expiry');
         return !!(token && expiry && Date.now() < parseInt(expiry));
@@ -45,9 +47,9 @@ export function useGoogleAuth() {
     const handleLoginSuccess = useCallback(async (accessToken: string) => {
         logger.info('[Auth] Login successful, processing token...');
         googleDriveService.setAccessToken(accessToken);
-        localStorage.setItem('google_access_token', accessToken);
+        await secureSet('google_access_token', accessToken);
         const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour
-        localStorage.setItem('google_token_expiry', expiryTime.toString());
+        await secureSet('google_token_expiry', expiryTime.toString());
 
         // Trigger callback FIRST to establish locks before React re-renders
         if (onLoginSuccessCallback.current) {
@@ -64,8 +66,8 @@ export function useGoogleAuth() {
         const checkAuth = async () => {
             // Restore token from localStorage IMMEDIATELY so Drive operations work
             // This must happen BEFORE SocialLogin.initialize() which can be slow on native
-            const token = localStorage.getItem('google_access_token');
-            const expiry = localStorage.getItem('google_token_expiry');
+            const token = await secureGet('google_access_token');
+            const expiry = await secureGet('google_token_expiry');
 
             if (token && expiry && Date.now() < parseInt(expiry)) {
                 googleDriveService.setAccessToken(token);
@@ -161,8 +163,8 @@ export function useGoogleAuth() {
             if (Capacitor.isNativePlatform()) {
                 try { await SocialLogin.logout({ provider: 'google' }); } catch (ignored) { }
             }
-            localStorage.removeItem('google_access_token');
-            localStorage.removeItem('google_token_expiry');
+            secureRemove('google_access_token');
+            secureRemove('google_token_expiry');
             setIsAuthenticated(false);
             setUserProfile(null);
         } catch (e) {

@@ -1,0 +1,17 @@
+[LOG] Starting reproccess for trip x3N5VIajJ54ahunKiIEU...
+[LOG] Iterating vehicles to find trip...
+[LOG] Found trip for vehicle VIN: LGXCH6CD0S2052990
+[LOG] Current points in document: 77
+[LOG] Fetching points from subcollection...
+[LOG] Found 0 points in subcollection.
+[LOG] Total merged points: 77
+[LOG] Running snapToRoads...
+[LOG] [snapToRoads] Processing 77 points...
+[LOG] [snapToRoads] Requesting chunk 1, path length: 77
+[LOG] [snapToRoads] Chunk 1 success. Received 97 snapped points.
+[LOG] [snapToRoads] Finished. Input: 77 -> Output: 97
+[LOG] Snap complete. Resulting points: 97
+[LOG] Calculated GPS Distance: 7.68 km
+[LOG] Recalculating Electricity: 0.04 * 82.5 = 3.3 kWh
+[LOG] Trip updated successfully!
+[LOG] Done.

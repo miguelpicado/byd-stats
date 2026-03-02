@@ -823,5 +823,12 @@
                 "impact": "It is normal to have fewer samples than total charges. The more quality samples (deep charges) you have, the more accurate the Real SoH calculation will be."
             }
         }
+    },
+    "error": {
+        "boundary": {
+            "title": "Something went wrong",
+            "message": "The application encountered an unexpected error.",
+            "reload": "Reload page"
+        }
     }
 }

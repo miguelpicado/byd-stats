@@ -1,0 +1,40 @@
+src/components/modals/CloudBackupsModal.tsx(41,30): error TS2352: Conversion of type 'GoogleDriveFile[]' to type 'DriveFile[]' may be a mistake because neither type sufficiently overlaps with the other. If this was intentional, convert the expression to 'unknown' first.
+  Type 'GoogleDriveFile' is not comparable to type 'DriveFile'.
+    Types of property 'size' are incompatible.
+      Type 'string | undefined' is not comparable to type 'number'.
+        Type 'string' is not comparable to type 'number'.
+src/hooks/__tests__/useSwipeGesture.test.ts(56,13): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(75,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(96,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(117,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(138,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(160,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(184,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(214,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(237,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/hooks/__tests__/useSwipeGesture.test.ts(258,17): error TS2322: Type 'Mock<Procedure | Constructable>' is not assignable to type '(tabId: string) => void'.
+  Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' is not assignable to type '(tabId: string) => void'.
+    Type 'MockInstance<Procedure | Constructable> & (new (...args: any[]) => any) & {}' provides no match for the signature '(tabId: string): void'.
+src/providers/__tests__/ChargesProvider.test.tsx(23,31): error TS2558: Expected 0-1 type arguments, but got 2.
+src/providers/__tests__/ChargesProvider.test.tsx(26,35): error TS2345: Argument of type '[]' is not assignable to parameter of type 'never'.
+src/providers/__tests__/ChargesProvider.test.tsx(60,41): error TS2345: Argument of type '"car-test"' is not assignable to parameter of type 'never'.
+src/providers/__tests__/ChargesProvider.test.tsx(109,45): error TS2345: Argument of type 'null' is not assignable to parameter of type 'never'.
+src/providers/__tests__/SyncProvider.test.tsx(4,8): error TS6133: 'React' is declared but its value is never read.

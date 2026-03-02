@@ -10,7 +10,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
+// React import removed as it is not used in vitest testing when not needed
 import ChargeCard from '../ChargeCard';
 import type { Charge } from '@/types';
 
