@@ -24,8 +24,54 @@ export const useMergedTrips = (
     const [hasMore, setHasMore] = useState(true);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
     const isFirstLoad = useRef(true);
+    const latestTripsRef = useRef<Trip[]>(latestTrips);
+    const loadMoreRef = useRef<() => Promise<void>>(() => Promise.resolve());
 
-    // 1. Initial Load & Real-time Updates (Latest 20)
+    // Keep latestTripsRef in sync (doesn't cause re-renders)
+    useEffect(() => {
+        latestTripsRef.current = latestTrips;
+    }, [latestTrips]);
+
+    // 1. Load More (Pagination) - Defined before useEffect to avoid TDZ
+    const loadMore = useCallback(async () => {
+        if (!vehicleId || !hasMore || isLoadingMore) return;
+
+        setIsLoadingMore(true);
+        try {
+            const result = await fetchTripsPage(vehicleId, lastDoc, 20, serverDateRange);
+
+            if (result.trips.length > 0) {
+                // Determine if we need to replace or append (first historical load vs subsequent)
+                setHistoricalTrips(prev => {
+                    // Avoid duplicating trips that might already be in latestTrips
+                    // Use ref to access current latestTrips without making it a dependency
+                    const existingIds = new Set(latestTripsRef.current.map(t => t.id));
+                    const newTrips = result.trips.filter(t => !existingIds.has(t.id));
+
+                    if (lastDoc === null) {
+                        return newTrips; // First historical page
+                    }
+                    return [...prev, ...newTrips];
+                });
+
+                setLastDoc(result.lastDoc);
+                setHasMore(result.hasMore);
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            logger.error('Error loading more trips:', error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    }, [vehicleId, hasMore, isLoadingMore, lastDoc, serverDateRange]);
+
+    // Keep loadMoreRef pointing to the latest loadMore (avoids making it a dep of the subscription effect)
+    useEffect(() => {
+        loadMoreRef.current = loadMore;
+    }, [loadMore]);
+
+    // 2. Initial Load & Real-time Updates (Latest 20)
     useEffect(() => {
         if (!vehicleId) {
             setLatestTrips([]);
@@ -46,8 +92,8 @@ export const useMergedTrips = (
                 if (isFirstLoad.current) {
                     isFirstLoad.current = false;
                     // Trigger first history fetch to set up lastDoc and hasMore properly
-                    loadMore();
-                } else if (trips.length > latestTrips.length) {
+                    loadMoreRef.current();
+                } else if (trips.length > latestTripsRef.current.length) {
                     // If we receive MORE trips than we had, it means a new trip was completed
                     // Trigger Autonomy Recalculation
                     if (recalculateAutonomy) {
@@ -67,40 +113,7 @@ export const useMergedTrips = (
             setHasMore(true);
             isFirstLoad.current = true;
         };
-    }, [vehicleId, serverDateRange?.start, serverDateRange?.end, recalculateAutonomy, serverDateRange, latestTrips.length, loadMore]); // Added missing dependencies
-
-    // 2. Load More (Pagination)
-    const loadMore = useCallback(async () => {
-        if (!vehicleId || !hasMore || isLoadingMore) return;
-
-        setIsLoadingMore(true);
-        try {
-            const result = await fetchTripsPage(vehicleId, lastDoc, 20, serverDateRange);
-
-            if (result.trips.length > 0) {
-                // Determine if we need to replace or append (first historical load vs subsequent)
-                setHistoricalTrips(prev => {
-                    // Avoid duplicating trips that might already be in latestTrips
-                    const existingIds = new Set(latestTrips.map(t => t.id));
-                    const newTrips = result.trips.filter(t => !existingIds.has(t.id));
-
-                    if (lastDoc === null) {
-                        return newTrips; // First historical page
-                    }
-                    return [...prev, ...newTrips];
-                });
-
-                setLastDoc(result.lastDoc);
-                setHasMore(result.hasMore);
-            } else {
-                setHasMore(false);
-            }
-        } catch (error) {
-            logger.error('Error loading more trips:', error);
-        } finally {
-            setIsLoadingMore(false);
-        }
-    }, [vehicleId, hasMore, isLoadingMore, lastDoc, latestTrips, serverDateRange]);
+    }, [vehicleId, serverDateRange?.start, serverDateRange?.end, recalculateAutonomy]);
 
     // Computed: Merged Trips (Local + Latest + Historical)
     const batterySize = typeof settings?.batterySize === 'string'

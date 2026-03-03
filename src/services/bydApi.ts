@@ -47,7 +47,7 @@ export interface BydRealtime {
         rearLeft: boolean;
         rearRight: boolean;
     };
-    raw?: any;
+    raw?: Record<string, unknown>;
 }
 
 export interface BydGps {
@@ -89,7 +89,7 @@ export async function bydConnect(
     controlPin?: string,
     userId?: string
 ): Promise<BydConnectResult> {
-    const callable = httpsCallable<any, BydConnectResult>(functions, 'bydConnectV2');
+    const callable = httpsCallable<{ username: string; password: string; countryCode: string; controlPin?: string; userId?: string }, BydConnectResult>(functions, 'bydConnectV2');
     const result = await callable({
         username,
         password,
@@ -104,7 +104,7 @@ export async function bydConnect(
  * Disconnect BYD account
  */
 export async function bydDisconnect(vin: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydDisconnectV2');
+    const callable = httpsCallable<{ vin: string }, { success: boolean }>(functions, 'bydDisconnectV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -113,7 +113,7 @@ export async function bydDisconnect(vin: string): Promise<{ success: boolean }> 
  * Save encrypted ABRP token
  */
 export async function bydSaveAbrpToken(vin: string, token: string): Promise<{ success: boolean }> {
-    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydSaveAbrpToken');
+    const callable = httpsCallable<{ vin: string; token: string }, { success: boolean }>(functions, 'bydSaveAbrpToken');
     const result = await callable({ vin, token });
     return result.data;
 }
@@ -254,11 +254,8 @@ export async function bydBatteryHeat(vin: string, pin?: string): Promise<{ succe
 /**
  * Get full diagnostic
  */
-/**
- * Get full diagnostic
- */
 export async function bydDiagnostic(vin: string): Promise<BydDiagnostic> {
-    const callable = httpsCallable<any, BydDiagnostic>(functions, 'bydDiagnosticV2');
+    const callable = httpsCallable<{ vin: string }, BydDiagnostic>(functions, 'bydDiagnosticV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -266,8 +263,8 @@ export async function bydDiagnostic(vin: string): Promise<BydDiagnostic> {
 /**
  * Get API Mapping Dump (Raw)
  */
-export async function bydDebugDump(vin: string): Promise<{ success: boolean; dump: any }> {
-    const callable = httpsCallable<any, { success: boolean; dump: any }>(functions, 'bydDebugV2');
+export async function bydDebugDump(vin: string): Promise<{ success: boolean; dump: Record<string, unknown> }> {
+    const callable = httpsCallable<{ vin: string }, { success: boolean; dump: Record<string, unknown> }>(functions, 'bydDebugV2');
     const result = await callable({ vin });
     return result.data;
 }
@@ -308,13 +305,18 @@ export async function bydWakeVehicle(vin: string): Promise<BydWakeResult> {
 /**
  * Fix and recalculate trip data
  */
-export async function bydFixTrip(vin: string, tripId: string, overrideValues?: any): Promise<{
+export async function bydFixTrip(vin: string, tripId: string, overrideValues?: Record<string, unknown>): Promise<{
     success: boolean;
-    updates?: any;
-    analysis?: any;
+    updates?: Record<string, unknown>;
+    analysis?: Record<string, unknown>;
     message?: string;
 }> {
-    const callable = httpsCallable<any, any>(functions, 'bydFixTripV2');
+    const callable = httpsCallable<{ vin: string; tripId: string; overrideValues?: Record<string, unknown> }, {
+        success: boolean;
+        updates?: Record<string, unknown>;
+        analysis?: Record<string, unknown>;
+        message?: string;
+    }>(functions, 'bydFixTripV2');
     const result = await callable({ vin, tripId, overrideValues });
     return result.data;
 }

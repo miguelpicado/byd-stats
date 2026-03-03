@@ -3,82 +3,122 @@ import { describe, it, expect, vi } from 'vitest';
 import React from 'react';
 import { DataProvider, useData, useDataState, useDataDispatch } from '../DataProvider';
 
-// Mock all dependencies
+// Mock all sub-providers and their contexts directly.
+// DataProvider is now a composition layer — mocking the sub-providers is the right approach.
+
+vi.mock('../ModalProvider', () => ({
+    ModalProvider: ({ children }) => <>{children}</>,
+    useModalContext: () => ({
+        modals: { registryRestore: false },
+        openModal: vi.fn(),
+        closeModal: vi.fn(),
+        openRegistryModal: vi.fn(),
+        isAnyModalOpen: false,
+    }),
+}));
+
+vi.mock('../FilterProvider', () => ({
+    FilterProvider: ({ children }) => <>{children}</>,
+    useFiltersContext: () => ({
+        filterType: 'all',
+        selMonth: '',
+        dateFrom: '',
+        dateTo: '',
+        setFilterType: vi.fn(),
+        setSelMonth: vi.fn(),
+        setDateFrom: vi.fn(),
+        setDateTo: vi.fn(),
+    }),
+}));
+
+vi.mock('../ChargesProvider', () => ({
+    ChargesProvider: ({ children }) => <>{children}</>,
+    useChargesContext: () => ({
+        charges: [],
+        replaceCharges: vi.fn(),
+        addCharge: vi.fn(),
+        updateCharge: vi.fn(),
+        deleteCharge: vi.fn(),
+        addMultipleCharges: vi.fn(),
+        exportCharges: vi.fn(),
+    }),
+}));
+
+vi.mock('../TripsProvider', () => ({
+    TripsProvider: ({ children }) => <>{children}</>,
+    useTripsContext: () => ({
+        rawTrips: [],
+        setRawTrips: vi.fn(),
+        tripHistory: [],
+        setTripHistory: vi.fn(),
+        filteredTrips: [],
+        allTrips: [],
+        months: [],
+        hasMore: false,
+        isLoadingMore: false,
+        loadMore: vi.fn(),
+        stats: null,
+        isProcessing: false,
+        isAiTraining: false,
+        aiScenarios: [],
+        aiLoss: null,
+        aiSoH: null,
+        aiSoHStats: null,
+        predictDeparture: vi.fn(),
+        findSmartChargingWindows: vi.fn(),
+        forceRecalculate: vi.fn(),
+        recalculateSoH: vi.fn(),
+        recalculateAutonomy: vi.fn(),
+        clearData: vi.fn(),
+        saveToHistory: vi.fn(),
+        loadFromHistory: vi.fn(),
+        clearHistory: vi.fn(),
+        acknowledgedAnomalies: [],
+        setAcknowledgedAnomalies: vi.fn(),
+        deletedAnomalies: [],
+        setDeletedAnomalies: vi.fn(),
+    }),
+}));
+
+vi.mock('../SyncProvider', () => ({
+    SyncProvider: ({ children }) => <>{children}</>,
+    useSyncContext: () => ({
+        googleSync: { isAuthenticated: false, isSyncing: false, syncNow: vi.fn() },
+        database: { sqlReady: true, initSql: vi.fn(), processDB: vi.fn(), exportDatabase: vi.fn() },
+        fileHandling: {},
+        loadFile: vi.fn(),
+        exportData: vi.fn(),
+        exportSyncData: vi.fn(),
+        importSyncData: vi.fn(),
+        loadChargeRegistry: vi.fn(),
+    }),
+}));
+
 vi.mock('@/context/AppContext', () => ({
     useApp: () => ({
         settings: {},
-        updateSettings: vi.fn()
-    })
+        updateSettings: vi.fn(),
+    }),
 }));
 
-vi.mock('@/hooks/useAppData', () => ({
-    default: () => ({
-        rawTrips: [],
-        setRawTrips: vi.fn(),
-    })
-}));
-
-vi.mock('@/hooks/useChargesData', () => ({
-    default: () => ({
-        charges: [],
-        replaceCharges: vi.fn()
-    })
-}));
-
-vi.mock('@/hooks/useDatabase', () => ({
-    useDatabase: () => ({
-        sqlReady: true
-    })
-}));
-
-vi.mock('@/hooks/useFileHandling', () => ({
-    useFileHandling: () => ({})
-}));
-
-vi.mock('@/hooks/useGoogleSync', () => ({
-    useGoogleSync: () => ({})
-}));
-
-vi.mock('@/hooks/useConfirmation', () => ({
-    useConfirmation: () => ({})
-}));
-
-vi.mock('@/hooks/useVehicleStatus', () => ({
-    useVehicleStatus: () => ({})
-}));
-
-vi.mock('@/hooks/useAutoChargeDetection', () => ({
-    useAutoChargeDetection: () => ({})
-}));
-
-vi.mock('@/hooks/useModalState', () => ({
-    default: () => ({
-        modals: {},
-        openModal: vi.fn(),
-        closeModal: vi.fn()
-    })
-}));
-
-vi.mock('@/context/CarContext', () => ({
-    useCar: () => ({
-        activeCarId: 'test',
-        cars: [],
-        updateCar: vi.fn()
-    })
+vi.mock('@hooks/useConfirmation', () => ({
+    useConfirmation: () => ({
+        confirmModalState: { isOpen: false },
+        closeConfirmation: vi.fn(),
+        showConfirmation: vi.fn(),
+        clearData: vi.fn(),
+        saveToHistory: vi.fn(),
+        loadFromHistory: vi.fn(),
+        clearHistory: vi.fn(),
+    }),
 }));
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
         t: (key) => key,
-        i18n: {
-            changeLanguage: () => Promise.resolve(),
-            language: 'en'
-        }
+        i18n: { changeLanguage: () => Promise.resolve(), language: 'en' },
     }),
-    initReactI18next: {
-        type: '3rdParty',
-        init: () => { }
-    }
+    initReactI18next: { type: '3rdParty', init: () => { } },
 }));
 
 describe('DataProvider', () => {

@@ -37,7 +37,7 @@ export const useSyncContext = () => {
 export function SyncProvider({ children }: { children: ReactNode }) {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
-    const { activeCarId, cars, updateCar, activeCar } = useCar();
+    const { activeCarId, cars, updateCar, activeCar, setActiveCarId } = useCar();
 
     // Dependencies
     const tripsContext = useTripsContext();
@@ -62,7 +62,7 @@ export function SyncProvider({ children }: { children: ReactNode }) {
         isRegistryModalOpen: modalContext.modals?.registryRestore,
         updateCar,
         carName: activeCar?.name || '',
-        setActiveCarId: useCar().setActiveCarId
+        setActiveCarId
     });
 
     // Auto Charge Detection - monitors vehicle status and auto-registers charge sessions

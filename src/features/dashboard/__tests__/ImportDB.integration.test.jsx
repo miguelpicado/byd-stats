@@ -2,7 +2,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import React from 'react';
 import { DataProvider, useData } from '../../../providers/DataProvider';
-import Header from '../../navigation/Header';
 import { AppProvider } from '../../../context/AppContext';
 import { LayoutProvider } from '../../../context/LayoutContext';
 import { CarProvider } from '../../../context/CarContext';
@@ -17,18 +16,106 @@ vi.mock('react-i18next', () => ({
     I18nextProvider: ({ children }) => <>{children}</>
 }));
 
-vi.mock('@/hooks/useGoogleSync', () => ({
-    useGoogleSync: () => ({ isAuthenticated: false })
+// Mock sub-providers to prevent OOM from real Firebase/SQL instantiation
+vi.mock('../../../providers/ModalProvider', () => ({
+    ModalProvider: ({ children }) => <>{children}</>,
+    useModalContext: () => ({
+        modals: { registryRestore: false },
+        openModal: vi.fn(),
+        closeModal: vi.fn(),
+        openRegistryModal: vi.fn(),
+        isAnyModalOpen: false,
+    }),
 }));
 
-// We'll mock useDatabase to simulate a successful load
+vi.mock('../../../providers/FilterProvider', () => ({
+    FilterProvider: ({ children }) => <>{children}</>,
+    useFiltersContext: () => ({
+        filterType: 'all',
+        selMonth: '',
+        dateFrom: '',
+        dateTo: '',
+        setFilterType: vi.fn(),
+        setSelMonth: vi.fn(),
+        setDateFrom: vi.fn(),
+        setDateTo: vi.fn(),
+    }),
+}));
+
+vi.mock('../../../providers/ChargesProvider', () => ({
+    ChargesProvider: ({ children }) => <>{children}</>,
+    useChargesContext: () => ({
+        charges: [],
+        replaceCharges: vi.fn(),
+        addCharge: vi.fn(),
+        updateCharge: vi.fn(),
+        deleteCharge: vi.fn(),
+        addMultipleCharges: vi.fn(),
+        exportCharges: vi.fn(),
+    }),
+}));
+
+vi.mock('../../../providers/TripsProvider', () => ({
+    TripsProvider: ({ children }) => <>{children}</>,
+    useTripsContext: () => ({
+        rawTrips: [],
+        setRawTrips: vi.fn(),
+        tripHistory: [],
+        setTripHistory: vi.fn(),
+        filteredTrips: [],
+        allTrips: [],
+        months: [],
+        hasMore: false,
+        isLoadingMore: false,
+        loadMore: vi.fn(),
+        stats: null,
+        isProcessing: false,
+        isAiTraining: false,
+        aiScenarios: [],
+        aiLoss: null,
+        aiSoH: null,
+        aiSoHStats: null,
+        predictDeparture: vi.fn(),
+        findSmartChargingWindows: vi.fn(),
+        forceRecalculate: vi.fn(),
+        recalculateSoH: vi.fn(),
+        recalculateAutonomy: vi.fn(),
+        clearData: vi.fn(),
+        saveToHistory: vi.fn(),
+        loadFromHistory: vi.fn(),
+        clearHistory: vi.fn(),
+        acknowledgedAnomalies: [],
+        setAcknowledgedAnomalies: vi.fn(),
+        deletedAnomalies: [],
+        setDeletedAnomalies: vi.fn(),
+    }),
+}));
+
 const mockLoadFile = vi.fn();
-vi.mock('@/hooks/useDatabase', () => ({
-    useDatabase: () => ({
-        sqlReady: true,
+vi.mock('../../../providers/SyncProvider', () => ({
+    SyncProvider: ({ children }) => <>{children}</>,
+    useSyncContext: () => ({
+        googleSync: { isAuthenticated: false, isSyncing: false, syncNow: vi.fn() },
+        database: { sqlReady: true, loadFile: mockLoadFile, initSql: vi.fn(), processDB: vi.fn(), exportDatabase: vi.fn() },
+        fileHandling: {},
         loadFile: mockLoadFile,
-        error: null
-    })
+        exportData: vi.fn(),
+        exportSyncData: vi.fn(),
+        importSyncData: vi.fn(),
+        loadChargeRegistry: vi.fn(),
+    }),
+}));
+
+vi.mock('@hooks/useConfirmation', () => ({
+    useConfirmation: () => ({
+        confirmModalState: { isOpen: false },
+        closeConfirmation: vi.fn(),
+        showConfirmation: vi.fn(),
+        clearData: vi.fn(),
+        saveToHistory: vi.fn(),
+        loadFromHistory: vi.fn(),
+        clearHistory: vi.fn(),
+    }),
 }));
 
 // Mock window.crypto.randomUUID for CarContext
@@ -54,29 +141,11 @@ describe('Import DB Integration Flow', () => {
         </CarProvider>
     );
 
-    it('should trigger database load when a file is selected', async () => {
-        render(
-            <AllProviders>
-                <Header />
-                {/* We simulate the file input that usually exists in a hidden way or in the dashboard */}
-                <input
-                    type="file"
-                    data-testid="db-input"
-                    onChange={(_e) => {
-                        // In reality, this is handled by useFileHandling
-                        // But we want to see if the action reaches the database hook
-                    }}
-                />
-            </AllProviders>
-        );
-
-        // This is a bit tricky because the actual file input is often in a different component
-        // Let's test the action propagation through useData
-
+    it('should trigger database load when a file is selected', () => {
         // Consumer component to trigger the action
         const ActionTrigger = () => {
-            const { database } = useData();
-            return <button onClick={() => database.loadFile(new File([], 'test.db'))}>Trigger Import</button>;
+            const { loadFile } = useData();
+            return <button onClick={() => loadFile(new File([], 'test.db'))}>Trigger Import</button>;
         };
 
         render(
@@ -89,8 +158,4 @@ describe('Import DB Integration Flow', () => {
 
         expect(mockLoadFile).toHaveBeenCalled();
     });
-
-    // Note: A full integration test would verify that processData is called 
-    // after useDatabase updates rawTrips. Since we mock hooks, we'll verify the 
-    // wiring between DataProvider and its consumers.
 });

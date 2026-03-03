@@ -133,7 +133,7 @@ export const useTabNavigation = ({ settings, isVertical = false, isNative = fals
     }, [tabs, activeTab]);
 
     const handleTabClick = useCallback((tabId: string) => {
-        if (tabId === activeTab) return;
+        if (tabId === currentTab) return;
         if (isTransitioning) return;
 
         // Use transitions for both vertical and horizontal modes
@@ -145,10 +145,10 @@ export const useTabNavigation = ({ settings, isVertical = false, isNative = fals
             setIsTransitioning(false);
             setFadingTab(null); // Clear animation after transition
         }, transitionDuration);
-    }, [activeTab, isTransitioning, transitionDuration]);
+    }, [currentTab, isTransitioning, transitionDuration]);
 
     return {
-        activeTab,
+        activeTab: currentTab, // Use memoized fallback-safe value instead of raw state
         setActiveTab,
         fadingTab,
         isTransitioning, // Exposed for MainLayout or other consumers
