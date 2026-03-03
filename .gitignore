@@ -80,3 +80,9 @@ tmp_*.txt
 tmp_*.ts
 test_*.ts
 *.local.ts
+
+# Test outputs & coverage logs
+*_out.txt
+*_out?.txt
+coverage_final*.txt
+build_out.txt

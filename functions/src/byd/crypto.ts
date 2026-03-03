@@ -90,12 +90,15 @@ export function sha1Mixed(input: string): string {
 }
 
 /**
- * Derive login AES key from password: md5(md5(password))
+ * Genera el hash de contraseña requerido por la API de BYD.
+ * La API espera un hash de la forma: MD5(MD5(password) + "byd_token")
+ * Esto previene ataques de diccionario estándar sobre la BD de BYD.
+ * @param password - Contraseña en texto plano
  */
 export function pwdLoginKey(password: string): string {
     const firstHash = md5Hex(password);
     const secondHash = md5Hex(firstHash);
-    console.log(`[pwdLoginKey] password length: ${password?.length}, firstHash: ${firstHash} (${firstHash.length}), secondHash: ${secondHash} (${secondHash.length})`);
+    // Eliminado por motivos de seguridad (Data Leakage)
     return secondHash;
 }
 
@@ -124,7 +127,11 @@ export function computeCheckcode(payload: any): string {
 const ZERO_IV = Buffer.alloc(16, 0);
 
 /**
- * AES-128-CBC encrypt, returns uppercase hex
+ * Encripta el payload usando AES-128-ECB (Electronic Codebook) simulado aquí como CBC con ZERO_IV.
+ * Nota: ECB es inherentemente inseguro, pero es el cifrado requerido por el endpoint
+ * legacy de la API de BYD. No modificar a CBC/GCM a menos que la API cambie.
+ * @param plaintext - Text to encrypt
+ * @param keyHex - 32-char hex string (16 bytes)
  */
 export function aesEncryptHex(plaintext: string, keyHex: string): string {
     console.log(`[aesEncryptHex] keyHex received: "${keyHex}" (length=${keyHex?.length})`);

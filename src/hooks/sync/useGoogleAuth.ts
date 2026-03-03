@@ -115,28 +115,20 @@ export function useGoogleAuth() {
 
                 logger.info('[Auth] Native login result:', JSON.stringify(result));
 
-                const resultAny = result as Record<string, unknown>;
-                const resultObj = resultAny.result as Record<string, unknown> | undefined;
-                const accessTokenObj = resultAny.accessToken as Record<string, unknown> | string | undefined;
-                const resultAccessToken = resultObj?.accessToken as Record<string, unknown> | string | undefined;
-
-                // Extract token string from various possible response formats
-                const getTokenString = (tokenValue: unknown): string | null => {
-                    if (typeof tokenValue === 'string') return tokenValue;
-                    if (typeof tokenValue === 'object' && tokenValue !== null) {
-                        const tokenObj = tokenValue as Record<string, unknown>;
-                        if (typeof tokenObj.token === 'string') return tokenObj.token;
-                    }
-                    return null;
-                };
-
-                const accessToken =
-                    getTokenString(resultAccessToken) ||
-                    getTokenString(resultObj?.accessToken) ||
-                    getTokenString(accessTokenObj) ||
-                    getTokenString(resultAny.accessToken) ||
-                    getTokenString(resultAny.token) ||
-                    (resultObj && getTokenString(resultObj.token));
+                // Simplify token extraction by probing the expected structure directly
+                let accessToken: string | null = null;
+                try {
+                    const res = result as any;
+                    accessToken = 
+                        res?.accessToken?.token || 
+                        res?.accessToken || 
+                        res?.result?.accessToken?.token || 
+                        res?.result?.accessToken || 
+                        res?.token || 
+                        null;
+                } catch (e) {
+                    logger.error('[Auth] Failed to parse native auth result', e);
+                }
 
                 if (accessToken) {
                     await handleLoginSuccess(accessToken);
@@ -161,7 +153,12 @@ export function useGoogleAuth() {
         try {
             await googleDriveService.signOut();
             if (Capacitor.isNativePlatform()) {
-                try { await SocialLogin.logout({ provider: 'google' }); } catch (ignored) { }
+                try { 
+                    await SocialLogin.logout({ provider: 'google' }); 
+                } catch (err) {
+                    logger.error('[Auth] Error closing native Google session', err);
+                    // Forzar limpieza de tokens aunque falle el plugin
+                }
             }
             secureRemove('google_access_token');
             secureRemove('google_token_expiry');

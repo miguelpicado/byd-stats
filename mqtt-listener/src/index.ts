@@ -1,3 +1,4 @@
+const isDebug = process.env.DEBUG === 'true';
 /**
  * BYD MQTT Listener - Multi-User Version
  *
