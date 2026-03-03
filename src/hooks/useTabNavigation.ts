@@ -125,16 +125,11 @@ export const useTabNavigation = ({ settings, isVertical = false, isNative = fals
         }
     }, [activeTab, isNative, isVertical]);
 
-    // NEW: Redirect if active tab becomes hidden (e.g. rotation or resize)
-    useEffect(() => {
+    // NEW: Determine valid active tab directly during render (removes setState-in-effect)
+    const currentTab = useMemo(() => {
         const isTabVisible = tabs.find(t => t.id === activeTab);
-        if (!isTabVisible) {
-            // Fallback to first available tab
-            const fallback = tabs.length > 0 ? tabs[0].id : 'overview';
-            if (activeTab !== fallback) {
-                setActiveTab(fallback);
-            }
-        }
+        if (isTabVisible) return activeTab;
+        return tabs.length > 0 ? tabs[0].id : 'overview';
     }, [tabs, activeTab]);
 
     const handleTabClick = useCallback((tabId: string) => {

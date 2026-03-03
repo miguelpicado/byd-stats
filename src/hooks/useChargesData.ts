@@ -58,10 +58,24 @@ const useChargesData = (activeCarId: string | null = null, chargerTypes: Charger
     // specific keys for current car
     const storageKey = activeCarId ? `${BASE_CHARGES_KEY}_${activeCarId}` : null;
 
-    // Initialize state
-    const [charges, setCharges] = useState<Charge[]>([]);
+    // Initialize state lazily to avoid cascading renders
+    const [charges, setCharges] = useState<Charge[]>(() => {
+        if (!storageKey) return [];
+        try {
+            const saved = localStorage.getItem(storageKey);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (Array.isArray(parsed)) {
+                    return parsed.sort((a: Charge, b: Charge) => (b.timestamp || 0) - (a.timestamp || 0));
+                }
+            }
+        } catch (e) {
+            logger.error('Error loading charges initially:', e);
+        }
+        return [];
+    });
 
-    // Load data when activeCarId changes
+    // Update state if storageKey changes (e.g., active car swapped)
     useEffect(() => {
         if (!storageKey) {
             setCharges([]);

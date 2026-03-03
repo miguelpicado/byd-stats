@@ -67,7 +67,7 @@ export const useMergedTrips = (
             setHasMore(true);
             isFirstLoad.current = true;
         };
-    }, [vehicleId, serverDateRange?.start, serverDateRange?.end]);
+    }, [vehicleId, serverDateRange?.start, serverDateRange?.end, recalculateAutonomy, serverDateRange, latestTrips.length, loadMore]); // Added missing dependencies
 
     // 2. Load More (Pagination)
     const loadMore = useCallback(async () => {
@@ -100,7 +100,7 @@ export const useMergedTrips = (
         } finally {
             setIsLoadingMore(false);
         }
-    }, [vehicleId, hasMore, isLoadingMore, lastDoc, latestTrips]);
+    }, [vehicleId, hasMore, isLoadingMore, lastDoc, latestTrips, serverDateRange]);
 
     // Computed: Merged Trips (Local + Latest + Historical)
     const batterySize = typeof settings?.batterySize === 'string'

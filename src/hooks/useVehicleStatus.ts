@@ -108,15 +108,24 @@ export function useVehicleStatus(
 ): VehicleStatus | null {
     const { enabled = true } = options;
     const { isNative } = useLayout();
-    const [vehicleData, setVehicleData] = useState<VehicleStatus | null>(null);
+    // Initialize state lazily to avoid cascading renders
+    const [vehicleData, setVehicleData] = useState<VehicleFirestoreData | null>(() => {
+        if (!enabled || !vehicleId || !isNative) return null;
+        try {
+            const cached = localStorage.getItem(`byd_vehicle_${vehicleId}`);
+            if (cached) return JSON.parse(cached);
+        } catch (e) {
+            logger.error('Failed to parse cached vehicle data', e);
+        }
+        return null;
+    });
 
+    // Realtime listener
     useEffect(() => {
         // Don't subscribe if disabled, no vehicle ID, or not native (PWA)
         if (!enabled || !vehicleId || !isNative) {
-            setVehicleData(null);
             return;
         }
-
         const db = getFirestore(getApp());
         const vehicleRef = doc(db, 'bydVehicles', vehicleId);
 

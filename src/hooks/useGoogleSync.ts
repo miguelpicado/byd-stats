@@ -109,7 +109,7 @@ export function useGoogleSync({
     const registryCheckTriggered = useRef(false);
 
     // Login Success Handler (orchestration)
-    const handleLoginLink = async (_accessToken: string) => {
+    const handleLoginLink = useCallback(async (_accessToken: string) => {
         // Prevent double-trigger with the mount useEffect below
         if (registryCheckTriggered.current) return;
         registryCheckTriggered.current = true;
@@ -122,12 +122,11 @@ export function useGoogleSync({
         } else {
             logger.info("[Auth] Registry modal opened, waiting for user action.");
         }
-    };
+    }, [checkAndPromptRegistry, performSync, localTrips.length, localCharges.length]);
 
-    // Attach handler to Auth hook
-    useEffect(() => {
-        onLoginSuccessCallback.current = handleLoginLink;
-    }, [checkAndPromptRegistry, performSync, localTrips.length, localCharges.length, onLoginSuccessCallback]);
+    // Attach handler to Auth hook immediately, bypassing useEffect to avoid ref mutation warnings
+    // eslint-disable-next-line react-hooks/immutability
+    onLoginSuccessCallback.current = handleLoginLink;
 
     // On mount (or auth transition): handle pending restore OR show registry modal
     // Uses null to distinguish "first mount" from "was false"

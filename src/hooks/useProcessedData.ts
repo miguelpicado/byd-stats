@@ -509,7 +509,7 @@ export const useProcessedData = (
 
         process();
 
-    }, [filteredTrips, allTrips, language, settings, charges, recalcTrigger]);
+    }, [filteredTrips, allTrips, language, settings, charges, recalcTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const predictDeparture = async (startTime: number) => {
         if (!workerRef.current) return null;

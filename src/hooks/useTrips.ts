@@ -18,8 +18,17 @@ export const useTrips = (activeCarId: string | null = null): UseTripsReturn => {
     const storageKey = activeCarId ? `${BASE_STORAGE_KEY}_${activeCarId}` : null;
     const historyKey = activeCarId ? `${BASE_TRIP_HISTORY_KEY}_${activeCarId}` : null;
 
-    const [rawTrips, setRawTrips] = useState<Trip[]>([]);
-    const [tripHistory, setTripHistory] = useState<Trip[]>([]);
+    const [rawTrips, setRawTrips] = useState<Trip[]>(() => {
+        if (!storageKey) return [];
+        const trips = StorageService.get<Trip[]>(storageKey, []);
+        return Array.isArray(trips) ? trips : [];
+    });
+    
+    const [tripHistory, setTripHistory] = useState<Trip[]>(() => {
+        if (!historyKey) return [];
+        const history = StorageService.get<Trip[]>(historyKey, []);
+        return Array.isArray(history) ? history : [];
+    });
 
     // Load initial data
     useEffect(() => {

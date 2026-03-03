@@ -72,11 +72,13 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
 
     // 3.0 Firebase Integration (Hybrid Mode) with debouncing
     // Note: batterySize NOT in dependencies - consumption calculated in merge step
-    const [firebaseTrips, setFirebaseTrips] = useState<Trip[]>([]);
+    const [firebaseTrips, setFirebaseTrips] = useState<Trip[]>(() => {
+        // En una refactorizacion real deberiamos leer la cache aqui, pero como solo tenemos el id, lo dejamos vacio inicial
+        return [];
+    });
 
     useEffect(() => {
         if (!activeCarId) {
-            setFirebaseTrips([]);
             return;
         }
 
@@ -231,12 +233,12 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         forceRecalculate
 
     }), [
-        allTrips, rawTrips, tripHistory,
-        filterType, selMonth, dateFrom, dateTo,
+        allTrips, setRawTrips, tripHistory, setTripHistory,
+        filterType, setFilterType, selMonth, setSelMonth, dateFrom, setDateFrom, dateTo, setDateTo,
         months, filtered, data,
         clearData, saveToHistory, loadFromHistory, clearHistory,
         isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate,
-        acknowledgedAnomalies, deletedAnomalies
+        acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
     ]);
 };
 
