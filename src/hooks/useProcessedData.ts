@@ -7,7 +7,7 @@
  * 2. AI & Machine Learning: Training and running inference for autonomy (Range), battery State of Health (SoH), and parking prediction.
  * 3. Caching: Persisting processed results and AI model weights to LocalStorage to ensure near-instant loads.
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 
 import * as Comlink from 'comlink';
 import { logger } from '@core/logger';
@@ -111,17 +111,28 @@ export const useProcessedData = (
     } | null>(efficiencyCacheKey, null);
 
 
+    const aiCacheRef = useRef(aiCache);
+    const sohCacheRef = useRef(sohCache);
+    const parkingCacheRef = useRef(parkingCache);
+    const efficiencyCacheRef = useRef(efficiencyCache);
+
+    // Keep refs in sync without triggering the main processing effect
+    useEffect(() => { aiCacheRef.current = aiCache; }, [aiCache]);
+    useEffect(() => { sohCacheRef.current = sohCache; }, [sohCache]);
+    useEffect(() => { parkingCacheRef.current = parkingCache; }, [parkingCache]);
+    useEffect(() => { efficiencyCacheRef.current = efficiencyCache; }, [efficiencyCache]);
+
     // Recalculation Trigger
     const [recalcTrigger, setRecalcTrigger] = useState(0);
 
-    const triggerRecalculation = () => {
+    const triggerRecalculation = useCallback(() => {
         setAiCache(null);
         setSohCache(null);
         setParkingCache(null);
         setEfficiencyCache(null);
 
         setRecalcTrigger(prev => prev + 1);
-    };
+    }, [setAiCache, setSohCache, setParkingCache, setEfficiencyCache]);
 
     const workerRef = useRef<Comlink.Remote<DataWorkerApi> | null>(null);
     const rawWorkerRef = useRef<Worker | null>(null);
@@ -204,7 +215,7 @@ export const useProcessedData = (
         }
     };
 
-    const recalculateEfficiency = async (trips: Trip[]) => {
+    const recalculateEfficiency = useCallback(async (trips: Trip[]) => {
         if (!workerRef.current || trips.length <= 5) return;
         try {
             await workerRef.current.trainModel(trips); // This triggers trainEfficiency in worker
@@ -217,9 +228,9 @@ export const useProcessedData = (
         } catch (error) {
             logger.error('[useProcessedData] Error recalculating Efficiency:', error);
         }
-    };
+    }, [setEfficiencyCache]);
 
-    const recalculateParking = async (trips: Trip[]) => {
+    const recalculateParking = useCallback(async (trips: Trip[]) => {
         if (!workerRef.current || trips.length <= 5) return;
         try {
             await workerRef.current.trainParking(trips);
@@ -232,7 +243,7 @@ export const useProcessedData = (
         } catch (error) {
             logger.error('[useProcessedData] Error recalculating Parking:', error);
         }
-    };
+    }, [setParkingCache]);
 
 
     useEffect(() => {
@@ -302,11 +313,11 @@ export const useProcessedData = (
             let needsSoHTraining = false;
 
             // Check Cache (Efficiency/Autonomy)
-            const hasAutonomyCache = aiCache && aiCache.hash === currentHash && aiCache.scenarios.length > 0;
+            const hasAutonomyCache = aiCacheRef.current && aiCacheRef.current.hash === currentHash && aiCacheRef.current.scenarios.length > 0;
             if (hasAutonomyCache) {
                 if (isMounted) {
-                    setAiScenarios(aiCache.scenarios);
-                    setAiLoss(aiCache.loss);
+                    setAiScenarios(aiCacheRef.current!.scenarios);
+                    setAiLoss(aiCacheRef.current!.loss);
                     logger.debug('[useProcessedData] Autonomy Cache HIT');
                 }
             } else {
@@ -318,14 +329,14 @@ export const useProcessedData = (
             }
 
             // Check SoH Cache
-            const hasSoHCache = sohCache && sohCache.hash === sohHash && sohCache.soh > 0;
+            const hasSoHCache = sohCacheRef.current && sohCacheRef.current.hash === sohHash && sohCacheRef.current.soh > 0;
             if (hasSoHCache) {
                 if (isMounted) {
-                    setAiSoH(sohCache.soh);
-                    setAiSoHStats(sohCache.stats);
+                    setAiSoH(sohCacheRef.current!.soh);
+                    setAiSoHStats(sohCacheRef.current!.stats);
                     // Apply AI mode
                     if (processingSettings.sohMode === 'ai') {
-                        processingSettings.soh = sohCache.soh;
+                        processingSettings.soh = sohCacheRef.current!.soh;
                     }
                     logger.debug('[useProcessedData] SoH Cache HIT');
                 }
@@ -404,7 +415,9 @@ export const useProcessedData = (
                     }
 
                     // Train SoH Model if needed
-                    if (needsSoHTraining && !isProcessing) {
+                    // Note: isProcessing is always true here (set on L352), so we use
+                    // a separate guard to prevent concurrent SoH training.
+                    if (needsSoHTraining && !isTrainingRef.current) {
                         logger.info('[useProcessedData] Auto-training SoH model...');
 
                         let capturedSoH = 100;
@@ -446,17 +459,17 @@ export const useProcessedData = (
 
                     // Train AI Parking Model (restore from cache or train if needed)
                     const parkingHash = currentHash;
-                    const hasParkingCache = parkingCache && parkingCache.hash === parkingHash &&
-                        parkingCache.weights && parkingCache.weights.length > 0;
+                    const hasParkingCache = parkingCacheRef.current && parkingCacheRef.current.hash === parkingHash &&
+                        parkingCacheRef.current.weights && parkingCacheRef.current.weights.length > 0;
 
                     if (hasParkingCache) {
                         // Validate Cache Format (v2: { data, shape })
-                        const w0 = parkingCache.weights[0] as unknown as Record<string, unknown>;
+                        const w0 = parkingCacheRef.current!.weights[0] as unknown as Record<string, unknown>;
                         const isValid = w0 && 'data' in w0 && w0.data && 'shape' in w0 && w0.shape;
 
                         if (isValid) {
                             // Restore Model from Cache
-                            workerRef.current.importParkingModel(parkingCache.weights).then(() => {
+                            workerRef.current.importParkingModel(parkingCacheRef.current!.weights).then(() => {
                                 logger.debug('[AI Parking] Model Restored from Cache');
                             }).catch(err => {
                                 logger.warn('Failed to restore parking model', err);
@@ -476,15 +489,15 @@ export const useProcessedData = (
 
                     // RESTORE AI EFFICIENCY MODEL
                     // The autonomy scenarios calculate logic also depends on this model
-                    const hasEfficiencyCache = efficiencyCache && efficiencyCache.hash === currentHash &&
-                        efficiencyCache.data && efficiencyCache.data.weights && efficiencyCache.data.normData;
+                    const hasEfficiencyCache = efficiencyCacheRef.current && efficiencyCacheRef.current.hash === currentHash &&
+                        efficiencyCacheRef.current.data && efficiencyCacheRef.current.data.weights && efficiencyCacheRef.current.data.normData;
 
                     if (hasEfficiencyCache && !needsAutonomyTraining) { // Only restore if scenarios didn't force a retrain
-                        const ew0 = efficiencyCache.data.weights[0] as unknown as Record<string, unknown>;
-                        const isValid = ew0 && 'data' in ew0 && ew0.data && efficiencyCache.data.normData.mean;
+                        const ew0 = efficiencyCacheRef.current!.data.weights[0] as unknown as Record<string, unknown>;
+                        const isValid = ew0 && 'data' in ew0 && ew0.data && efficiencyCacheRef.current!.data.normData.mean;
 
                         if (isValid) {
-                            workerRef.current.importEfficiencyModel(efficiencyCache.data).then(() => {
+                            workerRef.current.importEfficiencyModel(efficiencyCacheRef.current!.data).then(() => {
                                 logger.debug('[AI Efficiency] Model Restored from Cache');
                             }).catch(err => {
                                 logger.warn('Failed to restore efficiency model', err);
@@ -509,7 +522,7 @@ export const useProcessedData = (
 
         process();
 
-    }, [filteredTrips, allTrips, language, settings, charges, recalcTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [filteredTrips, allTrips, language, settings, charges, recalcTrigger, recalculateParking, recalculateEfficiency]);
 
     const predictDeparture = async (startTime: number) => {
         if (!workerRef.current) return null;

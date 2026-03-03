@@ -11,6 +11,10 @@ import { useLayout } from '@/context/LayoutContext';
 /**
  * Vehicle data structure from Firestore
  */
+export interface VehicleFirestoreData {
+    /* added due to missing type definition that we use in useState */
+}
+
 export interface VehicleStatus {
     // Battery & Charging
     lastSoC?: number;
@@ -109,7 +113,7 @@ export function useVehicleStatus(
     const { enabled = true } = options;
     const { isNative } = useLayout();
     // Initialize state lazily to avoid cascading renders
-    const [vehicleData, setVehicleData] = useState<VehicleFirestoreData | null>(() => {
+    const [vehicleData, setVehicleData] = useState<VehicleStatus | null>(() => {
         if (!enabled || !vehicleId || !isNative) return null;
         try {
             const cached = localStorage.getItem(`byd_vehicle_${vehicleId}`);
