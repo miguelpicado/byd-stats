@@ -70,33 +70,27 @@ service cloud.firestore {
     }
 
     // ==========================================================================
-    // LEGACY COLLECTIONS (read-only para migración)
-    // Estas colecciones son antiguas y no deben recibir escrituras nuevas.
-    // Mantener lectura autenticada para no romper clientes existentes.
+    // LEGACY COLLECTIONS — fully blocked
+    // Deprecated collections. All data lives in bydVehicles/{vin}/* now.
+    // No client should read or write here in production.
     // ==========================================================================
     match /trips/{tripId} {
-      allow read: if request.auth != null;
-      allow write: if false;
-
+      allow read, write: if false;
       match /points/{pointId} {
-        allow read: if request.auth != null;
-        allow write: if false;
+        allow read, write: if false;
       }
     }
 
     match /vehicles/{vehicleId} {
-      allow read: if request.auth != null;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /chargeSessions/{sessionId} {
-      allow read: if request.auth != null;
-      allow write: if false;
+      allow read, write: if false;
     }
 
     match /chargeNotifications/{notificationId} {
-      allow read: if request.auth != null;
-      allow write: if false;
+      allow read, write: if false;
     }
   }
 }
