@@ -1,4 +1,3 @@
-const isDebug = process.env.DEBUG === 'true';
 /**
  * BYD API Client
  * Ported from pyBYD (https://github.com/jkaberg/pyBYD)

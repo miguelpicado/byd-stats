@@ -245,7 +245,7 @@ export const bydConnectV2 = onCall({ region: REGION, secrets: [tokenEncryptionKe
 
     } catch (error: any) {
         safeLog('[bydConnect] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -277,7 +277,7 @@ export const bydDisconnectV2 = onCall({ region: REGION, secrets: [tokenEncryptio
 
     } catch (error: any) {
         safeLog('[bydDisconnect] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -331,7 +331,7 @@ export const bydSaveAbrpToken = onCall({ region: REGION, secrets: [tokenEncrypti
 
     } catch (error: any) {
         safeLog('[bydSaveAbrpToken] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -528,7 +528,7 @@ export const bydGetRealtimeV2 = onCall({ region: REGION, secrets: [tokenEncrypti
 
     } catch (error: any) {
         safeLog('[bydGetRealtime] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -567,7 +567,7 @@ export const bydGetGpsV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey
 
     } catch (error: any) {
         safeLog('[bydGetGps] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -706,7 +706,7 @@ export const bydGetChargingV2 = onCall({ region: REGION, secrets: [tokenEncrypti
 
     } catch (error: any) {
         safeLog('[bydGetCharging] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -1168,7 +1168,7 @@ export const bydPollVehicle = onCall({ region: REGION, secrets: [tokenEncryption
 
     } catch (error: any) {
         safeLog('[bydPollVehicle] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -1209,7 +1209,7 @@ export const bydDiagnosticV2 = onCall({ region: REGION, secrets: [tokenEncryptio
 
     } catch (error: any) {
         safeLog('[bydDiagnostic] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -1494,7 +1494,7 @@ export const bydGetMqttCredentialsV2 = onCall({ region: REGION, secrets: [tokenE
 
     } catch (error: any) {
         safeLog('[bydGetMqttCredentials] Error:', error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -2822,7 +2822,7 @@ export const bydWakeVehicleV2 = onCall({ region: REGION, secrets: [tokenEncrypti
     } catch (error: any) {
         if (error instanceof HttpsError) throw error;
         safeLog(`[bydWakeVehicle] Error:`, error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -2967,7 +2967,7 @@ export const bydFixTripV2 = onCall({ region: REGION, secrets: [tokenEncryptionKe
 
     } catch (error: any) {
         safeLog(`[bydFixTrip] Error:`, error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
 
@@ -3036,6 +3036,6 @@ export const bydDebugV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey]
 
     } catch (error: any) {
         safeLog(`[bydDebug] Error:`, error.message);
-        throw new HttpsError('internal', error.message);
+        throw new HttpsError('internal', 'Operation failed. Please try again.');
     }
 });
