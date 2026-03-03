@@ -9,6 +9,7 @@
  */
 import { logger } from '@core/logger';
 import { Trip, Charge, Settings, ChargerType, Car, RangeScenario, SoHStats } from '@/types';
+import { resilientFetch } from '@/utils/resilientFetch';
 
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
@@ -187,8 +188,10 @@ export const googleDriveService = {
             const url = `${DRIVER_API_URL}/files?spaces=appDataFolder&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=10&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
 
             logger.debug(`[Drive API] Fetching: ${url}`);
-            const response = await fetch(url, {
-                headers: googleDriveService._getHeaders()
+            const response = await resilientFetch(url, {
+                headers: googleDriveService._getHeaders(),
+                timeoutMs: 15_000,
+                maxRetries: 3
             }).catch(err => {
                 logger.error("[Drive API] Fetch NETWORK ERROR:", err);
                 throw err;
@@ -224,8 +227,10 @@ export const googleDriveService = {
             const query = `name contains 'byd_stats_data' and mimeType = 'application/json' and '${FOLDER_ID}' in parents and trashed = false`;
             const url = `${DRIVER_API_URL}/files?spaces=appDataFolder&fields=nextPageToken,files(id,name,modifiedTime,size)&pageSize=20&orderBy=modifiedTime desc&q=${encodeURIComponent(query)}`;
 
-            const response = await fetch(url, {
-                headers: googleDriveService._getHeaders()
+            const response = await resilientFetch(url, {
+                headers: googleDriveService._getHeaders(),
+                timeoutMs: 15_000,
+                maxRetries: 3
             });
 
             await googleDriveService._handleResponse(response, 'listing all files');
@@ -246,8 +251,10 @@ export const googleDriveService = {
     downloadFile: async (fileId: string): Promise<SyncData> => {
         try {
             const url = `${DRIVER_API_URL}/files/${fileId}?alt=media`;
-            const response = await fetch(url, {
-                headers: googleDriveService._getHeaders()
+            const response = await resilientFetch(url, {
+                headers: googleDriveService._getHeaders(),
+                timeoutMs: 30_000,
+                maxRetries: 4
             });
 
             await googleDriveService._handleResponse(response, 'downloading file');
@@ -291,10 +298,12 @@ export const googleDriveService = {
                     parents: [FOLDER_ID]
                 };
 
-                const createRes = await fetch(`${DRIVER_API_URL}/files`, {
+                const createRes = await resilientFetch(`${DRIVER_API_URL}/files`, {
                     method: 'POST',
                     headers: googleDriveService._getHeaders(true),
-                    body: JSON.stringify(metadata)
+                    body: JSON.stringify(metadata),
+                    timeoutMs: 15_000,
+                    maxRetries: 2
                 });
 
                 await googleDriveService._handleResponse(createRes, 'creating file metadata');
@@ -305,10 +314,12 @@ export const googleDriveService = {
             // Step 2: Upload Content (Simple Upload for small files)
             const updateUrl = `${UPLOAD_API_URL}/files/${fileId}?uploadType=media`;
 
-            const updateRes = await fetch(updateUrl, {
+            const updateRes = await resilientFetch(updateUrl, {
                 method: 'PATCH',
                 headers: googleDriveService._getHeaders(true),
-                body: fileContent
+                body: fileContent,
+                timeoutMs: 45_000,
+                maxRetries: 3
             });
 
             await googleDriveService._handleResponse(updateRes, 'uploading file content');
@@ -330,9 +341,11 @@ export const googleDriveService = {
     deleteFile: async (fileId: string): Promise<boolean> => {
         try {
             const url = `${DRIVER_API_URL}/files/${fileId}`;
-            const response = await fetch(url, {
+            const response = await resilientFetch(url, {
                 method: 'DELETE',
-                headers: googleDriveService._getHeaders()
+                headers: googleDriveService._getHeaders(),
+                timeoutMs: 10_000,
+                maxRetries: 2
             });
 
             await googleDriveService._handleResponse(response, 'deleting file');
@@ -364,7 +377,11 @@ export const googleDriveService = {
             const files = await googleDriveService.listFiles('byd_stats_registry.json', options);
             if (files && files.length > 0) {
                 const url = `${DRIVER_API_URL}/files/${files[0].id}?alt=media`;
-                const response = await fetch(url, { headers: googleDriveService._getHeaders() });
+                const response = await resilientFetch(url, {
+                    headers: googleDriveService._getHeaders(),
+                    timeoutMs: 15_000,
+                    maxRetries: 3
+                });
                 await googleDriveService._handleResponse(response, 'fetching registry');
                 const fileContent = await response.json();
 

@@ -6,6 +6,8 @@ import '@/core/chartSetup';
 // Hooks
 import { useAppOrchestrator } from '@hooks/useAppOrchestrator';
 import { useWearSync } from '@hooks/useWearSync';
+import { useNetworkStatus } from '@hooks/useNetworkStatus';
+import { useTranslation } from 'react-i18next';
 
 // Components
 import GlobalListeners from '@components/GlobalListeners';
@@ -19,6 +21,9 @@ const AllTripsViewLazy = lazy(() => import('@features/dashboard/AllTripsView'));
 const AllChargesViewLazy = lazy(() => import('@features/dashboard/AllChargesView'));
 
 export default function BYDStatsAnalyzer() {
+  const { t } = useTranslation();
+  const isOnline = useNetworkStatus();
+
   // Real-time synchronization with Wear OS device
   useWearSync();
 
@@ -174,6 +179,11 @@ export default function BYDStatsAnalyzer() {
   // Main Dashboard Layout
   return (
     <>
+      {!isOnline && (
+        <div className="bg-amber-500 text-white text-center text-xs py-1 font-medium z-50 fixed top-0 w-full" role="alert">
+          {t('common.offline', 'Sin conexión — Los cambios se sincronizarán al reconectar')}
+        </div>
+      )}
       <GlobalListeners activeTab={activeTab} />
       <MainLayout
         layoutMode={layoutMode || undefined}

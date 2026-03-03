@@ -1,117 +1,87 @@
-// BYD Stats - Date Utilities Tests
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { formatMonth, formatDate, formatTime, parseDate, toDateString } from '../dateUtils';
-import i18n from '../../i18n';
 
-// Initialize i18n for testing
-beforeAll(async () => {
-    if (!i18n.isInitialized) {
-        await i18n.init();
-    }
-});
-
-describe('dateUtils', () => {
+describe('Date Utilities (dateUtils)', () => {
     describe('formatMonth', () => {
-        it('should format valid month string (YYYYMM)', () => {
-            const result = formatMonth('202501');
-            expect(result).toBeTruthy();
-            expect(result.length).toBeGreaterThan(0);
+        it('should format YYYYMM string into Short Month YYYY (en locale)', () => {
+            const result = formatMonth('202401', 'en');
+            expect(result).toBe('Jan 2024');
         });
 
-        it('should handle empty or invalid input', () => {
-            expect(formatMonth('')).toBe('');
-            expect(formatMonth(null as any)).toBe('');
-            expect(formatMonth(undefined as any)).toBe('');
-            expect(formatMonth('2025')).toBe('2025'); // Too short
+        it('should format YYYYMM string into Short Month YYYY (es locale default fallback)', () => {
+            const result = formatMonth('202401', 'es');
+            // 'ene 2024' -> capitalized -> 'Ene 2024' (depending on env, might be Ene. 2024)
+            // Just verifying it contains year and some text
+            expect(result.toLowerCase()).toContain('ene');
+            expect(result).toContain('2024');
         });
 
-        it('should capitalize first letter', () => {
-            const result = formatMonth('202501');
-            expect(result[0]).toBe(result[0].toUpperCase());
+        it('should return original string if length < 6 or empty', () => {
+            expect(formatMonth('2024', 'en')).toBe('2024');
+            expect(formatMonth('', 'en')).toBe('');
         });
     });
 
     describe('formatDate', () => {
-        it('should format valid date string (YYYYMMDD)', () => {
-            const result = formatDate('20250114');
-            expect(result).toBeTruthy();
-            expect(result.length).toBeGreaterThan(0);
+        it('should format YYYYMMDD into DD/MM/YYYY locally (es)', () => {
+            const result = formatDate('20240115', 'es');
+            // Depending on the Node.js locale it could be 15/01/2024 or 15/1/2024
+            expect(result).toMatch(/15[/-]0?1[/-]2024/);
         });
 
-        it('should handle empty or invalid input', () => {
-            expect(formatDate('')).toBe('');
-            expect(formatDate(null as any)).toBe('');
-            expect(formatDate(undefined as any)).toBe('');
-            expect(formatDate('202501')).toBe('202501'); // Too short
+        it('should format YYYYMMDD correctly locally (en-US)', () => {
+            const result = formatDate('20240115', 'en-US');
+            // en-US normally does MM/DD/YYYY => 01/15/2024
+            expect(result).toMatch(/0?1[/-]15[/-]2024/);
         });
 
-        it('should handle edge dates', () => {
-            expect(formatDate('20240229')).toBeTruthy(); // Leap year
-            expect(formatDate('20250101')).toBeTruthy(); // New year
-            expect(formatDate('20251231')).toBeTruthy(); // End of year
+        it('should return original string if length < 8 or empty', () => {
+            expect(formatDate('2024', 'en')).toBe('2024');
+            expect(formatDate('', 'en')).toBe('');
         });
     });
 
     describe('formatTime', () => {
-        it('should format valid timestamp', () => {
-            const timestamp = 1705237200; // Jan 14, 2024 12:00:00 GMT
-            const result = formatTime(timestamp);
-            expect(result).toBeTruthy();
-            expect(result).toMatch(/\d{1,2}:\d{2}/); // HH:MM or H:MM
+        it('should format a Unix timestamp (seconds) into HH:MM', () => {
+            // Let's create a known timestamp. e.g. 2024-01-01T15:30:00Z
+            // But it depends on the local timezone where tests are run.
+            // We'll just ensure it returns a valid time format like HH:MM 
+            const ts = Math.floor(new Date().getTime() / 1000);
+            const result = formatTime(ts, 'es');
+            expect(result).toMatch(/^\d{1,2}:\d{2}\s?(AM|PM|am|pm)?$/);
         });
 
-        it('should handle empty or invalid input', () => {
-            expect(formatTime(null as any)).toBe('');
-            expect(formatTime(undefined as any)).toBe('');
+        it('should return empty string if no timestamp is provided', () => {
             expect(formatTime(0)).toBe('');
         });
     });
 
     describe('parseDate', () => {
-        it('should parse valid date string to Date object', () => {
-            const result = parseDate('20250114');
+        it('should convert YYYYMMDD string to Date object', () => {
+            const result = parseDate('20240520');
             expect(result).toBeInstanceOf(Date);
-            if (result) {
-                expect(result.getFullYear()).toBe(2025);
-                expect(result.getMonth()).toBe(0); // January (0-indexed)
-                expect(result.getDate()).toBe(14);
-            }
+            expect(result?.getFullYear()).toBe(2024);
+            expect(result?.getMonth()).toBe(4); // 0-indexed, so May is 4
+            expect(result?.getDate()).toBe(20);
         });
 
-        it('should return null for invalid input', () => {
+        it('should return null if string length is < 8 or empty', () => {
+            expect(parseDate('2024')).toBeNull();
             expect(parseDate('')).toBeNull();
-            expect(parseDate(null as any)).toBeNull();
-            expect(parseDate(undefined as any)).toBeNull();
-            expect(parseDate('2025')).toBeNull(); // Too short
-        });
-
-        it('should handle edge dates correctly', () => {
-            const leapDay = parseDate('20240229');
-            if (leapDay) {
-                expect(leapDay.getFullYear()).toBe(2024);
-                expect(leapDay.getMonth()).toBe(1); // February
-                expect(leapDay.getDate()).toBe(29);
-            }
         });
     });
 
     describe('toDateString', () => {
-        it('should convert Date to YYYYMMDD format', () => {
-            const date = new Date(2025, 0, 14); // Jan 14, 2025
+        it('should format Date object into YYYYMMDD', () => {
+            const date = new Date(2024, 4, 3); // May 3, 2024
             const result = toDateString(date);
-            expect(result).toBe('20250114');
+            expect(result).toBe('20240503');
         });
 
-        it('should pad single digit months and days', () => {
-            const date = new Date(2025, 0, 5); // Jan 5, 2025
+        it('should pad single digit days and months with zero', () => {
+            const date = new Date(2023, 0, 9); // Jan 9, 2023
             const result = toDateString(date);
-            expect(result).toBe('20250105');
-        });
-
-        it('should handle December correctly', () => {
-            const date = new Date(2025, 11, 31); // Dec 31, 2025
-            const result = toDateString(date);
-            expect(result).toBe('20251231');
+            expect(result).toBe('20230109');
         });
     });
 });

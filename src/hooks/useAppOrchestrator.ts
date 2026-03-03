@@ -1,168 +1,51 @@
 /**
  * useAppOrchestrator Hook
- * 
- * Acting as the central brain of the application, this orchestrator coordinates complex 
- * multi-step state flows, navigation, modal management, and high-level actions.
- * It integrates multiple lower-level hooks and contexts (App, Layout, Data, Sync)
- * to provide a unified interface for the main App component.
+ *
+ * Thin wrapper that composes focused sub-hooks into a unified interface
+ * for the main App component. Each sub-hook owns a single responsibility:
+ *
+ *  - useTabOrchestration   → tab navigation, swipe, chart dimensions
+ *  - useDataOrchestration  → DB operations, import/export, view sub-states
+ *  - useModalOrchestration → selection state, modal open/close, charge import
+ *
+ * Only the cross-cutting state that doesn't belong to any single domain
+ * (layout, app version, raw charges for landing detection) is read here.
  */
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import useAppVersion from '@hooks/useAppVersion';
 import { useApp } from '@/context/AppContext';
 import { useLayout } from '@/context/LayoutContext';
 import { useData } from '@/providers/DataProvider';
-import { useChartDimensions } from '@hooks/useChartDimensions';
-import { useTabNavigation } from '@hooks/useTabNavigation';
-import { useChargeImporter } from '@hooks/useChargeImporter';
-import { useSwipeGesture } from '@hooks/useSwipeGesture';
-import { Trip, Charge } from '@/types';
+import { useTabOrchestration } from '@hooks/useTabOrchestration';
+import { useDataOrchestration } from '@hooks/useDataOrchestration';
+import { useModalOrchestration } from '@hooks/useModalOrchestration';
 
 export const useAppOrchestrator = () => {
-    const { t } = useTranslation();
+    // Domain sub-hooks
+    const tabs = useTabOrchestration();
+    const dataOrc = useDataOrchestration();
+    const modalOrc = useModalOrchestration();
 
-    // Contexts
+    // Cross-cutting state not owned by any sub-hook
     const { settings, updateSettings } = useApp();
-    const { layoutMode, isCompact, isFullscreenBYD, isVertical, isNative } = useLayout();
-
+    const { layoutMode, isCompact, isVertical, isNative } = useLayout();
     const { version: appVersion } = useAppVersion();
+    const { trips: rawTrips, stats: data, charges } = useData();
 
-    // Data Context
-    const {
-        trips: rawTrips,
-        stats: data,
-        charges,
-
-        // Actions
-        setRawTrips,
-        clearData,
-
-        // Sub-Contexts
-        database,
-        googleSync,
-        filtered, // { trips, stats }
-
-        importSyncData,
-
-        // Modal State (Global)
-        modals,
-        openModal,
-        closeModal,
-        setLegalInitialSection,
-        legalInitialSection,
-        isAnyModalOpen,
-
-        // Selection State
-        selectedTrip,
-        setSelectedTrip,
-        selectedCharge,
-        setSelectedCharge
-    } = useData();
-
-    const { sqlReady, loading, error, initSql, processDB: processDBHook, exportDatabase: exportDBHook } = database;
-
-    // View State (Local to orchestrator, lifting up from App.jsx)
-    const [backgroundLoad, setBackgroundLoad] = useState(false);
-
-    // All Trips View State
-    const [allTripsFilterType, setAllTripsFilterType] = useState('all');
-    const [allTripsMonth, setAllTripsMonth] = useState('');
-    const [allTripsDateFrom, setAllTripsDateFrom] = useState('');
-    const [allTripsDateTo, setAllTripsDateTo] = useState('');
-    const [allTripsSortBy, setAllTripsSortBy] = useState('date');
-    const [allTripsSortOrder, setAllTripsSortOrder] = useState('desc');
-    const allTripsScrollRef = useRef(null);
-
-    const allChargesScrollRef = useRef(null);
-
-    // Initial load effect
-    useEffect(() => {
-        initSql();
-        const timer = setTimeout(() => {
-            setBackgroundLoad(true);
-        }, 1500);
-        return () => clearTimeout(timer);
-    }, [initSql]);
-
-    // Derived Logic
-    const showAllTripsModal = modals.allTrips;
-    const showAllChargesModal = modals.allCharges;
+    // Derived
     const isLandingPage = rawTrips.length === 0 && charges.length === 0;
-
-    // Handlers
-    const processDB = useCallback(async (file: File, merge = false) => {
-        // Handle JSON SyncData files specifically
-        if (file.name.toLowerCase().endsWith('.json')) {
-            const isSyncData = await database.isJsonSyncData(file);
-            if (isSyncData) {
-                await importSyncData(file, merge);
-                closeModal('upload');
-                closeModal('history');
-                return;
-            }
-        }
-
-        const trips = await processDBHook(file, merge ? rawTrips : [], merge);
-        if (trips) {
-            setRawTrips(trips);
-            if (googleSync.isAuthenticated) {
-                googleSync.syncNow(trips);
-            }
-            closeModal('upload');
-            closeModal('history');
-        }
-    }, [database, importSyncData, processDBHook, rawTrips, googleSync, closeModal, setRawTrips]);
-
-    const exportDatabase = useCallback(async () => {
-        const success = await exportDBHook(filtered);
-        if (success) alert(t('confirmations.dbExported'));
-    }, [exportDBHook, filtered, t]);
-
-    const handleChargeSelect = useCallback((charge: Charge) => {
-        setSelectedCharge(charge);
-        openModal('chargeDetail');
-    }, [openModal, setSelectedCharge]);
-
-    const openTripDetail = useCallback((trip: Trip) => {
-        setSelectedTrip(trip);
-        openModal('tripDetail'); // Using openModal instead of local state
-    }, [openModal, setSelectedTrip]);
-
-    const { loadChargeRegistry } = useChargeImporter();
-
-    // Tab Navigation
-    const {
-        activeTab,
-        fadingTab,
-        isTransitioning,
-        handleTabClick,
-        tabs
-    } = useTabNavigation({ settings, isVertical, isNative });
-
-    // Swipe Gesture
-    const setSwipeContainer = useSwipeGesture({
-        activeTab,
-        handleTabClick,
-        isTransitioning,
-        tabs,
-        layoutMode,
-        isModalOpen: isAnyModalOpen
-    });
-
-    // Chart Dimensions (pass through)
-    const chartDimensions = useChartDimensions({ isVertical, isFullscreenBYD, isCompact });
-
+    const showAllTripsModal = dataOrc.modals.allTrips;
+    const showAllChargesModal = dataOrc.modals.allCharges;
 
     return {
-        // State
-        loading,
-        error,
-        sqlReady,
+        // State flags
+        loading: dataOrc.loading,
+        error: dataOrc.error,
+        sqlReady: dataOrc.sqlReady,
         isNative,
         isLandingPage,
         appVersion,
 
-        // Render Conditions
+        // Render conditions
         showAllTripsModal,
         showAllChargesModal,
 
@@ -172,56 +55,47 @@ export const useAppOrchestrator = () => {
         data,
         rawTrips,
         charges,
-        googleSync,
-        modals,
+        googleSync: dataOrc.googleSync,
+        modals: dataOrc.modals,
 
         // View States
         layoutMode,
         isCompact,
-        backgroundLoad,
         isVertical,
+        backgroundLoad: dataOrc.backgroundLoad,
 
-        // Navigation
-        activeTab,
-        tabs,
-        handleTabClick,
-        isTransitioning,
-        fadingTab,
-        setSwipeContainer,
+        // Navigation (from useTabOrchestration)
+        activeTab: tabs.activeTab,
+        tabs: tabs.tabs,
+        handleTabClick: tabs.handleTabClick,
+        isTransitioning: tabs.isTransitioning,
+        fadingTab: tabs.fadingTab,
+        setSwipeContainer: tabs.setSwipeContainer,
+        chartDimensions: tabs.chartDimensions,
 
-        // Actions
-        processDB,
-        exportDatabase,
-        clearData,
-        loadChargeRegistry,
-        openTripDetail,
-        handleChargeSelect,
+        // Actions (from useDataOrchestration)
+        processDB: dataOrc.processDB,
+        exportDatabase: dataOrc.exportDatabase,
+        clearData: dataOrc.clearData,
 
-        // Refs
-        allTripsScrollRef,
-        allChargesScrollRef,
+        // Actions (from useModalOrchestration)
+        openTripDetail: modalOrc.openTripDetail,
+        handleChargeSelect: modalOrc.handleChargeSelect,
+        loadChargeRegistry: modalOrc.loadChargeRegistry,
 
-        // Sub-view States (All Trips/Charges)
-        allTripsState: {
-            filterType: allTripsFilterType, setFilterType: setAllTripsFilterType,
-            month: allTripsMonth, setMonth: setAllTripsMonth,
-            dateFrom: allTripsDateFrom, setDateFrom: setAllTripsDateFrom,
-            dateTo: allTripsDateTo, setDateTo: setAllTripsDateTo,
-            sortBy: allTripsSortBy, setSortBy: setAllTripsSortBy,
-            sortOrder: allTripsSortOrder, setSortOrder: setAllTripsSortOrder
-        },
+        // Refs & sub-view state (from useDataOrchestration)
+        allTripsScrollRef: dataOrc.allTripsScrollRef,
+        allChargesScrollRef: dataOrc.allChargesScrollRef,
+        allTripsState: dataOrc.allTripsState,
 
-        // Modal Helpers
-        openModal,
-        closeModal,
-        setLegalInitialSection,
-        legalInitialSection,
-        selectedTrip,
-        setSelectedTrip,
-        selectedCharge,
-        setSelectedCharge,
-
-        // Chart Dimensions
-        chartDimensions
+        // Modal helpers (from useModalOrchestration)
+        openModal: modalOrc.openModal,
+        closeModal: modalOrc.closeModal,
+        setLegalInitialSection: modalOrc.setLegalInitialSection,
+        legalInitialSection: modalOrc.legalInitialSection,
+        selectedTrip: modalOrc.selectedTrip,
+        setSelectedTrip: modalOrc.setSelectedTrip,
+        selectedCharge: modalOrc.selectedCharge,
+        setSelectedCharge: modalOrc.setSelectedCharge,
     };
 };

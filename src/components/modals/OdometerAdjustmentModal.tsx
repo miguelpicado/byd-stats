@@ -12,9 +12,9 @@ interface OdometerAdjustmentModalProps {
 const OdometerAdjustmentModal: React.FC<OdometerAdjustmentModalProps> = ({ isOpen, onClose }) => {
     const { t } = useTranslation();
     const { settings, updateSettings } = useApp();
-    const [offset, setOffset] = useState<number | string>(0);
+    const [offset, setOffset] = useState<number | string>('');
 
-    // Initialize state when modal opens
+    // Sincronizar con settings si abren el modal, sin re-render de hook si offset ya estaba
     useEffect(() => {
         if (isOpen) {
             setOffset(settings.odometerOffset || 0);

@@ -165,6 +165,8 @@ export function useGoogleAuth() {
             }
             secureRemove('google_access_token');
             secureRemove('google_token_expiry');
+            localStorage.removeItem('google_access_token');
+            localStorage.removeItem('google_token_expiry');
             setIsAuthenticated(false);
             setUserProfile(null);
         } catch (e) {

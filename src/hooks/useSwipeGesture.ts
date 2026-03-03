@@ -41,16 +41,16 @@ export const useSwipeGesture = ({
     const isTransitioningRef = useRef(isTransitioning);
     const handleTabClickRef = useRef(handleTabClick);
     const layoutModeRef = useRef(layoutMode);
-
-    // Keep refs updated
-    useEffect(() => { activeTabRef.current = activeTab; }, [activeTab]);
-    useEffect(() => { isTransitioningRef.current = isTransitioning; }, [isTransitioning]);
-    useEffect(() => { handleTabClickRef.current = handleTabClick; }, [handleTabClick]);
-    useEffect(() => { layoutModeRef.current = layoutMode; }, [layoutMode]);
-
-    // Ref for modal state
     const isModalOpenRef = useRef(isModalOpen);
-    useEffect(() => { isModalOpenRef.current = isModalOpen; }, [isModalOpen]);
+
+    // Keep refs updated — consolidated to avoid multiple observer subscriptions
+    useEffect(() => {
+        activeTabRef.current = activeTab;
+        isTransitioningRef.current = isTransitioning;
+        handleTabClickRef.current = handleTabClick;
+        layoutModeRef.current = layoutMode;
+        isModalOpenRef.current = isModalOpen;
+    }, [activeTab, isTransitioning, handleTabClick, layoutMode, isModalOpen]);
 
     useEffect(() => {
         // Require container to be available

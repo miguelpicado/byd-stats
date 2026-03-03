@@ -7,16 +7,30 @@
  */
 
 const STORAGE_PREFIX = 'sec_';
-const KEY_MATERIAL = 'byd-stats-storage-key'; // Deterministic, device-local
+const DEVICE_SALT_KEY = 'byd_device_salt';
 
 let cryptoKey: CryptoKey | null = null;
+
+function getOrCreateDeviceSalt(): string {
+  let salt = localStorage.getItem(DEVICE_SALT_KEY);
+  if (!salt) {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    salt = Array.from(bytes, b => b.toString(16).padStart(2, '0')).join('');
+    localStorage.setItem(DEVICE_SALT_KEY, salt);
+  }
+  return salt;
+}
 
 async function getKey(): Promise<CryptoKey> {
     if (cryptoKey) return cryptoKey;
     const encoder = new TextEncoder();
-    const keyMaterial = await crypto.subtle.importKey(
+    const deviceSalt = getOrCreateDeviceSalt();
+    const keyMaterial = encoder.encode('byd-stats-v2-' + deviceSalt);
+    const salt = encoder.encode('byd-stats-salt-' + deviceSalt);
+    
+    const baseKey = await crypto.subtle.importKey(
         'raw',
-        encoder.encode(KEY_MATERIAL),
+        keyMaterial,
         { name: 'PBKDF2' },
         false,
         ['deriveKey']
@@ -24,11 +38,11 @@ async function getKey(): Promise<CryptoKey> {
     cryptoKey = await crypto.subtle.deriveKey(
         {
             name: 'PBKDF2',
-            salt: encoder.encode('byd-stats-salt'),
+            salt: salt,
             iterations: 100000,
             hash: 'SHA-256',
         },
-        keyMaterial,
+        baseKey,
         { name: 'AES-GCM', length: 256 },
         false,
         ['encrypt', 'decrypt']

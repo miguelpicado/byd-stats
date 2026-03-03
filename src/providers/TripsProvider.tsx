@@ -5,8 +5,8 @@ import { useChargesContext } from './ChargesProvider';
 import { useFiltersContext } from './FilterProvider';
 import { useTrips } from '@hooks/useTrips';
 import { useMergedTrips } from '@hooks/useMergedTrips';
-import { useProcessedData } from '@hooks/useProcessedData';
-import { useLocalStorage } from '@hooks/useLocalStorage';
+import { useAiInsights } from '@hooks/useAiInsights';
+import { useAnomalyTracking } from '@hooks/useAnomalyTracking';
 import { Trip, ProcessedData, Settings, SoHStats } from '@/types';
 
 interface TripsContextValue {
@@ -145,17 +145,16 @@ export function TripsProvider({ children }: { children: ReactNode }) {
         return allTrips;
     }, [allTrips, filterType, selMonth, dateFrom, dateTo]);
 
-    // 4. Stats & AI Processing
-    const processed = useProcessedData(filteredTrips, allTrips, settings, charges, 'es', activeCarId);
+    // 4. Stats & AI Processing (delegated to useAiInsights)
+    const processed = useAiInsights(filteredTrips, allTrips, settings, charges, 'es', activeCarId);
 
     // Bind the recalculateAutonomy function to the ref so useMergedTrips can call it
     useEffect(() => {
         recalculateAutonomyRef.current = processed.recalculateAutonomy;
     }, [processed.recalculateAutonomy]);
 
-    // 5. Anomalies
-    const [acknowledgedAnomalies, setAcknowledgedAnomalies] = useLocalStorage<string[]>('acknowledged_anomalies', []);
-    const [deletedAnomalies, setDeletedAnomalies] = useLocalStorage<string[]>('deleted_anomalies', []);
+    // 5. Anomalies (delegated to useAnomalyTracking)
+    const { acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies } = useAnomalyTracking();
 
     const value = useMemo(() => ({
         rawTrips: allTrips, // Exposing merged trips as "rawTrips" to match legacy API

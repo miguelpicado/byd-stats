@@ -55,22 +55,31 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     const [localSmartCharging, setLocalSmartCharging] = useState<SmartChargingData | null>(null);
     const [isLocalCalculating, setIsLocalCalculating] = useState(false);
 
+    // Use props if available, otherwise fallback to local calculation
+    // Calculate locally only if not passed from parent
     useEffect(() => {
-        // If we already have the prop, don't recalculate
-        if (smartChargingProp || !isOpen || !findSmartChargingWindows) return;
+        let isMounted = true;
+
+        if (smartChargingProp || !isOpen || !findSmartChargingWindows || _trips.length === 0) {
+            setIsLocalCalculating(false);
+            return;
+        }
 
         setIsLocalCalculating(true);
-        findSmartChargingWindows(_trips || [], settings)
+        findSmartChargingWindows(_trips, settings)
             .then(result => {
-                setLocalSmartCharging(result as SmartChargingData);
-                setIsLocalCalculating(false);
+                if (isMounted) {
+                    setLocalSmartCharging(result as SmartChargingData);
+                    setIsLocalCalculating(false);
+                }
             })
             .catch(() => {
-                setIsLocalCalculating(false);
+                if (isMounted) setIsLocalCalculating(false);
             });
+
+        return () => { isMounted = false; };
     }, [isOpen, _trips, settings, findSmartChargingWindows, smartChargingProp]);
 
-    // Use props if available, otherwise fallback to local calculation
     const smartCharging = smartChargingProp || localSmartCharging;
     const isCalculating = smartChargingProp !== undefined && isCalculatingProp ? isCalculatingProp : isLocalCalculating;
 

@@ -10,6 +10,7 @@ import {
     bydDisconnect,
     BydVehicle,
     bydDebugDump,
+    bydSaveAbrpToken,
 } from '../../services/bydApi';
 import { waitForAuth, db } from '../../services/firebase';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
@@ -115,9 +116,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
         if (!connectedVin) return;
         setAbrpSaving(true);
         try {
-            await updateDoc(doc(db, 'bydVehicles', connectedVin), {
-                abrpUserToken: abrpToken.trim(),
-            });
+            await bydSaveAbrpToken(connectedVin, abrpToken.trim());
             toast.success(abrpToken.trim() ? 'Token ABRP guardado' : 'Token ABRP eliminado');
         } catch (err: unknown) {
             console.error('Error saving ABRP token:', err);
@@ -195,6 +194,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
 
             localStorage.removeItem('byd_connected_vin');
             localStorage.removeItem('byd_connected_vehicles');
+            localStorage.removeItem('byd_auto_register_charges');
 
             setSuccess('Desconectado correctamente');
             onConnectionChange?.(false);

@@ -1,6 +1,6 @@
 import React, { Suspense, memo, FC } from 'react';
 import { useTranslation } from 'react-i18next';
-import { AlertCircle, IconProps } from '@components/Icons';
+import { AlertCircle, IconProps, Plus } from '@components/Icons';
 import ErrorBoundary from '@components/common/ErrorBoundary';
 import { Trip, Charge } from '@/types';
 
@@ -80,9 +80,16 @@ const DesktopDashboardView = memo(({
             style={{ padding: isCompact ? '8px 10px' : '12px', height: '100%', overflowY: 'auto' }}
         >
             {!stats ? (
-                <div className="text-center py-12 bg-white dark:bg-slate-800/30 rounded-2xl">
+                <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-slate-800/30 rounded-2xl">
                     <AlertCircle className="w-12 h-12 text-slate-500 mx-auto mb-4" />
-                    <p className="text-slate-400">{t('common.noData')}</p>
+                    <p className="text-slate-400 mb-6">{t('common.noData')}</p>
+                    <button
+                        onClick={handleAddCharge}
+                        className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl shadow-lg transition-transform hover:scale-105 active:scale-95"
+                    >
+                        <Plus className="w-5 h-5" />
+                        <span className="font-semibold">{t('charges.addCharge', 'Añadir Carga')}</span>
+                    </button>
                 </div>
             ) : (
                 tabs.map((tab) => {

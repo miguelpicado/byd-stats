@@ -76,8 +76,14 @@ async function loadModelFromIDB(key: string): Promise<Sequential | null> {
     try {
         if (!tf) return null;
         return await tf.loadLayersModel(`indexeddb://${key}`) as Sequential;
-    } catch {
-        return null;
+    } catch (error) {
+        // Ignoramos el error si no existe el modelo, pero otras fallas se propagan
+        const msg = String(error);
+        if (msg.includes('not found') || msg.includes('NotFoundError')) {
+            return null;
+        }
+        console.warn(`[TF Worker] loadModelFromIDB Error loading '${key}':`, error);
+        throw error;
     }
 }
 
@@ -101,7 +107,10 @@ async function saveNormToIDB(norm: { mean: number[]; variance: number[] }): Prom
             tx.oncomplete = () => { db.close(); res(); };
             tx.onerror = () => { db.close(); rej(tx.error); };
         });
-    } catch { /* non-fatal: prediction falls back to default */ }
+    } catch (error) {
+        console.warn('[TF Worker] saveNormToIDB failed:', error);
+        // non-fatal: prediction falls back to default
+    }
 }
 
 async function loadNormFromIDB(): Promise<{ mean: number[]; variance: number[] } | null> {
@@ -113,7 +122,10 @@ async function loadNormFromIDB(): Promise<{ mean: number[]; variance: number[] }
             req.onsuccess = () => { db.close(); res((req.result as { mean: number[]; variance: number[] }) ?? null); };
             req.onerror = () => { db.close(); rej(req.error); };
         });
-    } catch { return null; }
+    } catch (error) {
+        console.warn('[TF Worker] loadNormFromIDB failed:', error);
+        return null;
+    }
 }
 
 async function trainEfficiency(trips: Trip[]): Promise<{ loss: number; samples: number }> {

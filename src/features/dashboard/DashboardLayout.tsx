@@ -32,6 +32,9 @@ interface DashboardLayoutProps {
     setSwipeContainer?: React.Dispatch<React.SetStateAction<HTMLElement | null>>;
 }
 
+const NOOP_TRIP = (_trip: Trip) => { };
+const NOOP_CHARGE = (_charge: Charge) => { };
+
 const DashboardLayout = memo((props: DashboardLayoutProps) => {
     const { layoutMode } = useLayout();
 
@@ -43,8 +46,8 @@ const DashboardLayout = memo((props: DashboardLayoutProps) => {
         {...props}
         fadingTab={props.fadingTab || ''}
         backgroundLoad={props.backgroundLoad || false}
-        onTripSelect={props.onTripSelect || (() => { })}
-        onChargeSelect={props.onChargeSelect || (() => { })}
+        onTripSelect={props.onTripSelect || NOOP_TRIP}
+        onChargeSelect={props.onChargeSelect || NOOP_CHARGE}
     />;
 });
 

@@ -73,7 +73,7 @@ const Header: React.FC = memo(() => {
                     {/* Logo y título */}
                     <div className="flex items-center gap-2 sm:gap-3">
                         <img
-                            src="app_icon_v2.png"
+                            src="app_icon_192.png"
                             className={`${layoutMode === 'horizontal' ? 'h-10 w-auto' : 'w-12 sm:w-16 md:w-20'} object-contain`}
                             alt="BYD Logo"
                         />
@@ -145,7 +145,7 @@ const Header: React.FC = memo(() => {
                                         googleSync.login();
                                     }
                                 }}
-                                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${!googleSync.isAuthenticated
+                                className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all ${!googleSync.isAuthenticated
                                     ? 'text-slate-400 hover:text-slate-600 dark:text-slate-500 dark:hover:text-slate-300'
                                     : googleSync.error
                                         ? 'text-red-500 bg-red-50 dark:bg-red-900/10'
@@ -174,35 +174,35 @@ const Header: React.FC = memo(() => {
                         )}
                         <button
                             onClick={() => openModal('help')}
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
                             title={t('tooltips.help')}
                         >
                             <HelpCircle className="w-5 h-5" />
                         </button>
                         <button
                             onClick={handleToggleFullscreen}
-                            className={`w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors ${layoutMode === 'vertical' ? 'hidden' : ''}`}
+                            className={`w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors ${layoutMode === 'vertical' ? 'hidden' : ''}`}
                             title={document.fullscreenElement ? t('tooltips.exitFullscreen') : t('tooltips.fullscreen')}
                         >
                             {document.fullscreenElement ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                         </button>
                         <button
                             onClick={() => openModal('history')}
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
                             title={t('tooltips.history')}
                         >
                             <Database className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => openModal('settings')}
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
                             title={t('tooltips.settings')}
                         >
                             <Settings className="w-5 h-5" />
                         </button>
                         <button
                             onClick={() => openModal('filter')}
-                            className="w-10 h-10 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
+                            className="w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-slate-800 transition-colors"
                             title={t('tooltips.filters')}
                         >
                             <Filter className="w-5 h-5" />

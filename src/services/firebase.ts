@@ -78,6 +78,9 @@ export const waitForAuth = async (timeoutMs = 5000): Promise<string | null> => {
         // Fallback timeout
         setTimeout(() => {
             unsubscribe();
+            if (!currentUser?.uid) {
+                console.warn('[Firebase] Auth timeout after', timeoutMs, 'ms — continuing without auth');
+            }
             resolve(currentUser?.uid || null); // Return current state (likely null) if timeout
         }, timeoutMs);
     });
@@ -266,5 +269,22 @@ export const fetchTripsPage = async (
         hasMore: snapshot.size === pageSize
     };
 };
+
+// ─── Request Deduplication ────────────────────────────────────────────────────
+// Avoids duplicate simultaneous async calls with the same key (e.g. vehicle data fetch)
+const _pendingRequests = new Map<string, Promise<unknown>>();
+
+/**
+ * Deduplicates concurrent async calls sharing the same key.
+ * If a call for `key` is already in-flight, returns the same Promise instead of issuing a new request.
+ */
+export async function deduplicatedQuery<T>(key: string, queryFn: () => Promise<T>): Promise<T> {
+    const existing = _pendingRequests.get(key);
+    if (existing) return existing as Promise<T>;
+
+    const promise = queryFn().finally(() => _pendingRequests.delete(key));
+    _pendingRequests.set(key, promise);
+    return promise;
+}
 
 export { db };

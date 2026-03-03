@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
         devOptions: {
           enabled: false
         },
-        includeAssets: ['app_icon_v2.png', 'byd_logo.png'],
+        includeAssets: ['app_icon_192.png', 'app_icon_512.png', 'app_icon_v2.png', 'byd_logo.png'],
         manifest: {
           name: 'BYD Stats',
           short_name: 'BYD Stats',
@@ -33,13 +33,13 @@ export default defineConfig(({ mode }) => {
           categories: ['utilities', 'productivity'],
           icons: [
             {
-              src: '/app_icon_v2.png',
+              src: '/app_icon_192.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any maskable'
             },
             {
-              src: '/app_icon_v2.png',
+              src: '/app_icon_512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any maskable'
@@ -77,7 +77,27 @@ export default defineConfig(({ mode }) => {
           cleanupOutdatedCaches: true,
           navigateFallback: 'index.html',
           // Don't cache map files or legacy polyfills heavily
-          globIgnores: ['**/node_modules/**/*', '*.map']
+          globIgnores: ['**/node_modules/**/*', '*.map'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/www\.googleapis\.com\/drive\//,
+              handler: 'NetworkFirst' as const,
+              options: {
+                cacheName: 'google-drive-api',
+                expiration: { maxEntries: 50, maxAgeSeconds: 300 },
+                networkTimeoutSeconds: 10,
+              },
+            },
+            {
+              urlPattern: /^https:\/\/firestore\.googleapis\.com\//,
+              handler: 'NetworkFirst' as const,
+              options: {
+                cacheName: 'firestore-api',
+                expiration: { maxEntries: 100, maxAgeSeconds: 600 },
+                networkTimeoutSeconds: 10,
+              },
+            },
+          ],
         }
       })
     ],

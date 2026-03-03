@@ -1,7 +1,7 @@
 // BYD Stats - Live Vehicle Status Component (StatCard format)
 // Shows real-time vehicle status (charging state, SoC, etc.)
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Battery, Zap, Car } from '../Icons';
 import { BYD_RED } from '@core/constants';
@@ -32,6 +32,23 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
     // Use shared hook for vehicle status subscription
     const vehicleData = useVehicleStatus(statusId);
 
+    const handleStopCharge = useCallback(async (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (!statusId) return;
+
+        setIsStoppingCharge(true);
+        try {
+            // Mock PyBYD stop
+            logger.info('[LiveVehicleStatus] Stopping charge via PyBYD (Mock)');
+            toast.success(t('charges.chargeStopped', 'Carga detenida (Simulado)'));
+        } catch (error) {
+            logger.error('[LiveVehicleStatus] Error stopping charge:', error);
+            toast.error(t('charges.stopError', 'Error al detener la carga'));
+        } finally {
+            setIsStoppingCharge(false);
+        }
+    }, [statusId, t]);
+
     // Polling Logic for Target SoC
     useEffect(() => {
         if (!isPybyd || !vehicleData?.chargingActive) return;
@@ -55,24 +72,7 @@ const LiveVehicleStatus: React.FC<LiveVehicleStatusProps> = ({ onClick }) => {
         checkTargetSoC(); // Initial check
 
         return () => clearInterval(interval);
-    }, [isPybyd, vehicleData?.chargingActive, vehicleData?.lastSoC, settings?.targetChargeSoC]);
-
-    const handleStopCharge = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!statusId) return;
-
-        setIsStoppingCharge(true);
-        try {
-            // Mock PyBYD stop
-            logger.info('[LiveVehicleStatus] Stopping charge via PyBYD (Mock)');
-            toast.success(t('charges.chargeStopped', 'Carga detenida (Simulado)'));
-        } catch (error) {
-            logger.error('[LiveVehicleStatus] Error stopping charge:', error);
-            toast.error(t('charges.stopError', 'Error al detener la carga'));
-        } finally {
-            setIsStoppingCharge(false);
-        }
-    };
+    }, [isPybyd, vehicleData?.chargingActive, vehicleData?.lastSoC, settings?.targetChargeSoC, handleStopCharge]);
 
     // Compute display values using normalize utility
     const soc = normalizeSoCToPercent(vehicleData?.lastSoC);

@@ -110,6 +110,15 @@ export async function bydDisconnect(vin: string): Promise<{ success: boolean }> 
 }
 
 /**
+ * Save encrypted ABRP token
+ */
+export async function bydSaveAbrpToken(vin: string, token: string): Promise<{ success: boolean }> {
+    const callable = httpsCallable<any, { success: boolean }>(functions, 'bydSaveAbrpToken');
+    const result = await callable({ vin, token });
+    return result.data;
+}
+
+/**
  * Get realtime vehicle data
  */
 export async function bydGetRealtime(vin: string): Promise<{ success: boolean; data: BydRealtime }> {

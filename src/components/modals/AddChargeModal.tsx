@@ -134,7 +134,7 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                 }));
             }
         }
-    }, [modals.addCharge, editingCharge, chargerTypes, isHybrid, stats]);
+    }, [modals.addCharge, chargerTypes, isHybrid, stats]); // Removed editingCharge here, managed below
 
     const handleChange = (field: keyof FormData, value: string | number | boolean) => {
         setFormData(prev => {
@@ -224,7 +224,7 @@ const AddChargeModal: React.FC<AddChargeModalProps> = () => {
                 }));
             }
         }
-    }, [formData.odometer, formData.type, charges, editingCharge, stats?.summary?.avgEff, settings.batterySize]);
+    }, [formData.odometer, formData.type, formData.initialPercentage, formData.isSOCEstimated, charges, editingCharge?.id, stats?.summary?.avgEff, settings.batterySize]);
 
 
     const handleSubmit = () => {

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { calculateScore, getScoreColor } from '@core/formatters';
 import { formatDate, formatTime } from '@core/dateUtils';
@@ -48,10 +48,16 @@ const TripCard: React.FC<TripCardProps> = React.memo(({ trip, minEff, maxEff, on
     // Cost logic: Use calculatedCost if available, otherwise totalCost (fallback)
     const displayCost = trip.calculatedCost !== undefined ? trip.calculatedCost : (trip.totalCost || 0);
 
+    const handleClick = useCallback(() => onClick(trip), [onClick, trip]);
+
     return (
         <div
-            onClick={() => onClick(trip)}
-            className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors ${paddingClass}`}
+            onClick={handleClick}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleClick(); } }}
+            role="button"
+            tabIndex={0}
+            aria-label={`${t('trip.viewDetails', 'Ver detalles del viaje')} — ${formatDate(trip.date)} ${formatTime(trip.start_timestamp)}, ${effectiveDistance.toFixed(1)} km`}
+            className={`bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA0029] ${paddingClass}`}
         >
             <div className={`text-center ${marginBottom}`}>
                 <p className={`text-slate-900 dark:text-white font-semibold ${(isCompact || isFullscreenBYD) ? 'text-xs' : 'text-sm sm:text-base'}`}>

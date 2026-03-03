@@ -15,7 +15,11 @@ const ChargeCard: React.FC<ChargeCardProps> = memo(({ charge, onClick, formatted
     return (
         <div
             onClick={() => onClick(charge)}
-            className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors"
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick(charge); } }}
+            role="button"
+            tabIndex={0}
+            aria-label={`Carga del ${formattedDate}, ${charge.kwhCharged?.toFixed(2) || '0.00'} kWh, ${chargerTypeName}`}
+            className="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 p-4 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#EA0029]"
         >
             <div className="flex justify-between items-center">
                 <div className="flex-1">

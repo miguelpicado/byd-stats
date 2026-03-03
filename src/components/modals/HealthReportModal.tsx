@@ -37,6 +37,67 @@ interface HealthReportModalProps {
     onDelete?: (id: string) => void;
 }
 
+interface StatusRowProps {
+    title: string;
+    items: Anomaly[];
+    icon: React.ReactNode;
+    emptyText: string;
+    onAcknowledge?: (id: string) => void;
+    t: (key: string, defaultText: string) => string;
+}
+
+const StatusRow: React.FC<StatusRowProps> = ({ title, items, icon, emptyText, onAcknowledge, t }) => (
+    <div className="mb-6 last:mb-0">
+        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+            {icon}
+            {title}
+        </h3>
+        {items.length === 0 ? (
+            <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-slate-500 dark:text-slate-400">
+                <CheckCircle className="w-5 h-5 text-emerald-500" />
+                <span className="text-sm">{emptyText}</span>
+            </div>
+        ) : (
+            <div className="space-y-3">
+                {items.map((item: Anomaly) => (
+                    <div key={item.id} className={`relative rounded-xl p-4 border ${item.severity === 'critical' ? 'bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-900/50' :
+                        item.severity === 'warning' ? 'bg-amber-50 border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/50' :
+                            'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-900/50'
+                        }`}>
+                        <div className="flex justify-between items-start pr-8">
+                            <h4 className={`font-bold text-sm ${item.severity === 'critical' ? 'text-red-700 dark:text-red-400' :
+                                item.severity === 'warning' ? 'text-amber-700 dark:text-amber-400' :
+                                    'text-blue-700 dark:text-blue-400'
+                                }`}>
+                                {item.title}
+                            </h4>
+                            {item.value && (
+                                <span className="text-xs font-mono font-bold px-2 py-0.5 bg-white/50 dark:bg-black/20 rounded">
+                                    {item.value}
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs mt-1 text-slate-600 dark:text-slate-300 leading-relaxed max-w-[90%]">
+                            {item.description}
+                        </p>
+
+                        {/* Acknowledge Button */}
+                        {onAcknowledge && (
+                            <button
+                                onClick={() => onAcknowledge(item.id)}
+                                className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-current opacity-60 hover:opacity-100"
+                                title={t('common.dismiss', 'Entendido / Ocultar')}
+                            >
+                                <CheckCircle className="w-5 h-5" />
+                            </button>
+                        )}
+                    </div>
+                ))}
+            </div>
+        )}
+    </div>
+);
+
 const HealthReportModal: React.FC<HealthReportModalProps> = ({
     isOpen,
     onClose,
@@ -116,58 +177,7 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
     const chargeAnomalies = anomalies.filter(a => a.type === 'charging');
     const effAnomalies = anomalies.filter(a => a.type === 'efficiency');
 
-    // Helper for rows
-    const StatusRow = ({ title, items, icon, emptyText }: { title: string; items: Anomaly[]; icon: React.ReactNode; emptyText: string }) => (
-        <div className="mb-6 last:mb-0">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-3 flex items-center gap-2">
-                {icon}
-                {title}
-            </h3>
-            {items.length === 0 ? (
-                <div className="bg-slate-50 dark:bg-slate-900/50 rounded-xl p-4 border border-slate-100 dark:border-slate-800 flex items-center gap-3 text-slate-500 dark:text-slate-400">
-                    <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    <span className="text-sm">{emptyText}</span>
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {items.map((item: Anomaly) => (
-                        <div key={item.id} className={`relative rounded-xl p-4 border ${item.severity === 'critical' ? 'bg-red-50 border-red-100 dark:bg-red-900/20 dark:border-red-900/50' :
-                            item.severity === 'warning' ? 'bg-amber-50 border-amber-100 dark:bg-amber-900/20 dark:border-amber-900/50' :
-                                'bg-blue-50 border-blue-100 dark:bg-blue-900/20 dark:border-blue-900/50'
-                            }`}>
-                            <div className="flex justify-between items-start pr-8">
-                                <h4 className={`font-bold text-sm ${item.severity === 'critical' ? 'text-red-700 dark:text-red-400' :
-                                    item.severity === 'warning' ? 'text-amber-700 dark:text-amber-400' :
-                                        'text-blue-700 dark:text-blue-400'
-                                    }`}>
-                                    {item.title}
-                                </h4>
-                                {item.value && (
-                                    <span className="text-xs font-mono font-bold px-2 py-0.5 bg-white/50 dark:bg-black/20 rounded">
-                                        {item.value}
-                                    </span>
-                                )}
-                            </div>
-                            <p className="text-xs mt-1 text-slate-600 dark:text-slate-300 leading-relaxed max-w-[90%]">
-                                {item.description}
-                            </p>
 
-                            {/* Acknowledge Button */}
-                            {onAcknowledge && (
-                                <button
-                                    onClick={() => onAcknowledge(item.id)}
-                                    className="absolute top-2 right-2 p-1.5 rounded-lg hover:bg-black/10 dark:hover:bg-white/10 transition-colors text-current opacity-60 hover:opacity-100"
-                                    title={t('common.dismiss', 'Entendido / Ocultar')}
-                                >
-                                    <CheckCircle className="w-5 h-5" />
-                                </button>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-    );
 
     return (
         <ModalPortal>
@@ -241,6 +251,8 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 items={batteryAnomalies}
                                 icon={<Battery className="w-5 h-5" />}
                                 emptyText={t('health.batteryOk', 'Salud de batería dentro de parámetros normales.')}
+                                onAcknowledge={onAcknowledge}
+                                t={t}
                             />
 
                             <StatusRow
@@ -248,6 +260,8 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 items={drainAnomalies}
                                 icon={<Activity className="w-5 h-5" />}
                                 emptyText={t('health.drainOk', 'Consumo en reposo normal.')}
+                                onAcknowledge={onAcknowledge}
+                                t={t}
                             />
 
                             <StatusRow
@@ -255,6 +269,8 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 items={chargeAnomalies}
                                 icon={<Zap className="w-5 h-5" />}
                                 emptyText={t('health.chargingOk', 'Eficiencia de carga óptima.')}
+                                onAcknowledge={onAcknowledge}
+                                t={t}
                             />
 
                             <StatusRow
@@ -262,6 +278,8 @@ const HealthReportModal: React.FC<HealthReportModalProps> = ({
                                 items={effAnomalies}
                                 icon={<AlertCircle className="w-5 h-5" />}
                                 emptyText={t('health.efficiencyOk', 'Consumo consistente con el historial.')}
+                                onAcknowledge={onAcknowledge}
+                                t={t}
                             />
 
                             {/* Tire Pressure Section Removed */}

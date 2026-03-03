@@ -14,6 +14,7 @@ export default defineConfig({
             '**/dist/**',
             '**/.{idea,git,cache,output,temp}/**',
             'functions/lib/**',
+            'e2e/**'
         ],
         coverage: {
             provider: 'v8',
@@ -47,6 +48,7 @@ export default defineConfig({
             '@services': path.resolve(__dirname, './src/services'),
             '@features': path.resolve(__dirname, './src/features'),
             '@tabs': path.resolve(__dirname, './src/features/dashboard/tabs'),
+            '@test-utils': path.resolve(__dirname, './src/test-utils'),
         },
     },
 });
