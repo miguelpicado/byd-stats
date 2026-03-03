@@ -84,5 +84,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <!-- READ_EXTERNAL_STORAGE removed: deprecated since API 33 (Android 13).
+         File access is handled by Capacitor File Picker via Storage Access Framework. -->
 </manifest>

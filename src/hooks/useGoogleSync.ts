@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { logger } from '@core/logger';
 import { Trip, Charge, Settings, Car } from '@/types';
 import { useGoogleAuth, UserProfile } from './sync/useGoogleAuth';
@@ -144,7 +144,7 @@ export function useGoogleSync({
         if (pendingRestore) {
             logger.info("[Sync] Pending restore flag FOUND. Clearing and scheduling pull...");
             localStorage.removeItem('byd_pending_restore');
-            
+
             const timer = setTimeout(async () => {
                 logger.info("[Sync] Executing scheduled force-pull for restored car...");
                 try {
@@ -164,7 +164,7 @@ export function useGoogleSync({
         if (isFreshInstall) {
             registryCheckTriggered.current = true;
             logger.info("[Sync] Auth detected with empty data. Checking registry...");
-            
+
             let executed = false;
             const timer = setTimeout(async () => {
                 executed = true;
@@ -178,7 +178,7 @@ export function useGoogleSync({
                     registryCheckTriggered.current = false;
                 }
             }, 1000);
-            
+
             return () => {
                 clearTimeout(timer);
                 if (!executed) {
