@@ -70,18 +70,24 @@ export const waitForAuth = async (timeoutMs = 5000): Promise<string | null> => {
     if (currentUser?.uid) return currentUser.uid;
 
     return new Promise((resolve) => {
+        let resolved = false;
+
         const unsubscribe = onAuthStateChanged(auth, (user) => {
+            if (resolved) return;
+            resolved = true;
+            clearTimeout(timer);
             unsubscribe();
             resolve(user?.uid || null);
         });
 
-        // Fallback timeout
-        setTimeout(() => {
+        const timer = setTimeout(() => {
+            if (resolved) return;
+            resolved = true;
             unsubscribe();
             if (!currentUser?.uid) {
-                console.warn('[Firebase] Auth timeout after', timeoutMs, 'ms — continuing without auth');
+                logger.warn('[Firebase] Auth timeout after', timeoutMs, 'ms — continuing without auth');
             }
-            resolve(currentUser?.uid || null); // Return current state (likely null) if timeout
+            resolve(currentUser?.uid || null);
         }, timeoutMs);
     });
 };
