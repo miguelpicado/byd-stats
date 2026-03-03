@@ -1,1 +1,0 @@
-src/components/cards/EstimatedChargeCard.tsx(98,2): error TS1005: ')' expected.
