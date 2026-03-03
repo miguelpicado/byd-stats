@@ -33,6 +33,7 @@
     "@react-oauth/google": "^0.13.4",
     "@tanstack/react-virtual": "^3.13.18",
     "@tensorflow/tfjs": "^4.22.0",
+    "capacitor-secure-storage-plugin": "^0.13.0",
     "chart.js": "^4.5.1",
     "comlink": "^4.4.2",
     "date-fns": "^4.1.0",

@@ -1,9 +1,10 @@
+import { Capacitor } from '@capacitor/core';
+import { SecureStoragePlugin } from 'capacitor-secure-storage-plugin';
+
 /**
  * Secure wrapper around localStorage that obfuscates sensitive values.
- * Uses AES-GCM with a device-derived key to prevent casual token theft.
- *
- * NOTE: This is defense-in-depth, not a security boundary.
- * The real protection is short-lived tokens + HTTPS + CSP.
+ * Uses AES-GCM with a device-derived key to prevent casual token theft on Web.
+ * On Native (Android/iOS), uses the hardware-backed secure Keystore/Keychain.
  */
 
 const STORAGE_PREFIX = 'sec_';
@@ -51,6 +52,16 @@ async function getKey(): Promise<CryptoKey> {
 }
 
 export async function secureSet(key: string, value: string): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await SecureStoragePlugin.set({ key, value });
+            return;
+        } catch (e) {
+            console.error('[SecureStorage] Native set failed', e);
+            // Fallback to web implementation if plugin fails
+        }
+    }
+
     try {
         const ck = await getKey();
         const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -70,6 +81,15 @@ export async function secureSet(key: string, value: string): Promise<void> {
 }
 
 export async function secureGet(key: string): Promise<string | null> {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            const { value } = await SecureStoragePlugin.get({ key });
+            return value;
+        } catch (e) {
+            // Item not found or error
+        }
+    }
+
     try {
         const stored = localStorage.getItem(STORAGE_PREFIX + key);
         if (!stored) {
@@ -90,7 +110,14 @@ export async function secureGet(key: string): Promise<string | null> {
     }
 }
 
-export function secureRemove(key: string): void {
+export async function secureRemove(key: string): Promise<void> {
+    if (Capacitor.isNativePlatform()) {
+        try {
+            await SecureStoragePlugin.remove({ key });
+        } catch (e) {
+            // Ignore error if item doesn't exist
+        }
+    }
     localStorage.removeItem(STORAGE_PREFIX + key);
     localStorage.removeItem(key); // Also remove legacy unencrypted
 }
