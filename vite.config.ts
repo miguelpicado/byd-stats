@@ -120,20 +120,28 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         external: ['fs', 'path', 'crypto'], // Externalize node built-ins
         output: {
-          manualChunks: {
-            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-            'chart-vendor': ['chart.js', 'react-chartjs-2'],
-            'utils-vendor': ['i18next', 'react-i18next', 'i18next-browser-languagedetector', 'i18next-http-backend'],
-            'capacitor-vendor': ['@capacitor/core', '@capacitor/app', '@capacitor/filesystem', '@capacitor/status-bar'],
-            'tensorflow-vendor': [
-              '@tensorflow/tfjs',
-              '@tensorflow/tfjs-core',
-              '@tensorflow/tfjs-backend-cpu',
-              '@tensorflow/tfjs-backend-webgl',
-              '@tensorflow/tfjs-converter',
-              '@tensorflow/tfjs-data',
-              '@tensorflow/tfjs-layers',
-            ],
+          manualChunks(id) {
+            if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
+              return 'vendor-react';
+            }
+            if (id.includes('node_modules/firebase') || id.includes('node_modules/@firebase')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('node_modules/chart.js') || id.includes('node_modules/react-chartjs-2')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('node_modules/sql.js')) {
+              return 'vendor-sqlite';
+            }
+            if (id.includes('node_modules/@capacitor')) {
+              return 'vendor-capacitor';
+            }
+            if (id.includes('node_modules/@tensorflow')) {
+              return 'vendor-tensorflow';
+            }
+            if (id.includes('node_modules/i18next')) {
+              return 'vendor-i18n';
+            }
           }
         }
       },
