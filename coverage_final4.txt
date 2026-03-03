@@ -1,0 +1,280 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+ [32mÔ£ô[39m src/components/ui/__tests__/ChartCard.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[32m 70[2mms[22m[39m
+stderr | src/hooks/__tests__/useAppVersion.test.ts > useAppVersion > returns cached version on fetch error
+Failed to fetch app version from GitHub: Error: Network error
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/__tests__/useAppVersion.test.ts:120:53
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+[90mstdout[2m | functions/src/__tests__/bydFunctions.test.ts
+[22m[39m[[CRITICAL] BYD_WEBHOOK_SECRET environment variable is not set. Webhook endpoint will reject all requests.]
+
+ [32mÔ£ô[39m src/workers/__tests__/dataWorker.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 228[2mms[22m[39m
+[90mstdout[2m | functions/src/__tests__/bydFunctions.test.ts[2m > [22m[2mrequireAuthAndOwnership[2m > [22m[2msucceeds when the authenticated user owns the vehicle
+[22m[39m[[bydDisconnect] Disconnected vehicle LFCE10B33PA123456]
+
+[90mstdout[2m | functions/src/__tests__/bydFunctions.test.ts[2m > [22m[2mrequireAuthAndOwnership[2m > [22m[2mcalls delete on the credentials subcollection on successful disconnect
+[22m[39m[[bydDisconnect] Disconnected vehicle LFCE10B33PA123456]
+
+[90mstdout[2m | functions/src/__tests__/bydFunctions.test.ts[2m > [22m[2mrequireAuthAndOwnership[2m > [22m[2mcalls update on the vehicle doc with disconnectedAt on success
+[22m[39m[[bydDisconnect] Disconnected vehicle LFCE10B33PA123456]
+
+stderr | src/hooks/__tests__/useAppVersion.test.ts > useAppVersion > returns default version when no cache and fetch fails
+Failed to fetch app version from GitHub: Error: Network error
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/__tests__/useAppVersion.test.ts:132:53
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+ [32mÔ£ô[39m functions/src/__tests__/bydFunctions.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useAppVersion.test.ts [2m([22m[2m7 tests[22m[2m)[22m[33m 303[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/sync/__tests__/useGoogleAuth.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 107[2mms[22m[39m
+ [32mÔ£ô[39m src/features/navigation/__tests__/Header.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 170[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useChargesData.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 225[2mms[22m[39m
+ [32mÔ£ô[39m src/components/cards/__tests__/TripCard.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 250[2mms[22m[39m
+ [32mÔ£ô[39m src/components/modals/__tests__/ChargeDetailModal.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 602[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m calls close handlers when clicking X button [33m 352[2mms[22m[39m
+ [32mÔ£ô[39m src/components/modals/__tests__/HealthReportModal.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 610[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m calls close handler when clicking close or backdrop [33m 368[2mms[22m[39m
+stderr | src/providers/__tests__/DataProvider.test.jsx
+[WARN] [Firebase] Anonymous auth failed (development mode?): auth/requests-from-referer-<empty>-are-blocked.
+
+ [32mÔ£ô[39m src/components/modals/__tests__/TripDetailModal.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 787[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m calls close handlers when clicking X button [33m 389[2mms[22m[39m
+stderr | src/features/dashboard/__tests__/ImportDB.integration.test.jsx
+[WARN] [Firebase] Anonymous auth failed (development mode?): auth/requests-from-referer-<empty>-are-blocked.
+
+stderr | src/providers/__tests__/ProviderIntegration.test.tsx
+[WARN] [Firebase] Anonymous auth failed (development mode?): auth/requests-from-referer-<empty>-are-blocked.
+
+stderr | src/providers/__tests__/ProviderIntegration.test.tsx > Provider Integration > should provide default trips and charges data through provider chain
+react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next { code: 'NO_I18NEXT_INSTANCE' }
+
+[90mstdout[2m | src/providers/__tests__/ProviderIntegration.test.tsx[2m > [22m[2mProvider Integration[2m > [22m[2mshould add a charge using addCharge
+[22m[39m[INFO] Charge added: 190ebebc-c3f0-4bed-8dd5-306e0c72718d
+
+ [32mÔ£ô[39m src/providers/__tests__/DataProvider.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 97[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/ProviderIntegration.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 171[2mms[22m[39m
+ [32mÔ£ô[39m src/features/dashboard/__tests__/ImportDB.integration.test.jsx [2m([22m[2m1 test[22m[2m)[22m[32m 168[2mms[22m[39m
+ [32mÔ£ô[39m src/features/dashboard/__tests__/DashboardLayout.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 744[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m renders Trends tab when active [33m 328[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m renders Charges tab when active [33m 317[2mms[22m[39m
+ [32mÔ£ô[39m src/components/cards/__tests__/TripCard.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 258[2mms[22m[39m
+ [32mÔ£ô[39m src/components/ui/__tests__/StatCard.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 152[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/ModalProvider.test.tsx [2m([22m[2m27 tests[22m[2m)[22m[32m 134[2mms[22m[39m
+stderr | src/providers/__tests__/SyncProvider.test.tsx > SyncProvider > importSyncData formats and merging > importSyncData throws on invalid JSON format
+[ERROR] Error importing sync data: SyntaxError: Unexpected token 'j', "{"malformed": json" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at Object.importSyncData (C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/providers/SyncProvider.tsx:160:31)
+
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mimportSyncData formats and merging[2m > [22m[2mimportSyncData aborts on user cancel
+[22m[39m[INFO] Import cancelled by user
+
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mimportSyncData formats and merging[2m > [22m[2mimportSyncData with merge=true deduplicates by date-timestamp
+[22m[39m[INFO] [IMPORT START] Current: 1 trips, 1 charges
+[INFO] [IMPORT START] Importing: 2 trips, 0 charges
+[INFO] [IMPORT COMPLETE] Final: 2 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Delta: +1 trips, 0 charges
+[INFO] [IMPORT] User confirmed sync to cloud
+
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mimportSyncData formats and merging[2m > [22m[2mimportSyncData with merge=false replaces all data
+[22m[39m[INFO] [IMPORT START] Current: 1 trips, 1 charges
+[INFO] [IMPORT START] Importing: 1 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Final: 1 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Delta: 0 trips, 0 charges
+[INFO] [IMPORT] User confirmed sync to cloud
+
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mloadFile routes .json to importSyncData handler
+[22m[39m[INFO] [IMPORT START] Current: 1 trips, 1 charges
+[INFO] [IMPORT START] Importing: 0 trips, 0 charges
+[INFO] [IMPORT COMPLETE] Final: 1 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Delta: 0 trips, 0 charges
+[INFO] [IMPORT] User confirmed sync to cloud
+
+ [32mÔ£ô[39m src/providers/__tests__/SyncProvider.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 114[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useSettings.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useWearSync.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 76[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useTrips.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 233[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/ChargesProvider.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[32m 155[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useSwipeGesture.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useAppData.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32mÔ£ô[39m src/components/cards/__tests__/ChargeCard.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[32m 194[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/FilterProvider.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[32m 97[2mms[22m[39m
+ [32mÔ£ô[39m src/context/__tests__/AppContext.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 81[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/TripsProvider.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useTabNavigation.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 117[2mms[22m[39m
+stderr | src/hooks/__tests__/useLocalStorage.test.js > useLocalStorage > should handle parse errors gracefully
+[ERROR] Error reading localStorage key "test_key": SyntaxError: Unexpected token 'i', "invalid json{" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/useLocalStorage.ts:62:32
+    at mountStateImpl (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:8268:24)
+    at mountState (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:8289:22)
+    at Object.useState (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:26243:18)
+    at process.env.NODE_ENV.exports.useState (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react\cjs\react.development.js:1263:34)
+    at useLocalStorage (C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/useLocalStorage.ts:59:43)
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/__tests__/useLocalStorage.test.js:66:60
+    at TestComponent (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\@testing-library\react\dist\pure.js:330:27)
+    at Object.react_stack_bottom_frame (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:25904:20)
+
+ [32mÔ£ô[39m src/hooks/__tests__/useLocalStorage.test.js [2m([22m[2m7 tests[22m[2m)[22m[32m 69[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useLocalStorage.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useVehicleStatus.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+stderr | src/services/__tests__/googleDrive.test.ts > googleDriveService > auth & initialization > throws if trying to make request without token
+[WARN] [Drive API] No access token available for headers!
+
+stderr | src/services/__tests__/googleDrive.test.ts > googleDriveService > _handleResponse > throws and clears token on 401 Unauthorized
+[ERROR] [Drive] Unauthorized (401) during test. Clearing token.
+
+ [32mÔ£ô[39m src/core/__tests__/formatters.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+stderr | src/services/__tests__/googleDrive.test.ts > googleDriveService > _handleResponse > throws error with details on non-ok response
+[ERROR] [Drive API] Error during testing limit: { status: 500, text: 'Server exploded' }
+
+ [32mÔ£ô[39m src/services/__tests__/googleDrive.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useChargeImporter.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useAutoChargeDetection.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 66[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/dateUtils.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32mÔ£ô[39m src/services/ai/__tests__/SoHModel.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useFilters.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 39[2mms[22m[39m
+ [32mÔ£ô[39m src/services/__tests__/AnomalyService.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 22[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/typeGuards.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/logger.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/chargingLogic.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/secureStorage.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 11[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/batteryCalculations.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32mÔ£ô[39m src/services/__tests__/StorageService.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/dataProcessing.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32mÔ£ô[39m src/services/__tests__/PredictiveService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32mÔ£ô[39m src/services/ai/__tests__/EfficiencyModel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/constants.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/validation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/normalize.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m53 passed[39m[22m[90m (53)[39m
+[2m      Tests [22m [1m[32m573 passed[39m[22m[90m (573)[39m
+[2m   Start at [22m 13:03:58
+[2m   Duration [22m 11.88s[2m (transform 8.65s, setup 23.26s, import 14.56s, tests 7.19s, environment 84.43s)[22m
+
+[34m % [39m[2mCoverage report from [22m[33mv8[39m
+-------------------|---------|----------|---------|---------|-------------------
+File               | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s 
+-------------------|---------|----------|---------|---------|-------------------
+All files          |   46.38 |    34.49 |    47.5 |   47.18 |                   
+ functions/src     |    6.65 |     1.56 |    9.41 |    6.89 |                   
+  bydFunctions.ts  |    6.65 |     1.56 |    9.41 |    6.89 | ...2967,2976-3036 
+ src/components    |   97.05 |    42.85 |      50 |   97.05 |                   
+  Icons.tsx        |   97.05 |    42.85 |      50 |   97.05 | 33,67             
+ ...mponents/cards |   17.64 |    39.52 |   30.43 |   17.46 |                   
+  ChargeCard.tsx   |      80 |       50 |   66.66 |      80 | 53                
+  ...hargeCard.tsx |    2.85 |        0 |       0 |    3.22 | 21-87             
+  ...cleStatus.tsx |    1.28 |        0 |       0 |    1.35 | 21-129            
+  TripCard.tsx     |     100 |    95.74 |     100 |     100 | 45,76,84,91       
+ ...ponents/common |   45.83 |       12 |    62.5 |   47.82 |                   
+  ...rBoundary.tsx |   28.57 |     6.66 |      60 |   28.57 | 30-40,46-54       
+  ModalHeader.tsx  |      50 |        0 |       0 |      50 | 26                
+  ModalPortal.tsx  |      75 |       50 |     100 |   85.71 | 16                
+ ...ponents/modals |   40.75 |    27.75 |   38.14 |   42.16 |                   
+  AddCarModal.tsx  |   26.08 |     12.5 |      20 |      25 | 21-98             
+  ...tailModal.tsx |   83.01 |    66.66 |     100 |     100 | ...44-162,250-251 
+  ...ghtsModal.tsx |    0.65 |        0 |       0 |     0.7 | 49-614            
+  ...portModal.tsx |   67.92 |    54.54 |   66.66 |    65.9 | ...58,168,304-308 
+  ...tailModal.tsx |   64.91 |    37.03 |   54.54 |   68.26 | ...80,187,236-404 
+ src/components/ui |     100 |     90.9 |     100 |     100 |                   
+  ChartCard.tsx    |     100 |      100 |     100 |     100 |                   
+  StatCard.tsx     |     100 |    89.58 |     100 |     100 | 32,43             
+ src/context       |   72.58 |     65.4 |   71.42 |   75.42 |                   
+  AppContext.tsx   |   87.93 |    70.49 |      90 |    87.5 | ...42-143,209-210 
+  CarContext.tsx   |   53.16 |    44.44 |   55.55 |   58.57 | ...23,128,132-134 
+  ...utContext.tsx |   85.71 |    70.37 |   85.71 |   85.71 | 27,61,79,85-87,95 
+ src/core          |   61.12 |    42.95 |   64.89 |   64.94 |                   
+  ...lculations.ts |   88.34 |    78.72 |      90 |   91.76 | ...,71-73,115,132 
+  chargingLogic.ts |   92.85 |    78.12 |   94.11 |   95.06 | 80-81,132,212     
+  constants.ts     |     100 |      100 |     100 |     100 |                   
+  ...Processing.ts |   18.03 |      8.9 |      25 |    20.2 | 126-456           
+  dateUtils.ts     |     100 |      100 |     100 |     100 |                   
+  formatters.ts    |   86.84 |    76.08 |   93.75 |   92.06 | 83-84,121,134,143 
+  logger.ts        |     100 |    83.33 |     100 |     100 | 19,66             
+ ...ures/dashboard |   53.57 |    32.11 |   21.21 |   67.18 |                   
+  ...ardLayout.tsx |    87.5 |       40 |   33.33 |    87.5 | 45                
+  ...boardView.tsx |   24.32 |        0 |       0 |   33.33 | 52-215            
+  ...boardView.tsx |   74.35 |    48.19 |   33.33 |    93.1 | 77,110            
+ ...dashboard/tabs |    4.62 |        0 |       0 |    5.61 |                   
+  VehicleTab.tsx   |    4.62 |        0 |       0 |    5.61 | 33-335            
+ ...tabs/dashboard |     4.7 |        0 |       0 |    5.03 |                   
+  ...eryHeader.tsx |    6.25 |        0 |       0 |    7.14 | 14-57             
+  ...alization.tsx |    2.63 |        0 |       0 |    2.63 | 29-124            
+  ...ngOverlay.tsx |    3.57 |        0 |       0 |    3.84 | 14-138            
+  DashboardTab.tsx |   10.25 |        0 |       0 |   11.76 | 29-214            
+  LocationCard.tsx |    6.66 |        0 |       0 |    7.69 | 17-67             
+  MiniStatsRow.tsx |   16.66 |      100 |       0 |   16.66 | 14-52             
+  QuickActions.tsx |    0.84 |        0 |       0 |    0.85 | 13-304            
+  ...atusPanel.tsx |       4 |        0 |       0 |    4.34 | 13-109            
+ ...res/navigation |   48.83 |    38.46 |   27.77 |   48.83 |                   
+  Header.tsx       |   48.83 |    38.46 |   27.77 |   48.83 | ...82-145,197-217 
+ src/hooks         |   66.64 |    55.49 |   69.44 |   67.19 |                   
+  useAppData.ts    |   77.94 |    61.53 |   76.47 |   77.96 | ...14-116,137-140 
+  useAppVersion.ts |   96.66 |    81.81 |     100 |   96.66 | 43                
+  ...eDetection.ts |   91.66 |    83.33 |   84.61 |   96.22 | 42,119            
+  ...geImporter.ts |      88 |    64.58 |   88.88 |      90 | ...,78-79,153-157 
+  ...hargesData.ts |   75.37 |    63.33 |   91.89 |   72.56 | 96,222-288        
+  ...nfirmation.ts |   32.35 |        0 |   15.38 |   31.25 | ...86-101,108-113 
+  ...eHandling.tsx |   17.69 |     7.81 |    23.8 |   18.44 | ...01-240,256-263 
+  useFilters.ts    |     100 |      100 |     100 |     100 |                   
+  ...calStorage.ts |   91.48 |    85.71 |     100 |   91.11 | 20,46,79,100      
+  ...ergedTrips.ts |   40.69 |    26.41 |   41.17 |   44.15 | ...41-143,148-150 
+  useModalState.ts |   76.66 |    47.82 |      70 |   81.63 | ...01,208,216-217 
+  useModals.ts     |       0 |      100 |       0 |       0 | 4-5               
+  ...cessedData.ts |   37.08 |    37.69 |   23.07 |   38.11 | ...15-516,520-521 
+  useSettings.ts   |     100 |      100 |     100 |     100 |                   
+  ...ipeGesture.ts |   96.87 |    84.14 |     100 |   96.38 | 128-130,158       
+  ...Navigation.ts |   78.26 |    52.54 |     100 |   82.45 | ...85,104,133-135 
+  useTrips.ts      |     100 |     90.9 |     100 |     100 | 77,98             
+  ...icleStatus.ts |   94.28 |    88.88 |   88.88 |   93.75 | 162-163           
+  useWearSync.ts   |   92.18 |    69.23 |   88.23 |   97.87 | 54                
+ src/hooks/sync    |   68.25 |    46.93 |   59.25 |   68.06 |                   
+  useGoogleAuth.ts |   77.08 |    53.84 |    64.7 |   78.02 | ...56,173,180-182 
+  ...oHAutoSync.ts |   46.15 |        0 |      50 |   41.66 | 12-20             
+  ...icleWakeup.ts |   35.29 |    33.33 |      50 |   31.25 | 11-14,18-32       
+ src/providers     |   87.18 |    64.08 |   86.36 |   87.45 |                   
+  AppProviders.tsx |     100 |       50 |     100 |     100 | 10                
+  ...sProvider.tsx |     100 |      100 |     100 |     100 |                   
+  DataProvider.tsx |     100 |      100 |     100 |     100 |                   
+  ...rProvider.tsx |     100 |      100 |     100 |     100 |                   
+  ...lProvider.tsx |     100 |      100 |     100 |     100 |                   
+  SyncProvider.tsx |   78.39 |    56.34 |   73.68 |   79.08 | ...89-303,330-338 
+  ...sProvider.tsx |   98.07 |    75.67 |      90 |   97.91 | 118               
+ src/services      |      55 |    51.93 |   45.55 |   55.91 |                   
+  ...alyService.ts |   89.79 |    79.51 |   88.88 |   90.32 | 75-84,91,98       
+  ...iveService.ts |     100 |      100 |     100 |     100 |                   
+  ...ageService.ts |   89.65 |      100 |     100 |   88.46 | 54-55,74          
+  bydApi.ts        |    1.72 |        0 |       0 |    1.72 | 92-319            
+  firebase.ts      |   17.04 |     1.53 |    12.5 |   18.07 | ...43-203,215-266 
+  googleDrive.ts   |   61.27 |    56.57 |   55.88 |   63.76 | ...17-519,540-541 
+ src/services/ai   |   78.21 |    60.57 |   73.91 |   84.71 |                   
+  ...iencyModel.ts |   94.11 |    85.29 |     100 |     100 | 30-57,113         
+  SoHModel.ts      |   68.46 |    48.57 |   57.14 |   74.73 | 109,139-174       
+ src/utils         |    64.7 |     55.9 |   70.96 |   66.41 |                   
+  normalize.ts     |     100 |      100 |     100 |     100 |                   
+  ...geRegistry.ts |       0 |        0 |       0 |       0 | 14-86             
+  ...lientFetch.ts |      52 |    33.33 |      25 |   56.52 | 17,36,41-53       
+  secureStorage.ts |   97.67 |    83.33 |     100 |    97.5 | 89                
+  typeGuards.ts    |     100 |      100 |     100 |     100 |                   
+  validation.ts    |   88.88 |    61.11 |     100 |     100 | 26,37-39,41-43    
+ src/workers       |   54.68 |     26.4 |   61.36 |   57.26 |                   
+  dataWorker.ts    |   54.68 |     26.4 |   61.36 |   57.26 | ...90-392,396-399 
+-------------------|---------|----------|---------|---------|-------------------

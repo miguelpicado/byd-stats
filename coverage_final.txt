@@ -1,0 +1,719 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium[39m
+      [2mCoverage enabled with [22m[33mv8[39m
+
+stderr | src/hooks/__tests__/useAppVersion.test.ts > useAppVersion > returns cached version on fetch error
+Failed to fetch app version from GitHub: Error: Network error
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/__tests__/useAppVersion.test.ts:120:53
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+ [32mÔ£ô[39m src/workers/__tests__/dataWorker.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 237[2mms[22m[39m
+ [32mÔ£ô[39m src/components/cards/__tests__/ChargeCard.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[32m 103[2mms[22m[39m
+stderr | src/hooks/__tests__/useAppVersion.test.ts > useAppVersion > returns default version when no cache and fetch fails
+Failed to fetch app version from GitHub: Error: Network error
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/__tests__/useAppVersion.test.ts:132:53
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+    at trace (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/vitest/dist/chunks/test.B8ej_ZHS.js:239:21)
+    at runTest (file:///C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/node_modules/@vitest/runner/dist/index.js:1653:12)
+
+ [32mÔ£ô[39m src/components/ui/__tests__/StatCard.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 93[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useAppVersion.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 299[2mms[22m[39m
+[90mstdout[2m | functions/src/__tests__/bydFunctions.test.ts
+[22m[39m[[CRITICAL] BYD_WEBHOOK_SECRET environment variable is not set. Webhook endpoint will reject all requests.]
+
+ [32mÔ£ô[39m src/hooks/__tests__/useTrips.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 109[2mms[22m[39m
+ [32mÔ£ô[39m src/components/cards/__tests__/TripCard.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 154[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/ChargesProvider.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[32m 110[2mms[22m[39m
+ [31mÔØ»[39m functions/src/__tests__/bydFunctions.test.ts [2m([22m[2m15 tests[22m[2m | [22m[31m8 failed[39m[2m)[22m[32m 58[2mms[22m[39m
+     [32mÔ£ô[39m throws unauthenticated when request has no auth[32m 5[2mms[22m[39m
+     [32mÔ£ô[39m does not throw unauthenticated when request has valid auth[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m throws invalid-argument when username is missing[39m[32m 18[2mms[22m[39m
+[31m     [31m├ù[31m throws invalid-argument when password is missing[39m[32m 2[2mms[22m[39m
+[31m     [31m├ù[31m throws invalid-argument when countryCode is missing[39m[32m 2[2mms[22m[39m
+[31m     [31m├ù[31m throws invalid-argument when userId is missing[39m[32m 2[2mms[22m[39m
+[31m     [31m├ù[31m error message lists the missing required fields[39m[32m 4[2mms[22m[39m
+     [32mÔ£ô[39m throws invalid-argument when vin is missing[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m throws invalid-argument when vin is an empty string[32m 0[2mms[22m[39m
+     [32mÔ£ô[39m throws unauthenticated when request has no auth[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m throws not-found when vehicle does not exist in Firestore[32m 1[2mms[22m[39m
+     [32mÔ£ô[39m throws permission-denied when user does not own the vehicle[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m succeeds when the authenticated user owns the vehicle[39m[32m 14[2mms[22m[39m
+[31m     [31m├ù[31m calls delete on the credentials subcollection on successful disconnect[39m[32m 1[2mms[22m[39m
+[31m     [31m├ù[31m calls update on the vehicle doc with disconnectedAt on success[39m[32m 1[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useChargesData.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 192[2mms[22m[39m
+ [32mÔ£ô[39m src/components/cards/__tests__/TripCard.test.jsx [2m([22m[2m11 tests[22m[2m)[22m[32m 236[2mms[22m[39m
+ [32mÔ£ô[39m src/features/navigation/__tests__/Header.test.jsx [2m([22m[2m5 tests[22m[2m)[22m[32m 175[2mms[22m[39m
+ [32mÔ£ô[39m src/components/modals/__tests__/ChargeDetailModal.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 573[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m calls close handlers when clicking X button [33m 322[2mms[22m[39m
+ [32mÔ£ô[39m src/components/modals/__tests__/HealthReportModal.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 546[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m calls close handler when clicking close or backdrop [33m 306[2mms[22m[39m
+ [31mÔØ»[39m src/components/modals/__tests__/TripDetailModal.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 717[2mms[22m[39m
+[31m     [31m├ù[31m renders correctly when open[39m[32m 193[2mms[22m[39m
+     [32mÔ£ô[39m calculates efficiency and costs based on mocked data[32m 85[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m calls close handlers when clicking X button [33m 336[2mms[22m[39m
+     [32mÔ£ô[39m triggers hidden delete confirmation on 10 quick score clicks[32m 100[2mms[22m[39m
+stderr | Object.warn (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\src\core\logger.ts:58:21)
+[WARN] [Firebase] Anonymous auth failed (development mode?): auth/requests-from-referer-<empty>-are-blocked.
+
+ [32mÔ£ô[39m src/features/dashboard/__tests__/DashboardLayout.test.jsx [2m([22m[2m3 tests[22m[2m)[22m[33m 737[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m renders Trends tab when active [33m 316[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m renders Charges tab when active [33m 316[2mms[22m[39m
+ [32mÔ£ô[39m src/components/ui/__tests__/ChartCard.test.jsx [2m([22m[2m9 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useWearSync.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useVehicleStatus.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useLocalStorage.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+ [32mÔ£ô[39m src/context/__tests__/AppContext.test.jsx [2m([22m[2m7 tests[22m[2m)[22m[32m 98[2mms[22m[39m
+stderr | src/providers/__tests__/SyncProvider.test.tsx > SyncProvider > importSyncData formats and merging > importSyncData throws on invalid JSON format
+[ERROR] Error importing sync data: SyntaxError: Unexpected token 'j', "{"malformed": json" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at Object.importSyncData (C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/providers/SyncProvider.tsx:160:31)
+
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mimportSyncData formats and merging[2m > [22m[2mimportSyncData aborts on user cancel
+[22m[39m[INFO] Import cancelled by user
+
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mimportSyncData formats and merging[2m > [22m[2mimportSyncData with merge=true deduplicates by date-timestamp
+[22m[39m[INFO] [IMPORT START] Current: 1 trips, 1 charges
+[INFO] [IMPORT START] Importing: 2 trips, 0 charges
+[INFO] [IMPORT COMPLETE] Final: 2 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Delta: +1 trips, 0 charges
+[INFO] [IMPORT] User confirmed sync to cloud
+
+ [32mÔ£ô[39m src/hooks/sync/__tests__/useGoogleAuth.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 116[2mms[22m[39m
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mimportSyncData formats and merging[2m > [22m[2mimportSyncData with merge=false replaces all data
+[22m[39m[INFO] [IMPORT START] Current: 1 trips, 1 charges
+[INFO] [IMPORT START] Importing: 1 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Final: 1 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Delta: 0 trips, 0 charges
+[INFO] [IMPORT] User confirmed sync to cloud
+
+[90mstdout[2m | src/providers/__tests__/SyncProvider.test.tsx[2m > [22m[2mSyncProvider[2m > [22m[2mloadFile routes .json to importSyncData handler
+[22m[39m[INFO] [IMPORT START] Current: 1 trips, 1 charges
+[INFO] [IMPORT START] Importing: 0 trips, 0 charges
+[INFO] [IMPORT COMPLETE] Final: 1 trips, 1 charges
+[INFO] [IMPORT COMPLETE] Delta: 0 trips, 0 charges
+[INFO] [IMPORT] User confirmed sync to cloud
+
+ [32mÔ£ô[39m src/providers/__tests__/SyncProvider.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 123[2mms[22m[39m
+stderr | src/providers/__tests__/ProviderIntegration.test.tsx > Provider Integration > should provide default trips and charges data through provider chain
+react-i18next:: useTranslation: You will need to pass in an i18next instance by using initReactI18next { code: 'NO_I18NEXT_INSTANCE' }
+
+ [32mÔ£ô[39m src/providers/__tests__/ModalProvider.test.tsx [2m([22m[2m27 tests[22m[2m)[22m[32m 144[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useSettings.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 79[2mms[22m[39m
+[90mstdout[2m | src/providers/__tests__/ProviderIntegration.test.tsx[2m > [22m[2mProvider Integration[2m > [22m[2mshould add a charge using addCharge
+[22m[39m[INFO] Charge added: 517877f4-4ca4-405a-a898-131f572ecb7f
+
+ [32mÔ£ô[39m src/providers/__tests__/DataProvider.test.jsx [2m([22m[2m4 tests[22m[2m)[22m[32m 77[2mms[22m[39m
+ [32mÔ£ô[39m src/features/dashboard/__tests__/ImportDB.integration.test.jsx [2m([22m[2m1 test[22m[2m)[22m[32m 147[2mms[22m[39m
+stderr | Object.warn (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\src\core\logger.ts:58:21)
+[WARN] [Firebase] Anonymous auth failed (development mode?): auth/requests-from-referer-<empty>-are-blocked.
+
+ [32mÔ£ô[39m src/hooks/__tests__/useAppData.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 96[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/ProviderIntegration.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 242[2mms[22m[39m
+stderr | Object.warn (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\src\core\logger.ts:58:21)
+[WARN] [Firebase] Anonymous auth failed (development mode?): auth/requests-from-referer-<empty>-are-blocked.
+
+ [32mÔ£ô[39m src/providers/__tests__/TripsProvider.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[32m 67[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useTabNavigation.test.js [2m([22m[2m6 tests[22m[2m)[22m[32m 91[2mms[22m[39m
+stderr | src/hooks/__tests__/useLocalStorage.test.js > useLocalStorage > should handle parse errors gracefully
+[ERROR] Error reading localStorage key "test_key": SyntaxError: Unexpected token 'i', "invalid json{" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/useLocalStorage.ts:62:32
+    at mountStateImpl (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:8268:24)
+    at mountState (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:8289:22)
+    at Object.useState (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:26243:18)
+    at process.env.NODE_ENV.exports.useState (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react\cjs\react.development.js:1263:34)
+    at useLocalStorage (C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/useLocalStorage.ts:59:43)
+    at C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/hooks/__tests__/useLocalStorage.test.js:66:60
+    at TestComponent (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\@testing-library\react\dist\pure.js:330:27)
+    at Object.react_stack_bottom_frame (C:\Users\migue\Github\BYD-Stats\BYD-Stats-Premium\byd-stats-premium\node_modules\react-dom\cjs\react-dom-client.development.js:25904:20)
+
+ [32mÔ£ô[39m src/hooks/__tests__/useLocalStorage.test.js [2m([22m[2m7 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/formatters.test.ts [2m([22m[2m21 tests[22m[2m)[22m[32m 51[2mms[22m[39m
+ [32mÔ£ô[39m src/providers/__tests__/FilterProvider.test.tsx [2m([22m[2m15 tests[22m[2m)[22m[32m 82[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useAutoChargeDetection.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 68[2mms[22m[39m
+stderr | src/services/__tests__/googleDrive.test.ts > googleDriveService > auth & initialization > throws if trying to make request without token
+[WARN] [Drive API] No access token available for headers!
+
+stderr | src/services/__tests__/googleDrive.test.ts > googleDriveService > _handleResponse > throws and clears token on 401 Unauthorized
+[ERROR] [Drive] Unauthorized (401) during test. Clearing token.
+
+stderr | src/services/__tests__/googleDrive.test.ts > googleDriveService > _handleResponse > throws error with details on non-ok response
+[ERROR] [Drive API] Error during testing limit: { status: 500, text: 'Server exploded' }
+
+ [32mÔ£ô[39m src/services/__tests__/googleDrive.test.ts [2m([22m[2m16 tests[22m[2m)[22m[32m 48[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useSwipeGesture.test.ts [2m([22m[2m10 tests[22m[2m)[22m[32m 73[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useChargeImporter.test.js [2m([22m[2m2 tests[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32mÔ£ô[39m src/hooks/__tests__/useFilters.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 50[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/logger.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32mÔ£ô[39m src/services/ai/__tests__/SoHModel.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 30[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/dateUtils.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/typeGuards.test.ts [2m([22m[2m28 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/chargingLogic.test.ts [2m([22m[2m17 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32mÔ£ô[39m src/services/__tests__/AnomalyService.test.ts [2m([22m[2m32 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/secureStorage.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32mÔ£ô[39m src/services/__tests__/StorageService.test.ts [2m([22m[2m9 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32mÔ£ô[39m src/services/__tests__/PredictiveService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/dataProcessing.test.ts [2m([22m[2m15 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32mÔ£ô[39m src/services/ai/__tests__/EfficiencyModel.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/constants.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mÔ£ô[39m src/core/__tests__/batteryCalculations.test.ts [2m([22m[2m26 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/normalize.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+ [32mÔ£ô[39m src/utils/__tests__/validation.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» Failed Tests 9 ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > bydConnectV2 ÔÇö input validation > throws invalid-argument when username is missing
+AssertionError: expected TypeError: db.runTransaction is not a funÔÇª to match object { code: 'invalid-argument' }
+
+- Expected
++ Received
+
+- {
+-   "code": "invalid-argument",
++ TypeError {
++   "message": "db.runTransaction is not a function",
+  }
+
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:161:9
+    159| describe('bydConnectV2 ÔÇö input validation', () => {
+    160|     it('throws invalid-argument when username is missing', async () =>ÔÇª
+    161|         await expect(
+       |         ^
+    162|             (bydConnectV2 as Function)(authRequest({ password: 'pw', cÔÇª
+    163|         ).rejects.toMatchObject({ code: 'invalid-argument' });
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/9]ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > bydConnectV2 ÔÇö input validation > throws invalid-argument when password is missing
+AssertionError: expected TypeError: db.runTransaction is not a funÔÇª to match object { code: 'invalid-argument' }
+
+- Expected
++ Received
+
+- {
+-   "code": "invalid-argument",
++ TypeError {
++   "message": "db.runTransaction is not a function",
+  }
+
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:167:9
+    165| 
+    166|     it('throws invalid-argument when password is missing', async () =>ÔÇª
+    167|         await expect(
+       |         ^
+    168|             (bydConnectV2 as Function)(authRequest({ username: 'user',ÔÇª
+    169|         ).rejects.toMatchObject({ code: 'invalid-argument' });
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/9]ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > bydConnectV2 ÔÇö input validation > throws invalid-argument when countryCode is missing
+AssertionError: expected TypeError: db.runTransaction is not a funÔÇª to match object { code: 'invalid-argument' }
+
+- Expected
++ Received
+
+- {
+-   "code": "invalid-argument",
++ TypeError {
++   "message": "db.runTransaction is not a function",
+  }
+
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:173:9
+    171| 
+    172|     it('throws invalid-argument when countryCode is missing', async ()ÔÇª
+    173|         await expect(
+       |         ^
+    174|             (bydConnectV2 as Function)(authRequest({ username: 'user',ÔÇª
+    175|         ).rejects.toMatchObject({ code: 'invalid-argument' });
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[3/9]ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > bydConnectV2 ÔÇö input validation > throws invalid-argument when userId is missing
+AssertionError: expected TypeError: db.runTransaction is not a funÔÇª to match object { code: 'invalid-argument' }
+
+- Expected
++ Received
+
+- {
+-   "code": "invalid-argument",
++ TypeError {
++   "message": "db.runTransaction is not a function",
+  }
+
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:179:9
+    177| 
+    178|     it('throws invalid-argument when userId is missing', async () => {
+    179|         await expect(
+       |         ^
+    180|             (bydConnectV2 as Function)(authRequest({ username: 'user',ÔÇª
+    181|         ).rejects.toMatchObject({ code: 'invalid-argument' });
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[4/9]ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > bydConnectV2 ÔÇö input validation > error message lists the missing required fields
+AssertionError: expected 'db.runTransaction is not a function' to contain 'username'
+
+Expected: "username"
+Received: "db.runTransaction is not a function"
+
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:186:31
+    184|     it('error message lists the missing required fields', async () => {
+    185|         const error = await (bydConnectV2 as Function)(authRequest({})ÔÇª
+    186|         expect(error.message).toContain('username');
+       |                               ^
+    187|         expect(error.message).toContain('password');
+    188|         expect(error.message).toContain('countryCode');
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[5/9]ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > requireAuthAndOwnership > succeeds when the authenticated user owns the vehicle
+TypeError: db.runTransaction is not a function
+ ÔØ» checkRateLimit functions/src/bydFunctions.ts:107:14
+    105|     const windowMs = 60_000;
+    106| 
+    107|     await db.runTransaction(async (transaction) => {
+       |              ^
+    108|         const doc = await transaction.get(ref);
+    109|         const data = doc.data();
+ ÔØ» Module.<anonymous> functions/src/bydFunctions.ts:260:11
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:260:24
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[6/9]ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > requireAuthAndOwnership > calls delete on the credentials subcollection on successful disconnect
+TypeError: db.runTransaction is not a function
+ ÔØ» checkRateLimit functions/src/bydFunctions.ts:107:14
+    105|     const windowMs = 60_000;
+    106| 
+    107|     await db.runTransaction(async (transaction) => {
+       |              ^
+    108|         const doc = await transaction.get(ref);
+    109|         const data = doc.data();
+ ÔØ» Module.<anonymous> functions/src/bydFunctions.ts:260:11
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:270:9
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[7/9]ÔÄ»
+
+ FAIL  functions/src/__tests__/bydFunctions.test.ts > requireAuthAndOwnership > calls update on the vehicle doc with disconnectedAt on success
+TypeError: db.runTransaction is not a function
+ ÔØ» checkRateLimit functions/src/bydFunctions.ts:107:14
+    105|     const windowMs = 60_000;
+    106| 
+    107|     await db.runTransaction(async (transaction) => {
+       |              ^
+    108|         const doc = await transaction.get(ref);
+    109|         const data = doc.data();
+ ÔØ» Module.<anonymous> functions/src/bydFunctions.ts:260:11
+ ÔØ» functions/src/__tests__/bydFunctions.test.ts:281:9
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[8/9]ÔÄ»
+
+ FAIL  src/components/modals/__tests__/TripDetailModal.test.tsx > TripDetailModal > renders correctly when open
+TestingLibraryElementError: Found multiple elements with the text: /50\.0/
+
+Here are the matching elements:
+
+Ignored nodes: comments, script, style
+<p
+  class="text-slate-900 dark:text-white text-lg font-bold"
+>
+  50.0
+   
+  units.km
+</p>
+
+Ignored nodes: comments, script, style
+<p
+  class="text-slate-900 dark:text-white text-lg font-bold"
+>
+  50.0
+   
+  units.kmh
+</p>
+
+(If this is intentional, then use the `*AllBy*` variant of the query (like `queryAllByText`, `getAllByText`, or `findAllByText`)).
+
+Ignored nodes: comments, script, style
+<body>
+  <div>
+    <div
+      class="fixed inset-0 z-50 flex items-center justify-center p-4 animate-modal-backdrop"
+    >
+      <div
+        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+      />
+      <div
+        aria-labelledby="trip-detail-modal-title"
+        aria-modal="true"
+        class="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700 animate-modal-content max-h-[90vh] overflow-y-auto"
+        role="dialog"
+      >
+        <div
+          class="flex items-center justify-between mb-4"
+        >
+          <div
+            class="flex items-center gap-4"
+          >
+            <div>
+              <h2
+                class="text-lg font-bold text-slate-900 dark:text-white"
+                id="trip-detail-modal-title"
+              >
+                tripDetail.title
+              </h2>
+              <p
+                class="text-sm text-slate-600 dark:text-slate-400"
+              >
+                01/01/2024
+                 ┬À 
+                10:06
+              </p>
+            </div>
+          </div>
+          <div
+            class="flex items-center gap-3"
+          >
+            <div
+              class="text-right cursor-pointer select-none"
+              title="tripDetail.tapToDelete"
+            >
+              <p
+                class="text-3xl font-black"
+                style="color: rgb(234, 0, 41);"
+              >
+                0.0
+              </p>
+              <p
+                class="text-slate-500 dark:text-slate-400 text-xs"
+              >
+                / 10
+              </p>
+            </div>
+            <button
+              aria-label="Close trip detail"
+              class="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white ml-2"
+            >
+              <svg
+                class="w-6 h-6 rotate-45"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <line
+                  x1="12"
+                  x2="12"
+                  y1="5"
+                  y2="19"
+                />
+                <line
+                  x1="5"
+                  x2="19"
+                  y1="12"
+                  y2="12"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+        <div
+          class="grid grid-cols-2 gap-2 mb-3"
+        >
+          <div
+            class="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-600/50 transition-colors"
+          >
+            <svg
+              class="w-4 h-4 mx-auto mb-0.5 text-red-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+              />
+              <circle
+                cx="12"
+                cy="10"
+                r="3"
+              />
+            </svg>
+            <p
+              class="text-slate-600 dark:text-slate-400 text-xs"
+            >
+              stats.distance
+            </p>
+            <p
+              class="text-slate-900 dark:text-white text-lg font-bold"
+            >
+              50.0
+               
+              units.km
+            </p>
+            <p
+              class="text-xs text-green-500 dark:text-green-400 font-medium"
+            >
+              GPS ­ƒôì
+            </p>
+            <p
+              class="text-[10px] text-slate-400"
+            >
+              Odo
+              : 
+              48.0
+               km
+            </p>
+          </div>
+          <div
+            class="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center"
+          >
+            <svg
+              class="w-4 h-4 mx-auto mb-0.5 text-amber-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                cx="12"
+                cy="12"
+                r="10"
+              />
+              <polyline
+                points="12 6 12 12 16 14"
+              />
+            </svg>
+            <p
+              class="text-slate-600 dark:text-slate-400 text-xs"
+            >
+              tripDetail.duration
+            </p>
+            <p
+              class="text-slate-900 dark:text-white text-lg font-bold"
+            >
+              1h 0min
+            </p>
+          </div>
+          <div
+            class="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center"
+          >
+            <svg
+              class="w-4 h-4 mx-auto mb-0.5 text-cyan-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <polygon
+                points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"
+              />
+            </svg>
+            <p
+              class="text-slate-600 dark:text-slate-400 text-xs"
+            >
+              tripDetail.consumption
+            </p>
+            <p
+              class="text-slate-900 dark:text-white text-lg font-bold"
+            >
+              10.00
+               
+              units.kWh
+            </p>
+          </div>
+          <div
+            class="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center"
+          >
+            <svg
+              class="w-4 h-4 mx-auto mb-0.5 text-green-400"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <rect
+                height="12"
+                rx="2"
+                width="18"
+                x="1"
+                y="6"
+              />
+              <line
+                x1="23"
+                x2="23"
+                y1="10"
+                y2="14"
+              />
+            </svg>
+            <p
+              class="text-slate-600 dark:text-slate-400 text-xs"
+            >
+              stats.efficiency
+            </p>
+            <p
+              class="text-slate-900 dark:text-white text-lg font-bold"
+            >
+              20.00
+            </p>
+            <p
+              class="text-slate-500 dark:text-slate-400 text-[10px]"
+            >
+              units.kWh100km
+            </p>
+          </div>
+        </div>
+        <div
+          class="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 mb-3"
+        >
+          <div
+            class="flex items-center justify-between"
+          >
+            <div
+              class="flex items-center gap-2"
+            >
+              <svg
+                class="w-4 h-4 text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                viewBox="0 0 24 24"
+              >
+                <polyline
+                  points="23 6 13.5 15.5 8.5 10.5 1 18"
+                />
+                <polyline
+                  points="17 6 23 6 23 12"
+                />
+              </svg>
+              <span
+                class="text-slate-600 dark:text-slate-400 text-sm"
+              >
+                stats.avgSpeed
+              </span>
+            </div>
+            <p
+              class="text-slate-900 dark:text-white text-lg font-bold"
+            >
+              50.0
+               
+              units.kmh
+            </p>
+          </div>
+        </div>
+        <div
+          class="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3"
+        >
+          <div
+            class="space-y-1.5"
+          >
+            <div
+              class="flex items-center justify-between"
+            >
+              <span
+                class="text-slate-500 dark:text-slate-400 text-sm"
+              >
+                tripDetail.comparedToAvg
+              </span>
+              <span
+                class="font-bold text-red-400"
+              >
+                +
+                11.1
+                %
+              </span>
+            </div>
+            <div
+              class="flex items-center justify-between"
+            >
+              <span
+                class="text-slate-500 dark:text-slate-400 text-sm"
+              >
+                tripDetail.percentile
+              </span>
+              <span
+                class="font-bold text-cyan-400"
+              >
+                Top 
+                50
+                %
+              </span>
+            </div>
+            <div
+              class="flex items-center justify-between"
+            >
+              <span
+                class="text-slate-500 dark:text-slate-400 text-sm"
+              >
+                tripDetail.cost
+              </span>
+              <div
+                class="text-right"
+              >
+                <span
+                  class="font-bold text-amber-500"
+                >
+                  1.50
+                  Ôé¼
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="mt-3 bg-slate-100 dark:bg-slate-700/50 rounded-xl p-4 text-center"
+        >
+          <p
+            class="text-sm font-bold text-slate-900 dark:text-white mb-1"
+          >
+            No se puede cargar el mapa
+          </p>
+          <p
+            class="text-slate-600 dark:text-slate-400 text-xs mb-3"
+          >
+            No hay puntos GPS registrados para este viaje.
+          </p>
+          <button
+            class="px-3 py-1.5 bg-slate-200 dark:bg-slate-600 text-slate-900 dark:text-white rounded-lg hover:bg-slate-300 dark:hover:bg-slate-500 transition-colors text-xs"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+ ÔØ» Object.getElementError node_modules/@testing-library/dom/dist/config.js:37:19
+ ÔØ» getElementError node_modules/@testing-library/dom/dist/query-helpers.js:20:35
+ ÔØ» getMultipleElementsFoundError node_modules/@testing-library/dom/dist/query-helpers.js:23:10
+ ÔØ» node_modules/@testing-library/dom/dist/query-helpers.js:55:13
+ ÔØ» node_modules/@testing-library/dom/dist/query-helpers.js:95:19
+ ÔØ» src/components/modals/__tests__/TripDetailModal.test.tsx:94:23
+     92|         // Check for specific stats blocks
+     93|         expect(screen.getByText('stats.distance')).toBeInTheDocument();
+     94|         expect(screen.getByText(/50\.0/)).toBeInTheDocument(); // DistÔÇª
+       |                       ^
+     95| 
+     96|         // 10 kWh electricity
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[9/9]ÔÄ»
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m51 passed[39m[22m[90m (53)[39m
+[2m      Tests [22m [1m[31m9 failed[39m[22m[2m | [22m[1m[32m564 passed[39m[22m[90m (573)[39m
+[2m   Start at [22m 12:55:38
+[2m   Duration [22m 11.69s[2m (transform 7.60s, setup 23.24s, import 13.45s, tests 6.68s, environment 82.53s)[22m
+

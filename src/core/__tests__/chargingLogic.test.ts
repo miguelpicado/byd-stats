@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { ChargingLogic, CostSavingsAnalysis } from '../chargingLogic';
 import { Charge, Settings } from '../../types';
 
@@ -199,8 +199,8 @@ describe('ChargingLogic', () => {
 
             // Charges spread over ~2 months
             const charges = [
-                { type: 'electric', timestamp: new Date('2024-01-01').getTime(), date: '20240101', kwhCharged: 40, totalCost: 8, costPerKwh: 0.20 }, // Cost: 8. Offpeak: 4. Savings: 4
-                { type: 'electric', timestamp: new Date('2024-02-01').getTime(), date: '20240201', kwhCharged: 50, totalCost: 15, costPerKwh: 0.30 }, // Cost 15. Offpeak 5. Savings: 10
+                { type: 'electric', timestamp: new Date('2024-01-01').getTime(), date: '20240101', kwhCharged: 40, totalCost: 8 }, // Cost: 8. Offpeak: 4. Savings: 4
+                { type: 'electric', timestamp: new Date('2024-02-01').getTime(), date: '20240201', kwhCharged: 50, totalCost: 15 }, // Cost 15. Offpeak 5. Savings: 10
             ] as Charge[];
 
             // 2 months evaluated. Total savings: 14. Monthly: 7.

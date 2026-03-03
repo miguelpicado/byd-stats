@@ -1,0 +1,98 @@
+
+> byd-stats@2.1.0 build
+> vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mÔ£ô[39m 1231 modules transformed.
+Generated an empty chunk: "tensorflow-vendor".
+rendering chunks...
+[plugin vite:reporter] 
+(!) C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/modals/ChargingInsightsModal.tsx is dynamically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/common/ModalContainer.tsx, C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/dashboard/DashboardTab.tsx but also statically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/cards/EstimatedChargeCard.tsx, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/modals/TripInsightsModal.tsx is dynamically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/common/ModalContainer.tsx, C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/VehicleTab.tsx, C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/dashboard/DashboardTab.tsx but also statically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/OverviewContent.tsx, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/modals/OdometerAdjustmentModal.tsx is dynamically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/common/ModalContainer.tsx, C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/VehicleTab.tsx, C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/dashboard/DashboardTab.tsx but also statically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/OverviewContent.tsx, dynamic import will not move module into another chunk.
+
+[plugin vite:reporter] 
+(!) C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/modals/HealthReportModal.tsx is dynamically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/components/common/ModalContainer.tsx, C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/VehicleTab.tsx, C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/dashboard/DashboardTab.tsx but also statically imported by C:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium/src/features/dashboard/tabs/OverviewContent.tsx, dynamic import will not move module into another chunk.
+
+computing gzip size...
+[2mdist/[22m[32mregisterSW.js                               [39m[1m[2m    0.14 kB[22m[1m[22m
+[2mdist/[22m[32mmanifest.webmanifest                        [39m[1m[2m    1.04 kB[22m[1m[22m
+[2mdist/[22m[32mindex.html                                  [39m[1m[2m    1.82 kB[22m[1m[22m[2m Ôöé gzip:   0.80 kB[22m
+[2mdist/[22m[32massets/tensorflowWorker-CoiKK6VL.js         [39m[1m[2m   12.72 kB[22m[1m[22m
+[2mdist/[22m[32massets/dataWorker-C7ig4tAW.js               [39m[1m[2m   18.80 kB[22m[1m[22m
+[2mdist/[22m[32massets/index-BoJasxhl.js                    [39m[1m[2m1,098.15 kB[22m[1m[22m
+[2mdist/[22m[35massets/leaflet-Dgihpmma.css                 [39m[1m[2m   15.04 kB[22m[1m[22m[2m Ôöé gzip:   6.38 kB[22m
+[2mdist/[22m[35massets/index-DaKgBoAv.css                   [39m[1m[2m   77.19 kB[22m[1m[22m[2m Ôöé gzip:  12.19 kB[22m
+[2mdist/[22m[36massets/tensorflow-vendor-l0sNRNKZ.js        [39m[1m[2m    0.00 kB[22m[1m[22m[2m Ôöé gzip:   0.02 kB[22m
+[2mdist/[22m[36massets/dateUtils-B7ESRiEn.js                [39m[1m[2m    0.58 kB[22m[1m[22m[2m Ôöé gzip:   0.29 kB[22m
+[2mdist/[22m[36massets/formatters-BcsVxj1g.js               [39m[1m[2m    0.67 kB[22m[1m[22m[2m Ôöé gzip:   0.38 kB[22m
+[2mdist/[22m[36massets/web-DV0H0LYX.js                      [39m[1m[2m    0.84 kB[22m[1m[22m[2m Ôöé gzip:   0.40 kB[22m
+[2mdist/[22m[36massets/LocationCardMap-d4GwXtvY.js          [39m[1m[2m    1.43 kB[22m[1m[22m[2m Ôöé gzip:   0.70 kB[22m
+[2mdist/[22m[36massets/TripMapModal-CIEw5JOL.js             [39m[1m[2m    1.55 kB[22m[1m[22m[2m Ôöé gzip:   0.73 kB[22m
+[2mdist/[22m[36massets/TripMap-22RN9QV2.js                  [39m[1m[2m    2.07 kB[22m[1m[22m[2m Ôöé gzip:   0.98 kB[22m
+[2mdist/[22m[36massets/UploadOptionsModal--KIS-Z8c.js       [39m[1m[2m    2.30 kB[22m[1m[22m[2m Ôöé gzip:   0.93 kB[22m
+[2mdist/[22m[36massets/ConfirmationModal-fGHFrNc8.js        [39m[1m[2m    2.37 kB[22m[1m[22m[2m Ôöé gzip:   0.93 kB[22m
+[2mdist/[22m[36massets/FAQModal-D-SrxuAP.js                 [39m[1m[2m    2.48 kB[22m[1m[22m[2m Ôöé gzip:   0.99 kB[22m
+[2mdist/[22m[36massets/LegalPage-kKHvqAbJ.js                [39m[1m[2m    2.91 kB[22m[1m[22m[2m Ôöé gzip:   1.04 kB[22m
+[2mdist/[22m[36massets/SyncConflictModal-BKtIeAHT.js        [39m[1m[2m    3.00 kB[22m[1m[22m[2m Ôöé gzip:   0.99 kB[22m
+[2mdist/[22m[36massets/LegalModal-v3KmBKIx.js               [39m[1m[2m    3.14 kB[22m[1m[22m[2m Ôöé gzip:   1.22 kB[22m
+[2mdist/[22m[36massets/MfgDateModal-CvumQ4wA.js             [39m[1m[2m    3.36 kB[22m[1m[22m[2m Ôöé gzip:   1.36 kB[22m
+[2mdist/[22m[36massets/LegalContent-CV5Pl5n-.js             [39m[1m[2m    3.87 kB[22m[1m[22m[2m Ôöé gzip:   0.69 kB[22m
+[2mdist/[22m[36massets/TripCard-D8VJlLqI.js                 [39m[1m[2m    3.97 kB[22m[1m[22m[2m Ôöé gzip:   1.16 kB[22m
+[2mdist/[22m[36massets/FilterModal-DKe-4G3i.js              [39m[1m[2m    4.43 kB[22m[1m[22m[2m Ôöé gzip:   1.33 kB[22m
+[2mdist/[22m[36massets/TrendsTab-D8OOkG0A.js                [39m[1m[2m    4.53 kB[22m[1m[22m[2m Ôöé gzip:   1.56 kB[22m
+[2mdist/[22m[36massets/RegistryRestoreModal-B1jeykAB.js     [39m[1m[2m    4.59 kB[22m[1m[22m[2m Ôöé gzip:   1.78 kB[22m
+[2mdist/[22m[36massets/HelpModal-B5RWI3kN.js                [39m[1m[2m    4.69 kB[22m[1m[22m[2m Ôöé gzip:   1.48 kB[22m
+[2mdist/[22m[36massets/ThermalStressModal-BeNW2-q_.js       [39m[1m[2m    4.81 kB[22m[1m[22m[2m Ôöé gzip:   1.80 kB[22m
+[2mdist/[22m[36massets/DatabaseUploadModal-BSDXQ5jl.js      [39m[1m[2m    4.99 kB[22m[1m[22m[2m Ôöé gzip:   1.61 kB[22m
+[2mdist/[22m[36massets/HistoryTab-B8jv8vVg.js               [39m[1m[2m    5.40 kB[22m[1m[22m[2m Ôöé gzip:   1.83 kB[22m
+[2mdist/[22m[36massets/PWAManager-C20ylk0a.js               [39m[1m[2m    5.44 kB[22m[1m[22m[2m Ôöé gzip:   1.64 kB[22m
+[2mdist/[22m[36massets/PatternsTab-Br8iigYc.js              [39m[1m[2m    6.03 kB[22m[1m[22m[2m Ôöé gzip:   1.66 kB[22m
+[2mdist/[22m[36massets/ChargeNotificationModal-BJEXXyx5.js  [39m[1m[2m    6.55 kB[22m[1m[22m[2m Ôöé gzip:   2.46 kB[22m
+[2mdist/[22m[36massets/ModalContainer-DdOs68z0.js           [39m[1m[2m    6.72 kB[22m[1m[22m[2m Ôöé gzip:   1.80 kB[22m
+[2mdist/[22m[36massets/RecordsTab-D1hrIxh4.js               [39m[1m[2m    7.01 kB[22m[1m[22m[2m Ôöé gzip:   1.19 kB[22m
+[2mdist/[22m[36massets/CloudBackupsModal-CipuqWne.js        [39m[1m[2m    7.06 kB[22m[1m[22m[2m Ôöé gzip:   2.46 kB[22m
+[2mdist/[22m[36massets/AllTripsView-CyjxaU8t.js             [39m[1m[2m    7.40 kB[22m[1m[22m[2m Ôöé gzip:   2.68 kB[22m
+[2mdist/[22m[36massets/AllChargesView-nqh7J7TR.js           [39m[1m[2m    7.80 kB[22m[1m[22m[2m Ôöé gzip:   2.69 kB[22m
+[2mdist/[22m[36massets/LandingPage-Hi0XNayq.js              [39m[1m[2m    8.41 kB[22m[1m[22m[2m Ôöé gzip:   3.06 kB[22m
+[2mdist/[22m[36massets/DayDetailsModal-nKd2bddo.js          [39m[1m[2m    8.67 kB[22m[1m[22m[2m Ôöé gzip:   2.18 kB[22m
+[2mdist/[22m[36massets/web-CVc5lbrW.js                      [39m[1m[2m    8.73 kB[22m[1m[22m[2m Ôöé gzip:   2.98 kB[22m
+[2mdist/[22m[36massets/RangeInsightsModal-C43eGJlv.js       [39m[1m[2m    8.94 kB[22m[1m[22m[2m Ôöé gzip:   2.71 kB[22m
+[2mdist/[22m[36massets/EfficiencyTab-DKopAwlj.js            [39m[1m[2m    9.02 kB[22m[1m[22m[2m Ôöé gzip:   2.45 kB[22m
+[2mdist/[22m[36massets/BatteryStatusModal-9FWTHHLE.js       [39m[1m[2m    9.03 kB[22m[1m[22m[2m Ôöé gzip:   2.78 kB[22m
+[2mdist/[22m[36massets/ChargeDetailModal-C3rk4dA_.js        [39m[1m[2m    9.19 kB[22m[1m[22m[2m Ôöé gzip:   2.28 kB[22m
+[2mdist/[22m[36massets/ChargesTab-D59atVTK.js               [39m[1m[2m    9.28 kB[22m[1m[22m[2m Ôöé gzip:   2.95 kB[22m
+[2mdist/[22m[36massets/capacitor-vendor-ByuG47wh.js         [39m[1m[2m    9.66 kB[22m[1m[22m[2m Ôöé gzip:   3.92 kB[22m
+[2mdist/[22m[36massets/FaqPage-8hGYop4W.js                  [39m[1m[2m    9.85 kB[22m[1m[22m[2m Ôöé gzip:   2.92 kB[22m
+[2mdist/[22m[36massets/ChargeInsightsModal-Ds0Z-vc6.js      [39m[1m[2m    9.86 kB[22m[1m[22m[2m Ôöé gzip:   2.63 kB[22m
+[2mdist/[22m[36massets/browser-ponyfill-COWMSz4W.js         [39m[1m[2m   10.30 kB[22m[1m[22m[2m Ôöé gzip:   3.53 kB[22m
+[2mdist/[22m[36massets/AddChargeModal-CWFeoe9h.js           [39m[1m[2m   11.04 kB[22m[1m[22m[2m Ôöé gzip:   3.07 kB[22m
+[2mdist/[22m[36massets/ClimateControlModal-BmbJlcvj.js      [39m[1m[2m   11.82 kB[22m[1m[22m[2m Ôöé gzip:   2.99 kB[22m
+[2mdist/[22m[36massets/TripDetailModal-BeIGgUvi.js          [39m[1m[2m   12.99 kB[22m[1m[22m[2m Ôöé gzip:   3.64 kB[22m
+[2mdist/[22m[36massets/useFilteredData-EkoO-Icg.js          [39m[1m[2m   14.92 kB[22m[1m[22m[2m Ôöé gzip:   4.86 kB[22m
+[2mdist/[22m[36massets/CalendarTab-SvuYNJsk.js              [39m[1m[2m   32.84 kB[22m[1m[22m[2m Ôöé gzip:   9.26 kB[22m
+[2mdist/[22m[36massets/web-BlYRGksa.js                      [39m[1m[2m   32.98 kB[22m[1m[22m[2m Ôöé gzip:   8.51 kB[22m
+[2mdist/[22m[36massets/react-vendor-UMfB5zIj.js             [39m[1m[2m   45.98 kB[22m[1m[22m[2m Ôöé gzip:  16.35 kB[22m
+[2mdist/[22m[36massets/SettingsModal-BfGYSqa3.js            [39m[1m[2m   53.72 kB[22m[1m[22m[2m Ôöé gzip:  11.69 kB[22m
+[2mdist/[22m[36massets/utils-vendor-D1Nx_I04.js             [39m[1m[2m   65.96 kB[22m[1m[22m[2m Ôöé gzip:  21.24 kB[22m
+[2mdist/[22m[36massets/leaflet-8JD350Vw.js                  [39m[1m[2m  153.17 kB[22m[1m[22m[2m Ôöé gzip:  44.57 kB[22m
+[2mdist/[22m[36massets/chart-vendor-BdcjlCh4.js             [39m[1m[2m  201.39 kB[22m[1m[22m[2m Ôöé gzip:  69.50 kB[22m
+[2mdist/[22m[36massets/index-CN0Lmowa.js                    [39m[1m[33m  943.95 kB[39m[22m[2m Ôöé gzip: 285.02 kB[22m
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+[32mÔ£ô built in 14.79s[39m
+
+PWA v1.2.0
+mode      generateSW
+precache  81 entries (4743.34 KiB)
+files generated
+  dist/sw.js
+  dist/workbox-a4ccc968.js

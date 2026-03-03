@@ -76,7 +76,7 @@ describe('EfficiencyModel', () => {
     });
 
     it('should predict efficiency after training', async () => {
-        const mockTrips: Partial<Trip>[] = Array.from({ length: 10 }).map((_, i) => ({
+        const mockTrips: Partial<Trip>[] = Array.from({ length: 10 }).map(() => ({
             trip: 50,
             electricity: 10,
             duration: 3600

@@ -57,6 +57,12 @@ const { MockHttpsError, mockVehicleDocGet, mockVehicleDocUpdate, mockCredDocDele
             update: vi.fn().mockResolvedValue(undefined),
         };
 
+        const mockTransaction = {
+            get: vi.fn().mockResolvedValue({ data: () => null }),
+            update: vi.fn(),
+            set: vi.fn()
+        };
+
         const mockDb = {
             collection: vi.fn().mockImplementation((name: string) => {
                 if (name === 'rateLimits') {
@@ -65,6 +71,7 @@ const { MockHttpsError, mockVehicleDocGet, mockVehicleDocUpdate, mockCredDocDele
                 return { doc: vi.fn(() => mockVehicleDoc) };
             }),
             batch: vi.fn(() => mockBatch),
+            runTransaction: vi.fn(async (cb) => cb(mockTransaction)),
         };
 
         return {

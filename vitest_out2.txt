@@ -1,0 +1,33 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium[39m
+
+ [31mÔØ»[39m src/hooks/sync/__tests__/useGoogleAuth.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 80[2mms[22m[39m
+     [32mÔ£ô[39m should initialize with isAuthenticated false if no valid token exists[32m 14[2mms[22m[39m
+     [32mÔ£ô[39m should initialize as authenticated if a valid token is in localStorage[32m 2[2mms[22m[39m
+     [32mÔ£ô[39m should fetch user profile when authenticated[32m 54[2mms[22m[39m
+     [32mÔ£ô[39m should perform native login when on native platform[32m 4[2mms[22m[39m
+[31m     [31m├ù[31m should clear data on logout[39m[32m 5[2mms[22m[39m
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» Failed Tests 1 ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/hooks/sync/__tests__/useGoogleAuth.test.ts > useGoogleAuth > should clear data on logout
+AssertionError: expected "vi.fn()" to be called with arguments: [ 'google_access_token' ]
+
+Number of calls: 0
+
+ ÔØ» src/hooks/sync/__tests__/useGoogleAuth.test.ts:138:44
+    136|         });
+    137| 
+    138|         expect(secureStorage.secureRemove).toHaveBeenCalledWith('googlÔÇª
+       |                                            ^
+    139|         expect(secureStorage.secureRemove).toHaveBeenCalledWith('googlÔÇª
+    140|         expect(result.current.isAuthenticated).toBe(false);
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/1]ÔÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 12:26:12
+[2m   Duration [22m 1.34s[2m (transform 117ms, setup 217ms, import 105ms, tests 80ms, environment 778ms)[22m
+

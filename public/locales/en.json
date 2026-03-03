@@ -1,5 +1,6 @@
 {
     "common": {
+        "offline": "Offline — Changes will sync when reconnected",
         "loading": "Loading...",
         "processing": "Processing...",
         "cancel": "Cancel",

@@ -1,0 +1,52 @@
+
+[1m[46m RUN [49m[22m [36mv4.0.17 [39m[90mC:/Users/migue/Github/BYD-Stats/BYD-Stats-Premium/byd-stats-premium[39m
+
+ [31mÔØ»[39m src/hooks/sync/__tests__/useGoogleAuth.test.ts [2m([22m[2m5 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1089[2mms[22m[39m
+     [32mÔ£ô[39m should initialize with isAuthenticated false if no valid token exists[32m 15[2mms[22m[39m
+     [32mÔ£ô[39m should initialize as authenticated if a valid token is in localStorage[32m 2[2mms[22m[39m
+     [32mÔ£ô[39m should fetch user profile when authenticated[32m 54[2mms[22m[39m
+     [32mÔ£ô[39m should perform native login when on native platform[32m 4[2mms[22m[39m
+[31m     [31m├ù[31m should clear data on logout[39m[33m 1013[2mms[22m[39m
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ» Failed Tests 1 ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+
+ FAIL  src/hooks/sync/__tests__/useGoogleAuth.test.ts > useGoogleAuth > should clear data on logout
+AssertionError: expected { name: 'Test User', ÔÇª(2) } to be null // Object.is equality
+
+Ignored nodes: comments, script, style
+<html>
+  <head />
+  <body>
+    <div />
+  </body>
+</html>
+
+- Expected: 
+null
+
++ Received: 
+{
+  "email": "test@example.com",
+  "name": "Test User",
+  "picture": "https://example.com/pic.jpg",
+}
+
+ ÔØ» src/hooks/sync/__tests__/useGoogleAuth.test.ts:143:48
+    141|             expect(secureStorage.secureRemove).toHaveBeenCalledWith('gÔÇª
+    142|             expect(result.current.isAuthenticated).toBe(false);
+    143|             expect(result.current.userProfile).toBe(null);
+       |                                                ^
+    144|         });
+    145|     });
+ ÔØ» runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:47:12
+ ÔØ» checkCallback node_modules/@testing-library/dom/dist/wait-for.js:124:77
+ ÔØ» Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:118:16
+
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/1]ÔÄ»
+
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[90m (1)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (5)[39m
+[2m   Start at [22m 12:42:50
+[2m   Duration [22m 2.68s[2m (transform 125ms, setup 214ms, import 114ms, tests 1.09s, environment 757ms)[22m
+

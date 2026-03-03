@@ -370,7 +370,7 @@ export const BydSettings: React.FC<BydSettingsProps> = ({ onConnectionChange }) 
                             </div>
                             <div className="flex gap-2">
                                 <input
-                                    type="text"
+                                    type="password"
                                     value={abrpToken}
                                     onChange={(e) => setAbrpToken(e.target.value)}
                                     placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"

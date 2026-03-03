@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useData } from '@/providers/DataProvider';
-import { deduplicatedQuery } from '@services/firebase';
-import { Trip } from '@/types';
+import { deduplicatedQuery } from '../services/firebase';
 
 /**
  * useDataOrchestration

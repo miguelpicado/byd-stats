@@ -28,6 +28,7 @@
         "kWhDay": "kWh/día"
     },
     "common": {
+        "offline": "Sin conexión — Los cambios se sincronizarán al reconectar",
         "loading": "Cargando...",
         "processing": "Procesando...",
         "cancel": "Cancelar",

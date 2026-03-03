@@ -92,7 +92,7 @@ const DatabaseUploadModal: React.FC = () => {
                                 <input
                                     type="file"
                                     id="uploadMerge"
-                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv,.json"
+                                    accept=".db,.sqlite,.json,.csv"
                                     className="hidden"
                                     onChange={(e) => handleFileChange(e, true)}
                                     disabled={!sqlReady}
@@ -131,7 +131,7 @@ const DatabaseUploadModal: React.FC = () => {
                                 <input
                                     type="file"
                                     id="uploadNew"
-                                    accept="*/*,image/*,.db,.jpg,.jpeg,.csv,.json"
+                                    accept=".db,.sqlite,.json,.csv"
                                     className="hidden"
                                     onChange={(e) => handleFileChange(e, false)}
                                     disabled={!sqlReady}

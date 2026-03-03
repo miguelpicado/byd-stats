@@ -6,10 +6,22 @@
  */
 
 import { onCall, onRequest, HttpsError, CallableRequest } from 'firebase-functions/v2/https';
+import { defineSecret } from 'firebase-functions/params';
+
+const tokenEncryptionKey = defineSecret('TOKEN_ENCRYPTION_KEY');
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import * as admin from 'firebase-admin';
 import { BydClient, BydConfig, initBydModule, BydRealtime, BydGps, BydCharging } from './byd';
 import { snapToRoads, calculatePathDistanceKm } from './googleMaps';
+import { z } from 'zod';
+
+const BydConnectSchema = z.object({
+    username: z.string().min(3).max(100).trim(),
+    password: z.string().min(1).max(200),
+    countryCode: z.string().min(2).max(5).regex(/^[A-Z]{2,3}$/),
+    controlPin: z.string().max(10).optional(),
+    userId: z.string().min(1).max(128),
+});
 
 // Initialize Firestore (may already be initialized by main index.ts)
 try {
@@ -31,6 +43,19 @@ function ensureBydInit() {
         bydInitialized = true;
     }
 }
+
+// =============================================================================
+// LOGGING HELPER
+// =============================================================================
+
+const sanitize = (text: string) =>
+    text.replace(/[A-HJ-NPR-Z0-9]{17}/gi, 'VIN:***')  // VINs
+        .replace(/[a-zA-Z0-9]{28}/g, 'UID:***');      // Firebase UIDs
+
+const safeLog = (tag: string, ...args: unknown[]) => {
+    const sanitized = args.map(a => typeof a === 'string' ? sanitize(a) : a);
+    console.log(`[${tag}]`, ...sanitized);
+};
 
 // =============================================================================
 // AUTH HELPERS
@@ -82,18 +107,20 @@ async function checkRateLimit(uid: string, action: string, maxPerMinute: number 
     const now = Date.now();
     const windowMs = 60_000;
 
-    const doc = await ref.get();
-    const data = doc.data();
+    await db.runTransaction(async (transaction) => {
+        const doc = await transaction.get(ref);
+        const data = doc.data();
 
-    if (data && data.count >= maxPerMinute && (now - data.windowStart) < windowMs) {
-        throw new HttpsError('resource-exhausted', 'Rate limit exceeded. Try again later.');
-    }
+        if (data && data.count >= maxPerMinute && (now - data.windowStart) < windowMs) {
+            throw new HttpsError('resource-exhausted', 'Rate limit exceeded. Try again later.');
+        }
 
-    if (!data || (now - data.windowStart) >= windowMs) {
-        await ref.set({ count: 1, windowStart: now });
-    } else {
-        await ref.update({ count: data.count + 1 });
-    }
+        if (!data || (now - data.windowStart) >= windowMs) {
+            transaction.set(ref, { count: 1, windowStart: now });
+        } else {
+            transaction.update(ref, { count: data.count + 1 });
+        }
+    });
 }
 
 // =============================================================================
@@ -104,17 +131,16 @@ async function checkRateLimit(uid: string, action: string, maxPerMinute: number 
  * Connect BYD account using username/password
  * Stores encrypted credentials in Firestore
  */
-export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydConnectV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
     // Auth required — no ownership check yet (vehicle doesn't exist until after connect)
     const uid = requireAuth(request);
     await checkRateLimit(uid, 'bydConnectV2', 3);
 
-    const { username, password, countryCode, controlPin, userId } = request.data;
-
-    if (!username || !password || !countryCode || !userId) {
-        throw new HttpsError('invalid-argument',
-            'Missing required fields: username, password, countryCode, userId');
+    const parsed = BydConnectSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input: ' + parsed.error.issues.map(i => i.path.join('.')).join(', '));
     }
+    const { username, password, countryCode, controlPin, userId } = parsed.data;
 
     ensureBydInit();
 
@@ -138,7 +164,7 @@ export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableR
         }
 
         // Store credentials (encrypted) for each vehicle
-        const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
+        const ENCRYPTION_KEY = tokenEncryptionKey.value();
         if (!ENCRYPTION_KEY) {
             throw new HttpsError('internal', 'Encryption key not configured');
         }
@@ -206,11 +232,11 @@ export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableR
                     mac: device.mac,
                     updatedAt: admin.firestore.Timestamp.now(),
                 });
-                console.log(`[bydConnect] Saved fresh session to mqttSession for ${vehicle.vin}`);
+                safeLog(`[bydConnect] Saved fresh session to mqttSession for ${vehicle.vin}`);
             }
         }
 
-        console.log(`[bydConnect] Connected ${vehicles.length} vehicles for user ${userId}`);
+        safeLog(`[bydConnect] Connected ${vehicles.length} vehicles for user ${userId}`);
 
         return {
             success: true,
@@ -218,7 +244,7 @@ export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableR
         };
 
     } catch (error: any) {
-        console.error('[bydConnect] Error:', error.message);
+        safeLog('[bydConnect] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -226,7 +252,7 @@ export const bydConnectV2 = onCall({ region: REGION }, async (request: CallableR
 /**
  * Disconnect BYD account
  */
-export const bydDisconnectV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydDisconnectV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -245,12 +271,66 @@ export const bydDisconnectV2 = onCall({ region: REGION }, async (request: Callab
             disconnectedAt: admin.firestore.Timestamp.now(),
         });
 
-        console.log(`[bydDisconnect] Disconnected vehicle ${vin}`);
+        safeLog(`[bydDisconnect] Disconnected vehicle ${vin}`);
 
         return { success: true };
 
     } catch (error: any) {
-        console.error('[bydDisconnect] Error:', error.message);
+        safeLog('[bydDisconnect] Error:', error.message);
+        throw new HttpsError('internal', error.message);
+    }
+});
+
+/**
+ * Save encrypted ABRP token
+ */
+const AbrpTokenSchema = z.object({
+    vin: z.string().length(17).regex(/^[A-HJ-NPR-Z0-9]{17}$/i),
+    token: z.string().max(200),
+});
+
+export const bydSaveAbrpToken = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = AbrpTokenSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
+    }
+    const { vin, token } = parsed.data;
+
+    const uid = await requireAuthAndOwnership(request, vin);
+    await checkRateLimit(uid, 'bydSaveAbrpToken', 5);
+
+    try {
+        const ENCRYPTION_KEY = tokenEncryptionKey.value();
+        if (!ENCRYPTION_KEY) {
+            throw new HttpsError('internal', 'Encryption key not configured');
+        }
+
+        const crypto = require('crypto');
+        const encrypt = (text: string) => {
+            const iv = crypto.randomBytes(16);
+            const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+            const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+            const authTag = cipher.getAuthTag();
+            return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted.toString('hex');
+        };
+
+        const encryptedToken = token ? encrypt(token) : '';
+
+        // Save encrypted token to private subcollection, NOT public document
+        const privateRef = db.collection('bydVehicles').doc(vin).collection('private').doc('integration');
+        await privateRef.set({ abrpToken: encryptedToken }, { merge: true });
+
+        // Update public document just to say we HAVE a token, but not the token itself
+        await db.collection('bydVehicles').doc(vin).update({
+            hasAbrpToken: !!token
+        });
+
+        safeLog(`[bydSaveAbrpToken] Saved ABRP token for vehicle ${vin}`);
+
+        return { success: true };
+
+    } catch (error: any) {
+        safeLog('[bydSaveAbrpToken] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -263,12 +343,12 @@ export const bydDisconnectV2 = onCall({ region: REGION }, async (request: Callab
  * Decrypt helper for credentials
  */
 function getDecryptor() {
-    const ENCRYPTION_KEY = process.env.TOKEN_ENCRYPTION_KEY;
+    const ENCRYPTION_KEY = tokenEncryptionKey.value();
     if (!ENCRYPTION_KEY) {
-        console.error('INTERNAL ERROR: TOKEN_ENCRYPTION_KEY is missing in environment variables');
+        safeLog('INTERNAL ERROR: TOKEN_ENCRYPTION_KEY is missing in environment variables');
         throw new Error('Encryption key not configured');
     }
-    // console.log('DEBUG: Encryption key present, length:', ENCRYPTION_KEY.length);
+    // safeLog('DEBUG: Encryption key present, length:', ENCRYPTION_KEY.length);
 
     const crypto = require('crypto');
     return (encrypted: string) => {
@@ -344,7 +424,7 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
         // Restore Device ID if available (CRITICAL: Session is bound to IMEI!)
         if (sessionData.imei && sessionData.mac) {
             client.setDeviceProfile(sessionData.imei, sessionData.mac);
-            console.log(`[getBydClientWithSession] Restored device profile: ${sessionData.imei}`);
+            safeLog(`[getBydClientWithSession] Restored device profile: ${sessionData.imei}`);
         }
 
         // Check if session is recent (less than 12 hours old)
@@ -359,13 +439,13 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
                 encryToken: sessionData.encryToken,
                 cookies: sessionData.cookies ? JSON.parse(sessionData.cookies) : {},
             });
-            console.log(`[getBydClientWithSession] Restored session for ${vin} (age: ${ageHours.toFixed(1)}h)`);
+            safeLog(`[getBydClientWithSession] Restored session for ${vin} (age: ${ageHours.toFixed(1)}h)`);
             return client;
         }
 
-        console.log(`[getBydClientWithSession] Session expired for ${vin} (age: ${ageHours.toFixed(1)}h), creating new one...`);
+        safeLog(`[getBydClientWithSession] Session expired for ${vin} (age: ${ageHours.toFixed(1)}h), creating new one...`);
     } else {
-        console.log(`[getBydClientWithSession] No stored session for ${vin}, creating new one...`);
+        safeLog(`[getBydClientWithSession] No stored session for ${vin}, creating new one...`);
     }
 
     // No valid session - create new one and store it
@@ -383,7 +463,7 @@ async function getBydClientWithSession(vin: string): Promise<BydClient> {
             mac: device.mac,
             updatedAt: admin.firestore.Timestamp.now(),
         });
-        console.log(`[getBydClientWithSession] Created and stored new session for ${vin}`);
+        safeLog(`[getBydClientWithSession] Created and stored new session for ${vin}`);
     }
 
     return client;
@@ -410,7 +490,7 @@ function normalizeSoC(val: number | undefined): number {
 /**
  * Get realtime vehicle data (battery, range, odometer, etc.)
  */
-export const bydGetRealtimeV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydGetRealtimeV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -426,7 +506,7 @@ export const bydGetRealtimeV2 = onCall({ region: REGION }, async (request: Calla
         const result = await pollVehicleInternal(vin, 'polling');
 
         if (result.isSleeping) {
-            console.log(`[bydGetRealtime] Vehicle ${vin} is sleeping/unreachable. Returning last known state.`);
+            safeLog(`[bydGetRealtime] Vehicle ${vin} is sleeping/unreachable. Returning last known state.`);
 
             // Fetch last known state from DB to return something useful instead of error
             const vehicleDoc = await db.collection('bydVehicles').doc(vin).get();
@@ -447,7 +527,7 @@ export const bydGetRealtimeV2 = onCall({ region: REGION }, async (request: Calla
         };
 
     } catch (error: any) {
-        console.error('[bydGetRealtime] Error:', error.message);
+        safeLog('[bydGetRealtime] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -455,7 +535,7 @@ export const bydGetRealtimeV2 = onCall({ region: REGION }, async (request: Calla
 /**
  * Get GPS location
  */
-export const bydGetGpsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydGetGpsV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -478,7 +558,7 @@ export const bydGetGpsV2 = onCall({ region: REGION }, async (request: CallableRe
             lastLocationUpdate: admin.firestore.Timestamp.now(),
         });
 
-        console.log(`[bydGetGps] ${vin}: lat=${gps.latitude}, lon=${gps.longitude}, heading=${gps.heading}`);
+        safeLog(`[bydGetGps] ${vin}: lat=${gps.latitude}, lon=${gps.longitude}, heading=${gps.heading}`);
 
         return {
             success: true,
@@ -486,7 +566,7 @@ export const bydGetGpsV2 = onCall({ region: REGION }, async (request: CallableRe
         };
 
     } catch (error: any) {
-        console.error('[bydGetGps] Error:', error.message);
+        safeLog('[bydGetGps] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -507,27 +587,27 @@ async function executeControlCommand(
         // Control commands need a clean session with consistent device identity
         client = await getBydClientForVehicle(vin);
         await client.login();
-        console.log(`[${commandName}] Fresh login completed for control command`);
+        safeLog(`[${commandName}] Fresh login completed for control command`);
     } catch (e: any) {
-        console.error(`[${commandName}] Failed to get client:`, e.message);
+        safeLog(`[${commandName}] Failed to get client:`, e.message);
         throw new HttpsError('internal', `Client init failed: ${e.message}`);
     }
 
     const controlPin = pin || await getStoredControlPin(vin);
     if (!controlPin) {
-        console.error(`[${commandName}] No control PIN found for ${vin}`);
+        safeLog(`[${commandName}] No control PIN found for ${vin}`);
     } else {
         const isNumeric = /^\d+$/.test(controlPin);
         const isUppercase = controlPin === controlPin.toUpperCase();
-        console.log(`[${commandName}] Using PIN: length=${controlPin.length}, isNumeric=${isNumeric}, isUpper=${isUppercase}`);
+        safeLog(`[${commandName}] Using PIN: length=${controlPin.length}, isNumeric=${isNumeric}, isUpper=${isUppercase}`);
 
     }
 
     try {
         // 2. Try action
-        console.log(`[${commandName}] Executing action for ${vin}...`);
+        safeLog(`[${commandName}] Executing action for ${vin}...`);
         const success = await action(client, controlPin);
-        console.log(`[${commandName}] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
+        safeLog(`[${commandName}] ${vin}: ${success ? 'SUCCESS' : 'FAILED'}`);
 
         if (!success) {
             return { success: false, message: 'Command failed execution' };
@@ -537,13 +617,13 @@ async function executeControlCommand(
     } catch (innerError: any) {
         const errMsg = innerError.message || '';
         const errCode = String(innerError.code || '');
-        console.log(`[${commandName}] Error: ${errMsg}. Code: ${errCode}`);
+        safeLog(`[${commandName}] Error: ${errMsg}. Code: ${errCode}`);
 
         // 3. Check for specific session/auth errors to trigger a forced refresh
         // NOTE: 1009 is a command verification error (wrong PIN/params), NOT session expiry!
         // Session expiry codes (1002, 1005, 1010) are handled internally by client.ts postAuthenticatedJson
         if (errMsg.includes('401') || errMsg.includes('Session expired') || errCode === 'unauthenticated') {
-            console.log(`[${commandName}] Session likely expired. Forcing re-login...`);
+            safeLog(`[${commandName}] Session likely expired. Forcing re-login...`);
 
             try {
                 // Force new login
@@ -567,7 +647,7 @@ async function executeControlCommand(
 
                 // Retry action with new session
                 const retrySuccess = await action(client, controlPin);
-                console.log(`[${commandName}] Retry after login: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
+                safeLog(`[${commandName}] Retry after login: ${retrySuccess ? 'SUCCESS' : 'FAILED'}`);
 
                 return {
                     success: retrySuccess,
@@ -575,7 +655,7 @@ async function executeControlCommand(
                 };
 
             } catch (loginError: any) {
-                console.error(`[${commandName}] Re-login failed:`, loginError.message);
+                safeLog(`[${commandName}] Re-login failed:`, loginError.message);
                 throw new HttpsError('unauthenticated', `Session expired and re-login failed: ${loginError.message}`);
             }
         }
@@ -585,7 +665,7 @@ async function executeControlCommand(
         if (errMsg.includes('1009') || errMsg.includes('1008') ||
             errMsg.includes('timeout') || errMsg.includes('Polling timeout') ||
             errMsg.includes('Poll failed')) {
-            console.log(`[${commandName}] Polling inconclusive (${errMsg.substring(0, 50)}...) but trigger was accepted. Returning optimistic success.`);
+            safeLog(`[${commandName}] Polling inconclusive (${errMsg.substring(0, 50)}...) but trigger was accepted. Returning optimistic success.`);
             return {
                 success: true,
                 message: 'Command sent successfully (confirmation pending)'
@@ -593,16 +673,22 @@ async function executeControlCommand(
         }
 
         const wrapMessage = `BYD Error: ${errMsg || 'Unknown error'} (Code: ${errCode || 'NoCode'})`;
-        console.error(`[${commandName}] Final error: ${wrapMessage}`);
+        safeLog(`[${commandName}] Final error: ${wrapMessage}`);
         throw new HttpsError('internal', wrapMessage);
     }
 }
-export const bydGetChargingV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin } = request.data;
 
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+const VinInputSchema = z.object({
+    vin: z.string().length(17).regex(/^[A-HJ-NPR-Z0-9]{17}$/i),
+    pin: z.string().max(10).optional(),
+});
+
+export const bydGetChargingV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid VIN');
     }
+    const { vin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydGetChargingV2', 10);
@@ -611,7 +697,7 @@ export const bydGetChargingV2 = onCall({ region: REGION }, async (request: Calla
         const client = await getBydClientWithSession(vin);
         const charging = await client.getChargingStatus(vin);
 
-        console.log(`[bydGetCharging] ${vin}: SOC=${charging.soc}%, charging=${charging.isCharging}`);
+        safeLog(`[bydGetCharging] ${vin}: SOC=${charging.soc}%, charging=${charging.isCharging}`);
 
         return {
             success: true,
@@ -619,7 +705,7 @@ export const bydGetChargingV2 = onCall({ region: REGION }, async (request: Calla
         };
 
     } catch (error: any) {
-        console.error('[bydGetCharging] Error:', error.message);
+        safeLog('[bydGetCharging] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -631,12 +717,12 @@ export const bydGetChargingV2 = onCall({ region: REGION }, async (request: Calla
 /**
  * Lock vehicle
  */
-export const bydLockV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydLockV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydLockV2', 5);
@@ -656,12 +742,12 @@ export const bydLockV2 = onCall({ region: REGION }, async (request: CallableRequ
 /**
  * Unlock vehicle
  */
-export const bydUnlockV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydUnlockV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydUnlockV2', 5);
@@ -678,15 +764,21 @@ export const bydUnlockV2 = onCall({ region: REGION }, async (request: CallableRe
     }, pin);
 });
 
+const ClimateInputSchema = VinInputSchema.extend({
+    temperature: z.number().min(16).max(32).optional(),
+    timeSpan: z.number().min(1).max(60).optional(),
+    cycleMode: z.number().min(0).max(2).optional(),
+});
+
 /**
  * Start climate
  */
-export const bydStartClimateV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, temperature, pin, timeSpan, cycleMode } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydStartClimateV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = ClimateInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, temperature, pin, timeSpan, cycleMode } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydStartClimateV2', 5);
@@ -703,12 +795,12 @@ export const bydStartClimateV2 = onCall({ region: REGION }, async (request: Call
 /**
  * Stop climate
  */
-export const bydStopClimateV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydStopClimateV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydStopClimateV2', 5);
@@ -721,12 +813,12 @@ export const bydStopClimateV2 = onCall({ region: REGION }, async (request: Calla
 /**
  * Flash lights / Find car
  */
-export const bydFlashLightsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydFlashLightsV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydFlashLightsV2', 5);
@@ -739,12 +831,12 @@ export const bydFlashLightsV2 = onCall({ region: REGION }, async (request: Calla
 /**
  * Honk horn (find car with sound)
  */
-export const bydHonkHornV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydHonkHornV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydHonkHornV2', 5);
@@ -757,12 +849,12 @@ export const bydHonkHornV2 = onCall({ region: REGION }, async (request: Callable
 /**
  * Close windows
  */
-export const bydCloseWindowsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydCloseWindowsV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydCloseWindowsV2', 5);
@@ -772,16 +864,23 @@ export const bydCloseWindowsV2 = onCall({ region: REGION }, async (request: Call
     }, pin);
 });
 
+const SeatClimateInputSchema = VinInputSchema.extend({
+    mainHeat: z.number().min(1).max(3).optional(),
+    mainVentilation: z.number().min(1).max(3).optional(),
+    copilotHeat: z.number().min(1).max(3).optional(),
+    copilotVentilation: z.number().min(1).max(3).optional(),
+});
+
 /**
  * Control seat heating and ventilation
  * Values: 1=off, 2=low, 3=high
  */
-export const bydSeatClimateV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, mainHeat, mainVentilation, copilotHeat, copilotVentilation, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydSeatClimateV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = SeatClimateInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, mainHeat, mainVentilation, copilotHeat, copilotVentilation, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydSeatClimateV2', 5);
@@ -799,12 +898,12 @@ export const bydSeatClimateV2 = onCall({ region: REGION }, async (request: Calla
 /**
  * Control battery heating
  */
-export const bydBatteryHeatV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin, pin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydBatteryHeatV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin, pin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydBatteryHeatV2', 5);
@@ -822,12 +921,12 @@ export const bydBatteryHeatV2 = onCall({ region: REGION }, async (request: Calla
  * Poll vehicle for trip tracking (called by scheduler)
  * Polls vehicle status and detects trip start/end
  */
-export const bydPollVehicle = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydPollVehicle = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydPollVehicle', 10);
@@ -870,7 +969,7 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
         const hasMovement = hasOdoMovement || hasGpsMovement;
         const isStationary = !hasMovement;
 
-        console.log(`[bydPollVehicle] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}`);
+        safeLog(`[bydPollVehicle] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km, odo_move=${hasOdoMovement}), gps_move=${hasGpsMovement}, movement=${hasMovement}, locked=${realtime.isLocked}`);
 
         const vehicleUpdate: any = {
             lastSpeed: realtime.speed || 0,
@@ -941,7 +1040,7 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
             }
 
             vehicleUpdate.activeTripId = tripRef.id;
-            console.log(`[bydPollVehicle] STARTED trip: ${tripRef.id}`);
+            safeLog(`[bydPollVehicle] STARTED trip: ${tripRef.id}`);
 
         } else if (activeTripId && realtime.isLocked && isStationary && stationaryPollCount >= 4) {
             // Close trip after 5 stationary polls while locked
@@ -990,7 +1089,7 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
 
                 await tripRef.update(updateData);
 
-                console.log(`[bydPollVehicle] CLOSED trip: ${activeTripId}, ${totalDistance.toFixed(2)}km, ${electricityKwh}kWh, ${durationMinutes}min`);
+                safeLog(`[bydPollVehicle] CLOSED trip: ${activeTripId}, ${totalDistance.toFixed(2)}km, ${electricityKwh}kWh, ${durationMinutes}min`);
             }
 
             vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
@@ -1000,7 +1099,7 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
         } else if (activeTripId && realtime.isLocked && isStationary) {
             // Increment stationary counter
             vehicleUpdate.stationaryPollCount = stationaryPollCount + 1;
-            console.log(`[bydPollVehicle] Locked + stationary: ${stationaryPollCount + 1}/5`);
+            safeLog(`[bydPollVehicle] Locked + stationary: ${stationaryPollCount + 1}/5`);
 
             // Update trip
             const tripRef = db.collection('bydVehicles').doc(vin).collection('trips').doc(activeTripId);
@@ -1047,7 +1146,7 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
                     timestamp: now,
                     type: 'waypoint',
                 });
-                console.log(`[bydPollVehicle] Added GPS waypoint`);
+                safeLog(`[bydPollVehicle] Added GPS waypoint`);
             }
         }
 
@@ -1068,7 +1167,7 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
         };
 
     } catch (error: any) {
-        console.error('[bydPollVehicle] Error:', error.message);
+        safeLog('[bydPollVehicle] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -1081,12 +1180,12 @@ export const bydPollVehicle = onCall({ region: REGION }, async (request: Callabl
 /**
  * Test BYD connection and get all vehicle data
  */
-export const bydDiagnosticV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydDiagnosticV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydDiagnosticV2', 10);
@@ -1109,7 +1208,7 @@ export const bydDiagnosticV2 = onCall({ region: REGION }, async (request: Callab
         };
 
     } catch (error: any) {
-        console.error('[bydDiagnostic] Error:', error.message);
+        safeLog('[bydDiagnostic] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -1120,7 +1219,7 @@ export const bydDiagnosticV2 = onCall({ region: REGION }, async (request: Callab
 
 const WEBHOOK_SECRET = process.env.BYD_WEBHOOK_SECRET;
 if (!WEBHOOK_SECRET) {
-    console.error('[CRITICAL] BYD_WEBHOOK_SECRET environment variable is not set. Webhook endpoint will reject all requests.');
+    safeLog('[CRITICAL] BYD_WEBHOOK_SECRET environment variable is not set. Webhook endpoint will reject all requests.');
 }
 
 /**
@@ -1142,7 +1241,7 @@ export const bydMqttWebhook = onRequest({ region: REGION }, async (req, res) => 
     // Validate webhook secret
     const secret = req.headers['x-webhook-secret'];
     if (secret !== WEBHOOK_SECRET) {
-        console.error('[bydMqttWebhook] Invalid webhook secret');
+        safeLog('[bydMqttWebhook] Invalid webhook secret');
         res.status(401).send('Unauthorized');
         return;
     }
@@ -1179,7 +1278,7 @@ export const bydMqttWebhook = onRequest({ region: REGION }, async (req, res) => 
             }
         }
 
-        console.log(`[bydMqttWebhook] Received ${event.event} event for VIN ${event.vin} from ${source} at ${timestamp}`);
+        safeLog(`[bydMqttWebhook] Received ${event.event} event for VIN ${event.vin} from ${source} at ${timestamp}`);
 
         // Process based on event type
         switch (event.event) {
@@ -1190,13 +1289,13 @@ export const bydMqttWebhook = onRequest({ region: REGION }, async (req, res) => 
                 await processRemoteControlEvent(event);
                 break;
             default:
-                console.log(`[bydMqttWebhook] Unknown event type: ${event.event}`);
+                safeLog(`[bydMqttWebhook] Unknown event type: ${event.event}`);
         }
 
         res.status(200).json({ success: true });
 
     } catch (error: any) {
-        console.error('[bydMqttWebhook] Error:', error.message);
+        safeLog('[bydMqttWebhook] Error:', error.message);
         res.status(500).json({ error: error.message });
     }
 });
@@ -1208,7 +1307,7 @@ export const bydMqttWebhook = onRequest({ region: REGION }, async (req, res) => 
 async function processVehicleInfoEvent(event: any): Promise<void> {
     const vin = event.vin;
     if (!vin) {
-        console.log('[processVehicleInfoEvent] No VIN in event');
+        safeLog('[processVehicleInfoEvent] No VIN in event');
         return;
     }
 
@@ -1266,7 +1365,7 @@ async function processVehicleInfoEvent(event: any): Promise<void> {
         }
     }
 
-    console.log(`[processVehicleInfoEvent] Updated ${vin}: SOC=${soc}%, odo=${odometer}km, unlocked=${isUnlocked}`);
+    safeLog(`[processVehicleInfoEvent] Updated ${vin}: SOC=${soc}%, odo=${odometer}km, unlocked=${isUnlocked}`);
 }
 
 /**
@@ -1276,7 +1375,7 @@ async function processRemoteControlEvent(event: any): Promise<void> {
     const vin = event.vin;
     if (!vin) return;
 
-    console.log(`[processRemoteControlEvent] Control event for ${vin}:`, event.data);
+    safeLog(`[processRemoteControlEvent] Control event for ${vin}:`, event.data);
 
     // Log the control event
     const vehicleRef = db.collection('bydVehicles').doc(vin);
@@ -1334,7 +1433,7 @@ async function createTripFromMqtt(
         stationaryPollCount: 0,
     });
 
-    console.log(`[createTripFromMqtt] Created trip ${tripRef.id} and activated polling: ${distance.toFixed(1)}km`);
+    safeLog(`[createTripFromMqtt] Created trip ${tripRef.id} and activated polling: ${distance.toFixed(1)}km`);
 }
 
 /**
@@ -1342,12 +1441,12 @@ async function createTripFromMqtt(
  * Used by Raspberry Pi to get the tokens needed for MQTT connection
  * Also triggers a data refresh to "activate" the session for push notifications
  */
-export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
-    const { vin } = request.data;
-
-    if (!vin) {
-        throw new HttpsError('invalid-argument', 'Missing VIN');
+export const bydGetMqttCredentialsV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
+    const parsed = VinInputSchema.safeParse(request.data);
+    if (!parsed.success) {
+        throw new HttpsError('invalid-argument', 'Invalid input');
     }
+    const { vin } = parsed.data;
 
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydGetMqttCredentialsV2', 10);
@@ -1367,7 +1466,7 @@ export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request
 
         // Get MQTT broker info
         const brokerInfo = await client.getEmqBrokerInfo();
-        console.log('[bydGetMqttCredentials] brokerInfo:', JSON.stringify(brokerInfo));
+        safeLog('[bydGetMqttCredentials] brokerInfo:', JSON.stringify(brokerInfo));
 
         const credentials = {
             userId: session.token.userId,
@@ -1376,7 +1475,7 @@ export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request
             brokerHost: brokerInfo?.host || 'emqoversea-eu.byd.auto',
             brokerPort: brokerInfo?.port || 8883,
         };
-        console.log('[bydGetMqttCredentials] Returning broker:', credentials.brokerHost, credentials.brokerPort);
+        safeLog('[bydGetMqttCredentials] Returning broker:', credentials.brokerHost, credentials.brokerPort);
 
         // Store session in Firestore so we can reuse it for triggerMqttRefresh
         // This allows the MQTT listener to trigger a refresh AFTER connecting
@@ -1394,7 +1493,7 @@ export const bydGetMqttCredentialsV2 = onCall({ region: REGION }, async (request
         };
 
     } catch (error: any) {
-        console.error('[bydGetMqttCredentials] Error:', error.message);
+        safeLog('[bydGetMqttCredentials] Error:', error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -1440,16 +1539,16 @@ async function cleanupOrphanedTrips(vin: string, activeId: string | null): Promi
                     cleanupReason: 'orphaned_trip_auto_cleanup'
                 });
                 orphanCount++;
-                console.log(`[cleanupOrphanedTrips] Closing orphaned trip ${doc.id} (age: ${Math.round(ageMinutes)}m)`);
+                safeLog(`[cleanupOrphanedTrips] Closing orphaned trip ${doc.id} (age: ${Math.round(ageMinutes)}m)`);
             }
         });
 
         if (orphanCount > 0) {
             await batch.commit();
-            console.log(`[cleanupOrphanedTrips] ✅ Cleaned up ${orphanCount} orphaned trips for ${vin}`);
+            safeLog(`[cleanupOrphanedTrips] ✅ Cleaned up ${orphanCount} orphaned trips for ${vin}`);
         }
     } catch (e) {
-        console.error(`[cleanupOrphanedTrips] Error:`, e);
+        safeLog(`[cleanupOrphanedTrips] Error:`, e);
         // Non-critical, continue
     }
 }
@@ -1474,11 +1573,11 @@ async function processVehicleState(
     // LOGGING: Check raw values for debugging consumption 100x error
     const rawRealtimeSoC = realtime.soc;
     const rawChargingSoC = charging?.soc;
-    console.log(`[SoC Debug] ${vin} - Realtime: ${rawRealtimeSoC} (${typeof rawRealtimeSoC}), Charging: ${rawChargingSoC} (${typeof rawChargingSoC})`);
+    safeLog(`[SoC Debug] ${vin} - Realtime: ${rawRealtimeSoC} (${typeof rawRealtimeSoC}), Charging: ${rawChargingSoC} (${typeof rawChargingSoC})`);
 
     // LOGGING: Tire pressure raw values for diagnostics
     if (realtime.tirePressure !== undefined) {
-        console.log(`[Tire Debug] ${vin} - Raw tire pressure:`, JSON.stringify(realtime.tirePressure));
+        safeLog(`[Tire Debug] ${vin} - Raw tire pressure:`, JSON.stringify(realtime.tirePressure));
     }
 
     const effectiveSoc = realtime.soc > 0 ? realtime.soc : (charging?.soc || 0);
@@ -1488,7 +1587,7 @@ async function processVehicleState(
     // We store it as a decimal (0.75) for consistency with other parts of the app
     const socDecimal = normalizeSoC(effectiveSoc);
 
-    console.log(`[processVehicleState] ${vin} (${source}): effectiveSoc=${effectiveSoc}, socDecimal=${socDecimal}`);
+    safeLog(`[processVehicleState] ${vin} (${source}): effectiveSoc=${effectiveSoc}, socDecimal=${socDecimal}`);
 
     const prevOdometer = vehicleData.lastOdometer || 0;
     const activeTripId = vehicleData.activeTripId || null;
@@ -1497,7 +1596,7 @@ async function processVehicleState(
     // during every 20s poll while driving). When a trip IS active, orphans can't interfere.
     if (!activeTripId) {
         cleanupOrphanedTrips(vin, null).catch(err =>
-            console.error('[processVehicleState] Orphan cleanup failed:', err)
+            safeLog('[processVehicleState] Orphan cleanup failed:', err)
         );
     }
 
@@ -1537,11 +1636,11 @@ async function processVehicleState(
     // Detect if car is sleeping: realtime returns zeros AND charging also has no data
     const isCarSleeping = realtime.soc === 0 && realtime.range === 0 && realtime.odometer === 0 && effectiveSoc === 0;
 
-    console.log(`[processVehicleState] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km), speed=${realtime.speed}, move=${hasMovement}, locked=${realtime.isLocked}, sleep=${isCarSleeping}`);
+    safeLog(`[processVehicleState] ${vin}: odo=${realtime.odometer} (delta=${odoDelta.toFixed(2)}km), speed=${realtime.speed}, move=${hasMovement}, locked=${realtime.isLocked}, sleep=${isCarSleeping}`);
 
     // If truly sleeping (no data from any source), preserve last known values
     if (isCarSleeping) {
-        console.log(`[processVehicleState] ${vin}: Car offline/sleeping. Preserving last known values (including tire pressure).`);
+        safeLog(`[processVehicleState] ${vin}: Car offline/sleeping. Preserving last known values (including tire pressure).`);
 
         // IDLE SLEEP TRACKING: Only deactivate after 10 consecutive offline polls
         const newOfflineCount = (vehicleData.offlinePollCount || 0) + 1;
@@ -1552,7 +1651,7 @@ async function processVehicleState(
         };
 
         if (activeTripId && newOfflineCount >= 12) {
-            console.log(`[processVehicleState] Car offline for 12 polls (4 min) with active trip ${activeTripId} - Force Ending with trim.`);
+            safeLog(`[processVehicleState] Car offline for 12 polls (4 min) with active trip ${activeTripId} - Force Ending with trim.`);
 
             // Use the comprehensive closeTrip function to ensure SoC, distance and TRIM are handled correctly
             // We use prevOdometer and last known SoC from vehicleData as the car is now unreachable
@@ -1607,7 +1706,7 @@ async function processVehicleState(
             ...realtime.tirePressure,
             lastTireUpdate: now
         };
-        console.log(`[processVehicleState] ${vin}: Updated tire pressure with timestamp`);
+        safeLog(`[processVehicleState] ${vin}: Updated tire pressure with timestamp`);
     }
 
     if (gps) {
@@ -1674,21 +1773,21 @@ async function processVehicleState(
                 vehicleUpdate.activeTripId = tripRef.id;
                 vehicleUpdate.pollingActive = true;
                 vehicleUpdate.pollingActivatedAt = now;
-                console.log(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear})`);
+                safeLog(`[processVehicleState] ✅ STARTED trip: ${tripRef.id} (speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear})`);
             } else {
                 // Log why trip was blocked
-                console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (strictStart failed): source=${source}, speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear}, epb=${realtime.parkingBrake}, prevOdo=${prevOdometer}`);
+                safeLog(`[processVehicleState] ⚠️ TRIP BLOCKED (strictStart failed): source=${source}, speed=${realtime.speed}, odoDelta=${odoDelta.toFixed(3)}km, gear=${realtime.gear}, epb=${realtime.parkingBrake}, prevOdo=${prevOdometer}`);
             }
         } else {
             // Log why trip was blocked (not canStartTrip)
-            console.log(`[processVehicleState] ⚠️ TRIP BLOCKED (canStartTrip=false): isParked=${isParked}, gear=${realtime.gear}, hasMovement=${hasMovement}`);
+            safeLog(`[processVehicleState] ⚠️ TRIP BLOCKED (canStartTrip=false): isParked=${isParked}, gear=${realtime.gear}, hasMovement=${hasMovement}`);
         }
     } else if (activeTripId && isStationary) {
         // --- STATIONARY / TRIP END LOGIC ---
 
         // 1. Immediate End: Plugged In
         if (effectiveIsCharging) {
-            console.log(`[processVehicleState] Trip End: Vehicle plugged in.`);
+            safeLog(`[processVehicleState] Trip End: Vehicle plugged in.`);
             await closeTrip(vin, activeTripId, realtime, vehicleData, 0, 'plugged_in');
             vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
             vehicleUpdate.pollingActive = false; // Stop trip polling
@@ -1723,7 +1822,7 @@ async function processVehicleState(
         // Also keep legacy stationaryPollCount for backward compatibility/logging
         vehicleUpdate.stationaryPollCount = (vehicleData.stationaryPollCount || 0) + 1;
 
-        console.log(`[processVehicleState] Stationary Counters: GPS=${newCounters.gps}/15, ClimOFF=${newCounters.climateOff}/9, LockOFF=${newCounters.lockedOff}/6`);
+        safeLog(`[processVehicleState] Stationary Counters: GPS=${newCounters.gps}/15, ClimOFF=${newCounters.climateOff}/9, LockOFF=${newCounters.lockedOff}/6`);
 
         // Check Stop Thresholds
         let stopReason = null;
@@ -1744,7 +1843,7 @@ async function processVehicleState(
         }
 
         if (stopReason) {
-            console.log(`[processVehicleState] Trip End Triggered: ${stopReason}. Trimming ${trimMinutes} min.`);
+            safeLog(`[processVehicleState] Trip End Triggered: ${stopReason}. Trimming ${trimMinutes} min.`);
             await closeTrip(vin, activeTripId, realtime, vehicleData, trimMinutes, stopReason);
 
             vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
@@ -1761,10 +1860,10 @@ async function processVehicleState(
                     lastUpdate: now
                 });
             } catch (e: any) {
-                console.warn(`[processVehicleState] ⚠️ Failed to update stationary trip ${activeTripId}: ${e.message}`);
+                safeLog(`[processVehicleState] ⚠️ Failed to update stationary trip ${activeTripId}: ${e.message}`);
                 // If trip doc is missing, clear the activeTripId so we don't get stuck
                 if (e.code === 5 || e.message.includes('NOT_FOUND') || e.message.includes('No document to update')) {
-                    console.log(`[processVehicleState] 🧹 Clearing stale activeTripId ${activeTripId} (doc missing)`);
+                    safeLog(`[processVehicleState] 🧹 Clearing stale activeTripId ${activeTripId} (doc missing)`);
                     vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
                 }
             }
@@ -1794,7 +1893,7 @@ async function processVehicleState(
             await tripRef.update(updateData);
         } else {
             // Trip document missing but vehicle has activeTripId - CLEAR IT
-            console.log(`[processVehicleState] 🧹 Clearing stale activeTripId ${activeTripId} (doc missing while moving)`);
+            safeLog(`[processVehicleState] 🧹 Clearing stale activeTripId ${activeTripId} (doc missing while moving)`);
             vehicleUpdate.activeTripId = admin.firestore.FieldValue.delete();
 
             // Optionally: Should we force-start a new trip immediately? 
@@ -1806,7 +1905,7 @@ async function processVehicleState(
         // re-detect activity via updateTime/SoC changes and re-escalate.
         vehicleUpdate.pollingActive = false;
         vehicleUpdate.stationaryPollCount = 0;
-        console.log(`[processVehicleState] IDLE — no trip, no movement, deactivating polling`);
+        safeLog(`[processVehicleState] IDLE — no trip, no movement, deactivating polling`);
     }
 
     await vehicleRef.update(vehicleUpdate);
@@ -1838,7 +1937,7 @@ export const bydActiveTripMonitorV2 = onSchedule({
     region: REGION,
     timeoutSeconds: 300,
 }, async (event) => {
-    console.log('[bydActiveTripMonitor] Tick');
+    safeLog('[bydActiveTripMonitor] Tick');
     ensureBydInit();
     const startTime = Date.now();
 
@@ -1876,7 +1975,7 @@ export const bydIdleHeartbeatV2 = onSchedule({
     region: REGION,
     timeoutSeconds: 300,
 }, async (event) => {
-    console.log('[bydIdleHeartbeat] Starting idle heartbeat...');
+    safeLog('[bydIdleHeartbeat] Starting idle heartbeat...');
     ensureBydInit();
 
     const allVehicles = await db.collection('bydVehicles')
@@ -1884,11 +1983,11 @@ export const bydIdleHeartbeatV2 = onSchedule({
         .get();
 
     if (allVehicles.empty) {
-        console.log('[bydIdleHeartbeat] No connected vehicles found');
+        safeLog('[bydIdleHeartbeat] No connected vehicles found');
         return;
     }
 
-    console.log(`[bydIdleHeartbeat] Processing ${allVehicles.docs.length} connected vehicle(s)`);
+    safeLog(`[bydIdleHeartbeat] Processing ${allVehicles.docs.length} connected vehicle(s)`);
 
     const promises = allVehicles.docs.map(async (doc) => {
         const vin = doc.id;
@@ -1896,7 +1995,7 @@ export const bydIdleHeartbeatV2 = onSchedule({
 
         // Skip vehicles with active trips (already being polled every 20s by bydActiveTripMonitor)
         if (data.activeTripId) {
-            console.log(`[bydIdleHeartbeat] Skipping ${vin} (active trip)`);
+            safeLog(`[bydIdleHeartbeat] Skipping ${vin} (active trip)`);
             return;
         }
 
@@ -1905,13 +2004,13 @@ export const bydIdleHeartbeatV2 = onSchedule({
             const result = await cloudProbeVehicle(vin);
 
             if (result.shouldEscalate) {
-                console.log(`[bydIdleHeartbeat] ${vin}: State change detected, escalating to full poll (wake)`);
+                safeLog(`[bydIdleHeartbeat] ${vin}: State change detected, escalating to full poll (wake)`);
                 await pollVehicleInternal(vin, 'polling');
                 return; // Full poll already got fresh GPS, no need for location watch
             }
 
             if (result.changed && result.isCharging) {
-                console.log(`[bydIdleHeartbeat] ${vin}: Charging activity (cloud-only, no wake)`);
+                safeLog(`[bydIdleHeartbeat] ${vin}: Charging activity (cloud-only, no wake)`);
             }
 
             // 2. Location watch — only if user enabled it
@@ -1921,7 +2020,7 @@ export const bydIdleHeartbeatV2 = onSchedule({
             const cachedGps = await client.getGpsCache(vin).catch(() => null);
 
             if (!cachedGps || cachedGps.latitude === 0) {
-                console.log(`[bydIdleHeartbeat] ${vin}: No cached GPS available`);
+                safeLog(`[bydIdleHeartbeat] ${vin}: No cached GPS available`);
                 return;
             }
 
@@ -1931,7 +2030,7 @@ export const bydIdleHeartbeatV2 = onSchedule({
                 await db.collection('bydVehicles').doc(vin).update({
                     lastLocation: { lat: cachedGps.latitude, lon: cachedGps.longitude },
                 });
-                console.log(`[bydIdleHeartbeat] ${vin}: Stored initial location`);
+                safeLog(`[bydIdleHeartbeat] ${vin}: Stored initial location`);
                 return;
             }
 
@@ -1943,7 +2042,7 @@ export const bydIdleHeartbeatV2 = onSchedule({
 
             if (significantMovement) {
                 // Car moved >~500m without a registered trip — suspicious
-                console.log(`[bydIdleHeartbeat] ⚠️ ${vin}: SUSPICIOUS MOVEMENT detected! GPS delta: lat=${latDelta.toFixed(5)}, lon=${lonDelta.toFixed(5)}. Escalating to full wake.`);
+                safeLog(`[bydIdleHeartbeat] ⚠️ ${vin}: SUSPICIOUS MOVEMENT detected! GPS delta: lat=${latDelta.toFixed(5)}, lon=${lonDelta.toFixed(5)}. Escalating to full wake.`);
 
                 // Escalate to full wake to get FRESH GPS (cached may be stale)
                 await pollVehicleInternal(vin, 'wake');
@@ -1959,10 +2058,10 @@ export const bydIdleHeartbeatV2 = onSchedule({
                     },
                 });
             } else {
-                console.log(`[bydIdleHeartbeat] ${vin}: Location stable (delta: ${(latDelta + lonDelta).toFixed(5)})`);
+                safeLog(`[bydIdleHeartbeat] ${vin}: Location stable (delta: ${(latDelta + lonDelta).toFixed(5)})`);
             }
         } catch (error: any) {
-            console.error(`[bydIdleHeartbeat] Error processing ${vin}:`, error.message);
+            safeLog(`[bydIdleHeartbeat] Error processing ${vin}:`, error.message);
         }
     });
 
@@ -2009,7 +2108,7 @@ async function calculateMovingAverageEfficiency(vin: string, limit = 20): Promis
 
         return 18.0; // Fallback
     } catch (e) {
-        console.error(`[calculateMovingAverageEfficiency] Error:`, e);
+        safeLog(`[calculateMovingAverageEfficiency] Error:`, e);
         return 18.0;
     }
 }
@@ -2028,7 +2127,7 @@ async function closeTrip(
     const tripData = tripDoc.data();
 
     if (!tripData || tripData.status === 'completed') {
-        console.log(`[closeTrip] Trip ${tripId} already closed or missing — skipping`);
+        safeLog(`[closeTrip] Trip ${tripId} already closed or missing — skipping`);
         return;
     }
 
@@ -2057,11 +2156,11 @@ async function closeTrip(
         electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
     } else {
         // Short trip / Small SoC change (<1%): Use average efficiency + 25% overhead
-        console.log(`[closeTrip] Small SoC change (${(socDelta * 100).toFixed(2)}%). Calculating consumption via average efficiency.`);
+        safeLog(`[closeTrip] Small SoC change (${(socDelta * 100).toFixed(2)}%). Calculating consumption via average efficiency.`);
         const avgEff = await calculateMovingAverageEfficiency(vin);
         // consumption = (distance * efficiency / 100) * 1.25
         electricityKwh = Math.round(Math.max(0, (totalDistance * avgEff / 100) * 1.25) * 100) / 100;
-        console.log(`[closeTrip] Recalculated electricity (short trip): ${electricityKwh} kWh (Avg Eff: ${avgEff.toFixed(2)})`);
+        safeLog(`[closeTrip] Recalculated electricity (short trip): ${electricityKwh} kWh (Avg Eff: ${avgEff.toFixed(2)})`);
     }
 
     const updateData: any = {
@@ -2090,11 +2189,11 @@ async function closeTrip(
         // Robust check: check doc field FIRST, then subcollection
         let rawPoints = tripData.points || [];
         if (rawPoints.length === 0) {
-            console.log(`[closeTrip] No points in doc array, checking subcollection for ${tripId}...`);
+            safeLog(`[closeTrip] No points in doc array, checking subcollection for ${tripId}...`);
             const pointsSnap = await tripRef.collection('points').orderBy('timestamp').get();
             if (!pointsSnap.empty) {
                 rawPoints = pointsSnap.docs.map(doc => doc.data());
-                console.log(`[closeTrip] Found ${rawPoints.length} points in subcollection.`);
+                safeLog(`[closeTrip] Found ${rawPoints.length} points in subcollection.`);
             }
         }
 
@@ -2113,12 +2212,12 @@ async function closeTrip(
                 // Remove duplicates and snap
                 const uniquePoints = rawPoints.filter((p: any, i: number, arr: any[]) => i === 0 || p.timestamp > arr[i - 1].timestamp);
                 if (uniquePoints.length > 2) {
-                    console.log(`[closeTrip] Snapping ${uniquePoints.length} points for ${tripId}...`);
+                    safeLog(`[closeTrip] Snapping ${uniquePoints.length} points for ${tripId}...`);
                     const snappedPoints = await snapToRoads(uniquePoints as any[]);
                     updateData.points = snappedPoints;
 
                     const gpsDistance = calculatePathDistanceKm(snappedPoints);
-                    console.log(`[closeTrip] GPS Distance calculated: ${gpsDistance} km (Odo: ${totalDistance} km)`);
+                    safeLog(`[closeTrip] GPS Distance calculated: ${gpsDistance} km (Odo: ${totalDistance} km)`);
 
                     // Update distance if it looks valid
                     if (gpsDistance > 0 && !isNaN(gpsDistance)) {
@@ -2128,24 +2227,24 @@ async function closeTrip(
                     }
                 }
             } catch (e) {
-                console.error(`Error snapping points for trip ${tripId}:`, e);
+                safeLog(`Error snapping points for trip ${tripId}:`, e);
             }
         }
     }
 
     try {
         await tripRef.update(updateData);
-        console.log(`[closeTrip] ✅ CLOSED trip: ${tripId}. Distance: ${updateData.distanceKm}km, Duration: ${durationMinutes}m (trimmed ${trimMinutes}m), Electricity: ${electricityKwh}kWh, Reason: ${stopReason}`);
+        safeLog(`[closeTrip] ✅ CLOSED trip: ${tripId}. Distance: ${updateData.distanceKm}km, Duration: ${durationMinutes}m (trimmed ${trimMinutes}m), Electricity: ${electricityKwh}kWh, Reason: ${stopReason}`);
     } catch (dbError: any) {
-        console.error(`[closeTrip] ❌ Critical error updating Firestore for trip ${tripId}:`, dbError.message);
+        safeLog(`[closeTrip] ❌ Critical error updating Firestore for trip ${tripId}:`, dbError.message);
         // We still want to return and continue so the activeTripId gets cleared in the caller
         // even if this specific trip record update partially failed.
         // Try to at least mark it as completed to prevent orphaned trips
         try {
             await tripRef.update({ status: 'completed', lastUpdate: now, error: dbError.message });
-            console.log(`[closeTrip] ⚠️ Partial recovery: marked trip as completed despite error`);
+            safeLog(`[closeTrip] ⚠️ Partial recovery: marked trip as completed despite error`);
         } catch (recoveryError: any) {
-            console.error(`[closeTrip] ❌ Recovery also failed:`, recoveryError.message);
+            safeLog(`[closeTrip] ❌ Recovery also failed:`, recoveryError.message);
         }
     }
 }
@@ -2169,7 +2268,7 @@ async function logApiCall(vin: string, context: 'trip_poll' | 'trip_start' | 'tr
         });
     } catch (e) {
         // Non-critical, don't throw
-        console.error(`[logApiCall] Failed to log for ${vin}:`, e);
+        safeLog(`[logApiCall] Failed to log for ${vin}:`, e);
     }
 }
 
@@ -2282,7 +2381,7 @@ async function cloudProbeVehicle(vin: string): Promise<{
                 await sendAbrpTelemetry(vin, abrpToken.trim(), abrpRealtime, null, charging);
             }
         } catch (e: any) {
-            console.error(`[cloudProbe] ${vin}: Failed to store charging detail or send ABRP: ${e.message}`);
+            safeLog(`[cloudProbe] ${vin}: Failed to store charging detail or send ABRP: ${e.message}`);
         }
     }
 
@@ -2317,15 +2416,15 @@ async function cloudProbeVehicle(vin: string): Promise<{
                     status: 'pending_review',
                     createdAt: admin.firestore.Timestamp.now(),
                 });
-                console.log(`[cloudProbe] ${vin}: ✅ Auto charge recorded ${autoChargeRef.id} — SoC ${(startSoC * 100).toFixed(0)}%→${(endSoC * 100).toFixed(0)}%, ${kwhCharged}kWh, ~${estimatedPowerKw}kW, ${Math.round(durationMinutes)}min`);
+                safeLog(`[cloudProbe] ${vin}: ✅ Auto charge recorded ${autoChargeRef.id} — SoC ${(startSoC * 100).toFixed(0)}%→${(endSoC * 100).toFixed(0)}%, ${kwhCharged}kWh, ~${estimatedPowerKw}kW, ${Math.round(durationMinutes)}min`);
             } else {
-                console.log(`[cloudProbe] ${vin}: Charge ended but too small to record (gain=${(socGain * 100).toFixed(1)}%, ${Math.round(durationMinutes)}min)`);
+                safeLog(`[cloudProbe] ${vin}: Charge ended but too small to record (gain=${(socGain * 100).toFixed(1)}%, ${Math.round(durationMinutes)}min)`);
             }
 
             // Clear stale chargingDetail now that charging is done
             await vehicleRef.update({ chargingDetail: admin.firestore.FieldValue.delete() });
         } catch (e: any) {
-            console.error(`[cloudProbe] ${vin}: Failed to record auto charge: ${e.message}`);
+            safeLog(`[cloudProbe] ${vin}: Failed to record auto charge: ${e.message}`);
         }
     }
 
@@ -2340,7 +2439,7 @@ async function cloudProbeVehicle(vin: string): Promise<{
 
     await vehicleRef.update(cloudUpdate);
 
-    console.log(`[cloudProbe] ${vin}: SoC=${(currentSoC * 100).toFixed(1)}% (prev=${(prevSoC * 100).toFixed(1)}%), updTime=${cloudUpdateTime} (prev=${prevCloudUpdateTime}), charging=${isCharging}, changed=${changed}, escalate=${shouldEscalate} (SoC:${socChanged}, UpdTime:${updateTimeChanged})`);
+    safeLog(`[cloudProbe] ${vin}: SoC=${(currentSoC * 100).toFixed(1)}% (prev=${(prevSoC * 100).toFixed(1)}%), updTime=${cloudUpdateTime} (prev=${prevCloudUpdateTime}), charging=${isCharging}, changed=${changed}, escalate=${shouldEscalate} (SoC:${socChanged}, UpdTime:${updateTimeChanged})`);
 
     return { changed, shouldEscalate, isCharging };
 }
@@ -2369,7 +2468,7 @@ async function pollActiveTripVehicles() {
                 const pollingActivatedAt = data.pollingActivatedAt?.toMillis() || 0;
                 const twoHoursMs = 2 * 60 * 60 * 1000;
                 if (pollingActivatedAt > 0 && (now - pollingActivatedAt) > twoHoursMs) {
-                    console.log(`[pollActiveTripVehicles] ${doc.id}: Stale polling (${Math.round((now - pollingActivatedAt) / 60000)}min, no trip) — deactivating`);
+                    safeLog(`[pollActiveTripVehicles] ${doc.id}: Stale polling (${Math.round((now - pollingActivatedAt) / 60000)}min, no trip) — deactivating`);
                     await db.collection('bydVehicles').doc(doc.id).update({ pollingActive: false });
                     continue;
                 }
@@ -2379,7 +2478,7 @@ async function pollActiveTripVehicles() {
             // getRealtime can take up to 20s, so a T=0 poll might still be running at T=20
             const lastPollStarted = data.lastPollStartedAt?.toMillis() || 0;
             if (lastPollStarted > 0 && (now - lastPollStarted) < 15000) {
-                console.log(`[pollActiveTripVehicles] ${doc.id}: Skipping — previous poll still in-flight (${Math.round((now - lastPollStarted) / 1000)}s ago)`);
+                safeLog(`[pollActiveTripVehicles] ${doc.id}: Skipping — previous poll still in-flight (${Math.round((now - lastPollStarted) / 1000)}s ago)`);
                 continue;
             }
 
@@ -2388,7 +2487,7 @@ async function pollActiveTripVehicles() {
 
         if (vehiclesToPoll.length === 0) return;
 
-        console.log(`[pollActiveTripVehicles] Polling ${vehiclesToPoll.length} vehicle(s) (Trip/Retry/Precon)`);
+        safeLog(`[pollActiveTripVehicles] Polling ${vehiclesToPoll.length} vehicle(s) (Trip/Retry/Precon)`);
 
         const promises = vehiclesToPoll.map(async (doc) => {
             try {
@@ -2398,12 +2497,12 @@ async function pollActiveTripVehicles() {
                 });
                 await pollVehicleInternal(doc.id, 'polling');
             } catch (e: any) {
-                console.error(`Error polling ${doc.id}: ${e.message}`);
+                safeLog(`Error polling ${doc.id}: ${e.message}`);
             }
         });
         await Promise.all(promises);
     } catch (e) {
-        console.error('[pollActiveTripVehicles] Error:', e);
+        safeLog('[pollActiveTripVehicles] Error:', e);
     }
 }
 
@@ -2439,22 +2538,22 @@ async function cloudProbeAllVehicles() {
                 if (result.shouldEscalate) {
                     // Cloud data changed + not charging → car is likely being driven
                     // Escalate to full poll for GPS, speed, EPB, gear
-                    console.log(`[cloudProbe] ${vin}: State change detected! Escalating to full poll (will wake T-Box)`);
+                    safeLog(`[cloudProbe] ${vin}: State change detected! Escalating to full poll (will wake T-Box)`);
                     await pollVehicleInternal(vin, 'polling');
                 } else if (result.changed && result.isCharging) {
                     // Charging activity detected — rich charging data already fetched
                     // inside cloudProbeVehicle. No T-Box wake needed.
-                    console.log(`[cloudProbe] ${vin}: Charging activity detected (cloud-only, no wake)`);
+                    safeLog(`[cloudProbe] ${vin}: Charging activity detected (cloud-only, no wake)`);
                 }
                 // If !changed → car is idle, do nothing (no wake, no write beyond cloud metadata)
             } catch (e: any) {
-                console.error(`[cloudProbe] Error probing ${vin}: ${e.message}`);
+                safeLog(`[cloudProbe] Error probing ${vin}: ${e.message}`);
             }
         });
 
         await Promise.all(promises);
     } catch (e) {
-        console.error('[cloudProbeAllVehicles] Error:', e);
+        safeLog('[cloudProbeAllVehicles] Error:', e);
     }
 }
 
@@ -2527,13 +2626,13 @@ async function sendAbrpTelemetry(
         const result = await response.json() as { status: string; error?: string };
 
         if (result.status !== 'ok') {
-            console.warn(`[ABRP] ${vin}: Error - ${result.error || JSON.stringify(result)}`);
+            safeLog(`[ABRP] ${vin}: Error - ${result.error || JSON.stringify(result)}`);
         } else {
-            console.log(`[ABRP] ${vin}: Telemetría enviada. SoC=${soc}%, speed=${speed}km/h, power=${power}kW, charging=${isCharging}, dcfc=${isDcfc}`);
+            safeLog(`[ABRP] ${vin}: Telemetría enviada. SoC=${soc}%, speed=${speed}km/h, power=${power}kW, charging=${isCharging}, dcfc=${isDcfc}`);
         }
     } catch (e: any) {
         // No propagar el error — ABRP es opcional, no debe romper el flujo principal
-        console.warn(`[ABRP] ${vin}: Fallo al enviar telemetría: ${e.message}`);
+        safeLog(`[ABRP] ${vin}: Fallo al enviar telemetría: ${e.message}`);
     }
 }
 
@@ -2554,7 +2653,7 @@ async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mq
     } catch (error: any) {
         // Handle "Vehicle Unreachable" (Deep Sleep / Network Issue)
         if (error.message && (error.message.includes('1008') || error.message.includes('timeout'))) {
-            console.log(`[pollVehicleInternal] Vehicle ${vin} unreachable (Code 1008/Timeout). Assuming sleep.`);
+            safeLog(`[pollVehicleInternal] Vehicle ${vin} unreachable (Code 1008/Timeout). Assuming sleep.`);
             return { isSleeping: true, data: null };
         }
         throw error; // Re-throw other errors
@@ -2597,7 +2696,7 @@ async function pollVehicleInternal(vin: string, source: 'polling' | 'wake' | 'mq
 // Returns cached Firestore data — does NOT wake the T-Box
 // =============================================================================
 
-export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydWakeVehicleV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -2607,12 +2706,12 @@ export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: Calla
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydWakeVehicleV2', 10);
 
-    console.log(`[bydWakeVehicle] Triggering live poll for ${vin}...`);
+    safeLog(`[bydWakeVehicle] Triggering live poll for ${vin}...`);
 
     try {
         // FORCE FRESH LOGIN for 10-tap wake (development tool)
         // Old sessions may be in bad state even if < 12h old
-        console.log(`[bydWakeVehicle] Creating fresh session...`);
+        safeLog(`[bydWakeVehicle] Creating fresh session...`);
         const client = await getBydClientForVehicle(vin);
         await client.login();
 
@@ -2629,30 +2728,30 @@ export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: Calla
                 mac: device.mac,
                 updatedAt: admin.firestore.Timestamp.now(),
             });
-            console.log(`[bydWakeVehicle] Fresh session created and stored`);
+            safeLog(`[bydWakeVehicle] Fresh session created and stored`);
         }
 
         // Use common polling logic to get FRESH data
         const result = await pollVehicleInternal(vin, 'wake');
 
         if (result.isSleeping) {
-            console.log(`[bydWakeVehicle] Vehicle ${vin} is sleeping. Attempting to wake with flash lights...`);
+            safeLog(`[bydWakeVehicle] Vehicle ${vin} is sleeping. Attempting to wake with flash lights...`);
 
             try {
                 // FORCE WAKE: Send flash lights command to wake the T-Box
                 const client = await getBydClientWithSession(vin);
                 await client.flashLights(vin);
-                console.log(`[bydWakeVehicle] Flash lights sent. Waiting 10 seconds for T-Box to wake...`);
+                safeLog(`[bydWakeVehicle] Flash lights sent. Waiting 10 seconds for T-Box to wake...`);
 
                 // Wait 10 seconds for T-Box to wake up
                 await new Promise(resolve => setTimeout(resolve, 10000));
 
                 // Retry polling after wake attempt
-                console.log(`[bydWakeVehicle] Retrying poll after wake attempt...`);
+                safeLog(`[bydWakeVehicle] Retrying poll after wake attempt...`);
                 const retryResult = await pollVehicleInternal(vin, 'wake');
 
                 if (!retryResult.isSleeping) {
-                    console.log(`[bydWakeVehicle] SUCCESS: Vehicle ${vin} woke up!`);
+                    safeLog(`[bydWakeVehicle] SUCCESS: Vehicle ${vin} woke up!`);
                     return {
                         success: true,
                         isAwake: retryResult.data.isOnline,
@@ -2672,9 +2771,9 @@ export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: Calla
                     };
                 }
 
-                console.log(`[bydWakeVehicle] Vehicle ${vin} still sleeping after wake attempt.`);
+                safeLog(`[bydWakeVehicle] Vehicle ${vin} still sleeping after wake attempt.`);
             } catch (wakeError: any) {
-                console.error(`[bydWakeVehicle] Wake attempt failed:`, wakeError.message);
+                safeLog(`[bydWakeVehicle] Wake attempt failed:`, wakeError.message);
             }
 
             // If still sleeping or wake failed, return last known data
@@ -2722,7 +2821,7 @@ export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: Calla
 
     } catch (error: any) {
         if (error instanceof HttpsError) throw error;
-        console.error(`[bydWakeVehicle] Error:`, error.message);
+        safeLog(`[bydWakeVehicle] Error:`, error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -2731,7 +2830,7 @@ export const bydWakeVehicleV2 = onCall({ region: REGION }, async (request: Calla
 // MANUAL TRIP RECALCULATION (Fix bad data)
 // =============================================================================
 
-export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydFixTripV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
     const { vin, tripId, overrideValues } = request.data;
 
     if (!vin || !tripId) {
@@ -2741,7 +2840,7 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydFixTripV2', 10);
 
-    console.log(`[bydFixTrip] Fixing trip ${tripId} for ${vin}...`);
+    safeLog(`[bydFixTrip] Fixing trip ${tripId} for ${vin}...`);
 
     try {
         const vehicleRef = db.collection('bydVehicles').doc(vin);
@@ -2760,7 +2859,7 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
 
         // 0. Apply Overrides (Priority)
         if (overrideValues) {
-            console.log(`[bydFixTrip] Applying overrides:`, overrideValues);
+            safeLog(`[bydFixTrip] Applying overrides:`, overrideValues);
             if (overrideValues.distanceKm !== undefined) updates.distanceKm = Number(overrideValues.distanceKm);
             if (overrideValues.gpsDistanceKm !== undefined) updates.gpsDistanceKm = Number(overrideValues.gpsDistanceKm);
             if (overrideValues.electricity !== undefined) updates.electricity = Number(overrideValues.electricity);
@@ -2786,13 +2885,13 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
                 electricityKwh = Math.round(Math.max(0, socDelta * batteryCapacity) * 100) / 100;
             } else {
                 // Short trip / Small SoC change (<1%): Use average efficiency + 25% overhead
-                console.log(`[bydFixTrip] Small SoC change (${(socDelta * 100).toFixed(2)}%). Calculating via average efficiency.`);
+                safeLog(`[bydFixTrip] Small SoC change (${(socDelta * 100).toFixed(2)}%). Calculating via average efficiency.`);
                 const avgEff = await calculateMovingAverageEfficiency(vin);
                 electricityKwh = Math.round(Math.max(0, (odometerDelta * avgEff / 100) * 1.25) * 100) / 100;
             }
 
             updates.electricity = electricityKwh;
-            console.log(`[bydFixTrip] Recalculated electricity: ${electricityKwh} kWh`);
+            safeLog(`[bydFixTrip] Recalculated electricity: ${electricityKwh} kWh`);
         }
 
         // 2. Snap to Road & Distance
@@ -2801,28 +2900,28 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
 
         // If no points in doc array, try fetch from subcollection
         if (!pointsToSnap || pointsToSnap.length === 0) {
-            console.log(`[bydFixTrip] No points in doc array, checking subcollection...`);
+            safeLog(`[bydFixTrip] No points in doc array, checking subcollection...`);
             const pointsRef = tripRef.collection('points');
             const pointsSnap = await pointsRef.orderBy('timestamp').get();
             if (!pointsSnap.empty) {
                 pointsToSnap = pointsSnap.docs.map(doc => doc.data());
-                console.log(`[bydFixTrip] Found ${pointsToSnap.length} points in subcollection.`);
+                safeLog(`[bydFixTrip] Found ${pointsToSnap.length} points in subcollection.`);
             }
         }
 
         if (pointsToSnap && pointsToSnap.length > 2) {
-            console.log(`[bydFixTrip] Snapping ${pointsToSnap.length} points check...`);
+            safeLog(`[bydFixTrip] Snapping ${pointsToSnap.length} points check...`);
             // Only snap if not already snapped (check for 'snapped' type)
             const hasSnapped = pointsToSnap.some((p: any) => p.type === 'snapped');
 
             if (!hasSnapped) {
-                console.log(`[bydFixTrip] Snapping points...`);
+                safeLog(`[bydFixTrip] Snapping points...`);
                 // Use the new pointsToSnap array
                 const snappedPoints = await snapToRoads(pointsToSnap);
                 updates.points = snappedPoints;
 
                 const gpsDistance = calculatePathDistanceKm(snappedPoints);
-                console.log(`[bydFixTrip] GPS Distance: ${gpsDistance} km`);
+                safeLog(`[bydFixTrip] GPS Distance: ${gpsDistance} km`);
 
                 // Update distance if it looks valid
                 const originalDistance = tripData.distanceKm || 0;
@@ -2834,7 +2933,7 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
                     }
                 }
             } else {
-                console.log(`[bydFixTrip] Points already snapped.`);
+                safeLog(`[bydFixTrip] Points already snapped.`);
             }
         }
 
@@ -2856,7 +2955,7 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
             pointsCount: tripData.points?.length || 0
         };
 
-        console.log('[bydFixTrip] Analysis:', analysis);
+        safeLog('[bydFixTrip] Analysis:', analysis);
 
         if (Object.keys(updates).length > 0) {
             await tripRef.update(updates);
@@ -2867,7 +2966,7 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
 
 
     } catch (error: any) {
-        console.error(`[bydFixTrip] Error:`, error.message);
+        safeLog(`[bydFixTrip] Error:`, error.message);
         throw new HttpsError('internal', error.message);
     }
 });
@@ -2876,7 +2975,7 @@ export const bydFixTripV2 = onCall({ region: REGION }, async (request: CallableR
 // DEBUG / API DUMP
 // =============================================================================
 
-export const bydDebugV2 = onCall({ region: REGION }, async (request: CallableRequest) => {
+export const bydDebugV2 = onCall({ region: REGION, secrets: [tokenEncryptionKey] }, async (request: CallableRequest) => {
     const { vin } = request.data;
 
     if (!vin) {
@@ -2886,7 +2985,7 @@ export const bydDebugV2 = onCall({ region: REGION }, async (request: CallableReq
     const uid = await requireAuthAndOwnership(request, vin);
     await checkRateLimit(uid, 'bydDebugV2', 10);
 
-    console.log(`[bydDebug] Generating diagnostic dump for ${vin}...`);
+    safeLog(`[bydDebug] Generating diagnostic dump for ${vin}...`);
 
     try {
         const client = await getBydClientWithSession(vin);
@@ -2936,7 +3035,7 @@ export const bydDebugV2 = onCall({ region: REGION }, async (request: CallableReq
         return { success: true, dump };
 
     } catch (error: any) {
-        console.error(`[bydDebug] Error:`, error.message);
+        safeLog(`[bydDebug] Error:`, error.message);
         throw new HttpsError('internal', error.message);
     }
 });

@@ -4,7 +4,7 @@ import { AppProviders } from '../AppProviders';
 import { useData } from '../DataProvider';
 import { useApp } from '@/context/AppContext';
 import { useCar } from '@/context/CarContext';
-import { Trip, Charge } from '@/types';
+import { Trip } from '@/types';
 
 // Mock dependencies that would otherwise cause issues in test environment
 vi.mock('@react-oauth/google', () => ({
@@ -70,9 +70,9 @@ describe('Provider Integration', () => {
     it('should update trips when setRawTrips is called', async () => {
         const { result } = renderHook(() => useData(), { wrapper });
 
-        const mockTrips: Trip[] = [
+        const mockTrips = [
             { id: '1', date: '2023-01-01', distance: 10, totalDistance: 100, duration: 15 }
-        ];
+        ] as unknown as Trip[];
 
         act(() => {
             result.current.setRawTrips(mockTrips);
