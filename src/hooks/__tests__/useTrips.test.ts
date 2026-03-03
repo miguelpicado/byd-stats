@@ -51,9 +51,10 @@ describe('useTrips', () => {
         it('loads trip history from StorageService on mount', async () => {
             const history = [makeTrip({ date: '20230601' })];
             // first call (rawTrips) returns [], second call (history) returns history
-            (StorageService.get as ReturnType<typeof vi.fn>)
-                .mockReturnValueOnce([])
-                .mockReturnValueOnce(history);
+            (StorageService.get as ReturnType<typeof vi.fn>).mockImplementation((key) => {
+                if (key.includes('history')) return history;
+                return [];
+            });
 
             const { result } = renderHook(() => useTrips(CAR_ID));
             await waitFor(() => expect(result.current.tripHistory).toHaveLength(1));
@@ -181,9 +182,10 @@ describe('useTrips', () => {
         it('reports "added" count correctly', async () => {
             const trip = makeTrip({ date: '20240301', start_timestamp: 3000 });
             // rawTrips has the trip, tripHistory starts empty → added should be 1
-            (StorageService.get as ReturnType<typeof vi.fn>)
-                .mockReturnValueOnce([trip]) // rawTrips
-                .mockReturnValueOnce([]);    // tripHistory (empty)
+            (StorageService.get as ReturnType<typeof vi.fn>).mockImplementation((key) => {
+                if (key.includes('history')) return [];
+                return [trip];
+            });
 
             const { result } = renderHook(() => useTrips(CAR_ID));
             await waitFor(() => expect(result.current.rawTrips).toHaveLength(1));
