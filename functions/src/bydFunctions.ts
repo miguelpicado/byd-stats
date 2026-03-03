@@ -164,19 +164,7 @@ export const bydConnectV2 = onCall({ region: REGION, secrets: [tokenEncryptionKe
         }
 
         // Store credentials (encrypted) for each vehicle
-        const ENCRYPTION_KEY = tokenEncryptionKey.value();
-        if (!ENCRYPTION_KEY) {
-            throw new HttpsError('internal', 'Encryption key not configured');
-        }
-
-        const crypto = require('crypto');
-        const encrypt = (text: string) => {
-            const iv = crypto.randomBytes(16);
-            const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
-            const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
-            const authTag = cipher.getAuthTag();
-            return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted.toString('hex');
-        };
+        const encrypt = encryptWithKey;
 
         const batch = db.batch();
         const connectedVehicles: any[] = [];
@@ -300,19 +288,7 @@ export const bydSaveAbrpToken = onCall({ region: REGION, secrets: [tokenEncrypti
     await checkRateLimit(uid, 'bydSaveAbrpToken', 5);
 
     try {
-        const ENCRYPTION_KEY = tokenEncryptionKey.value();
-        if (!ENCRYPTION_KEY) {
-            throw new HttpsError('internal', 'Encryption key not configured');
-        }
-
-        const crypto = require('crypto');
-        const encrypt = (text: string) => {
-            const iv = crypto.randomBytes(16);
-            const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
-            const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
-            const authTag = cipher.getAuthTag();
-            return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted.toString('hex');
-        };
+        const encrypt = encryptWithKey;
 
         const encryptedToken = token ? encrypt(token) : '';
 
@@ -361,6 +337,24 @@ function getDecryptor() {
         return decipher.update(data, undefined, 'utf8') + decipher.final('utf8');
     };
 }
+
+/**
+ * Encrypt a string using AES-256-GCM with the token encryption key.
+ * Returns format: iv_hex:authTag_hex:ciphertext_hex
+ */
+function encryptWithKey(text: string): string {
+    const ENCRYPTION_KEY = tokenEncryptionKey.value();
+    if (!ENCRYPTION_KEY) {
+        throw new HttpsError('internal', 'Encryption key not configured');
+    }
+    const crypto = require('crypto');
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv('aes-256-gcm', Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
+    const encrypted = Buffer.concat([cipher.update(text, 'utf8'), cipher.final()]);
+    const authTag = cipher.getAuthTag();
+    return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted.toString('hex');
+}
+
 
 /**
  * Get the stored control PIN for a vehicle
