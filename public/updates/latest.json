@@ -1,7 +1,7 @@
 ﻿{
-    "changelog":  "Fix i18n Spanish init, chart grow-from-bottom animation, AI training (stop stripping console)",
-    "url":  "https://bydstats.com/updates/byd-stats-v2.1.4.zip",
-    "version":  "2.1.4",
-    "releasedAt":  "2026-03-04T22:27:43Z",
+    "changelog":  "Fix OTA update (404), add manual check button to Help, add Android back button navigation",
+    "url":  "https://bydstats.com/updates/byd-stats-v2.1.5.zip",
+    "version":  "2.1.5",
+    "releasedAt":  "2026-03-04T22:37:52Z",
     "minAppVersion":  "1.6.0"
 }
