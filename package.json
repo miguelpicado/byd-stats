@@ -1,7 +1,7 @@
 {
   "name": "byd-stats",
   "private": true,
-  "version": "2.1.0",
+  "version": "2.1.1",
   "type": "module",
   "sideEffects": false,
   "scripts": {
@@ -20,7 +20,11 @@
     "android:sync": "npm run build && npx cap sync android",
     "android:open": "npx cap open android",
     "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "android:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease"
+    "android:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease",
+    "release": "powershell -ExecutionPolicy Bypass -File scripts/ota-release.ps1 -Patch",
+    "release:minor": "powershell -ExecutionPolicy Bypass -File scripts/ota-release.ps1 -Minor",
+    "release:major": "powershell -ExecutionPolicy Bypass -File scripts/ota-release.ps1 -Major",
+    "release:dry": "powershell -ExecutionPolicy Bypass -File scripts/ota-release.ps1 -Patch -DryRun"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

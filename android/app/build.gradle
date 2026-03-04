@@ -22,8 +22,8 @@ android {
         applicationId "com.bydstats.app"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 7
-        versionName "1.6.0"
+        versionCode 8
+        versionName "2.1.1"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
         // Google OAuth Client ID - injected at build time, never hardcoded in source
