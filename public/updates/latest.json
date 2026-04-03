@@ -1,8 +1,8 @@
 {
-  "version": "2.5.1",
-  "url": "https://bydstats.com/updates/byd-stats-v2.5.1.zip",
-  "checksum": "1df0e905dfb8624a7c93e534848dabf0a8d938cf4fda69f234c1afe53c474fe2",
+  "version": "2.5.3",
+  "url": "https://bydstats.com/updates/byd-stats-v2.5.3.zip",
+  "checksum": "d11c07a576ded12694dad96f1ba997a975f6ace202368cfb5eb897342c77dd99",
   "minAppVersion": "1.6.0",
-  "changelog": "Automated OTA Release via GitHub Actions: 2.5.1",
-  "releasedAt": "2026-04-03T20:30:29Z"
+  "changelog": "Automated OTA Release via GitHub Actions: 2.5.3",
+  "releasedAt": "2026-04-03T20:33:52Z"
 }
