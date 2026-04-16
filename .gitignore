@@ -29,6 +29,8 @@ android/build/
 android/.gradle/
 android/local.properties
 android/.idea/
+android/app/*.keystore
+android/app/*.jks
 
 # Testing
 coverage/
