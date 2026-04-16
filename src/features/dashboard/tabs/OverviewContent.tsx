@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useMemo, FC } from 'react';
+import { useRef, useEffect, useMemo, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import StatCard from '@components/ui/StatCard';
@@ -7,12 +7,9 @@ import HybridStatsCard from '@components/cards/HybridStatsCard';
 import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
-import HealthReportModal from '@components/modals/HealthReportModal';
-import { MapPin, Zap, Clock, Battery, TrendingUp, Activity, Fuel, IconProps, AlertTriangle } from '@components/Icons';
+import { MapPin, Zap, Clock, Battery, Fuel, Euro, IconProps } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
-import { Summary, Trip, Settings, TripInsightType, Charge, ProcessedData } from '@/types';
-import { AnomalyService, Anomaly } from '@/services/AnomalyService';
-import { useData } from '@/providers/DataProvider';
+import { Summary, Trip, Settings, TripInsightType, Charge } from '@/types';
 
 const PIE_CHART_OPTIONS = {
     maintainAspectRatio: false,
@@ -51,12 +48,7 @@ interface OverviewContentProps {
     insightType: TripInsightType | null;
     onCloseInsightModal: () => void;
     isActive?: boolean;
-    onRangeClick?: () => void;
-    isAiReady?: boolean;
-    aiSoH?: number | null;
-    aiSoHStats?: { points: any[]; trend: any[] } | null;
     charges?: Charge[];
-    stats?: ProcessedData;
 }
 
 const OverviewContent: FC<OverviewContentProps> = ({
@@ -78,12 +70,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
     insightType,
     onCloseInsightModal,
     isActive = true,
-    onRangeClick,
-    isAiReady = false,
-    aiSoH,
-    aiSoHStats,
     charges,
-    stats
 }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -92,34 +79,13 @@ const OverviewContent: FC<OverviewContentProps> = ({
     const lineChartRef = useRef<any>(null);
     const pieChartRef = useRef<any>(null);
 
-    const { acknowledgedAnomalies = [], setAcknowledgedAnomalies, deletedAnomalies = [], setDeletedAnomalies } = useData();
-    const [showHealthModal, setShowHealthModal] = useState(false);
-
-    // Calculate Anomalies
-    const allAnomalies: Anomaly[] = useMemo(() => {
-        if (!stats || !settings) return [];
-        return AnomalyService.checkSystemHealth(stats, settings, charges || [], trips);
-    }, [stats, settings, charges, trips]);
-
-    const activeAnomalies = useMemo(() =>
-        allAnomalies.filter(a => !acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id)),
-        [allAnomalies, acknowledgedAnomalies, deletedAnomalies]);
-
-    const historyAnomalies = useMemo(() =>
-        allAnomalies.filter(a => acknowledgedAnomalies.includes(a.id) && !deletedAnomalies.includes(a.id)),
-        [allAnomalies, acknowledgedAnomalies, deletedAnomalies]);
-
-    const criticalAnomalies = activeAnomalies.filter(a => a.severity === 'critical').length;
-    const warningAnomalies = activeAnomalies.filter(a => a.severity === 'warning').length;
-    const hasAnomalies = activeAnomalies.length > 0;
-
-    const handleAcknowledge = (id: string) => {
-        setAcknowledgedAnomalies([...acknowledgedAnomalies, id]);
-    };
-
-    const handleDelete = (id: string) => {
-        setDeletedAnomalies([...deletedAnomalies, id]);
-    };
+    // Monthly cost: total charge cost divided by number of active months
+    const monthlyCost = useMemo(() => {
+        if (!charges || charges.length === 0) return 0;
+        const total = charges.reduce((acc, c) => acc + (c.totalCost || 0), 0);
+        const months = new Set(charges.map(c => c.date?.substring(0, 7)).filter(Boolean));
+        return months.size > 0 ? total / months.size : 0;
+    }, [charges]);
 
     // Effect to trigger animation when tab becomes active
     useEffect(() => {
@@ -175,12 +141,11 @@ const OverviewContent: FC<OverviewContentProps> = ({
         },
         {
             key: 'range',
-            icon: isAiReady ? () => <span className="text-lg">🧠</span> : Battery,
-            label: isAiReady ? t('stats.aiRange', 'AI Range') : t('stats.estimatedRange'),
+            icon: Battery,
+            label: t('stats.estimatedRange'),
             value: summary.estimatedRange,
             unit: t('units.km'),
-            color: isAiReady ? "bg-indigo-500/20 text-indigo-400" : "bg-amber-500/20 text-amber-400",
-            onClick: onRangeClick || (() => onInsightClick('range'))
+            color: "bg-amber-500/20 text-amber-400",
         },
         // Replaces Stationary for Hybrid, and Time for EV
         summary.isHybrid ? {
@@ -221,22 +186,19 @@ const OverviewContent: FC<OverviewContentProps> = ({
             key: 'soh',
             icon: Battery,
             label: t('settings.soh'),
-            value: aiSoH ? aiSoH.toFixed(1) : summary.soh,
+            value: summary.soh,
             unit: "%",
             color: "bg-emerald-500/20 text-emerald-400",
             onClick: () => onInsightClick('soh')
         },
         {
-            key: 'system_health',
-            icon: hasAnomalies ? AlertTriangle : Activity,
-            label: t('stats.systemStatus', 'Estado Sistema'),
-            value: hasAnomalies ? `${activeAnomalies.length} Alerta${activeAnomalies.length > 1 ? 's' : ''}` : t('stats.normal', 'Normal'),
-            unit: '',
-            color: criticalAnomalies > 0
-                ? "bg-red-500/20 text-red-500"
-                : (warningAnomalies > 0 ? "bg-amber-500/20 text-amber-500" : "bg-emerald-500/20 text-emerald-500"),
-            sub: hasAnomalies ? t('stats.checkDetails', 'Ver detalles') : t('stats.allSystemsOk', 'Todo correcto'),
-            onClick: () => setShowHealthModal(true)
+            key: 'monthly_cost',
+            icon: Euro,
+            label: t('stats.monthlyCost', 'Coste mensual'),
+            value: monthlyCost.toFixed(2),
+            unit: '€',
+            color: "bg-blue-500/20 text-blue-400",
+            onClick: () => onInsightClick('energy')
         }
     ];
 
@@ -250,11 +212,8 @@ const OverviewContent: FC<OverviewContentProps> = ({
                     item.isCustom ? (
                         <EstimatedChargeCard
                             key={item.key}
-                            summary={summary}
                             settings={settings}
-                            stats={stats || null}
                             charges={charges}
-                            trips={trips}
                         />
                     ) : (
                         <StatCard
@@ -278,11 +237,8 @@ const OverviewContent: FC<OverviewContentProps> = ({
                     item.isCustom ? (
                         <EstimatedChargeCard
                             key={item.key}
-                            summary={summary}
                             settings={settings}
-                            stats={stats || null}
                             charges={charges}
-                            trips={trips}
                         />
                     ) : (
                         <StatCard
@@ -346,20 +302,10 @@ const OverviewContent: FC<OverviewContentProps> = ({
                 summary={summary}
                 onMfgDateClick={onMfgDateClick}
                 onThermalStressClick={onThermalStressClick}
-                aiSoH={aiSoH}
-                aiSoHStats={aiSoHStats}
             />
             <OdometerAdjustmentModal
                 isOpen={showOdometerModal}
                 onClose={onCloseOdometerModal}
-            />
-            <HealthReportModal
-                isOpen={showHealthModal}
-                onClose={() => setShowHealthModal(false)}
-                anomalies={activeAnomalies}
-                historyAnomalies={historyAnomalies}
-                onAcknowledge={handleAcknowledge}
-                onDelete={handleDelete}
             />
         </div>
     );

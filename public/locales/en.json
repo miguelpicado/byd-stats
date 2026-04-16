@@ -548,7 +548,7 @@
         "chargesImported": "{{count}} charges imported successfully",
         "chargerTypesCreated": "New charger types created: {{types}}",
         "avgLast10": "Average last 10 charges",
-        "avgKwh": "Avg kWh",
+        "avgKwh": "Avg kWh charged",
         "avgCost": "Avg Cost",
         "last10Charges": "Last 10 charges"
     },

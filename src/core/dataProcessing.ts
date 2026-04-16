@@ -245,27 +245,23 @@ function finalizeSummary(
     let soh = typeof settings.soh === 'string' ? parseFloat(settings.soh) : (settings.soh || 100);
     let sohData = null;
 
-    // Advanced SoH Calculation
+    // Advanced SoH Calculation — always use the calculated value when available
     if (settings.mfgDate) {
         sohData = calculateAdvancedSoH(charges, settings.mfgDate, batterySize, settings.chargerTypes, settings.thermalStressFactor || 1.0);
-        if (settings.sohMode === 'calculated') {
-            soh = sohData.estimated_soh;
-        }
+        soh = sohData.estimated_soh;
     }
 
-    // Calculate Estimated Range: (Effective Battery Energy / Efficiency) * 100
-    // Effective Battery = batterySize * (SoH / 100)
-    const effectiveBattery = batterySize * (soh / 100);
-    const estimatedRange = (effectiveBattery > 0 && avgEffVal > 0)
-        ? (effectiveBattery / avgEffVal * 100).toFixed(0)
+    // Estimated Range: batterySize / avgEff (simple, no SoH factor)
+    const estimatedRange = (batterySize > 0 && avgEffVal > 0)
+        ? (batterySize / avgEffVal * 100).toFixed(0)
         : '0';
 
-    const estimatedRangeHighway = (effectiveBattery > 0 && avgEffVal > 0)
-        ? (effectiveBattery / (avgEffVal * 1.2) * 100).toFixed(0)
+    const estimatedRangeHighway = (batterySize > 0 && avgEffVal > 0)
+        ? (batterySize / (avgEffVal * 1.2) * 100).toFixed(0)
         : '0';
 
-    const estimatedRangeCity = (effectiveBattery > 0 && avgEffVal > 0)
-        ? (effectiveBattery / (avgEffVal * 0.8) * 100).toFixed(0)
+    const estimatedRangeCity = (batterySize > 0 && avgEffVal > 0)
+        ? (batterySize / (avgEffVal * 0.8) * 100).toFixed(0)
         : '0';
 
     return {

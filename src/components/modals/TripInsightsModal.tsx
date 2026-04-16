@@ -4,7 +4,6 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Zap, TrendingUp, Calendar, Battery, MapPin, Clock, Car, Fuel, LucideIcon, Info } from '../Icons'; // Added Info
-import { Line } from 'react-chartjs-2';
 import StatItem from '../ui/StatItem';
 import ModalPortal from '../common/ModalPortal';
 import SoHExplanationModal, { SoHMetricType } from './SoHExplanationModal';
@@ -20,8 +19,6 @@ interface TripInsightsModalProps {
     summary?: any;
     onMfgDateClick?: () => void;
     onThermalStressClick?: () => void;
-    aiSoH?: number | null;
-    aiSoHStats?: { points: any[]; trend: any[] } | null;
 }
 
 /**
@@ -229,8 +226,6 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
     summary,
     onMfgDateClick,
     onThermalStressClick,
-    aiSoH,
-    aiSoHStats
 }) => {
     const { t } = useTranslation();
     const electricityPrice = Number(settings?.electricPrice) || 0.15;
@@ -442,91 +437,6 @@ const TripInsightsModal: React.FC<TripInsightsModalProps> = ({
                 const sohData = summary?.sohData;
                 return (
                     <div className="flex flex-col gap-3">
-                        {aiSoH && (
-                            <div className="bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-800/30 p-3">
-                                <div className="flex items-center gap-2 mb-3">
-                                    <TrendingUp className="w-4 h-4 text-emerald-500" />
-                                    <h4 className="text-sm font-bold text-slate-700 dark:text-slate-300">
-                                        {t('modals.batteryHealth.aiAnalysisTitle', 'Análisis de SoH con IA')}
-                                    </h4>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3 mb-3">
-                                    <button
-                                        onClick={() => setExplanationType('ai_soh')}
-                                        className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-emerald-100 dark:border-emerald-900/50 flex flex-col items-center justify-center text-center hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors"
-                                    >
-                                        <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold uppercase flex items-center gap-1">
-                                            {t('modals.batteryHealth.realSoH', 'SoH Real')}
-                                            <Info className="w-2.5 h-2.5 opacity-50" />
-                                        </span>
-                                        <span className="text-xl font-black text-emerald-600 dark:text-emerald-400">
-                                            {aiSoH.toFixed(1)}%
-                                        </span>
-                                    </button>
-                                    <button
-                                        onClick={() => setExplanationType('samples')}
-                                        className="p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-center hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                                    >
-                                        <span className="text-[10px] text-slate-500 font-bold uppercase flex items-center gap-1">
-                                            {t('modals.batteryHealth.samples', 'Muestras')}
-                                            <Info className="w-2.5 h-2.5 opacity-50" />
-                                        </span>
-                                        <span className="text-xl font-black text-slate-700 dark:text-slate-300">
-                                            {aiSoHStats?.points.length || 0}
-                                        </span>
-                                    </button>
-                                </div>
-
-                                <div className="h-40 w-full bg-white dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800 p-2">
-                                    {aiSoHStats && (
-                                        <Line
-                                            options={{
-                                                responsive: true,
-                                                maintainAspectRatio: false,
-                                                plugins: { legend: { display: false } },
-                                                scales: {
-                                                    x: {
-                                                        display: true,
-                                                        grid: { display: false },
-                                                        ticks: { display: false } // Hide x labels for cleanliness, or keep simple
-                                                    },
-                                                    y: {
-                                                        min: 80,
-                                                        max: 110,
-                                                        display: true,
-                                                        grid: { color: 'rgba(0,0,0,0.05)' }
-                                                    }
-                                                },
-                                                elements: {
-                                                    point: { radius: 2, hoverRadius: 4 },
-                                                }
-                                            }}
-                                            data={{
-                                                datasets: [
-                                                    {
-                                                        type: 'scatter' as const,
-                                                        label: 'Points',
-                                                        data: aiSoHStats.points.map(p => ({ x: p.x, y: p.y })),
-                                                        backgroundColor: 'rgba(16, 185, 129, 0.4)'
-                                                    },
-                                                    {
-                                                        type: 'line' as const,
-                                                        label: 'Trend',
-                                                        data: aiSoHStats.trend.map(p => ({ x: p.x, y: p.y })),
-                                                        borderColor: '#10b981',
-                                                        borderWidth: 2,
-                                                        pointRadius: 0,
-                                                        tension: 0.4
-                                                    }
-                                                ]
-                                            } as any}
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                        )}
-
                         <div className="flex flex-col items-center justify-center py-2">
                             <button
                                 onClick={() => setExplanationType('formula')}

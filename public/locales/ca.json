@@ -627,7 +627,7 @@
         "chargesImported": "{{count}} recàrregues importades correctament",
         "chargerTypesCreated": "Nous tipus de carregador creats: {{types}}",
         "avgLast10": "Mitjana de les últimes 10 recàrregues",
-        "avgKwh": "Mitjana kWh",
+        "avgKwh": "Mitjana kWh carregats",
         "avgCost": "Cost mitjà",
         "last10Charges": "Últimes 10 recàrregues",
         "typeElectric": "Elèctrica",

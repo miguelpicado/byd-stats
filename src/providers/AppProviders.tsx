@@ -7,7 +7,7 @@ import { LayoutProvider } from '../context/LayoutContext';
 import { DataProvider } from './DataProvider';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 
-const WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || '';
+const WEB_CLIENT_ID = import.meta.env.VITE_GOOGLE_WEB_CLIENT_ID || 'no-client-id';
 
 export const AppProviders: React.FC<{ children: ReactNode }> = ({ children }) => {
     return (

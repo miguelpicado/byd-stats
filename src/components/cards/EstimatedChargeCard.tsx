@@ -2,56 +2,55 @@
 import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Zap } from '../Icons';
-import { Summary, Settings, ProcessedData, Charge, Trip } from '../../types';
-import ChargingInsightsModal from '../modals/ChargingInsightsModal';
+import { Settings, Charge } from '../../types';
+import ChargeInsightsModal from '../modals/ChargeInsightsModal';
 import StatCard from '../ui/StatCard';
 import { useLayout } from '@/context/LayoutContext';
 
 interface EstimatedChargeCardProps {
-    summary: Summary;
     settings: Settings;
-    stats: ProcessedData | null; // Needed for modal logic
     charges?: Charge[];
-    trips?: Trip[];
 }
 
-const EstimatedChargeCard: React.FC<EstimatedChargeCardProps> = ({ summary, settings, stats, charges, trips }) => {
+const EstimatedChargeCard: React.FC<EstimatedChargeCardProps> = ({ settings, charges = [] }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
     const [isModalOpen, setIsModalOpen] = useState(false);
 
-    // Calculate Estimated Daily Charge (kWh)
-    // Logic: Driving kWh / Days Active (or more sophisticated window)
-    // Summary has 'drivingKwh' and 'daysActive' or 'totalDays'
-    const dailyKwh = useMemo(() => {
-        if (!summary) return 0;
-        // Parse drivingKwh (string "123.45")
-        const kwh = parseFloat(summary.drivingKwh) || 0;
-        const days = summary.daysActive || 1;
-        return days > 0 ? (kwh / days) : 0;
-    }, [summary]);
+    // Average kWh from last 10 electric charges
+    const avgKwh = useMemo(() => {
+        const electricCharges = charges.filter(c => c.type !== 'fuel' && (c.kwhCharged || 0) > 0);
+        const last10 = electricCharges.slice(0, 10);
+        if (last10.length === 0) return 0;
+        const total = last10.reduce((acc, c) => acc + (c.kwhCharged || 0), 0);
+        return total / last10.length;
+    }, [charges]);
+
+    const batterySize = typeof settings.batterySize === 'string'
+        ? parseFloat(settings.batterySize)
+        : (settings.batterySize || 0);
 
     return (
         <>
             <StatCard
                 icon={Zap}
-                label={t('stats.estimatedDailyCharge')}
-                value={dailyKwh.toFixed(1)}
+                label={t('charges.avgKwh')}
+                value={avgKwh.toFixed(2)}
                 unit={t('units.kWh')}
-                color="bg-blue-500/20 text-blue-400"
+                color="bg-emerald-500/20 text-emerald-400"
                 onClick={() => setIsModalOpen(true)}
                 isCompact={isCompact}
                 isLarger={isLargerCard}
                 isVerticalMode={isVertical}
             />
 
-            <ChargingInsightsModal
+            <ChargeInsightsModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
-                stats={stats}
-                settings={settings}
+                type="kwh"
                 charges={charges}
-                trips={trips}
+                batterySize={batterySize}
+                chargerTypes={settings.chargerTypes || []}
             />
         </>
     );

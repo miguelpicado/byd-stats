@@ -552,7 +552,7 @@
         "chargesImported": "{{count}} cargas importadas correctamente",
         "chargerTypesCreated": "Novos tipos de cargador creados: {{types}}",
         "avgLast10": "Media últimas 10 cargas",
-        "avgKwh": "Media kWh",
+        "avgKwh": "Media kWh recargados",
         "avgCost": "Custo medio",
         "last10Charges": "Últimas 10 cargas",
         "typeElectric": "Eléctrica",

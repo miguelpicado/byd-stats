@@ -1,10 +1,9 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { X, Info, Activity, Clock, Zap, Target, FileText, TrendingUp, Filter, RefreshCw } from '../Icons'; // Added icons
+import { X, Info, Activity, Clock, Zap, Target, FileText } from '../Icons';
 import ModalPortal from '../common/ModalPortal';
-import { useData } from '@/providers/DataProvider';
 
-export type SoHMetricType = 'sei' | 'cycle' | 'calendar' | 'calibration' | 'formula' | 'ai_soh' | 'samples';
+export type SoHMetricType = 'sei' | 'cycle' | 'calendar' | 'calibration' | 'formula';
 
 interface SoHExplanationModalProps {
     isOpen: boolean;
@@ -18,13 +17,6 @@ const SoHExplanationModal: React.FC<SoHExplanationModalProps> = ({
     type
 }) => {
     const { t } = useTranslation();
-    const { forceRecalculate, isAiTraining } = useData();
-
-    const handleRecalculate = () => {
-        if (forceRecalculate) {
-            forceRecalculate();
-        }
-    };
 
     if (!isOpen || !type) return null;
 
@@ -80,26 +72,6 @@ const SoHExplanationModal: React.FC<SoHExplanationModalProps> = ({
                     definition: t('modals.formula.definition', 'Estimación matemática basada en la química de las celdas LFP y el historial de uso del vehículo.\n\nConstantes utilizadas:\n• SEI: Máximo 2% (primeros 50 ciclos)\n• Ciclos: 0.005% por ciclo (ajustado por estrés)\n• Tiempo: 0.75% por año'),
                     calculation: t('modals.formula.calculation', 'SoH = 100% - SEI - (Ciclos × 0.005% × Estrés) - (Años × 0.75%)'),
                     impact: t('modals.formula.impact', 'Este valor es una aproximación teórica. El SoH real puede variar y la BMS del coche es la que tiene la última palabra sobre la capacidad usable actual.')
-                };
-            case 'ai_soh':
-                return {
-                    title: t('modals.ai_soh.title', 'SoH Real (Análisis IA)'),
-                    icon: TrendingUp,
-                    color: 'text-emerald-600',
-                    bgColor: 'bg-emerald-100 dark:bg-emerald-900/30',
-                    definition: t('modals.ai_soh.definition', 'Cálculo empírico basado en tus sesiones de carga reales. La IA analiza cuánta energía entra realmente en la batería vs. el porcentaje reportado por el coche.'),
-                    calculation: t('modals.ai_soh.calculation', "Usa regresión lineal sobre tus cargas históricas para encontrar la 'capacidad total efectiva' actual."),
-                    impact: t('modals.ai_soh.impact', 'Este valor es más preciso que el teórico porque refleja la salud real de tus celdas.')
-                };
-            case 'samples':
-                return {
-                    title: t('modals.samples.title', 'Muestras de Calidad'),
-                    icon: Filter,
-                    color: 'text-slate-500',
-                    bgColor: 'bg-slate-100 dark:bg-slate-800',
-                    definition: t('modals.samples.definition', 'Número de sesiones de carga que la IA ha considerado válidas para su cálculo.'),
-                    calculation: t('modals.samples.calculation', 'La IA descarta automáticamente cargas pequeñas (<15-20%), cargas muy lentas o con interrupciones.'),
-                    impact: t('modals.samples.impact', 'Es normal tener menos muestras que cargas totales. Cuantas más muestras de calidad tengas, más preciso será el cálculo.')
                 };
             default:
                 return null;
@@ -172,19 +144,6 @@ const SoHExplanationModal: React.FC<SoHExplanationModalProps> = ({
                     </div>
 
                     <div className="p-4 bg-slate-50 dark:bg-slate-900/30 border-t border-slate-100 dark:border-slate-700 flex justify-center gap-3">
-                        {type === 'ai_soh' && (
-                            <button
-                                onClick={handleRecalculate}
-                                disabled={isAiTraining}
-                                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors ${isAiTraining
-                                    ? 'bg-slate-100 text-slate-400 cursor-wait'
-                                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30'
-                                    }`}
-                            >
-                                <RefreshCw className={`w-4 h-4 ${isAiTraining ? 'animate-spin' : ''}`} />
-                                {isAiTraining ? t('common.calculating', 'Recalculando...') : t('common.recalculate', 'Recalcular')}
-                            </button>
-                        )}
                         <button
                             onClick={onClose}
                             className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 px-4 py-2"
