@@ -1,0 +1,67 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.claude/
+
+# Android
+android/app/build/
+android/build/
+android/.gradle/
+android/local.properties
+android/.idea/
+
+# Testing
+coverage/
+.gemini/
+
+# Env
+.env
+.envdev-dist
+
+EC_database_Hybrid.db
+
+# Keystores (never commit signing keys)
+*.jks
+*.keystore
+
+# Premium backend (separate project)
+functions/
+mqtt-listener/
+.firebase/
+
+# Zombie/reference code
+temp-pybyd/
+
+# Test artifacts
+playwright-report/
+test-results/
+
+# Build output (covered by dist above, but belt-and-suspenders)
+dist/
+
+# Local TypeScript output
+tsc_output.txt
+
+# Security audit (local only, contains sensitive findings)
+00_AUDIT.md

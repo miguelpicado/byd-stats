@@ -1,0 +1,14 @@
+{
+  "appId": "com.bydstats.app",
+  "appName": "BYD Stats",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https",
+    "hostname": "localhost"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0f172a"
+  },
+  "plugins": {}
+}
