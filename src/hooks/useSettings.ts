@@ -1,7 +1,6 @@
 // BYD Stats - useSettings Hook
 
 import { useEffect } from 'react';
-// @ts-ignore - useLocalStorage is still JS
 import { useLocalStorage } from './useLocalStorage';
 import { SETTINGS_KEY, DEFAULT_SETTINGS } from '@core/constants';
 import { Settings } from '@/types';

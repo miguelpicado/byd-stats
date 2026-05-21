@@ -2,7 +2,7 @@
 // Manages charging session data persistence and CRUD operations
 
 import { useState, useCallback, useEffect, useMemo } from 'react';
-import { CHARGES_STORAGE_KEY as BASE_CHARGES_KEY } from '@core/constants';
+import { CHARGES_STORAGE_KEY as BASE_CHARGES_KEY, uuid } from '@core/constants';
 import { logger } from '@core/logger';
 import { Charge } from '@/types';
 
@@ -93,10 +93,13 @@ const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn
             try {
                 localStorage.setItem(storageKey, JSON.stringify(charges));
             } catch (e) {
-                logger.error('Error saving charges to localStorage:', e);
+                if (e instanceof DOMException &&
+                    (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+                    logger.warn('Charges save failed: storage quota exceeded');
+                } else {
+                    logger.error('Error saving charges to localStorage:', e);
+                }
             }
-        } else if (storageKey && charges.length === 0) {
-            // Optional: clean up?
         }
     }, [charges, storageKey]);
 
@@ -106,7 +109,7 @@ const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn
     const addCharge = useCallback((chargeData: ChargeData) => {
         const newCharge: Charge = {
             ...chargeData,
-            id: crypto.randomUUID(),
+            id: uuid(),
             timestamp: new Date(`${chargeData.date}T${chargeData.time}`).getTime(),
             kwhCharged: chargeData.kwhCharged || chargeData.kwh || 0,
             totalCost: chargeData.totalCost || 0,
@@ -134,7 +137,7 @@ const useChargesData = (activeCarId: string | null = null): UseChargesDataReturn
 
         const newCharges: Charge[] = chargesArray.map(chargeData => ({
             ...chargeData,
-            id: crypto.randomUUID(),
+            id: uuid(),
             timestamp: new Date(`${chargeData.date}T${chargeData.time}`).getTime(),
             kwhCharged: chargeData.kwhCharged || chargeData.kwh || 0,
             totalCost: chargeData.totalCost || 0,

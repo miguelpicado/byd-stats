@@ -2,12 +2,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import TripCard from '../TripCard';
+import { Trip } from '@/types';
 
 // Mock i18next
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key) => {
-            const translations = {
+        t: (key: string) => {
+            const translations: Record<string, string> = {
                 'stats.distance': 'Distance',
                 'stats.efficiency': 'Efficiency',
                 'tripDetail.consumption': 'Consumption'
@@ -29,8 +30,10 @@ describe('TripCard', () => {
         trip: 25.5,
         electricity: 3.82,
         date: '2026-01-14',
-        start_timestamp: 1705200000
-    };
+        start_timestamp: 1705200000,
+        duration: 25,
+        end_timestamp: 1705201500
+    } as Trip;
 
     const defaultProps = {
         trip: mockTrip,
@@ -75,7 +78,7 @@ describe('TripCard', () => {
         render(<TripCard {...defaultProps} />);
 
         const card = screen.getByText('25.5').closest('div[class*="cursor-pointer"]');
-        fireEvent.click(card);
+        fireEvent.click(card!);
 
         expect(defaultProps.onClick).toHaveBeenCalledTimes(1);
         expect(defaultProps.onClick).toHaveBeenCalledWith(mockTrip);
@@ -84,14 +87,14 @@ describe('TripCard', () => {
     it('applies compact styling when isCompact is true', () => {
         const { container } = render(<TripCard {...defaultProps} isCompact={true} />);
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('p-[7px]');
     });
 
     it('applies normal styling when isCompact is false', () => {
         const { container } = render(<TripCard {...defaultProps} isCompact={false} />);
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('p-3');
     });
 
@@ -110,7 +113,7 @@ describe('TripCard', () => {
     it('handles trip with null electricity gracefully', () => {
         const tripWithNullElectricity = {
             ...mockTrip,
-            electricity: null
+            electricity: null as any
         };
 
         render(<TripCard {...defaultProps} trip={tripWithNullElectricity} />);
@@ -122,7 +125,7 @@ describe('TripCard', () => {
     it('has hover effect classes', () => {
         const { container } = render(<TripCard {...defaultProps} />);
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('hover:bg-slate-100');
         expect(card.className).toContain('cursor-pointer');
     });
@@ -140,9 +143,7 @@ describe('TripCard', () => {
 
         // The score element should have inline color style
         const scoreElements = screen.getAllByText(/\d+\.\d/);
-        const scoreElement = scoreElements.find(el => el.style.color);
+        const scoreElement = scoreElements.find((el: HTMLElement) => el.style.color);
         expect(scoreElement).toBeTruthy();
     });
 });
-
-

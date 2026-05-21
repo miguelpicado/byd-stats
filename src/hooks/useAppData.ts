@@ -29,12 +29,6 @@ export interface UseAppDataReturn {
     loadFromHistory: () => { success: boolean; count?: number; reason?: string };
     clearHistory: () => boolean;
     isProcessing: boolean;
-    isAiTraining: boolean;
-    aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
-    aiLoss: number | null;
-    aiSoH: number | null;
-    aiSoHStats: { points: any[]; trend: any[] } | null;
-    predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
     acknowledgedAnomalies: string[];
     setAcknowledgedAnomalies: (ids: string[]) => void;
     deletedAnomalies: string[];
@@ -100,7 +94,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
     }, [rawTrips, filterType, selMonth, dateFrom, dateTo]);
 
     // 5. Worker Processing (Async Stats)
-    const { data, isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate } = useProcessedData(filtered, settings, charges);
+    const { data, isProcessing, forceRecalculate } = useProcessedData(filtered, settings, charges);
 
     // 6. Anomalies State
     const [acknowledgedAnomalies, setAcknowledgedAnomalies] = useLocalStorage<string[]>('acknowledged_anomalies', []);
@@ -134,14 +128,6 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         loadFromHistory,
         clearHistory,
         isProcessing,
-        isAiTraining,
-
-        // AI Data
-        aiScenarios,
-        aiLoss,
-        aiSoH,
-        aiSoHStats,
-        predictDeparture, // Added explicitly
 
         // Anomalies
         acknowledgedAnomalies,
@@ -155,7 +141,7 @@ const useAppData = (settings: Settings, charges: Charge[] = [], activeCarId: str
         filterType, selMonth, dateFrom, dateTo,
         months, filtered, data,
         clearData, saveToHistory, loadFromHistory, clearHistory,
-        isProcessing, isAiTraining, aiScenarios, aiLoss, aiSoH, aiSoHStats, predictDeparture, forceRecalculate,
+        isProcessing, forceRecalculate,
         acknowledgedAnomalies, deletedAnomalies
     ]);
 };

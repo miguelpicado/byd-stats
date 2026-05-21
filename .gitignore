@@ -64,4 +64,4 @@ tsc_output.txt
 
 # Security audit (local only, contains sensitive findings)
 00_AUDIT.md
-01_PLAN_IMPLANTACION.md
+01_PLAN.md

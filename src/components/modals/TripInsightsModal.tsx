@@ -9,6 +9,7 @@ import ModalPortal from '../common/ModalPortal';
 import SoHExplanationModal, { SoHMetricType } from './SoHExplanationModal';
 import { isStationaryTrip } from '../../core/dataProcessing';
 import { Trip, Settings as SettingsType } from '../../types'; // Correct import path
+import { parseDateSafe } from '../../core/dateUtils';
 
 interface TripInsightsModalProps {
     isOpen: boolean;
@@ -91,14 +92,21 @@ const useTripInsights = (trips: Trip[], electricityPrice = 0.15, settings: Setti
         // Wait, checked dataProcessing.js: "dailyData" and "uniqueDates" are populated inside the "for (const trip of allTrips)" loop.
         // And stationary check "if (tTrip < 0.5) { ... continue; }" happens BEFORE dailyData population.
         // So daysActive ONLY counts days with VALID trips.
-        const dates = validTrips.map(t => (t.date || '').substring(0, 10)).filter(d => d); // YYYY-MM-DD
+        const dates = validTrips.map(t => {
+            const d = t.date || '';
+            // Normalize YYYYMMDD to YYYY-MM-DD for consistent string operations
+            if (d.length === 8 && /^\d{8}$/.test(d)) {
+                return `${d.slice(0, 4)}-${d.slice(4, 6)}-${d.slice(6, 8)}`;
+            }
+            return d.substring(0, 10);
+        }).filter(d => d.length === 10);
         const uniqueDays = [...new Set(dates)];
         const daysActive = uniqueDays.length;
 
         // Calculate active days distribution (Monday-Sunday)
         const daysOfWeek = [0, 0, 0, 0, 0, 0, 0]; // Sun-Sat
         validTrips.forEach(t => {
-            const date = new Date(t.date);
+            const date = parseDateSafe(t.date);
             if (!isNaN(date.getTime())) {
                 daysOfWeek[date.getDay()]++;
             }
@@ -207,8 +215,8 @@ const useTripInsights = (trips: Trip[], electricityPrice = 0.15, settings: Setti
                 percentage: 0
             },
             range: {
-                highway: (Number(settings?.batterySize) > 0 && globalEfficiency > 0) ? (Number(settings.batterySize) * ((Number(settings.soh) || 100) / 100) / (globalEfficiency * 1.2) * 100) : 0,
-                city: (Number(settings?.batterySize) > 0 && globalEfficiency > 0) ? (Number(settings.batterySize) * ((Number(settings.soh) || 100) / 100) / (globalEfficiency * 0.8) * 100) : 0
+                highway: ((settings?.batterySize || 0) > 0 && globalEfficiency > 0) ? (settings.batterySize * ((Number(settings.soh) || 100) / 100) / (globalEfficiency * 1.2) * 100) : 0,
+                city: ((settings?.batterySize || 0) > 0 && globalEfficiency > 0) ? (settings.batterySize * ((Number(settings.soh) || 100) / 100) / (globalEfficiency * 0.8) * 100) : 0
             },
             // Pass stationary data specifically if needed
             stationaryCount: stationaryTrips.length,

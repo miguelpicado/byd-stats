@@ -1,8 +1,7 @@
 // BYD Stats - Data Processing Utilities
 
 import { BYD_RED } from './constants';
-// @ts-ignore
-import { formatMonth, formatDate } from './dateUtils';
+import { formatMonth, formatDate, parseDateTimeSafe } from './dateUtils';
 import { Trip, Charge, ProcessedData, Summary, MonthlyData, DailyData, Settings } from '../types';
 import { calculateAdvancedSoH } from './batteryCalculations.ts';
 
@@ -115,14 +114,14 @@ function preparePriceStrategies(priceSettings: Settings, charges: Charge[]): Pri
 
         if (elecStrategy === 'dynamic') {
             processedElectricCharges = eCharges.map(c => {
-                const ts = new Date(`${c.date}T${c.time || "00:00"}:00`).getTime() / 1000;
+                const ts = parseDateTimeSafe(c.date, c.time || "00:00").getTime() / 1000;
                 return { ...c, timestamp: ts, effectivePrice: c.kwhCharged > 0 ? (c.totalCost / c.kwhCharged) : 0 };
             }).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         }
 
         if (fuelStrategy === 'dynamic') {
             processedFuelCharges = fCharges.map(c => {
-                const ts = new Date(`${c.date}T${c.time || "00:00"}:00`).getTime() / 1000;
+                const ts = parseDateTimeSafe(c.date, c.time || "00:00").getTime() / 1000;
                 return { ...c, timestamp: ts, effectivePrice: (c.litersCharged || 0) > 0 ? (c.totalCost / (c.litersCharged || 1)) : 0 };
             }).sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
         }
@@ -241,7 +240,7 @@ function finalizeSummary(
     const firstTrip = allTrips[0];
     const lastTrip = allTrips[allTrips.length - 1];
     const avgEffVal = stats.totalKm > 0 ? (stats.drivingKwh / stats.totalKm * 100) : 0;
-    const batterySize = typeof settings.batterySize === 'string' ? parseFloat(settings.batterySize) : (settings.batterySize || 0);
+    const batterySize = settings.batterySize || 0;
     let soh = typeof settings.soh === 'string' ? parseFloat(settings.soh) : (settings.soh || 100);
     let sohData = null;
 

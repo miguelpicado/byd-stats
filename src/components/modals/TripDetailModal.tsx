@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatTime } from '@core/dateUtils';
-import { formatDuration, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
+import { formatDurationFromSeconds, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
 import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons';
 
 import { useApp } from '../../context/AppContext';
@@ -27,19 +27,16 @@ const TripDetailModal: React.FC = () => {
     const details = useMemo(() => {
         if (!trip) return { efficiency: 0, score: 0, scoreColor: '', comparisonPercent: 0, percentile: 0, cost: 0, electricCost: 0, fuelCost: 0, dayName: '' };
 
-        // @ts-ignore
         const validTrips = allTrips ? allTrips.filter(t => t.trip >= 1 && t.electricity !== 0) : [];
         const efficiencies = validTrips.map(t => ((t.electricity || 0) / (t.trip || 1)) * 100);
         const minEff = Math.min(...efficiencies);
         const maxEff = Math.max(...efficiencies);
 
         const efficiency = (trip.trip || 0) > 0 ? ((trip.electricity || 0) / (trip.trip || 1)) * 100 : 0;
-        // @ts-ignore - calculateScore types might need adjustment if they expect numbers but receive potentially NaN/Infinity without safe checks, but logic seems fine
         const score = calculateScore(efficiency, minEff, maxEff);
         const scoreColor = getScoreColor(score);
         const avgEfficiency = parseFloat(summary?.avgEff?.toString() || '0');
         const comparisonPercent = avgEfficiency > 0 ? ((efficiency - avgEfficiency) / avgEfficiency) * 100 : 0;
-        // @ts-ignore
         const percentile = calculatePercentile(trip, allTrips || []);
 
         // Calculate costs (electricity + fuel for hybrids)
@@ -97,7 +94,7 @@ const TripDetailModal: React.FC = () => {
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
                         <Clock className="w-4 h-4 mx-auto mb-0.5 text-amber-400" />
                         <p className="text-slate-600 dark:text-slate-400 text-xs">{t('tripDetail.duration')}</p>
-                        <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDuration(trip.duration)}</p>
+                        <p className="text-slate-900 dark:text-white text-lg font-bold">{formatDurationFromSeconds(trip.duration)}</p>
                     </div>
                     <div className="bg-slate-100 dark:bg-slate-700/50 rounded-xl p-3 text-center">
                         <Zap className="w-4 h-4 mx-auto mb-0.5 text-cyan-400" />

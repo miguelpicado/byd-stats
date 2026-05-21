@@ -18,8 +18,7 @@ describe('batteryCalculations', () => {
         });
 
         it('should handle kwh alias in charges', () => {
-            // @ts-ignore
-            const result = calculateAdvancedSoH([{ kwh: 10, speedKw: 7, finalPercentage: 100 }], mfgDate, 100);
+            const result = calculateAdvancedSoH([{ kwh: 10, speedKw: 7, finalPercentage: 100 } as any], mfgDate, 100);
             expect(result.real_cycles_count).toBeGreaterThan(0);
         });
 
@@ -36,8 +35,7 @@ describe('batteryCalculations', () => {
         });
 
         it('should handle missing or invalid mfgDate gracefully', () => {
-            // @ts-ignore
-            const result = calculateAdvancedSoH(mockCharges, null, 100);
+            const result = calculateAdvancedSoH(mockCharges, null as any, 100);
             expect(result.estimated_soh).toBe(100);
         });
 
@@ -49,8 +47,7 @@ describe('batteryCalculations', () => {
 
     describe('estimateInitialSoC', () => {
         it('should return null if previous charge is missing data', () => {
-            // @ts-ignore
-            expect(estimateInitialSoC({}, 1000, 15, 60)).toBeNull();
+            expect(estimateInitialSoC({} as any, 1000, 15, 60)).toBeNull();
         });
 
         it('should calculate initial SoC correctly', () => {

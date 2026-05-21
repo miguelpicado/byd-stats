@@ -5,7 +5,7 @@ import StatCard from '../StatCard';
 import { Battery } from '../../Icons';
 
 // Mock icon component for testing
-const MockIcon = ({ className }) => <svg data-testid="mock-icon" className={className} />;
+const MockIcon = ({ className }: { className?: string }) => <svg data-testid="mock-icon" className={className} />;
 
 describe('StatCard', () => {
     const defaultProps = {
@@ -40,7 +40,7 @@ describe('StatCard', () => {
         render(<StatCard {...defaultProps} />);
 
         // Check that only label, value, and unit are present
-        const container = screen.getByText('Total Distance').closest('div').parentElement;
+        const container = screen.getByText('Total Distance').closest('div')!.parentElement!;
         expect(container.textContent).not.toContain('sub');
     });
 
@@ -48,7 +48,7 @@ describe('StatCard', () => {
         const { container } = render(<StatCard {...defaultProps} isCompact={true} />);
 
         // Compact mode uses h-16 or similar compact heights
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('h-');
     });
 
@@ -57,7 +57,7 @@ describe('StatCard', () => {
             <StatCard {...defaultProps} isCompact={true} isLarger={true} />
         );
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('h-20');
     });
 
@@ -67,7 +67,7 @@ describe('StatCard', () => {
         );
 
         // Vertical mode affects height classes
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card).toBeInTheDocument();
     });
 
@@ -76,7 +76,7 @@ describe('StatCard', () => {
             <StatCard {...defaultProps} isCompact={true} lowPadding={true} />
         );
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('h-12');
     });
 
@@ -99,7 +99,7 @@ describe('StatCard', () => {
     it('maintains dark mode classes', () => {
         const { container } = render(<StatCard {...defaultProps} />);
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('dark:bg-slate-800/50');
     });
 });

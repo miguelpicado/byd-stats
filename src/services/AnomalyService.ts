@@ -1,4 +1,5 @@
 import { ProcessedData, Charge, Trip, Settings, Summary } from '../types';
+import { parseDateSafe, parseDateTimeSafe } from '../core/dateUtils';
 
 export interface Anomaly {
     id: string;
@@ -39,10 +40,10 @@ export const AnomalyService = {
 
     analyzeCharges: (charges: Charge[], settings: Settings, trips: Trip[]): Anomaly[] => {
         const anomalies: Anomaly[] = [];
-        const batteryCapacity = parseFloat(settings.batterySize.toString()) || 60; // Default 60kWh
+        const batteryCapacity = settings.batterySize || 60; // Default 60kWh
 
         // Sort by date desc
-        const recentCharges = [...charges].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 5);
+        const recentCharges = [...charges].sort((a, b) => parseDateSafe(b.date).getTime() - parseDateSafe(a.date).getTime()).slice(0, 5);
 
         recentCharges.forEach(charge => {
             if (charge.kwhCharged > 0 && charge.initialPercentage !== undefined && charge.finalPercentage !== undefined) {
@@ -59,14 +60,9 @@ export const AnomalyService = {
 
                 // Parse Charge Time
                 if (charge.time && charge.date) {
-                    const dStr = charge.date.replace(/-/g, '');
-                    if (dStr.length === 8) {
-                        const y = parseInt(dStr.substring(0, 4));
-                        const m = parseInt(dStr.substring(4, 6)) - 1;
-                        const d = parseInt(dStr.substring(6, 8));
-                        const [h, min] = charge.time.split(':').map(Number);
-
-                        chargeTime = new Date(y, m, d, h, min).getTime();
+                    const parsed = parseDateTimeSafe(charge.date, charge.time);
+                    if (!isNaN(parsed.getTime())) {
+                        chargeTime = parsed.getTime();
 
                         // Find gap in trips
                         // Sort trips by start time
@@ -89,7 +85,8 @@ export const AnomalyService = {
 
                         // Fallback Heuristic: End Time 07:00-09:00 -> 8h (Midnight start)
                         // This handles cases where trips might be missing or not synced perfectly
-                        if (durationHours === 0 && h >= 7 && h <= 9) {
+                        const hour = parseInt(charge.time.split(':')[0], 10);
+                        if (durationHours === 0 && hour >= 7 && hour <= 9) {
                             durationHours = 8;
                         }
                     }
@@ -142,7 +139,7 @@ export const AnomalyService = {
         // Sort trips chronologically
         const sortedTrips = [...trips].sort((a, b) => a.start_timestamp - b.start_timestamp);
 
-        const batteryCapacity = parseFloat(settings.batterySize.toString()) || 60;
+        const batteryCapacity = settings.batterySize || 60;
 
         for (let i = 0; i < sortedTrips.length - 1; i++) {
             const currentTrip = sortedTrips[i];

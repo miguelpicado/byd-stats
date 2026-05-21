@@ -26,9 +26,7 @@ const EstimatedChargeCard: React.FC<EstimatedChargeCardProps> = ({ settings, cha
         return total / last10.length;
     }, [charges]);
 
-    const batterySize = typeof settings.batterySize === 'string'
-        ? parseFloat(settings.batterySize)
-        : (settings.batterySize || 0);
+    const batterySize = settings.batterySize || 0;
 
     return (
         <>

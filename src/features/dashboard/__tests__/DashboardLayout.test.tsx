@@ -1,10 +1,10 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import DashboardLayout from '../DashboardLayout';
 
 // Mock dependencies
-const mockT = vi.fn((key) => key);
+const mockT = vi.fn((key: string) => key);
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({ t: mockT }),
     initReactI18next: {
@@ -113,7 +113,7 @@ vi.mock('@/components/common/TabFallback', () => ({
     default: () => <div data-testid="loading">Loading...</div>
 }));
 vi.mock('@/components/common/FloatingActionButton', () => ({
-    default: ({ onClick, label }) => <button onClick={onClick}>{label}</button>
+    default: ({ onClick, label }: { onClick: () => void; label: string }) => <button onClick={onClick}>{label}</button>
 }));
 
 describe('DashboardLayout', () => {

@@ -60,6 +60,42 @@ export const parseDate = (dateStr: string): Date | null => {
 };
 
 /**
+ * Safely parse a date string in either YYYYMMDD or YYYY-MM-DD format.
+ * Returns a Date at local midnight. Returns Invalid Date on failure (so callers can use isNaN check).
+ */
+export const parseDateSafe = (dateStr: string): Date => {
+    if (!dateStr) return new Date(NaN);
+    // YYYY-MM-DD (ISO date from HTML inputs)
+    if (dateStr.length === 10 && dateStr[4] === '-' && dateStr[7] === '-') {
+        const [year, month, day] = dateStr.split('-').map(Number);
+        return new Date(year, month - 1, day);
+    }
+    // YYYYMMDD (internal storage format)
+    if (dateStr.length === 8 && /^\d{8}$/.test(dateStr)) {
+        const year = parseInt(dateStr.slice(0, 4), 10);
+        const month = parseInt(dateStr.slice(4, 6), 10) - 1;
+        const day = parseInt(dateStr.slice(6, 8), 10);
+        return new Date(year, month, day);
+    }
+    return new Date(NaN);
+};
+
+/**
+ * Safely combine a date string (YYYYMMDD or YYYY-MM-DD) with a time string (HH:MM or HH:MM:SS).
+ * Returns a Date at the local date+time. Returns Invalid Date on failure.
+ */
+export const parseDateTimeSafe = (dateStr: string, timeStr?: string): Date => {
+    const date = parseDateSafe(dateStr);
+    if (isNaN(date.getTime())) return date;
+    if (!timeStr) return date;
+    const parts = timeStr.split(':').map(Number);
+    if (parts.length >= 2 && !isNaN(parts[0]) && !isNaN(parts[1])) {
+        date.setHours(parts[0], parts[1], parts[2] || 0, 0);
+    }
+    return date;
+};
+
+/**
  * Convert Date to YYYYMMDD format
  * @param {Date} date - Date object
  * @returns {string} Date string in YYYYMMDD format

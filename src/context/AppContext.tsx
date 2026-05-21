@@ -5,8 +5,8 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { logger } from '@core/logger';
 import { useCar } from './CarContext';
-import { SETTINGS_KEY as BASE_SETTINGS_KEY } from '@core/constants';
-import { Settings, ChargerType } from '@/types';
+import { SETTINGS_KEY as BASE_SETTINGS_KEY, DEFAULT_SETTINGS, DEFAULT_CHARGER_TYPES } from '@core/constants';
+import { Settings } from '@/types';
 
 interface AppContextType {
     settings: Settings;
@@ -25,55 +25,6 @@ export const useApp = (): AppContextType => {
         throw new Error('useApp must be used within an AppProvider');
     }
     return context;
-};
-
-// Default charger types configuration
-const DEFAULT_CHARGER_TYPES: ChargerType[] = [
-    { id: 'domestic', name: '240V (Doméstico)', speedKw: 2.4, efficiency: 0.85 },
-    { id: 'slow', name: 'Carga lenta', speedKw: 7.4, efficiency: 0.90 },
-    { id: 'fast', name: 'Carga rápida', speedKw: 50, efficiency: 0.92 },
-    { id: 'ultrafast', name: 'Carga ultrarrápida', speedKw: 150, efficiency: 0.95 }
-];
-
-// Default settings configuration
-const DEFAULT_SETTINGS: Settings = {
-    carModel: '',
-    licensePlate: '',
-    insurancePolicy: '',
-    batterySize: 60.48,
-    soh: 100,
-    mfgDate: '',
-    mfgDateDisplay: '',
-    sohMode: 'manual',
-
-    // Prices & Strategy
-    electricPrice: 0.15,
-    fuelPrice: 1.50, // €/L - Default fuel price
-    useCalculatedPrice: false,
-    useCalculatedFuelPrice: false,
-    priceStrategy: 'custom', // 'custom' | 'average' | 'dynamic'
-    fuelPriceStrategy: 'custom',
-
-    // Home Charging / Tariff
-    homeChargerRating: 8,
-    offPeakEnabled: false,
-    offPeakStart: '00:00',
-    offPeakEnd: '08:00',
-    offPeakStartWeekend: undefined,
-    offPeakEndWeekend: undefined,
-    offPeakPrice: 0.05,
-
-    // AI / Smart Charging Preferences
-    smartChargingPreferences: [],
-
-    // Theme & UI
-    theme: 'auto',
-    chargerTypes: DEFAULT_CHARGER_TYPES,
-    hiddenTabs: [],
-
-    // Technical
-    odometerOffset: 0,
-    thermalStressFactor: 1.0,
 };
 
 /**
@@ -134,7 +85,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
                 carModel: updated.carModel ?? prev.carModel ?? '',
                 licensePlate: updated.licensePlate ?? prev.licensePlate ?? '',
                 insurancePolicy: updated.insurancePolicy ?? prev.insurancePolicy ?? '',
-                batterySize: updated.batterySize ?? prev.batterySize ?? 60.48,
+                batterySize: Number(updated.batterySize ?? prev.batterySize ?? 60.48),
                 soh: updated.soh ?? prev.soh ?? 100,
                 electricPrice: updated.electricPrice ?? prev.electricPrice ?? 0.15,
                 fuelPrice: updated.fuelPrice ?? prev.fuelPrice ?? 1.50,
@@ -166,7 +117,11 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             };
 
             if (settingsKey) {
-                localStorage.setItem(settingsKey, JSON.stringify(validated));
+                try {
+                    localStorage.setItem(settingsKey, JSON.stringify(validated));
+                } catch (e) {
+                    logger.warn('Settings save failed (quota or access)', e);
+                }
             }
             return validated;
         });

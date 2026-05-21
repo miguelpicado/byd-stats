@@ -1,6 +1,5 @@
 import { renderHook, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import React from 'react';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AppProvider, useApp } from '../AppContext';
 
 // Mock logger
@@ -20,7 +19,7 @@ vi.mock('../CarContext', () => ({
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key) => key,
+        t: (key: string) => key,
         i18n: {
             changeLanguage: () => Promise.resolve(),
             language: 'en'
@@ -40,7 +39,7 @@ describe('AppContext', () => {
         vi.clearAllMocks();
     });
 
-    const wrapper = ({ children }) => <AppProvider>{children}</AppProvider>;
+    const wrapper = ({ children }: { children: React.ReactNode }) => <AppProvider>{children}</AppProvider>;
 
     it('should initialize with default settings if localStorage is empty', () => {
         const { result } = renderHook(() => useApp(), { wrapper });

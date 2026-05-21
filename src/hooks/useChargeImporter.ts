@@ -104,7 +104,7 @@ export const useChargeImporter = () => {
             }
 
             // Get battery capacity for estimation
-            const batterySize = parseFloat(String(settings.batterySize)) || 60.48;
+            const batterySize = settings.batterySize || 60.48;
 
             // Import charges with estimation logic
             const processedCharges = charges.map(c => {

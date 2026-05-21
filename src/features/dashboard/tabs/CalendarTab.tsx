@@ -16,6 +16,7 @@ import { enGB, es } from 'date-fns/locale';
 import { ChevronLeft, Car, Zap } from '@components/Icons';
 import DayDetailsModal from '@components/modals/DayDetailsModal';
 import { Trip, Charge } from '@/types';
+import { parseDateSafe } from '@core/dateUtils';
 
 interface CalendarTabProps {
     trips?: Trip[];
@@ -81,7 +82,7 @@ const CalendarTab: FC<CalendarTabProps> = ({
         // Process charges
         charges.forEach(charge => {
             if (!charge.date) return;
-            const chargeDate = new Date(charge.date);
+            const chargeDate = parseDateSafe(charge.date);
             if (isNaN(chargeDate.getTime())) return; // Skip invalid dates
 
             const dateStr = format(chargeDate, 'yyyy-MM-dd');

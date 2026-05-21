@@ -59,7 +59,7 @@ export interface Settings {
     insurancePolicy?: string;
 
     // Battery & Calculations
-    batterySize: string | number;
+    batterySize: number;
     soh: string | number;
     mfgDate?: string;
     mfgDateDisplay?: string;

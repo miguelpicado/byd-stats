@@ -27,7 +27,12 @@ export function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T)
                 localStorage.setItem(key, JSON.stringify(storedValue));
             }
         } catch (error) {
-            logger.error(`Error writing localStorage key "${key}":`, error);
+            if (error instanceof DOMException &&
+                (error.name === 'QuotaExceededError' || error.name === 'NS_ERROR_DOM_QUOTA_REACHED')) {
+                logger.warn(`Storage quota exceeded writing key "${key}"`);
+            } else {
+                logger.error(`Error writing localStorage key "${key}":`, error);
+            }
         }
     }, [key, storedValue]);
 

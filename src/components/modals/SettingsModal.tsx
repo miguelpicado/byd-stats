@@ -7,13 +7,11 @@ import { BYD_RED, TAB_ORDER } from '@core/constants';
 import { Settings, Zap, Trash2, Eye, EyeOff, Calendar } from '../Icons';
 import ModalHeader from '../common/ModalHeader';
 import { GaliciaFlag, CataloniaFlag, BasqueFlag, SpainFlag, UKFlag, PortugalFlag } from '../FlagIcons';
-// @ts-ignore
 import GoogleSyncSettings from '../settings/GoogleSyncSettings';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
 
-// @ts-ignore
 import MfgDateModal from './MfgDateModal';
 import { Charge } from '../../types';
 
@@ -24,7 +22,6 @@ const SettingsModal: React.FC = () => {
     const { t, i18n } = useTranslation();
     const { settings, updateSettings: onSettingsChange } = useApp();
     const { activeCar, updateCar, activeCarId } = useCar();
-    // @ts-ignore
     const { googleSync, charges, modals, closeModal, stats } = useData();
     const [showMfgModal, setShowMfgModal] = useState(false);
 

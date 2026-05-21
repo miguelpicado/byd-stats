@@ -44,15 +44,6 @@ export interface DataState {
     editingCharge: Charge | null;
     setEditingCharge: React.Dispatch<React.SetStateAction<Charge | null>>;
 
-    // AI Data
-    aiScenarios: Array<{ name: string; speed: number; efficiency: number; range: number }>;
-    aiLoss: number | null;
-    isAiTraining: boolean;
-    aiSoH: number | null;
-    aiSoHStats: { points: any[]; trend: any[] } | null;
-    predictDeparture: (startTime: number) => Promise<{ departureTime: number; duration: number } | null>;
-    forceRecalculate: () => void;
-
     // Anomalies
     acknowledgedAnomalies: string[];
     setAcknowledgedAnomalies: (ids: string[]) => void;
@@ -157,13 +148,6 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const rawClearHistory = appData.clearHistory;
     const rawLoadFromHistory = appData.loadFromHistory;
 
-    // AI Data from useProcessedData (via appData)
-    const aiScenarios = appData.aiScenarios || [];
-    const aiLoss = appData.aiLoss || null;
-    const isAiTraining = appData.isAiTraining || false;
-    const aiSoH = appData.aiSoH || null;
-    const aiSoHStats = appData.aiSoHStats || null;
-    const predictDeparture = appData.predictDeparture;
     const forceRecalculate = appData.forceRecalculate;
     const acknowledgedAnomalies = appData.acknowledgedAnomalies;
     const setAcknowledgedAnomalies = appData.setAcknowledgedAnomalies;
@@ -308,20 +292,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             const syncData = {
                 trips: rawTrips || [],
                 charges: charges || [],
-                settings,
-                aiCache: {
-                    efficiency: aiScenarios && aiLoss !== null ? {
-                        hash: `count:${rawTrips?.length || 0}`,
-                        scenarios: aiScenarios,
-                        loss: aiLoss
-                    } : undefined,
-                    soh: aiSoH !== null && aiSoHStats ? {
-                        hash: `count:${rawTrips?.length || 0}`,
-                        soh: aiSoH,
-                        stats: aiSoHStats
-                    } : undefined,
-                    parking: undefined
-                }
+                settings
             };
             const jsonString = JSON.stringify(syncData, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
@@ -341,7 +312,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             toast.error(t('sync.exportFailed', 'Error al exportar datos'));
             return { success: false, reason: 'error', message: error.message };
         }
-    }, [rawTrips, charges, settings, activeCarId, aiScenarios, aiLoss, aiSoH, aiSoHStats, t]);
+    }, [rawTrips, charges, settings, activeCarId, t]);
 
     const loadChargeRegistry = useCallback(async (file: File) => {
         try {
@@ -461,13 +432,13 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         ...modalState, // Spread remaining modal state
         fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture, forceRecalculate,
+        forceRecalculate,
         acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
     }), [
         rawTrips, filtered, data, charges, tripHistory,
         settings, googleSync, database, modalState, fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
-        aiScenarios, aiLoss, aiSoH, aiSoHStats, isAiTraining, predictDeparture, forceRecalculate,
+        forceRecalculate,
         acknowledgedAnomalies, deletedAnomalies
     ]);
 

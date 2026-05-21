@@ -44,7 +44,7 @@ describe('ChartCard', () => {
             </ChartCard>
         );
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('custom-class');
     });
 
@@ -55,7 +55,7 @@ describe('ChartCard', () => {
             </ChartCard>
         );
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('p-2');
     });
 
@@ -66,7 +66,7 @@ describe('ChartCard', () => {
             </ChartCard>
         );
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('p-4');
     });
 
@@ -77,7 +77,7 @@ describe('ChartCard', () => {
             </ChartCard>
         );
 
-        const card = container.firstChild;
+        const card = container.firstChild as HTMLElement;
         expect(card.className).toContain('bg-white');
         expect(card.className).toContain('dark:bg-slate-800/50');
         expect(card.className).toContain('rounded-2xl');

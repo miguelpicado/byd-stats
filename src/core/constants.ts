@@ -2,6 +2,14 @@
 
 export const BYD_RED = '#EA0029';
 
+// Cross-browser UUID v4 generation
+export const uuid = (): string =>
+    (crypto as any).randomUUID?.() ??
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+        const r = (Math.random() * 16) | 0;
+        return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+    });
+
 // Storage keys
 export const STORAGE_KEY = 'byd_stats_data';
 export const TRIP_HISTORY_KEY = 'byd_trip_history';
@@ -32,27 +40,53 @@ export const dayNamesFull: Record<string, string> = {
     'Dom': 'Domingo'
 };
 
-// Default settings
+// Default charger types
+export const DEFAULT_CHARGER_TYPES = [
+    { id: 'domestic', name: '240V (Doméstico)', speedKw: 2.4, efficiency: 0.85 },
+    { id: 'slow', name: 'Carga lenta', speedKw: 7.4, efficiency: 0.90 },
+    { id: 'fast', name: 'Carga rápida', speedKw: 50, efficiency: 0.92 },
+    { id: 'ultrafast', name: 'Carga ultrarrápida', speedKw: 150, efficiency: 0.95 }
+];
+
+// Default settings — single source of truth
 export const DEFAULT_SETTINGS = {
     carModel: '',
     licensePlate: '',
     insurancePolicy: '',
     batterySize: 60.48,
     soh: 100,
-    electricityPrice: 0.15,
-    fuelPrice: 1.50, // €/L - only used for hybrid vehicles
+    mfgDate: '',
+    mfgDateDisplay: '',
+    sohMode: 'manual' as const,
+
+    // Prices & Strategy
+    electricPrice: 0.15,
+    fuelPrice: 1.50, // €/L - Default fuel price
     useCalculatedPrice: false,
-    theme: 'auto',
-    chargerTypes: [],
-    hiddenTabs: [],
-    // Home Charging Defaults
-    homeChargerRating: 16, // 3.7W default
+    useCalculatedFuelPrice: false,
+    priceStrategy: 'custom' as const,
+    fuelPriceStrategy: 'custom' as const,
+
+    // Home Charging / Tariff
+    homeChargerRating: 8,
     offPeakEnabled: false,
-    offPeakStart: "00:00",
-    offPeakEnd: "08:00",
+    offPeakStart: '00:00',
+    offPeakEnd: '08:00',
     offPeakStartWeekend: undefined,
     offPeakEndWeekend: undefined,
-    offPeakPrice: 0.11
+    offPeakPrice: 0.05,
+
+    // AI / Smart Charging Preferences
+    smartChargingPreferences: [],
+
+    // Theme & UI
+    theme: 'auto' as const,
+    chargerTypes: DEFAULT_CHARGER_TYPES,
+    hiddenTabs: [] as string[],
+
+    // Technical
+    odometerOffset: 0,
+    thermalStressFactor: 1.0
 };
 
 // Trip distribution colors

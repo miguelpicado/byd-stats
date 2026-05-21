@@ -1,6 +1,5 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
 import { DataProvider, useData } from '../../../providers/DataProvider';
 import Header from '../../navigation/Header';
 import { AppProvider } from '../../../context/AppContext';
@@ -10,11 +9,11 @@ import { CarProvider } from '../../../context/CarContext';
 // Mock dependencies
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key) => key,
+        t: (key: string) => key,
         i18n: { changeLanguage: () => Promise.resolve(), language: 'en' }
     }),
     initReactI18next: { type: '3rdParty', init: () => { } },
-    I18nextProvider: ({ children }) => <>{children}</>
+    I18nextProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 vi.mock('@/hooks/useGoogleSync', () => ({
@@ -42,7 +41,7 @@ describe('Import DB Integration Flow', () => {
         localStorage.clear();
     });
 
-    const AllProviders = ({ children }) => (
+    const AllProviders = ({ children }: { children: React.ReactNode }) => (
         <CarProvider>
             <LayoutProvider>
                 <AppProvider>

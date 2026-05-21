@@ -484,10 +484,10 @@ export function useGoogleSync({
 
     const handleLoginSuccess = useCallback(async (accessToken: string) => {
         googleDriveService.setAccessToken(accessToken);
-        localStorage.setItem('google_access_token', accessToken);
+        try { localStorage.setItem('google_access_token', accessToken); } catch { /* non-critical */ }
 
         const expiryTime = Date.now() + (60 * 60 * 1000); // 1 hour
-        localStorage.setItem('google_token_expiry', expiryTime.toString());
+        try { localStorage.setItem('google_token_expiry', expiryTime.toString()); } catch { /* non-critical */ }
 
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);

@@ -6,8 +6,6 @@ const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
 const DB_FILENAME = 'byd_stats_data.json';
 const FOLDER_ID = 'appDataFolder';
 
-let accessToken: string | null = null;
-
 export interface GoogleDriveFile {
     id: string;
     name: string;
@@ -26,7 +24,18 @@ export interface RegistryData {
     cars: Car[];
 }
 
-export const googleDriveService = {
+export const googleDriveService = (() => {
+    let _token: string | null = null;
+
+    const _getHeaders = (): HeadersInit => {
+        if (!_token) throw new Error("No access token set");
+        return {
+            'Authorization': `Bearer ${_token}`,
+            'Content-Type': 'application/json'
+        };
+    };
+
+    return {
     // Flag to indicate if service is ready
     isInited: true,
 
@@ -41,33 +50,27 @@ export const googleDriveService = {
      * Set the access token for API calls
      */
     setAccessToken: (token: string | null): void => {
-        accessToken = token;
+        _token = token;
     },
 
     /**
      * Check if the user is signed in (checks if token is present)
      */
     isSignedIn: (): boolean => {
-        return !!accessToken;
+        return !!_token;
     },
 
     /**
      * Sign out (Clear token)
      */
     signOut: async (): Promise<void> => {
-        accessToken = null;
+        _token = null;
     },
 
     /**
-     * Helper for fetch headers
+     * Helper for fetch headers — exposed for internal use only
      */
-    _getHeaders: (): HeadersInit => {
-        if (!accessToken) throw new Error("No access token set");
-        return {
-            'Authorization': `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-        };
-    },
+    _getHeaders,
 
     /**
      * List files in the App Data folder to find our DB
@@ -376,4 +379,4 @@ export const googleDriveService = {
             charges: mergedCharges
         };
     }
-};
+}; })();

@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import {
     calculateScore,
     getScoreColor,
-    formatDuration,
+    formatDurationFromSeconds,
     calculatePercentile,
     formatNumber
 } from '../formatters';
@@ -68,25 +68,25 @@ describe('formatters', () => {
         });
     });
 
-    describe('formatDuration', () => {
+    describe('formatDurationFromSeconds', () => {
         it('should format seconds to minutes', () => {
-            expect(formatDuration(180)).toBe('3 min');
-            expect(formatDuration(60)).toBe('1 min');
+            expect(formatDurationFromSeconds(180)).toBe('3 min');
+            expect(formatDurationFromSeconds(60)).toBe('1 min');
         });
 
         it('should format seconds to hours and minutes', () => {
-            expect(formatDuration(3660)).toBe('1h 1min');
-            expect(formatDuration(7200)).toBe('2h 0min');
+            expect(formatDurationFromSeconds(3660)).toBe('1h 1min');
+            expect(formatDurationFromSeconds(7200)).toBe('2h 0min');
         });
 
         it('should handle zero/null values', () => {
-            expect(formatDuration(0)).toBe('0 min');
-            expect(formatDuration(null as any)).toBe('0 min');
-            expect(formatDuration(undefined as any)).toBe('0 min');
+            expect(formatDurationFromSeconds(0)).toBe('0 min');
+            expect(formatDurationFromSeconds(null as any)).toBe('0 min');
+            expect(formatDurationFromSeconds(undefined as any)).toBe('0 min');
         });
 
         it('should handle very large durations', () => {
-            const result = formatDuration(86400); // 24 hours
+            const result = formatDurationFromSeconds(86400); // 24 hours
             expect(result).toContain('h');
         });
     });

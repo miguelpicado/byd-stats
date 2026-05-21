@@ -3,9 +3,9 @@ import React, { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import ModalPortal from '../common/ModalPortal';
 import { X, Zap, Calendar, TrendingUp, Info, ChevronLeft, ChevronRight, Edit, Check, Trash2, Plus } from '../Icons';
+import { uuid } from '@core/constants';
 import { ChargingLogic } from '../../core/chargingLogic';
 import { ProcessedData, Settings, Charge, Trip } from '../../types';
-import { useData } from '../../providers/DataProvider';
 import { useApp } from '../../context/AppContext';
 import { logger } from '@core/logger';
 
@@ -32,7 +32,6 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
 }) => {
     const { t } = useTranslation();
     const { updateSettings } = useApp();
-    const { predictDeparture } = useData();
     const [view, setView] = useState<InsightView>('main');
     const [smartCharging, setSmartCharging] = useState<any>(null); // Async state
     const [isCalculating, setIsCalculating] = useState(false);
@@ -60,7 +59,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
         if (id === 'new' || !id) {
             // Add new
             prefs.push({
-                id: crypto.randomUUID(),
+                id: uuid(),
                 day: editDay,
                 start: editStart,
                 end: editEnd,
@@ -146,7 +145,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
     React.useEffect(() => {
         if (isOpen && trips.length > 0) {
             setIsCalculating(true);
-            ChargingLogic.findSmartChargingWindows(trips, settings, predictDeparture)
+            ChargingLogic.findSmartChargingWindows(trips, settings)
                 .then(result => {
                     setSmartCharging(result);
                     setIsCalculating(false);
@@ -156,7 +155,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                     setIsCalculating(false);
                 });
         }
-    }, [isOpen, trips, settings, predictDeparture]);
+    }, [isOpen, trips, settings]);
 
     if (!isOpen) return null;
 

@@ -1,9 +1,10 @@
 // BYD Stats - useDatabase Hook
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback } from 'react';
 import { logger } from '@core/logger';
 import { toast } from 'react-hot-toast';
 import { Trip } from '@/types';
+import { parseCsvTrips, mergeTrips } from '@/services/CsvImportService';
 
 // Declare types for window.SQL and initSqlJs
 declare global {
@@ -80,92 +81,16 @@ export function useDatabase(): UseDatabaseReturn {
             // Handle CSV Import
             if (file.name.toLowerCase().endsWith('.csv')) {
                 const text = await file.text();
-                const lines = text.split(/\r?\n/).filter(l => l.trim());
-
-                if (lines.length < 2) throw new Error('CSV vacío o formato incorrecto');
-
-                const rows = lines.slice(1).map((line, index) => {
-                    // Method from DataProvider.jsx (loadChargeRegistry)
-                    // Matches quoted strings OR non-comma sequences
-                    const values = line.match(/("[^"]*"|[^,]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
-
-                    if (!values || values.length < 4) {
-                        // Try semicolon fallback if comma failed
-                        const semiValues = line.match(/("[^"]*"|[^;]+)/g)?.map(v => v.replace(/^"|"$/g, '').trim());
-                        if (semiValues && semiValues.length >= 4) {
-                            // Use semicolon logic if it looks better
-                            return parseTripRow(semiValues);
-                        }
-                        return null;
-                    }
-
-                    return parseTripRow(values);
-                }).filter((r): r is Trip => r !== null);
-
-                // Helper to parse a standardized row array
-                function parseTripRow(values: string[]): Trip | null {
-                    const [inicio, dur, dist, energy] = values;
-                    if (!inicio) return null;
-
-                    // Strict Date Parsing (from DataProvider)
-                    // Expects YYYY-MM-DD HH:MM specifically
-                    const dateMatch = inicio.match(/^(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
-
-                    if (!dateMatch) {
-                        return null;
-                    }
-
-                    const dateStr = dateMatch[1]; // "2025-07-13"
-                    const timeStr = dateMatch[2]; // "11:42"
-
-                    const [year, month, day] = dateStr.split('-').map(Number);
-                    const [hour, minute] = timeStr.split(':').map(Number);
-
-                    // Construct Date object (month is 0-indexed)
-                    const dateObj = new Date(year, month - 1, day, hour || 0, minute || 0);
-                    const timestamp = Math.floor(dateObj.getTime() / 1000); // Seconds for App compatibility
-
-                    // Fix: Duration in CSV is in minutes (integer), app expects seconds
-                    const durationSeconds = (parseInt(dur) || 0) * 60;
-
-                    // Format for App (YYYYMMDD without hyphens, expected by dateUtils)
-                    const appDateStr = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
-                    const appMonthStr = `${year}${String(month).padStart(2, '0')}`;
-
-                    return {
-                        trip: parseFloat(dist) || 0,
-                        electricity: parseFloat(energy) || 0,
-                        duration: durationSeconds,
-                        date: appDateStr,
-                        start_timestamp: timestamp,
-                        month: appMonthStr,
-                        end_timestamp: timestamp + durationSeconds
-                    };
-                }
+                const { trips: rows, lineCount } = parseCsvTrips(text);
 
                 if (rows.length === 0) {
-                    toast.error(`CSV leído (${lines.length} líneas) pero 0 filas válidas detectadas. Verifica el formato.`);
-                    logger.warn(`CSV Parsing failed. Lines: ${lines.length}, Rows: 0`);
+                    toast.error(`CSV leído (${lineCount} líneas) pero 0 filas válidas detectadas. Verifica el formato.`);
+                    logger.warn(`CSV Parsing failed. Lines: ${lineCount}, Rows: 0`);
                     return [];
                 }
 
                 logger.info(`CSV Parsed: ${rows.length} valid trips.`);
-
-                // Merge Logic (Reused)
-                if (merge && existingTrips.length) {
-                    const map = new Map<string, Trip>();
-                    // Use a unique key for deduplication. Date + Timestamp is good.
-                    existingTrips.forEach(t => map.set(`${t.date}-${t.start_timestamp}`, t));
-                    rows.forEach(t => map.set(`${t.date}-${t.start_timestamp}`, t));
-
-                    return Array.from(map.values()).sort((a, b) => {
-                        const dateComp = (a.date || '').localeCompare(b.date || '');
-                        if (dateComp !== 0) return dateComp;
-                        return (a.start_timestamp || 0) - (b.start_timestamp || 0);
-                    });
-                } else {
-                    return rows;
-                }
+                return merge && existingTrips.length ? mergeTrips(existingTrips, rows) : rows;
             }
 
             // Handle SQLite Import (Existing Logic)
@@ -193,15 +118,7 @@ export function useDatabase(): UseDatabaseReturn {
                 });
 
                 db.close();
-
-                if (merge && existingTrips.length) {
-                    const map = new Map<string, Trip>();
-                    existingTrips.forEach(t => map.set(`${t.date}-${t.start_timestamp}`, t));
-                    rows.forEach((t: Trip) => map.set(`${t.date}-${t.start_timestamp}`, t));
-                    return Array.from(map.values()).sort((a, b) => (a.date || '').localeCompare(b.date || ''));
-                } else {
-                    return rows;
-                }
+                return merge && existingTrips.length ? mergeTrips(existingTrips, rows as Trip[]) : rows as Trip[];
             } else {
                 throw new Error('Sin datos');
             }

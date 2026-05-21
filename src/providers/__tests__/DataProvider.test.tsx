@@ -1,6 +1,5 @@
 import { renderHook } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
-import React from 'react';
 import { DataProvider, useData, useDataState, useDataDispatch } from '../DataProvider';
 
 // Mock all dependencies
@@ -61,7 +60,7 @@ vi.mock('@/context/CarContext', () => ({
 
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key) => key,
+        t: (key: string) => key,
         i18n: {
             changeLanguage: () => Promise.resolve(),
             language: 'en'
@@ -74,7 +73,7 @@ vi.mock('react-i18next', () => ({
 }));
 
 describe('DataProvider', () => {
-    const wrapper = ({ children }) => <DataProvider>{children}</DataProvider>;
+    const wrapper = ({ children }: { children: React.ReactNode }) => <DataProvider>{children}</DataProvider>;
 
     it('provides data via useDataState', () => {
         const { result } = renderHook(() => useDataState(), { wrapper });

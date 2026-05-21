@@ -2,6 +2,7 @@
 // Implements advanced SoH estimation for LFP batteries
 
 import { Charge, SoHData, ChargerType } from '../types';
+import { parseDateSafe } from './dateUtils';
 
 /**
  * Estimates Battery State of Health (SoH) based on usage patterns
@@ -68,7 +69,7 @@ export const calculateAdvancedSoH = (
             n_charges_to_100++;
             // Parse date
             if (charge.date) {
-                const ts = new Date(charge.date).getTime();
+                const ts = parseDateSafe(charge.date).getTime();
                 if (!isNaN(ts) && ts > last_calibration_time) {
                     last_calibration_time = ts;
                 }
@@ -105,7 +106,7 @@ export const calculateAdvancedSoH = (
     // More robust date parsing
     let calendar_degradation = 0;
     try {
-        const mfg = new Date(mfgDate);
+        const mfg = parseDateSafe(mfgDate);
         if (!isNaN(mfg.getTime())) {
             const now = new Date();
             const age_years = (now.getTime() - mfg.getTime()) / (1000 * 60 * 60 * 24 * 365.25);

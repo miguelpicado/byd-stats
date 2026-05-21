@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import React from 'react';
 import Header from '../Header';
 
 // Static spies and variables to ensure stability and control
@@ -9,12 +8,12 @@ const setActiveCarIdSpy = vi.fn();
 const addCarSpy = vi.fn();
 const syncNowSpy = vi.fn();
 const toggleFullscreenSpy = vi.fn();
-let mockTrips = [];
+let mockTrips: number[] = [];
 
 // Mock dependencies
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
-        t: (key, options) => {
+        t: (key: string, options?: any) => {
             if (key === 'header.trips') return `${options?.count || 0} trips`;
             return key;
         },

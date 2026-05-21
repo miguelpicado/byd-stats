@@ -42,7 +42,7 @@ export const getScoreColor = (score: number): string => {
  * @param {number} seconds - Duration in seconds
  * @returns {string} Formatted duration string
  */
-export const formatDuration = (seconds: number): string => {
+export const formatDurationFromSeconds = (seconds: number): string => {
     if (!seconds) return '0 min';
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);

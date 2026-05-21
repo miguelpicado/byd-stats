@@ -59,7 +59,7 @@ const ChargesTab: FC<ChargesTabProps> = React.memo(({
             toast.loading(t('common.recalculating', 'Recalculating...'), { duration: 2000 });
 
             // Ensure batterySize is valid number
-            const validBatterySize = parseFloat(String(batterySize)) || 60.48;
+            const validBatterySize = batterySize || 60.48;
             let updatedCount = 0;
 
             // Logic to recalc missing initial SoC

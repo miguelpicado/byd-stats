@@ -7,10 +7,8 @@ describe('dataProcessing', () => {
     describe('processData', () => {
         it('should return null for empty array', () => {
             expect(processData([])).toBeNull();
-            // @ts-ignore
-            expect(processData(null)).toBeNull();
-            // @ts-ignore
-            expect(processData(undefined)).toBeNull();
+            expect(processData(null as any)).toBeNull();
+            expect(processData(undefined as any)).toBeNull();
         });
 
         it('should handle zero distance trips as stationary consumption', () => {

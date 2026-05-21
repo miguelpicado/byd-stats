@@ -16,7 +16,6 @@ export const LOG_LEVELS = {
 };
 
 // Default levels based on environment
-// @ts-ignore
 const DEFAULT_LEVEL = import.meta.env?.PROD ? LogLevel.ERROR : LogLevel.WARN;
 
 /**
