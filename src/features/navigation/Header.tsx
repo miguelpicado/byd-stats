@@ -7,6 +7,7 @@ import { useCar } from '../../context/CarContext';
 // import useModalState from '../../hooks/useModalState';
 import AddCarModal from '../../components/modals/AddCarModal';
 import { useState, useRef, useEffect, useCallback } from 'react';
+import { logger } from '@core/logger';
 
 const Header: React.FC = memo(() => {
     const { t } = useTranslation();
@@ -57,7 +58,7 @@ const Header: React.FC = memo(() => {
     const handleToggleFullscreen = () => {
         if (!document.fullscreenElement) {
             document.documentElement.requestFullscreen().catch((e) => {
-                console.error(`Error attempting to enable fullscreen mode: ${e.message}`);
+                logger.error(`Error attempting to enable fullscreen mode: ${e.message}`);
             });
         } else {
             if (document.exitFullscreen) {

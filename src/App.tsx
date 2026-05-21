@@ -24,7 +24,6 @@ export default function BYDStatsAnalyzer() {
     sqlReady,
     error,
     isLandingPage,
-    isNative,
     appVersion,
 
     // Render Conditions
@@ -98,7 +97,6 @@ export default function BYDStatsAnalyzer() {
             sqlReady={sqlReady}
             error={error}
             googleSync={googleSync}
-            isNative={isNative}
             onFileProcess={processDB}
           />
         </Suspense>
@@ -137,7 +135,6 @@ export default function BYDStatsAnalyzer() {
           closeModal={closeModal as (modal: string) => void}
           openTripDetail={openTripDetail}
           scrollRef={allTripsScrollRef}
-          isNative={isNative}
         />
       </Suspense>
     );
@@ -170,7 +167,6 @@ export default function BYDStatsAnalyzer() {
           closeModal={closeModal as any}
           setSelectedCharge={setSelectedCharge}
           scrollRef={allChargesScrollRef}
-          isNative={isNative}
         />
       </Suspense>
     );

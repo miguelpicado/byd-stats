@@ -22,7 +22,6 @@ interface AllTripsViewProps {
     closeModal: (modal: string) => void;
     openTripDetail: (trip: Trip) => void;
     scrollRef: React.MutableRefObject<any>;
-    isNative: boolean;
 }
 
 const AllTripsView = ({
@@ -42,7 +41,6 @@ const AllTripsView = ({
     closeModal,
     openTripDetail,
     scrollRef,
-    isNative,
 }: AllTripsViewProps) => {
     const { t } = useTranslation();
 
@@ -113,7 +111,7 @@ const AllTripsView = ({
         >
             <ModalContainer />
 
-            <div className={`max-w-7xl mx-auto px-4 py-6 ${isNative ? 'pt-12' : ''}`}>
+            <div className="max-w-7xl mx-auto px-4 py-6">
                 <div className="flex flex-col gap-4 mb-6">
                     <div>
                         <button

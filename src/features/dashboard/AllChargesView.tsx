@@ -24,7 +24,6 @@ interface AllChargesViewProps {
     closeModal: (modal: string) => void;
     setSelectedCharge: (charge: Charge | null) => void;
     scrollRef: React.MutableRefObject<any>;
-    isNative: boolean;
 }
 
 const AllChargesView = ({
@@ -46,7 +45,6 @@ const AllChargesView = ({
     closeModal,
     setSelectedCharge,
     scrollRef,
-    isNative,
 }: AllChargesViewProps) => {
     const { t } = useTranslation();
 
@@ -111,7 +109,7 @@ const AllChargesView = ({
         >
             <ModalContainer />
 
-            <div className={`max-w-7xl mx-auto px-4 py-6 ${isNative ? 'pt-12' : ''}`}>
+            <div className="max-w-7xl mx-auto px-4 py-6">
                 <div className="flex flex-col gap-4 mb-6">
                     <div>
                         <button

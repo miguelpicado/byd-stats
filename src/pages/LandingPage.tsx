@@ -14,7 +14,6 @@ const LandingPage = ({
     sqlReady,
     error,
     googleSync,
-    isNative,
     onFileProcess, // Wrapper around processDB to handle file object
 }) => {
     const { t } = useTranslation();
@@ -78,9 +77,9 @@ const LandingPage = ({
                         borderColor: dragOver ? BYD_RED : '#475569',
                         backgroundColor: dragOver ? 'rgba(234,0,41,0.1)' : 'transparent'
                     }}
-                    onDragOver={(e) => { if (sqlReady && !isNative) { e.preventDefault(); setDragOver(true); } }}
-                    onDragLeave={() => !isNative && setDragOver(false)}
-                    onDrop={(e) => !isNative && sqlReady && handleDrop(e)}
+                    onDragOver={(e) => { if (sqlReady) { e.preventDefault(); setDragOver(true); } }}
+                    onDragLeave={() => setDragOver(false)}
+                    onDrop={(e) => sqlReady && handleDrop(e)}
                 >
                     <input
                         id="fileInput"
@@ -97,7 +96,7 @@ const LandingPage = ({
                         <Upload className={`${isCompact ? 'w-6 h-6' : 'w-8 h-8'}`} style={{ color: dragOver ? 'white' : BYD_RED }} />
                     </div>
                     <p className={`text-white mb-2 ${isCompact ? 'text-base' : 'text-lg sm:text-xl'}`}>
-                        {sqlReady ? (isNative ? t('landing.tapToSelect') : t('landing.clickToSelect')) : t('landing.preparing')}
+                        {sqlReady ? t('landing.clickToSelect') : t('landing.preparing')}
                     </p>
                     <p className="text-slate-400 text-xs mt-4">
                         {t('landing.hint')}

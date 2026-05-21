@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'react-hot-toast';
-import { Capacitor } from '@capacitor/core';
 import { logger } from '@core/logger';
 import useAppVersion from '@hooks/useAppVersion';
 import { useApp } from '@/context/AppContext';
@@ -15,7 +14,6 @@ import { Trip, Charge } from '@/types';
 
 export const useAppOrchestrator = () => {
     const { t } = useTranslation();
-    const isNative = Capacitor.isNativePlatform();
 
     // Contexts
     const { settings, updateSettings } = useApp();
@@ -151,7 +149,6 @@ export const useAppOrchestrator = () => {
         loading,
         error,
         sqlReady,
-        isNative,
         isLandingPage,
         appVersion,
 

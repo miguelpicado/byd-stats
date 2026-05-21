@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { logger } from '@core/logger';
 
 const CACHE_KEY = 'byd_app_version';
 const CACHE_EXPIRY_KEY = 'byd_app_version_expiry';
@@ -52,7 +53,7 @@ export default function useAppVersion() {
 
                 setVersion(latestVersion);
             } catch (error) {
-                console.warn('Failed to fetch app version from GitHub:', error);
+                logger.warn('Failed to fetch app version from GitHub:', error);
                 // Use cached version if available, otherwise use fallback
                 const cachedVersion = localStorage.getItem(CACHE_KEY);
                 setVersion(cachedVersion || FALLBACK_VERSION);

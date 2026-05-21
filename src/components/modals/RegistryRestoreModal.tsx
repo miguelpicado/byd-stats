@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Cloud, Check, CarFront } from '../Icons';
+import { logger } from '@core/logger';
 
 interface RegistryCar {
     id: string;
@@ -29,7 +30,7 @@ const RegistryRestoreModal: React.FC<RegistryRestoreModalProps> = ({ registryCar
         try {
             await onRestore(selectedCar);
         } catch (error) {
-            console.error("Restore failed", error);
+            logger.error("Restore failed", error);
             alert(t('errors.restoreFailed', 'Error al restaurar'));
         } finally {
             setLoading(false);

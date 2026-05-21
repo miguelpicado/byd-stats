@@ -4,7 +4,6 @@ import { Upload, Download, FileText, Trash2, Database } from '../Icons';
 import ModalHeader from '../common/ModalHeader';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
-import { Capacitor } from '@capacitor/core';
 
 // Electric blue color for accent buttons
 const ELECTRIC_BLUE = '#3b82f6';
@@ -14,7 +13,6 @@ const ELECTRIC_BLUE = '#3b82f6';
  */
 const DatabaseUploadModal: React.FC = () => {
     const { t } = useTranslation();
-    const isNative = Capacitor.isNativePlatform();
     const {
         modals,
         closeModal,
@@ -203,11 +201,9 @@ const DatabaseUploadModal: React.FC = () => {
                     </div>
                 </div>
 
-                {!isNative && (
-                    <p className="text-slate-400 dark:text-slate-500 text-[10px] text-center mt-4">
-                        {t('upload.tip')}
-                    </p>
-                )}
+                <p className="text-slate-400 dark:text-slate-500 text-[10px] text-center mt-4">
+                    {t('upload.tip')}
+                </p>
             </div>
         </div>
     );

@@ -1,13 +1,10 @@
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Capacitor } from '@capacitor/core';
-import { App as CapacitorApp } from '@capacitor/app';
 import { logger } from '@core/logger';
 import { useData } from '@/providers/DataProvider';
 
 const GlobalListeners = ({ activeTab }) => {
     const { t } = useTranslation();
-    const isNative = Capacitor.isNativePlatform();
 
     const {
         trips: rawTrips,
@@ -17,56 +14,18 @@ const GlobalListeners = ({ activeTab }) => {
         // Database
         database,
         // Modals
-        modals,
-        openModal,
-        closeModal,
         isAnyModalOpen,
-        // Selection
-        setSelectedTrip
     } = useData();
 
     const { pendingFile, clearPendingFile, readFile } = fileHandling;
     const { sqlReady, processDB: processDBHook } = database;
 
-    // Modal convenience vars
-    const showTripDetailModal = modals.tripDetail;
-    const showSettingsModal = modals.settings;
-    const showAllTripsModal = modals.allTrips;
-
-    // Handle Android back button
-    useEffect(() => {
-        if (!isNative) return;
-
-        const backHandler = CapacitorApp.addListener('backButton', ({ canGoBack }) => {
-            // Always handle the back button - prevent default Android behavior
-
-            if (showTripDetailModal) {
-                closeModal('tripDetail');
-                setSelectedTrip(null);
-            } else if (showSettingsModal) {
-                closeModal('settings');
-            } else if (showAllTripsModal) {
-                closeModal('allTrips');
-            } else {
-                // No modals open - only now check if we should exit
-                if (!canGoBack) {
-                    CapacitorApp.exitApp();
-                }
-            }
-        });
-
-        return () => {
-            backHandler.then(h => h.remove());
-        };
-    }, [showTripDetailModal, showSettingsModal, showAllTripsModal, isNative, closeModal, setSelectedTrip]);
-
-    // Handle file opening and sharing (both Android native and PWA)
+    // Handle file opening and sharing (PWA)
     useEffect(() => {
         if (!pendingFile || !sqlReady) return;
 
         const handleSharedFile = async () => {
             try {
-                // Read file using unified handler (works for both Android and PWA)
                 const file = await readFile(pendingFile);
 
                 // Validate file

@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { X, Cloud, Database, Download, FileText, AlertTriangle, Trash2 } from '../Icons';
 import { useData } from '../../providers/DataProvider';
 import { useCar } from '../../context/CarContext';
+import { logger } from '@core/logger';
 
 interface DriveFile {
     id: string;
@@ -43,7 +44,7 @@ const CloudBackupsModal: React.FC = () => {
             );
             setBackups(sorted);
         } catch (err) {
-            console.error("Error loading backups", err);
+            logger.error("Error loading backups", err);
             setError(t('errors.generic', 'Error cargando copias'));
         } finally {
             setLoading(false);

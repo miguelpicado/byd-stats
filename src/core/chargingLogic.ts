@@ -1,5 +1,6 @@
 
 import { Charge, Settings, Trip } from '../types';
+import { logger } from './logger';
 
 export interface ChargingRecommendation {
     type: 'balanced' | 'slow' | 'fast' | 'mixed';
@@ -100,7 +101,7 @@ export const ChargingLogic = {
 
         if (!predictDeparture) {
             // Fallback: Basic night slots if AI is active but service missing
-            console.warn("AI Charging Logic: No prediction service provided. Fallback to basic night slots.");
+            logger.warn("AI Charging Logic: No prediction service provided. Fallback to basic night slots.");
             return {
                 windows: [
                     { day: 'Lunes', start: '00:00', end: '08:00', tariffLimit: '08:00', startMins: 0, endMins: 480 },

@@ -1,11 +1,8 @@
 import { useEffect } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { useApp } from '../context/AppContext';
-import { logger } from '@core/logger';
 
 const ThemeManager = () => {
     const { settings } = useApp();
-    const isNative = Capacitor.isNativePlatform();
 
     // Theme management - UNIFIED AND ROBUST
     useEffect(() => {
@@ -38,12 +35,6 @@ const ThemeManager = () => {
                 // Light theme: light background
                 themeColorMeta.setAttribute('content', isDark ? '#0f172a' : '#f8fafc');
             }
-
-            // 4. Native StatusBar (for Capacitor apps)
-            if (isNative && window.StatusBar) {
-                window.StatusBar.setStyle({ style: isDark ? 'LIGHT' : 'DARK' })
-                    .catch(e => logger.error('StatusBar error:', e));
-            }
         };
 
         const getSystemTheme = () => window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -62,7 +53,7 @@ const ThemeManager = () => {
             // Manual theme
             applyTheme(settings.theme === 'dark');
         }
-    }, [settings.theme, isNative]);
+    }, [settings.theme]);
 
     return null;
 };

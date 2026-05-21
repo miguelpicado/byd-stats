@@ -7,6 +7,7 @@ import { ChargingLogic } from '../../core/chargingLogic';
 import { ProcessedData, Settings, Charge, Trip } from '../../types';
 import { useData } from '../../providers/DataProvider';
 import { useApp } from '../../context/AppContext';
+import { logger } from '@core/logger';
 
 interface ChargingInsightsModalProps {
     isOpen: boolean;
@@ -151,7 +152,7 @@ const ChargingInsightsModal: React.FC<ChargingInsightsModalProps> = ({
                     setIsCalculating(false);
                 })
                 .catch(err => {
-                    console.error("Smart Charging Error:", err);
+                    logger.error("Smart Charging Error:", err);
                     setIsCalculating(false);
                 });
         }

@@ -12,20 +12,9 @@
     "test": "vitest",
     "test:core": "vitest src/core",
     "test:ui": "vitest --ui",
-    "test:coverage": "vitest --coverage",
-    "android:sync": "npm run build && npx cap sync android",
-    "android:open": "npx cap open android",
-    "android:build": "npm run build && npx cap sync android && cd android && ./gradlew assembleDebug",
-    "android:release": "npm run build && npx cap sync android && cd android && ./gradlew assembleRelease"
+    "test:coverage": "vitest --coverage"
   },
   "dependencies": {
-    "@capacitor/android": "^8.0.0",
-    "@capacitor/app": "^8.0.0",
-    "@capacitor/cli": "^8.0.0",
-    "@capacitor/core": "^8.0.0",
-    "@capacitor/filesystem": "^8.0.0",
-    "@capacitor/status-bar": "^8.0.0",
-    "@capgo/capacitor-social-login": "^8.2.11",
     "@react-oauth/google": "^0.13.4",
     "@tanstack/react-virtual": "^3.13.18",
     "@tensorflow/tfjs": "^4.22.0",
@@ -46,7 +35,6 @@
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@capacitor/assets": "^3.0.5",
     "@eslint/js": "^9.39.1",
     "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.9.1",

@@ -5,6 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { useData } from '@/providers/DataProvider';
 import { Charge, ChargerType } from '@/types';
 import { ChargeCsvRowSchema, parseChargeCsvLine } from '@/utils/validation';
+import { logger } from '@core/logger';
 
 export const useChargeImporter = () => {
     const { t } = useTranslation();
@@ -45,7 +46,7 @@ export const useChargeImporter = () => {
                 // 2. Validate with Zod
                 const validation = ChargeCsvRowSchema.safeParse(rawData);
                 if (!validation.success) {
-                    console.warn(`Skipping invalid row ${i}:`, validation.error.format());
+                    logger.warn(`Skipping invalid row ${i}:`, validation.error.format());
                     continue;
                 }
 
@@ -153,7 +154,7 @@ export const useChargeImporter = () => {
                 toast.error(t('errors.noDataFound'));
             }
         } catch (error) {
-            console.error('Error loading charge registry:', error);
+            logger.error('Error loading charge registry:', error);
             toast.error(t('errors.processingFile') || 'Error processing file');
         }
     }, [settings, updateSettings, addMultipleCharges, googleSync, t]);

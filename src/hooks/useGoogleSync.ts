@@ -1,8 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { googleDriveService, GoogleDriveFile, SyncData, RegistryData } from '@/services/googleDrive';
-import { Capacitor } from '@capacitor/core';
-import { SocialLogin } from '@capgo/capacitor-social-login';
 import { logger } from '@core/logger';
 import { Trip, Charge, Settings, Car } from '@/types';
 
@@ -306,14 +304,6 @@ export function useGoogleSync({
         try {
             await googleDriveService.signOut();
 
-            if (Capacitor.isNativePlatform()) {
-                try {
-                    await SocialLogin.logout({ provider: 'google' });
-                } catch (nativeErr) {
-                    logger.warn('Native logout error (ignoring):', nativeErr);
-                }
-            }
-
             localStorage.removeItem('google_access_token'); // Clear Token
             localStorage.removeItem('google_token_expiry'); // Clear Token Expiry
             setIsAuthenticated(false);
@@ -530,37 +520,8 @@ export function useGoogleSync({
     });
 
     const login = useCallback(async () => {
-        const isNative = Capacitor.isNativePlatform();
-
-        if (isNative) {
-            try {
-                const result = await SocialLogin.login({
-                    provider: 'google',
-                    options: {
-                        scopes: ['email', 'profile', 'https://www.googleapis.com/auth/drive.appdata']
-                    }
-                });
-
-                const resultAny = result as any;
-                const accessToken = resultAny.result?.accessToken?.token
-                    || resultAny.result?.accessToken
-                    || resultAny.accessToken?.token
-                    || resultAny.accessToken;
-
-                if (accessToken) {
-                    await handleLoginSuccess(accessToken);
-                } else {
-                    logger.error('No accessToken found. Result:', JSON.stringify(result));
-                    setError("Error: No Access Token received.");
-                }
-            } catch (e: any) {
-                logger.error('Native Login Failed:', e);
-                setError(e.message || "Error al iniciar sesión con Google");
-            }
-        } else {
-            webLogin();
-        }
-    }, [webLogin, handleLoginSuccess]);
+        webLogin();
+    }, [webLogin]);
 
 
     const checkCloudBackups = useCallback(async () => {
@@ -692,16 +653,6 @@ export function useGoogleSync({
 
     useEffect(() => {
         const checkAuth = async () => {
-            if (Capacitor.isNativePlatform()) {
-                await SocialLogin.initialize({
-                    google: {
-                        webClientId: "721727786401-l61n23pt50lq34789851610211116124.apps.googleusercontent.com"
-                    }
-                }).catch(() => {
-                    // console.log
-                });
-            }
-
             const token = localStorage.getItem('google_access_token');
             const expiry = localStorage.getItem('google_token_expiry');
 
@@ -716,17 +667,12 @@ export function useGoogleSync({
                     }
                 });
             } else if (token || expiry) {
-                if (Capacitor.isNativePlatform()) {
-                    logger.info("[Auth] Token expired, attempting silent refresh...");
-                    login();
-                } else {
-                    localStorage.removeItem('google_access_token');
-                    localStorage.removeItem('google_token_expiry');
-                }
+                localStorage.removeItem('google_access_token');
+                localStorage.removeItem('google_token_expiry');
             }
         };
         checkAuth();
-    }, [fetchUserProfile, localTrips.length, totalCars, openRegistryModal, login]);
+    }, [fetchUserProfile, localTrips.length, totalCars, openRegistryModal]);
 
     useEffect(() => {
         const handleVisibilityChange = () => {

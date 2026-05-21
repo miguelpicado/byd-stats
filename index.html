@@ -3,6 +3,18 @@
 
 <head>
   <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' https://accounts.google.com https://apis.google.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: https:;
+    connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://api.github.com;
+    frame-src https://accounts.google.com;
+    worker-src 'self' blob:;
+    object-src 'none';
+    base-uri 'self';
+  " />
   <link rel="icon" type="image/png" href="/app_logo.png" />
   <link rel="apple-touch-icon" href="/app_logo.png" />
   <meta name="viewport"
@@ -14,14 +26,7 @@
   <!-- Preconnect to external domains for faster resource loading -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <script>
-    // Capture PWA install prompt event immediately
-    window.deferredPrompt = null;
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      window.deferredPrompt = e;
-    });
-  </script>
+  <script src="/install-prompt.js"></script>
 </head>
 
 <body>
