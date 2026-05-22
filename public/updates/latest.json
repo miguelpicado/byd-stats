@@ -1,8 +1,8 @@
 {
   "version": "1.0.2",
   "url": "https://bydstats.com/updates/byd-stats-v1.0.2.zip",
-  "checksum": "927be139704b0d4d146efccc0cd5ba2510bbab21f5af622134d890589b4274a4",
+  "checksum": "7c37989897a12fe2a3c62df29716d03bf8cab5e3bef316f24182c4e61b099164",
   "minAppVersion": "1.6.0",
   "changelog": "Automated OTA Release via GitHub Actions: 1.0.2",
-  "releasedAt": "2026-05-22T09:58:02Z"
+  "releasedAt": "2026-05-22T14:18:33Z"
 }
