@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useEffect, FC } from 'react';
+import { useMemo, useRef, useEffect, FC, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Bar as BarJS, Radar as RadarJS } from 'react-chartjs-2';
 import { Calendar, Clock, TrendingUp, BYD_RED, Car } from '@components/Icons';
@@ -11,7 +11,7 @@ interface PatternsTabProps {
   weekday: { day: string; trips: number; km: number }[];
   hourly: { hour: number; trips: number; km: number }[];
   summary: Summary | null;
-  patternsSpacing: number;
+  patternsSpacing: string;
   patternsChartHeight: number;
   isActive?: boolean;
 }
@@ -71,7 +71,7 @@ const RADAR_CHART_OPTIONS_HORIZONTAL = {
 /**
  * Patterns tab showing usage patterns by hour and day
  */
-const PatternsTab: FC<PatternsTabProps> = React.memo(({
+const PatternsTab: FC<PatternsTabProps> = memo(({
   weekday,
   hourly,
   summary,

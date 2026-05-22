@@ -184,6 +184,16 @@ export interface SoHData {
     };
 }
 
+export interface LiveData {
+    odometer: number;           // Odómetro real del coche (km)
+    soh: number;               // SoH desde la app premium (%)
+    sohMode: 'ai' | 'manual';  // Origen del SoH
+    rangeAtCurrentSoc: number;  // Autonomía estimada al SoC actual (km)
+    rangeAt100Percent: number;  // Autonomía máxima histórica al 100% (km)
+    currentSoc: number;         // SoC actual del coche (%)
+    lastUpdated: string;        // ISO 8601 timestamp
+}
+
 export type TripInsightType = 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays' | 'stationary' | 'soh' | 'fuel' | 'range';
 
 export interface ProcessedData {

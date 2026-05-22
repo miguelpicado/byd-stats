@@ -1,7 +1,8 @@
-import React, { Suspense, memo } from 'react';
+import { Suspense, memo, lazy } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AlertCircle } from '@components/Icons';
 import ErrorBoundary from '@components/common/ErrorBoundary';
+import type { Trip, Charge } from '@/types';
 
 // Contexts & Hooks
 import { useData } from '@/providers/DataProvider';
@@ -14,13 +15,22 @@ import OverviewTab from '@tabs/OverviewTab';
 import TabFallback from '@components/common/TabFallback';
 
 // Lazy loaded tabs
-const CalendarTab = React.lazy(() => import('@tabs/CalendarTab'));
-const HistoryTab = React.lazy(() => import('@tabs/HistoryTab'));
-const RecordsTab = React.lazy(() => import('@tabs/RecordsTab'));
-const TrendsTab = React.lazy(() => import('@tabs/TrendsTab'));
-const PatternsTab = React.lazy(() => import('@tabs/PatternsTab'));
-const EfficiencyTab = React.lazy(() => import('@tabs/EfficiencyTab'));
-const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
+const CalendarTab = lazy(() => import('@tabs/CalendarTab'));
+const HistoryTab = lazy(() => import('@tabs/HistoryTab'));
+const RecordsTab = lazy(() => import('@tabs/RecordsTab'));
+const TrendsTab = lazy(() => import('@tabs/TrendsTab'));
+const PatternsTab = lazy(() => import('@tabs/PatternsTab'));
+const EfficiencyTab = lazy(() => import('@tabs/EfficiencyTab'));
+const ChargesTab = lazy(() => import('@tabs/ChargesTab'));
+
+interface DesktopDashboardViewProps {
+    activeTab: string;
+    tabs: any[];
+    fadingTab?: string | null;
+    backgroundLoad?: boolean;
+    onTripSelect?: (trip: Trip) => void;
+    onChargeSelect?: (charge: Charge) => void;
+}
 
 /**
  * Desktop Dashboard View - Optimized for tab navigation and larger screens
@@ -32,11 +42,18 @@ const DesktopDashboardView = memo(({
     backgroundLoad,
     onTripSelect,
     onChargeSelect
-}) => {
+}: DesktopDashboardViewProps) => {
     const { t } = useTranslation();
 
     const { stats, trips: rawTrips, filtered, charges } = useData();
-    const { summary, monthly, daily, hourly, weekday, tripDist, effScatter, top } = stats || {};
+    const summary = stats?.summary ?? null;
+    const monthly = stats?.monthly ?? [];
+    const daily = stats?.daily ?? [];
+    const hourly = stats?.hourly ?? [];
+    const weekday = stats?.weekday ?? [];
+    const tripDist = stats?.tripDist ?? [];
+    const effScatter = stats?.effScatter ?? [];
+    const top = stats?.top ?? { km: [], kwh: [], dur: [], fuel: [] };
 
     const { settings } = useApp();
     const { isCompact, isFullscreenBYD } = useLayout();
@@ -60,7 +77,7 @@ const DesktopDashboardView = memo(({
                     <p className="text-slate-400">{t('common.noData')}</p>
                 </div>
             ) : (
-                tabs.map((tab) => {
+                tabs.map((tab: any) => {
                     const isActive = activeTab === tab.id;
                     const isFading = fadingTab === tab.id;
 
@@ -86,8 +103,8 @@ const DesktopDashboardView = memo(({
                                         trips={rawTrips}
                                         charges={charges}
                                         isActive={isActive}
-                                        onTripSelect={onTripSelect}
-                                        onChargeSelect={onChargeSelect}
+                                        onTripSelect={onTripSelect || (() => {})}
+                                        onChargeSelect={onChargeSelect || (() => {})}
                                     />
                                 </ErrorBoundary>
                             )}
@@ -143,7 +160,7 @@ const DesktopDashboardView = memo(({
                                 <ErrorBoundary isTab title={t('common.errorLoadingTab')}>
                                     <HistoryTab
                                         filtered={filtered}
-                                        openTripDetail={onTripSelect}
+                                        openTripDetail={onTripSelect || (() => {})}
                                         setShowAllTripsModal={handleShowAllTrips}
                                         isActive={isActive}
                                     />
@@ -154,7 +171,7 @@ const DesktopDashboardView = memo(({
                                     <ChargesTab
                                         charges={charges}
                                         chargerTypes={settings.chargerTypes || []}
-                                        onChargeClick={onChargeSelect}
+                                        onChargeClick={onChargeSelect || (() => {})}
                                         onAddClick={handleAddCharge}
                                         setShowAllChargesModal={handleShowAllCharges}
                                         batterySize={settings.batterySize}

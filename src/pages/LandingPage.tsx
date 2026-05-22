@@ -1,25 +1,29 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
+import type { DragEvent, ChangeEvent } from 'react';
 import { toast } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
-import { BYD_RED } from '../components/Icons'; // Assuming BYD_RED is exported from Icons or another constant file
+import { BYD_RED } from '../components/Icons';
 import { Upload, Cloud } from '../components/Icons';
 
-// Note: BYD_RED might be in constants, let's check imports in App.jsx.
-// App.jsx imports { ..., BYD_RED } from './components/Icons';
-// But usually constants are in utils/constants.js. 
-// However, assuming App.jsx import is correct for now.
+interface LandingPageProps {
+    isCompact: boolean;
+    sqlReady: boolean;
+    error: string | null;
+    googleSync: any;
+    onFileProcess: (file: File, merge: boolean) => void;
+}
 
 const LandingPage = ({
     isCompact,
     sqlReady,
     error,
     googleSync,
-    onFileProcess, // Wrapper around processDB to handle file object
-}) => {
+    onFileProcess,
+}: LandingPageProps) => {
     const { t } = useTranslation();
     const [dragOver, setDragOver] = useState(false);
 
-    const handleDrop = useCallback((e) => {
+    const handleDrop = useCallback((e: DragEvent<HTMLDivElement>) => {
         e.preventDefault();
         setDragOver(false);
         const f = e.dataTransfer.files[0];
@@ -33,8 +37,8 @@ const LandingPage = ({
         }
     }, [onFileProcess, t]);
 
-    const handleFileChange = useCallback((e) => {
-        const f = e.target.files[0];
+    const handleFileChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0];
         if (f) {
             const fileName = f.name.toLowerCase();
             if (!fileName.endsWith('.db') && !fileName.endsWith('.jpg') && !fileName.endsWith('.jpeg') && !fileName.endsWith('.json')) {
@@ -68,6 +72,12 @@ const LandingPage = ({
                 {error && (
                     <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
                         <p style={{ color: BYD_RED }}>{error}</p>
+                    </div>
+                )}
+
+                {googleSync?.error && (
+                    <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-xl text-center">
+                        <p style={{ color: BYD_RED }}>{googleSync.error}</p>
                     </div>
                 )}
 

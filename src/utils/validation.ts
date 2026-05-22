@@ -12,7 +12,7 @@ export const ChargeCsvRowSchema = z.object({
     totalCost: z.number().min(0, "Cost cannot be negative"),
     chargerType: z.string().min(1, "Charger type is required"),
     pricePerKwh: z.number().min(0, "Price per kWh cannot be negative"),
-    initialPercentage: z.number().min(0).max(100).optional().default(0),
+    initialPercentage: z.number().min(0).max(100).optional(),
     finalPercentage: z.number().min(0).max(100, "Percentage must be between 0 and 100").optional().default(0),
     isSOCEstimated: z.boolean().optional(),
 });
@@ -25,7 +25,7 @@ export type ChargeCsvRow = z.infer<typeof ChargeCsvRowSchema>;
 export const parseChargeCsvLine = (values: string[]) => {
     if (values.length < 8) return null;
 
-    const [fechaHora, kmTotales, kwhFacturados, precioTotal, socInicial, tipoCargador, precioKw, porcentajeFinal] = values;
+    const [fechaHora, kmTotales, kwhFacturados, precioTotal, _eficiencia, tipoCargador, precioKw, porcentajeFinal, porcentajeInicial] = values;
 
     // Basic regex check to unify date parsing logic
     const dateMatch = fechaHora?.match(/(\d{4}-\d{2}-\d{2})\s*(\d{2}:\d{2})/);
@@ -37,10 +37,10 @@ export const parseChargeCsvLine = (values: string[]) => {
         odometer: parseFloat(kmTotales) || 0,
         kwhCharged: parseFloat(kwhFacturados) || 0,
         totalCost: parseFloat(precioTotal) || 0,
-        initialPercentage: parseFloat(socInicial) || 0, // Now captured
         chargerType: tipoCargador?.trim() || 'Unknown',
         pricePerKwh: parseFloat(precioKw) || 0,
         finalPercentage: parseFloat(porcentajeFinal) || 0,
+        initialPercentage: porcentajeInicial ? parseFloat(porcentajeInicial) : undefined,
         // isSOCEstimated will be calculated in importer
     };
 };

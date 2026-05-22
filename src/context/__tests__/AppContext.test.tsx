@@ -76,7 +76,7 @@ describe('AppContext', () => {
         expect(result.current.settings.carModel).toBe('BYD Atto 3');
         expect(result.current.settings.theme).toBe('light');
 
-        const saved = JSON.parse(window.localStorage.getItem('byd_settings_test-car'));
+        const saved = JSON.parse(window.localStorage.getItem('byd_settings_test-car')!);
         expect(saved.carModel).toBe('BYD Atto 3');
         expect(saved.theme).toBe('light');
     });
@@ -104,7 +104,7 @@ describe('AppContext', () => {
         expect(result.current.settings.theme).toBe('auto');
         expect(result.current.settings.chargerTypes).toHaveLength(4);
 
-        const saved = JSON.parse(window.localStorage.getItem('byd_settings_test-car'));
+        const saved = JSON.parse(window.localStorage.getItem('byd_settings_test-car')!);
         expect(saved.batterySize).toBe(100);
     });
 

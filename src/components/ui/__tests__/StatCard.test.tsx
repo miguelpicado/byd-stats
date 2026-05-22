@@ -2,7 +2,6 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import StatCard from '../StatCard';
-import { Battery } from '../../Icons';
 
 // Mock icon component for testing
 const MockIcon = ({ className }: { className?: string }) => <svg data-testid="mock-icon" className={className} />;

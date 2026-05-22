@@ -1,5 +1,5 @@
 import { logger } from '@core/logger';
-import { Trip, Charge, Settings, ChargerType, Car } from '@/types';
+import { Trip, Charge, Settings, ChargerType, Car, LiveData } from '@/types';
 
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
@@ -264,6 +264,33 @@ export const googleDriveService = (() => {
         } catch (e) {
             logger.error('Error updating registry', e);
             throw e;
+        }
+    },
+
+    /**
+     * Download live data file for a specific car (premium feature).
+     * Returns null if the file doesn't exist or is malformed (free user / no data).
+     */
+    downloadLiveDataFile: async (carId: string): Promise<LiveData | null> => {
+        try {
+            const filename = `byd_live_data_${carId}.json`;
+            const files = await googleDriveService.listFiles(filename);
+            if (!files || files.length === 0) return null;
+
+            const url = `${DRIVER_API_URL}/files/${files[0].id}?alt=media`;
+            const response = await fetch(url, { headers: googleDriveService._getHeaders() });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (typeof data?.odometer !== 'number' || typeof data?.soh !== 'number' || typeof data?.rangeAtCurrentSoc !== 'number') {
+                logger.warn('[LiveData] File found but missing required fields, ignoring');
+                return null;
+            }
+
+            return data as LiveData;
+        } catch (e) {
+            logger.warn('[LiveData] Failed to download live data', e);
+            return null;
         }
     },
 

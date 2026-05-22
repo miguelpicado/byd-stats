@@ -11,7 +11,7 @@ import { useFileHandling } from '@hooks/useFileHandling';
 import { useConfirmation } from '@hooks/useConfirmation';
 import { useCar } from '@/context/CarContext';
 import useModalState, { ModalsState } from '@hooks/useModalState';
-import { Trip, Charge, ProcessedData, Settings } from '@/types';
+import { Trip, Charge, ProcessedData, Settings, LiveData } from '@/types';
 
 // Define context interfaces
 export interface DataState {
@@ -49,6 +49,9 @@ export interface DataState {
     setAcknowledgedAnomalies: (ids: string[]) => void;
     deletedAnomalies: string[];
     setDeletedAnomalies: (ids: string[]) => void;
+
+    // Premium live data
+    liveData: LiveData | null;
 
     // ... other state
 }
@@ -196,6 +199,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         carName: activeCar?.name || ''
     });
 
+    const liveData = googleSync.liveData;
+
     // 8. Auto-Sync Effect
     useEffect(() => {
         if (!googleSync.isAuthenticated || googleSync.isSyncing) return;
@@ -287,7 +292,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         return database.exportDatabase(rawTrips);
     }, [database, rawTrips]);
 
-    const exportSyncData = useCallback(() => {
+    const exportSyncData = useCallback(async () => {
         try {
             const syncData = {
                 trips: rawTrips || [],
@@ -305,12 +310,12 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             toast.success(t('sync.exportSuccess', 'Datos exportados correctamente'));
-            return { success: true };
+            return { success: true as const, reason: undefined, message: undefined };
         } catch (e) {
             const error = e instanceof Error ? e : new Error(String(e));
             logger.error('Error exporting sync data:', e);
             toast.error(t('sync.exportFailed', 'Error al exportar datos'));
-            return { success: false, reason: 'error', message: error.message };
+            return { success: false as const, reason: 'error', message: error.message };
         }
     }, [rawTrips, charges, settings, activeCarId, t]);
 
@@ -337,7 +342,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
                 if (!values || values.length < 8) continue;
 
-                const [fechaHora, kmTotales, kwhFacturados, precioTotal, , tipoCargador, precioKw, porcentajeFinal] = values;
+                const [fechaHora, kmTotales, kwhFacturados, precioTotal, , tipoCargador, precioKw, porcentajeFinal, porcentajeInicial] = values;
 
                 if (!fechaHora || !fechaHora.match(/^\d{4}-\d{2}-\d{2}/)) {
                     break;
@@ -384,7 +389,8 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                     totalCost: parseFloat(precioTotal) || 0,
                     chargerTypeId,
                     pricePerKwh: parseFloat(precioKw) || 0,
-                    finalPercentage: parseFloat(porcentajeFinal) || 0
+                    finalPercentage: parseFloat(porcentajeFinal) || 0,
+                    initialPercentage: porcentajeInicial ? parseFloat(porcentajeInicial) : undefined
                 });
             }
 
@@ -433,13 +439,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
         forceRecalculate,
-        acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies
+        acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies,
+        liveData
     }), [
         rawTrips, filtered, data, charges, tripHistory,
         settings, googleSync, database, modalState, fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
         forceRecalculate,
-        acknowledgedAnomalies, deletedAnomalies
+        acknowledgedAnomalies, deletedAnomalies,
+        liveData
     ]);
 
     // Dispatch Value

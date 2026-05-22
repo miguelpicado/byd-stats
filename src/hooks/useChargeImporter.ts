@@ -91,8 +91,8 @@ export const useChargeImporter = () => {
                         totalCost: data.totalCost,
                         chargerTypeId,
                         pricePerKwh: data.pricePerKwh,
-                        initialPercentage: data.initialPercentage,
-                        finalPercentage: data.finalPercentage
+                        finalPercentage: data.finalPercentage,
+                        initialPercentage: data.initialPercentage
                     });
                 }
             }

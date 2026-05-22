@@ -9,7 +9,7 @@ import TripInsightsModal from '@components/modals/TripInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
 import { MapPin, Zap, Clock, Battery, Fuel, Euro, IconProps } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
-import { Summary, Trip, Settings, TripInsightType, Charge } from '@/types';
+import { Summary, Trip, Settings, TripInsightType, Charge, LiveData } from '@/types';
 
 const PIE_CHART_OPTIONS = {
     maintainAspectRatio: false,
@@ -49,6 +49,7 @@ interface OverviewContentProps {
     onCloseInsightModal: () => void;
     isActive?: boolean;
     charges?: Charge[];
+    liveData?: LiveData | null;
 }
 
 const OverviewContent: FC<OverviewContentProps> = ({
@@ -71,6 +72,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
     onCloseInsightModal,
     isActive = true,
     charges,
+    liveData = null,
 }) => {
     const { t } = useTranslation();
     const { isCompact, isLargerCard, isVertical } = useLayout();
@@ -86,6 +88,22 @@ const OverviewContent: FC<OverviewContentProps> = ({
         const months = new Set(charges.map(c => c.date?.substring(0, 7)).filter(Boolean));
         return months.size > 0 ? total / months.size : 0;
     }, [charges]);
+
+    // Staleness check for premium live data
+    const isLiveDataStale = useMemo(() => {
+        if (!liveData?.lastUpdated) return false;
+        const ageMs = Date.now() - new Date(liveData.lastUpdated).getTime();
+        return ageMs > 24 * 60 * 60 * 1000;
+    }, [liveData?.lastUpdated]);
+
+    const liveDataAge = useMemo(() => {
+        if (!liveData?.lastUpdated) return null;
+        const ageMs = Date.now() - new Date(liveData.lastUpdated).getTime();
+        const hours = Math.round(ageMs / (60 * 60 * 1000));
+        if (hours < 1) return t('premium.justNow', 'ahora');
+        if (hours < 24) return t('premium.hoursAgo', { hours });
+        return t('premium.daysAgo', { days: Math.round(hours / 24) });
+    }, [liveData?.lastUpdated, t]);
 
     // Effect to trigger animation when tab becomes active
     useEffect(() => {
@@ -114,19 +132,23 @@ const OverviewContent: FC<OverviewContentProps> = ({
         color?: string;
         sub?: string;
         onClick?: () => void;
-        isCustom?: boolean; // Flag for custom components
+        isCustom?: boolean;
+        isPremium?: boolean;
     }
 
     const getStatsConfig = (): StatConfigItem[] => [
         {
             key: 'distance',
             icon: MapPin,
-            label: t('stats.distance'),
-            value: summary.totalKm,
+            label: liveData ? t('stats.premiumOdometer', 'Odómetro Premium') : t('stats.distance'),
+            value: liveData ? liveData.odometer.toFixed(0) : summary.totalKm,
             unit: t('units.km'),
-            color: "bg-red-500/20 text-red-400",
-            sub: `${summary.kmDay} ${t('units.km')}/${t('units.day')}`,
-            onClick: onOdometerClick
+            color: liveData ? "bg-red-500/20 text-red-300" : "bg-red-500/20 text-red-400",
+            sub: liveData
+                ? (isLiveDataStale ? `${t('premium.stale', 'desactualizado')} · ${liveDataAge}` : `Premium · ${liveDataAge}`)
+                : `${summary.kmDay} ${t('units.km')}/${t('units.day')}`,
+            onClick: onOdometerClick,
+            isPremium: !!liveData
         },
         {
             key: 'energy',
@@ -142,10 +164,12 @@ const OverviewContent: FC<OverviewContentProps> = ({
         {
             key: 'range',
             icon: Battery,
-            label: t('stats.estimatedRange'),
-            value: summary.estimatedRange,
+            label: liveData ? t('stats.premiumRange', 'Autonomía AI') : t('stats.estimatedRange'),
+            value: liveData ? `${liveData.rangeAtCurrentSoc}/${liveData.rangeAt100Percent}` : summary.estimatedRange,
             unit: t('units.km'),
-            color: "bg-amber-500/20 text-amber-400",
+            color: liveData ? "bg-amber-400/20 text-amber-300" : "bg-amber-500/20 text-amber-400",
+            sub: liveData ? `${t('stats.soc', 'SoC')}: ${liveData.currentSoc}%` : undefined,
+            isPremium: !!liveData
         },
         // Replaces Stationary for Hybrid, and Time for EV
         summary.isHybrid ? {
@@ -185,11 +209,13 @@ const OverviewContent: FC<OverviewContentProps> = ({
         {
             key: 'soh',
             icon: Battery,
-            label: t('settings.soh'),
-            value: summary.soh,
+            label: liveData ? t('stats.premiumSoh', 'SoH Premium') : t('settings.soh'),
+            value: liveData ? liveData.soh : summary.soh,
             unit: "%",
-            color: "bg-emerald-500/20 text-emerald-400",
-            onClick: () => onInsightClick('soh')
+            color: liveData ? "bg-emerald-400/20 text-emerald-300" : "bg-emerald-500/20 text-emerald-400",
+            sub: liveData ? `Premium · ${liveData.sohMode === 'ai' ? 'AI' : 'Manual'}` : undefined,
+            onClick: () => onInsightClick('soh'),
+            isPremium: !!liveData
         },
         {
             key: 'monthly_cost',
@@ -228,6 +254,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
                             color={item.color!}
                             sub={item.sub}
                             onClick={item.onClick}
+                            isPremium={item.isPremium}
                         />
                     )
                 ))}
@@ -253,6 +280,7 @@ const OverviewContent: FC<OverviewContentProps> = ({
                             color={item.color!}
                             sub={item.sub}
                             onClick={item.onClick}
+                            isPremium={item.isPremium}
                         />
                     )
                 ))}

@@ -57,7 +57,11 @@
         "stationaryConsumption": "Stationary consumption",
         "stationary": "Stationary consumption",
         "estimatedRange": "Estimated Range",
-        "cost": "Cost"
+        "cost": "Cost",
+        "premiumOdometer": "Premium Odometer",
+        "premiumRange": "AI Range",
+        "premiumSoh": "Premium SoH",
+        "soc": "SoC"
     },
     "units": {
         "km": "mi",
@@ -504,6 +508,12 @@
         "update": "Update",
         "exitConfirmTitle": "Close BYD Stats?",
         "exitConfirmText": "You can reopen the app from the icon on your home screen."
+    },
+    "premium": {
+        "justNow": "just now",
+        "hoursAgo": "{{hours}}h ago",
+        "daysAgo": "{{days}}d ago",
+        "stale": "outdated"
     },
     "patterns": {
         "tripsPerWeekday": "Trips per weekday",

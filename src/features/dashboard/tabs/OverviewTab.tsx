@@ -41,7 +41,7 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
   isActive = true
 }) => {
   const { updateSettings } = useApp();
-  const { charges } = useData();
+  const { charges, liveData } = useData();
 
 
 
@@ -133,6 +133,7 @@ const OverviewTab: React.FC<OverviewTabProps> = React.memo(({
         onThermalStressClick={() => setShowThermalModal(true)}
         isActive={isActive}
         charges={charges}
+        liveData={liveData}
       />
       <MfgDateModal
         isOpen={showMfgModal}

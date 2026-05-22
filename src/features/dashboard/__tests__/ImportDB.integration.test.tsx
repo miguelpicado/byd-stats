@@ -6,6 +6,15 @@ import { AppProvider } from '../../../context/AppContext';
 import { LayoutProvider } from '../../../context/LayoutContext';
 import { CarProvider } from '../../../context/CarContext';
 
+// jsdom polyfill
+if (typeof global.ResizeObserver === 'undefined') {
+    global.ResizeObserver = class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    };
+}
+
 // Mock dependencies
 vi.mock('react-i18next', () => ({
     useTranslation: () => ({
@@ -32,7 +41,7 @@ vi.mock('@/hooks/useDatabase', () => ({
 
 // Mock window.crypto.randomUUID for CarContext
 if (!global.crypto.randomUUID) {
-    global.crypto.randomUUID = () => 'test-uuid-' + Math.random();
+    global.crypto.randomUUID = () => '00000000-0000-0000-0000-000000000000';
 }
 
 describe('Import DB Integration Flow', () => {
@@ -61,7 +70,7 @@ describe('Import DB Integration Flow', () => {
                 <input
                     type="file"
                     data-testid="db-input"
-                    onChange={(e) => {
+                    onChange={(_e) => {
                         // In reality, this is handled by useFileHandling
                         // But we want to see if the action reaches the database hook
                     }}

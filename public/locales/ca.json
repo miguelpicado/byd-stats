@@ -98,7 +98,11 @@
         "stationaryConsumption": "Consum en parat",
         "stationary": "Consum en parat",
         "estimatedRange": "Autonomia estimada",
-        "cost": "Cost"
+        "cost": "Cost",
+        "premiumOdometer": "Odòmetre Premium",
+        "premiumRange": "Autonomia IA",
+        "premiumSoh": "SoH Premium",
+        "soc": "SoC"
     },
     "insights": {
         "dailyGoal": "Meta diària recomanada",
@@ -587,6 +591,12 @@
         "update": "Actualitza",
         "exitConfirmTitle": "Voleu tancar BYD Stats?",
         "exitConfirmText": "Podeu tornar a obrir l'aplicació des de la icona a la pantalla d'inici."
+    },
+    "premium": {
+        "justNow": "ara",
+        "hoursAgo": "fa {{hours}}h",
+        "daysAgo": "fa {{days}}d",
+        "stale": "desactualitzat"
     },
     "patterns": {
         "tripsPerWeekday": "Trajectes per dia de la setmana",

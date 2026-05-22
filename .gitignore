@@ -65,3 +65,10 @@ tsc_output.txt
 # Security audit (local only, contains sensitive findings)
 00_AUDIT.md
 01_PLAN.md
+
+# Plans (local working documents)
+docs/plans/
+
+# Build artifacts
+tsconfig.tsbuildinfo
+vite.config.d.ts

@@ -23,6 +23,7 @@ interface UseDatabaseReturn {
     exportDatabase: (trips: Trip[]) => Promise<{ success: boolean; reason?: string; message?: string }>;
     validateFile: (file: File) => boolean;
     setError: (error: string | null) => void;
+    isJsonSyncData: (file: File) => Promise<boolean>;
 }
 
 /**
@@ -191,6 +192,17 @@ export function useDatabase(): UseDatabaseReturn {
         }
     }, []);
 
+    // Check if JSON file is BYD Stats sync data
+    const isJsonSyncData = useCallback(async (file: File): Promise<boolean> => {
+        try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            return data && typeof data === 'object' && 'trips' in data && 'charges' in data && 'settings' in data;
+        } catch {
+            return false;
+        }
+    }, []);
+
     // Validate file type
     const validateFile = useCallback((file: File) => {
         const fileName = file.name.toLowerCase();
@@ -208,7 +220,8 @@ export function useDatabase(): UseDatabaseReturn {
         processDB,
         exportDatabase,
         validateFile,
-        setError
+        setError,
+        isJsonSyncData
     };
 }
 

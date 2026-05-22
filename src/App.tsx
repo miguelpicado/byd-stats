@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import { Suspense, lazy } from 'react';
 import { BYD_RED } from '@components/Icons';
 import '@/core/chartSetup';
 
@@ -36,9 +36,6 @@ export default function BYDStatsAnalyzer() {
 
     // Actions
     processDB,
-    exportDatabase,
-    clearData,
-    loadChargeRegistry,
     openTripDetail,
     handleChargeSelect,
 
@@ -46,7 +43,6 @@ export default function BYDStatsAnalyzer() {
     allTripsScrollRef,
     allChargesScrollRef,
 
-    // Pass-through props for views
     // Pass-through props for views
     rawTrips,
     charges,
@@ -57,7 +53,6 @@ export default function BYDStatsAnalyzer() {
     closeModal,
     // selectedTrip,
     // setSelectedTrip,
-    selectedCharge,
     setSelectedCharge,
     // setLegalInitialSection,
     // legalInitialSection,
@@ -183,7 +178,7 @@ export default function BYDStatsAnalyzer() {
         tabs={tabs}
         handleTabClick={handleTabClick}
         isTransitioning={isTransitioning}
-        fadingTab={fadingTab}
+        fadingTab={fadingTab ?? undefined}
         backgroundLoad={backgroundLoad}
         onTripSelect={openTripDetail}
         onChargeSelect={handleChargeSelect}

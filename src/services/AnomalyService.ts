@@ -214,7 +214,7 @@ export const AnomalyService = {
     }
 };
 
-const checkBatteryHealth = (data: ProcessedData, settings: Settings): Anomaly[] => {
+const checkBatteryHealth = (data: ProcessedData, _settings: Settings): Anomaly[] => {
     const anomalies: Anomaly[] = [];
     const currentSoH = data.summary.soh;
 

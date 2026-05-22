@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { X, Download } from './Icons';
 import { logger } from '@core/logger';
 
 // Simple icons for PWA Manager (not in Icons.jsx)
-const LogOut = ({ className }) => (
+const LogOut = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
         <polyline points="16 17 21 12 16 7" />
@@ -12,7 +12,7 @@ const LogOut = ({ className }) => (
     </svg>
 );
 
-const RefreshCw = ({ className }) => (
+const RefreshCw = ({ className }: { className?: string }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="23 4 23 10 17 10" />
         <polyline points="1 20 1 14 7 14" />
@@ -28,9 +28,9 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
  * @param {string} layoutMode - 'horizontal' or 'vertical' from parent
  * @param {boolean} isCompact - Whether compact mode is active
  */
-export default function PWAManager({ layoutMode = 'vertical', isCompact = false }) {
+export default function PWAManager({ layoutMode = 'vertical', isCompact = false }: { layoutMode?: string; isCompact?: boolean }) {
     const { t } = useTranslation();
-    const [deferredPrompt, setDeferredPrompt] = useState(null);
+    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
     const [showInstallBanner, setShowInstallBanner] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
     const [showExitConfirm, setShowExitConfirm] = useState(false);
@@ -42,7 +42,7 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
             const standalone = window.matchMedia('(display-mode: standalone)').matches ||
                 window.matchMedia('(display-mode: fullscreen)').matches ||
                 window.navigator.standalone;
-            setIsStandalone(standalone);
+            setIsStandalone(standalone ?? false);
         };
 
         checkStandalone();
@@ -56,13 +56,13 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
 
     // Virtual PWA Register Hook
     const {
-        offlineReady: [offlineReady, setOfflineReady],
-        needRefresh: [needRefresh, setNeedRefresh],
+        offlineReady: [offlineReady],
+        needRefresh: [needRefresh],
         updateServiceWorker,
     } = useRegisterSW({
-        onRegisteredPO(r) {
+        onRegistered(_r: any) {
         },
-        onRegisterError(error) {
+        onRegisterError(error: any) {
             logger.error('[PWA] SW Registration Error:', error);
         },
     });
@@ -86,7 +86,7 @@ export default function PWAManager({ layoutMode = 'vertical', isCompact = false 
 
     // Listen for install prompt
     useEffect(() => {
-        const handleInstallPrompt = (e) => {
+        const handleInstallPrompt = (e: any) => {
             e.preventDefault();
             setDeferredPrompt(e);
             setShowInstallBanner(true);

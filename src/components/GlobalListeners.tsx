@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { logger } from '@core/logger';
 import { useData } from '@/providers/DataProvider';
 
-const GlobalListeners = ({ activeTab }) => {
+const GlobalListeners = ({ activeTab }: { activeTab: string }) => {
     const { t } = useTranslation();
 
     const {
@@ -48,7 +48,7 @@ const GlobalListeners = ({ activeTab }) => {
                 clearPendingFile();
             } catch (err) {
                 logger.error('[FileHandling] Error processing file:', err);
-                alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + err.message);
+                alert(t('errors.processingFile') || 'Error al procesar el archivo: ' + (err instanceof Error ? err.message : String(err)));
                 clearPendingFile();
             }
         };

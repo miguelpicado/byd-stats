@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { googleDriveService, GoogleDriveFile, SyncData, RegistryData } from '@/services/googleDrive';
 import { logger } from '@core/logger';
-import { Trip, Charge, Settings, Car } from '@/types';
+import { Trip, Charge, Settings, Car, LiveData } from '@/types';
 
 // Types for Conflict Resolution
 interface ConflictDifference {
@@ -51,6 +51,7 @@ interface UseGoogleSyncReturn {
     error: string | null;
     userProfile: UserProfile | null;
     pendingConflict: PendingConflict | null;
+    liveData: LiveData | null;
     resolveConflict: (resolution: 'local' | 'cloud' | 'merge') => Promise<void>;
     dismissConflict: () => void;
     login: () => Promise<void>;
@@ -91,6 +92,10 @@ export function useGoogleSync({
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
     const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(null);
+    const [liveData, setLiveData] = useState<LiveData | null>(null);
+
+    // Ref to track if initial auth-triggered sync has run (prevents infinite re-sync)
+    const initialAuthSyncDoneRef = useRef(false);
 
     // Derive filename from activeCarId
     const getTargetFilename = useCallback(() => {
@@ -308,10 +313,21 @@ export function useGoogleSync({
             localStorage.removeItem('google_token_expiry'); // Clear Token Expiry
             setIsAuthenticated(false);
             setUserProfile(null);
+            initialAuthSyncDoneRef.current = false; // Reset so next login triggers a fresh sync
         } catch (e) {
             logger.error('Logout failed', e);
         }
     }, []);
+
+    const fetchLiveData = useCallback(async () => {
+        if (!activeCarId) return;
+        try {
+            const result = await googleDriveService.downloadLiveDataFile(activeCarId);
+            setLiveData(result);
+        } catch (e) {
+            logger.warn('[Sync] Failed to fetch live data', e);
+        }
+    }, [activeCarId]);
 
     const performSync = useCallback(async (newTripsData: Trip[] | null = null, options: { forcePull?: boolean; forcePush?: boolean } = {}) => {
         logger.info(`[Sync] Initiated. Local trips: ${localTrips?.length}, New data: ${newTripsData?.length}, Online: ${navigator.onLine}`);
@@ -464,6 +480,9 @@ export function useGoogleSync({
                 logger.warn('[Sync] Registry update failed (non-critical)', regErr);
             }
 
+            // Fetch premium live data (non-blocking)
+            fetchLiveData().catch(() => {});
+
         } catch (e: any) {
             const isAuthError = e.status === 401 || e.status === 403 ||
                 (e.result?.error?.code === 401 || e.result?.error?.code === 403) ||
@@ -480,7 +499,7 @@ export function useGoogleSync({
         } finally {
             setIsSyncing(false);
         }
-    }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout, getTargetFilename, isAuthenticated, activeCarId, totalCars, updateCar]);
+    }, [localTrips, settings, localCharges, setLocalTrips, setSettings, setLocalCharges, logout, getTargetFilename, isAuthenticated, activeCarId, totalCars, updateCar, fetchLiveData]);
 
     const handleLoginSuccess = useCallback(async (accessToken: string) => {
         googleDriveService.setAccessToken(accessToken);
@@ -495,7 +514,8 @@ export function useGoogleSync({
         const modalOpened = await checkAndPromptRegistry();
 
         if (!modalOpened) {
-            performSync();
+            initialAuthSyncDoneRef.current = true; // Prevent duplicate sync from checkAuth effect
+            await performSync();
         } else {
             logger.info("[Sync] Suspended pending registry action");
         }
@@ -505,6 +525,11 @@ export function useGoogleSync({
     useEffect(() => {
         handleLoginSuccessRef.current = handleLoginSuccess;
     }, [handleLoginSuccess]);
+
+    const performSyncRef = useRef(performSync);
+    useEffect(() => {
+        performSyncRef.current = performSync;
+    }, [performSync]);
 
     const webLogin = useGoogleLogin({
         onSuccess: async (tokenResponse) => {
@@ -661,11 +686,16 @@ export function useGoogleSync({
                 setIsAuthenticated(true);
                 fetchUserProfile(token);
 
-                checkAndPromptRegistry().then(opened => {
-                    if (opened) {
-                        logger.info("[Auth] Registry modal opened, waiting for user action.");
-                    }
-                });
+                const modalOpened = await checkAndPromptRegistry();
+                if (modalOpened) {
+                    logger.info("[Auth] Registry modal opened, waiting for user action.");
+                } else if (!initialAuthSyncDoneRef.current) {
+                    // Car is known and no modal needed — pull data from cloud
+                    initialAuthSyncDoneRef.current = true;
+                    logger.info("[Auth] Car known, triggering initial sync...");
+                    performSyncRef.current();
+                    fetchLiveData().catch(() => {});
+                }
             } else if (token || expiry) {
                 localStorage.removeItem('google_access_token');
                 localStorage.removeItem('google_token_expiry');
@@ -684,13 +714,14 @@ export function useGoogleSync({
                 if (now - lastSync > 2 * 60 * 1000) {
                     logger.info("[Sync] App became visible, triggering auto-pull...");
                     performSync();
+                    fetchLiveData().catch(() => {});
                 }
             }
         };
 
         document.addEventListener('visibilitychange', handleVisibilityChange);
         return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-    }, [isAuthenticated, isSyncing, lastSyncTime, performSync, isRegistryModalOpen]);
+    }, [isAuthenticated, isSyncing, lastSyncTime, performSync, isRegistryModalOpen, fetchLiveData]);
 
     return {
         isAuthenticated,
@@ -699,6 +730,7 @@ export function useGoogleSync({
         error,
         userProfile,
         pendingConflict,
+        liveData,
         resolveConflict,
         dismissConflict,
         login,

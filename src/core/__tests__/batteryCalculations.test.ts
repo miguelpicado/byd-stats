@@ -76,9 +76,14 @@ describe('batteryCalculations', () => {
 
     describe('Edge Cases', () => {
         it('should flag calibration warning if no charges reach 100%', () => {
+            // Calibration logic requires > 5 sessions before flagging
             const charges = [
                 { kwhCharged: 10, finalPercentage: 80, type: 'electric' },
-                { kwhCharged: 10, finalPercentage: 90, type: 'electric' }
+                { kwhCharged: 10, finalPercentage: 90, type: 'electric' },
+                { kwhCharged: 5, finalPercentage: 70, type: 'electric' },
+                { kwhCharged: 8, finalPercentage: 85, type: 'electric' },
+                { kwhCharged: 12, finalPercentage: 75, type: 'electric' },
+                { kwhCharged: 6, finalPercentage: 60, type: 'electric' }
             ] as Charge[];
             const mfgDate = '2024-01-01';
 

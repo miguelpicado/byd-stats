@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Activity, TrendingUp, Clock, Zap, BarChart3, List, Battery, Calendar } from '../components/Icons';
 import { Settings } from '@/types';
@@ -27,6 +27,12 @@ export const useTabNavigation = ({ settings }: UseTabNavigationProps) => {
     const [fadingTab, setFadingTab] = useState<string | null>(null);
     const [isTransitioning, setIsTransitioning] = useState<boolean>(false);
 
+    // Ref for current tab so popstate handler always reads the latest value
+    const activeTabRef = useRef(activeTab);
+    useEffect(() => {
+        activeTabRef.current = activeTab;
+    }, [activeTab]);
+
     // Constants
     const transitionDuration = 500;
 
@@ -44,18 +50,31 @@ export const useTabNavigation = ({ settings }: UseTabNavigationProps) => {
     // Handle browser back/forward buttons
     useEffect(() => {
         const handlePopState = () => {
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+            // PWA back behavior: first back → Overview, second back → close app
+            if (isStandalone) {
+                if (activeTabRef.current !== 'overview') {
+                    window.history.pushState({ pwaBack: true }, '', '/#overview');
+                    setActiveTab('overview');
+                    return;
+                }
+                try { window.close(); } catch {}
+                return;
+            }
+
             const hash = window.location.hash.replace('#', '');
             const validTabs = tabs.map(t => t.id);
             const newTab = validTabs.includes(hash) ? hash : 'overview';
 
-            if (newTab !== activeTab) {
+            if (newTab !== activeTabRef.current) {
                 setActiveTab(newTab);
             }
         };
 
         window.addEventListener('popstate', handlePopState);
         return () => window.removeEventListener('popstate', handlePopState);
-    }, [activeTab, tabs]);
+    }, [tabs]);
 
     // Sync state changes to URL
     useEffect(() => {

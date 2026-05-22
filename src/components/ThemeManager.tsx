@@ -6,7 +6,7 @@ const ThemeManager = () => {
 
     // Theme management - UNIFIED AND ROBUST
     useEffect(() => {
-        const applyTheme = (isDark) => {
+        const applyTheme = (isDark: boolean) => {
             // 1. CSS Classes
             if (isDark) {
                 document.documentElement.classList.add('dark');
@@ -19,7 +19,7 @@ const ThemeManager = () => {
 
             // 2.1 Force meta tag to match active theme (critical for car systems)
             // This prevents the car's dark mode from overriding app's light theme
-            let colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+            let colorSchemeMeta: HTMLMetaElement | null = document.querySelector('meta[name="color-scheme"]');
             if (!colorSchemeMeta) {
                 colorSchemeMeta = document.createElement('meta');
                 colorSchemeMeta.name = 'color-scheme';
@@ -45,7 +45,7 @@ const ThemeManager = () => {
 
             // Listen for system changes
             const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-            const handler = (e) => applyTheme(e.matches);
+            const handler = (e: MediaQueryListEvent) => applyTheme(e.matches);
 
             mediaQuery.addEventListener('change', handler);
             return () => mediaQuery.removeEventListener('change', handler);

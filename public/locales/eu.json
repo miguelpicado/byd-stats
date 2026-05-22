@@ -57,7 +57,11 @@
         "stationaryConsumption": "Geldiko kontsumoa",
         "stationary": "Geldiko kontsumoa",
         "estimatedRange": "Aurreikusitako autonomia",
-        "cost": "Kostua"
+        "cost": "Kostua",
+        "premiumOdometer": "Odometro Premium",
+        "premiumRange": "IA Autonomia",
+        "premiumSoh": "SoH Premium",
+        "soc": "SoC"
     },
     "units": {
         "km": "km",
@@ -499,6 +503,12 @@
         "update": "Eguneratu",
         "exitConfirmTitle": "BYD Stats itxi?",
         "exitConfirmText": "Zure hasierako pantailako ikonoan aplikazioa berriz ireki dezakezu."
+    },
+    "premium": {
+        "justNow": "orain",
+        "hoursAgo": "duela {{hours}}o",
+        "daysAgo": "duela {{days}}e",
+        "stale": "zaharkitua"
     },
     "patterns": {
         "tripsPerWeekday": "Asteko eguneko bidaiak",

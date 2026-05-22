@@ -57,7 +57,11 @@
         "stationaryConsumption": "Consumo estacionário",
         "stationary": "Consumo estacionário",
         "estimatedRange": "Autonomia estimada",
-        "cost": "Custo"
+        "cost": "Custo",
+        "premiumOdometer": "Odômetro Premium",
+        "premiumRange": "Autonomia IA",
+        "premiumSoh": "SoH Premium",
+        "soc": "SoC"
     },
     "units": {
         "km": "km",
@@ -505,6 +509,12 @@
         "update": "Atualizar",
         "exitConfirmTitle": "Fechar BYD Stats?",
         "exitConfirmText": "Pode reabrir a app a partir do ícone no seu ecrã inicial."
+    },
+    "premium": {
+        "justNow": "agora",
+        "hoursAgo": "há {{hours}}h",
+        "daysAgo": "há {{days}}d",
+        "stale": "desatualizado"
     },
     "patterns": {
         "tripsPerWeekday": "Viagens por dia da semana",

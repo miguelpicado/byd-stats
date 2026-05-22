@@ -1,4 +1,4 @@
-import React, { Suspense, memo, FC } from 'react';
+import { Suspense, memo, FC, lazy } from 'react';
 import { AlertCircle } from '../Icons';
 import { TAB_PADDING, COMPACT_TAB_PADDING } from '@core/constants';
 import { Trip, Charge, Summary, MonthlyData, DailyData, Settings, ProcessedData } from '@/types';
@@ -10,13 +10,13 @@ import TabFallback from '../common/TabFallback';
 import FloatingActionButton from '../common/FloatingActionButton'; // Used in vertical mode
 
 // Lazy loaded tabs
-const CalendarTab = React.lazy(() => import('@tabs/CalendarTab'));
-const HistoryTab = React.lazy(() => import('@tabs/HistoryTab'));
-const RecordsTab = React.lazy(() => import('@tabs/RecordsTab'));
-const TrendsTab = React.lazy(() => import('@tabs/TrendsTab'));
-const PatternsTab = React.lazy(() => import('@tabs/PatternsTab'));
-const EfficiencyTab = React.lazy(() => import('@tabs/EfficiencyTab'));
-const ChargesTab = React.lazy(() => import('@tabs/ChargesTab'));
+const CalendarTab = lazy(() => import('@tabs/CalendarTab'));
+const HistoryTab = lazy(() => import('@tabs/HistoryTab'));
+const RecordsTab = lazy(() => import('@tabs/RecordsTab'));
+const TrendsTab = lazy(() => import('@tabs/TrendsTab'));
+const PatternsTab = lazy(() => import('@tabs/PatternsTab'));
+const EfficiencyTab = lazy(() => import('@tabs/EfficiencyTab'));
+const ChargesTab = lazy(() => import('@tabs/ChargesTab'));
 
 interface TabsManagerProps {
     activeTab: string;
@@ -46,12 +46,12 @@ interface TabsManagerProps {
         smallChartHeight: number;
         patternsChartHeight: number;
         largeChartHeight: number;
-        overviewSpacingVertical: number;
-        overviewSpacingHorizontal: number;
-        patternsSpacing: number;
-        recordsItemPadding: number;
-        recordsItemPaddingHorizontal: number;
-        recordsListHeightHorizontal: number;
+        overviewSpacingVertical: string;
+        overviewSpacingHorizontal: string;
+        patternsSpacing: string;
+        recordsItemPadding: string;
+        recordsItemPaddingHorizontal: string;
+        recordsListHeightHorizontal: string;
     };
     // Handlers
     openModal: (modalName: keyof ModalsState, props?: any) => void;
@@ -96,7 +96,7 @@ const TabsManager: FC<TabsManagerProps> = memo(({
     t
 }) => {
     // Helper for class names
-    const getTabClassName = (tabId: string, isActive: boolean, isFading: boolean, baseClass = 'tab-content-container') => {
+    const getTabClassName = (_tabId: string, isActive: boolean, isFading: boolean, baseClass = 'tab-content-container') => {
         const classes = [baseClass];
         if (isActive && isFading) {
             classes.push('tab-fade-in');
