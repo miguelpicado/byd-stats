@@ -11,7 +11,7 @@ import { useFileHandling } from '@hooks/useFileHandling';
 import { useConfirmation } from '@hooks/useConfirmation';
 import { useCar } from '@/context/CarContext';
 import useModalState, { ModalsState } from '@hooks/useModalState';
-import { Trip, Charge, ProcessedData, Settings, LiveData } from '@/types';
+import { Trip, Charge, ProcessedData, Settings, LiveData, GpsCoord } from '@/types';
 
 // Define context interfaces
 export interface DataState {
@@ -52,6 +52,8 @@ export interface DataState {
 
     // Premium live data
     liveData: LiveData | null;
+    // Premium per-trip GPS routes, keyed by trip start_timestamp (null for non-premium)
+    tripRoutes: Record<string, GpsCoord[]> | null;
 
     // ... other state
 }
@@ -200,6 +202,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     });
 
     const liveData = googleSync.liveData;
+    const tripRoutes = googleSync.tripRoutes;
 
     // 8. Auto-Sync Effect
     useEffect(() => {
@@ -440,14 +443,15 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         filterType, selMonth, dateFrom, dateTo, months,
         forceRecalculate,
         acknowledgedAnomalies, setAcknowledgedAnomalies, deletedAnomalies, setDeletedAnomalies,
-        liveData
+        liveData,
+        tripRoutes
     }), [
         rawTrips, filtered, data, charges, tripHistory,
         settings, googleSync, database, modalState, fileHandling,
         filterType, selMonth, dateFrom, dateTo, months,
         forceRecalculate,
         acknowledgedAnomalies, deletedAnomalies,
-        liveData
+        liveData, tripRoutes
     ]);
 
     // Dispatch Value

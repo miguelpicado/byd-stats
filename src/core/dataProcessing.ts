@@ -371,11 +371,23 @@ export function processData(rows: Trip[], priceSettings: Settings = {} as Settin
     allTrips.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
     validTrips.sort((a, b) => (a.start_timestamp || 0) - (b.start_timestamp || 0));
 
+    // Per-trip efficiency (kWh/100km) — only meaningful for trips >= 5km with sane values
+    const tripEff = (t: Trip) => ((t.electricity || 0) / (t.trip || 1)) * 100;
+    const effCandidates = validTrips.filter(t => (t.trip || 0) >= 5 && (t.electricity || 0) > 0 && tripEff(t) > 0 && tripEff(t) < 50);
+
+    // Per-trip average speed (km/h) — duration is stored in seconds; cap at sane values
+    const tripSpeed = (t: Trip) => (t.duration || 0) > 0 ? (t.trip || 0) / ((t.duration || 0) / 3600) : 0;
+    const speedCandidates = validTrips.filter(t => (t.trip || 0) > 0 && (t.duration || 0) > 0 && tripSpeed(t) > 0 && tripSpeed(t) < 200);
+
     const topRecords = {
         km: getTopN(validTrips, (a, b) => (b.trip || 0) - (a.trip || 0), 10),
         kwh: getTopN(validTrips, (a, b) => (b.electricity || 0) - (a.electricity || 0), 10),
         dur: getTopN(validTrips, (a, b) => (b.duration || 0) - (a.duration || 0), 10),
-        fuel: stats.hasAnyFuel ? getTopN(validTrips.filter(t => (t.fuel || 0) > 0), (a, b) => (b.fuel || 0) - (a.fuel || 0), 10) : []
+        fuel: stats.hasAnyFuel ? getTopN(validTrips.filter(t => (t.fuel || 0) > 0), (a, b) => (b.fuel || 0) - (a.fuel || 0), 10) : [],
+        // Top efficiency = most efficient = lowest kWh/100km (ascending)
+        eff: getTopN(effCandidates, (a, b) => tripEff(a) - tripEff(b), 10),
+        // Top average speed = highest km/h (descending)
+        speed: getTopN(speedCandidates, (a, b) => tripSpeed(b) - tripSpeed(a), 10)
     };
 
     const daysActive = uniqueDates.size || 1;

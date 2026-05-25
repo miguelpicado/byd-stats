@@ -191,7 +191,25 @@ export interface LiveData {
     rangeAtCurrentSoc: number;  // Autonomía estimada al SoC actual (km)
     rangeAt100Percent: number;  // Autonomía máxima histórica al 100% (km)
     currentSoc: number;         // SoC actual del coche (%)
+    monthlyCost?: number;        // Coste medio de carga por mes (€/mes) — autoritativo APK
+    efficiency?: number;         // Consumo medio (kWh/100km) — autoritativo APK
+    totalDrivingHours?: number;  // Tiempo total de conducción (horas decimal) — autoritativo APK
     lastUpdated: string;        // ISO 8601 timestamp
+}
+
+/** A single GPS sample: [latitude, longitude] in decimal degrees. */
+export type GpsCoord = [number, number];
+
+/**
+ * Premium-only trip routes, written to Google Drive by the premium APK.
+ * Keyed by trip `start_timestamp` (unix seconds) — the stable shared key
+ * between APK and PWA. Absent for Open Source / non-premium users, in which
+ * case no map is shown and the map code is never loaded.
+ */
+export interface TripRoutesFile {
+    version: number;
+    lastUpdated: string;                 // ISO 8601 timestamp
+    routes: Record<string, GpsCoord[]>;  // { "<start_timestamp>": [[lat,lng], ...] }
 }
 
 export type TripInsightType = 'distance' | 'energy' | 'trips' | 'time' | 'efficiency' | 'speed' | 'avgTrip' | 'activeDays' | 'stationary' | 'soh' | 'fuel' | 'range';
@@ -209,6 +227,8 @@ export interface ProcessedData {
         kwh: Trip[];
         dur: Trip[];
         fuel: Trip[];
+        eff: Trip[];
+        speed: Trip[];
     };
     isHybrid: boolean;
 }

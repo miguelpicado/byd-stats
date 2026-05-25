@@ -290,7 +290,9 @@
         "effVsDist": "Eficiència vs Distància",
         "topDist": "Top Distància",
         "topCons": "Top Consum",
-        "topDur": "Top Durada"
+        "topDur": "Top Durada",
+        "topEff": "Top Eficiència",
+        "topSpeed": "Top Velocitat"
     },
     "records": {
         "title": "Rècords",
@@ -318,6 +320,8 @@
         "initial": "Inicial",
         "final": "Final",
         "energyRecovered": "Energia recuperada",
+        "route": "Ruta GPS",
+        "loadingMap": "Carregant mapa…",
         "percentile": "Percentil",
         "consumptionPerTrip": "Consum/trajecte",
         "avgDistance": "Distància mitjana"
@@ -648,6 +652,10 @@
     "chargeInsights": {
         "kwhTitle": "Conclusions d'energia",
         "costTitle": "Conclusions de costos",
+        "monthlyCostTitle": "Conclusions de cost",
+        "dailyCost": "Cost diari",
+        "totalFreeKwh": "kWh gratis totals",
+        "historicalPrice": "Preu €/kWh històric",
         "priceTitle": "Conclusions de preus",
         "countTitle": "Conclusions d'ús",
         "avgKwh": "Mitjana per recàrrega",

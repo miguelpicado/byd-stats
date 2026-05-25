@@ -77,8 +77,11 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json}'],
         cleanupOutdatedCaches: true,
         navigateFallback: 'index.html',
-        // Don't cache map files or legacy polyfills heavily
-        globIgnores: ['**/node_modules/**/*', '*.map']
+        // Don't cache map files or legacy polyfills heavily.
+        // Keep the premium Leaflet/OSM map chunk OUT of the precache so Open
+        // Source / non-premium users never download it; it is fetched on demand
+        // only when a premium trip route is rendered.
+        globIgnores: ['**/node_modules/**/*', '*.map', '**/TripRouteMap-*.js', '**/TripRouteMap-*.css']
       }
     })
   ],

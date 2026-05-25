@@ -1,4 +1,4 @@
-import { useRef, useEffect, useMemo, FC } from 'react';
+import { useRef, useEffect, useMemo, useState, FC } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Line as LineJS, Pie as PieJS } from 'react-chartjs-2';
 import StatCard from '@components/ui/StatCard';
@@ -6,6 +6,7 @@ import ChartCard from '@components/ui/ChartCard';
 import HybridStatsCard from '@components/cards/HybridStatsCard';
 import EstimatedChargeCard from '@components/cards/EstimatedChargeCard';
 import TripInsightsModal from '@components/modals/TripInsightsModal';
+import ChargeInsightsModal from '@components/modals/ChargeInsightsModal';
 import OdometerAdjustmentModal from '@components/modals/OdometerAdjustmentModal';
 import { MapPin, Zap, Clock, Battery, Fuel, Euro, IconProps } from '@components/Icons';
 import { useLayout } from '@/context/LayoutContext';
@@ -81,6 +82,8 @@ const OverviewContent: FC<OverviewContentProps> = ({
     const lineChartRef = useRef<any>(null);
     const pieChartRef = useRef<any>(null);
 
+    const [showCostInsights, setShowCostInsights] = useState(false);
+
     // Monthly cost: total charge cost divided by number of active months
     const monthlyCost = useMemo(() => {
         if (!charges || charges.length === 0) return 0;
@@ -88,6 +91,21 @@ const OverviewContent: FC<OverviewContentProps> = ({
         const months = new Set(charges.map(c => c.date?.substring(0, 7)).filter(Boolean));
         return months.size > 0 ? total / months.size : 0;
     }, [charges]);
+
+    // Premium live-data values override the CSV-computed ones when present (★ premium badge).
+    // Fields are optional and additive — fall back to the PWA's own calculation when missing.
+    const isPremiumMonthlyCost = Number.isFinite(liveData?.monthlyCost);
+    const monthlyCostValue = isPremiumMonthlyCost ? (liveData!.monthlyCost as number) : monthlyCost;
+
+    const isPremiumEfficiency = Number.isFinite(liveData?.efficiency);
+    const efficiencyValue = isPremiumEfficiency
+        ? (liveData!.efficiency as number).toFixed(2)
+        : summary.avgEff;
+
+    const isPremiumDrivingHours = Number.isFinite(liveData?.totalDrivingHours);
+    const drivingHoursValue = isPremiumDrivingHours
+        ? (liveData!.totalDrivingHours as number).toFixed(1)
+        : summary.totalHours;
 
     // Staleness check for premium live data
     const isLiveDataStale = useMemo(() => {
@@ -179,19 +197,23 @@ const OverviewContent: FC<OverviewContentProps> = ({
             key: 'time',
             icon: Clock,
             label: t('stats.time'),
-            value: summary.totalHours,
+            value: drivingHoursValue,
             unit: "h",
-            color: "bg-purple-500/20 text-purple-400",
-            onClick: () => onInsightClick('time')
+            color: isPremiumDrivingHours ? "bg-purple-400/20 text-purple-300" : "bg-purple-500/20 text-purple-400",
+            sub: isPremiumDrivingHours ? `Premium · ${liveDataAge}` : undefined,
+            onClick: () => onInsightClick('time'),
+            isPremium: isPremiumDrivingHours
         },
         {
             key: 'efficiency',
             icon: Battery,
             label: t('stats.efficiency'),
-            value: summary.avgEff,
+            value: efficiencyValue,
             unit: t('units.kWh100km'),
-            color: "bg-green-500/20 text-green-400",
-            onClick: () => onInsightClick('efficiency')
+            color: isPremiumEfficiency ? "bg-green-400/20 text-green-300" : "bg-green-500/20 text-green-400",
+            sub: isPremiumEfficiency ? `Premium · ${liveDataAge}` : undefined,
+            onClick: () => onInsightClick('efficiency'),
+            isPremium: isPremiumEfficiency
         },
         // Replaces fuel for Hybrid, and Stationary_EV for EV
         summary.isHybrid ? {
@@ -221,10 +243,12 @@ const OverviewContent: FC<OverviewContentProps> = ({
             key: 'monthly_cost',
             icon: Euro,
             label: t('stats.monthlyCost', 'Coste mensual'),
-            value: monthlyCost.toFixed(2),
+            value: monthlyCostValue.toFixed(2),
             unit: '€',
-            color: "bg-blue-500/20 text-blue-400",
-            onClick: () => onInsightClick('energy')
+            color: isPremiumMonthlyCost ? "bg-blue-400/20 text-blue-300" : "bg-blue-500/20 text-blue-400",
+            sub: isPremiumMonthlyCost ? `Premium · ${liveDataAge}` : undefined,
+            onClick: () => setShowCostInsights(true),
+            isPremium: isPremiumMonthlyCost
         }
     ];
 
@@ -330,6 +354,14 @@ const OverviewContent: FC<OverviewContentProps> = ({
                 summary={summary}
                 onMfgDateClick={onMfgDateClick}
                 onThermalStressClick={onThermalStressClick}
+            />
+            <ChargeInsightsModal
+                isOpen={showCostInsights}
+                onClose={() => setShowCostInsights(false)}
+                type="monthlyCost"
+                charges={charges || []}
+                batterySize={typeof settings.batterySize === 'number' ? settings.batterySize : undefined}
+                chargerTypes={settings.chargerTypes}
             />
             <OdometerAdjustmentModal
                 isOpen={showOdometerModal}

@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
 import { googleDriveService, GoogleDriveFile, SyncData, RegistryData } from '@/services/googleDrive';
 import { logger } from '@core/logger';
-import { Trip, Charge, Settings, Car, LiveData } from '@/types';
+import { Trip, Charge, Settings, Car, LiveData, GpsCoord } from '@/types';
 
 // Types for Conflict Resolution
 interface ConflictDifference {
@@ -52,6 +52,7 @@ interface UseGoogleSyncReturn {
     userProfile: UserProfile | null;
     pendingConflict: PendingConflict | null;
     liveData: LiveData | null;
+    tripRoutes: Record<string, GpsCoord[]> | null;
     resolveConflict: (resolution: 'local' | 'cloud' | 'merge') => Promise<void>;
     dismissConflict: () => void;
     login: () => Promise<void>;
@@ -93,6 +94,7 @@ export function useGoogleSync({
     const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null);
     const [pendingConflict, setPendingConflict] = useState<PendingConflict | null>(null);
     const [liveData, setLiveData] = useState<LiveData | null>(null);
+    const [tripRoutes, setTripRoutes] = useState<Record<string, GpsCoord[]> | null>(null);
 
     // Ref to track if initial auth-triggered sync has run (prevents infinite re-sync)
     const initialAuthSyncDoneRef = useRef(false);
@@ -322,8 +324,12 @@ export function useGoogleSync({
     const fetchLiveData = useCallback(async () => {
         if (!activeCarId) return;
         try {
-            const result = await googleDriveService.downloadLiveDataFile(activeCarId);
-            setLiveData(result);
+            const [live, routes] = await Promise.all([
+                googleDriveService.downloadLiveDataFile(activeCarId),
+                googleDriveService.downloadTripRoutesFile(activeCarId)
+            ]);
+            setLiveData(live);
+            setTripRoutes(routes);
         } catch (e) {
             logger.warn('[Sync] Failed to fetch live data', e);
         }
@@ -731,6 +737,7 @@ export function useGoogleSync({
         userProfile,
         pendingConflict,
         liveData,
+        tripRoutes,
         resolveConflict,
         dismissConflict,
         login,

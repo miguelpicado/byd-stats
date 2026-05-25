@@ -1,5 +1,5 @@
 import { logger } from '@core/logger';
-import { Trip, Charge, Settings, ChargerType, Car, LiveData } from '@/types';
+import { Trip, Charge, Settings, ChargerType, Car, LiveData, GpsCoord } from '@/types';
 
 const DRIVER_API_URL = "https://www.googleapis.com/drive/v3";
 const UPLOAD_API_URL = "https://www.googleapis.com/upload/drive/v3";
@@ -290,6 +290,34 @@ export const googleDriveService = (() => {
             return data as LiveData;
         } catch (e) {
             logger.warn('[LiveData] Failed to download live data', e);
+            return null;
+        }
+    },
+
+    /**
+     * Download per-trip GPS routes for a specific car (premium feature).
+     * Returns the routes map keyed by trip start_timestamp, or null if the
+     * file is absent/malformed (Open Source / non-premium user → no map).
+     */
+    downloadTripRoutesFile: async (carId: string): Promise<Record<string, GpsCoord[]> | null> => {
+        try {
+            const filename = `byd_trip_routes_${carId}.json`;
+            const files = await googleDriveService.listFiles(filename);
+            if (!files || files.length === 0) return null;
+
+            const url = `${DRIVER_API_URL}/files/${files[0].id}?alt=media`;
+            const response = await fetch(url, { headers: googleDriveService._getHeaders() });
+            if (!response.ok) return null;
+
+            const data = await response.json();
+            if (!data || typeof data.routes !== 'object' || data.routes === null) {
+                logger.warn('[TripRoutes] File found but missing routes map, ignoring');
+                return null;
+            }
+
+            return data.routes as Record<string, GpsCoord[]>;
+        } catch (e) {
+            logger.warn('[TripRoutes] Failed to download trip routes', e);
             return null;
         }
     },

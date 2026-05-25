@@ -14,7 +14,7 @@ type LucideIcon = React.FC<any>;
 interface ChargeInsightsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    type: 'kwh' | 'cost' | 'price' | 'count' | 'fuel';
+    type: 'kwh' | 'cost' | 'price' | 'count' | 'fuel' | 'monthlyCost';
     charges: Charge[];
     batterySize?: number;
     chargerTypes?: any[];
@@ -83,6 +83,13 @@ const useChargeInsights = (charges: Charge[], batterySize: number, chargerTypes:
 
         // Free charges
         const freeCharges = charges.filter(c => !c.totalCost || c.totalCost === 0);
+        // Total free kWh recovered (energy charged on free charges)
+        const totalFreeKwh = freeCharges.reduce((sum, c) => sum + (c.kwhCharged || 0), 0);
+
+        // Days spanned by the charge history (inclusive)
+        const daysActive = timestamps.length > 0
+            ? Math.ceil((maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24)) + 1
+            : 1;
 
         // Calculate cost of last complete month
         const now = new Date();
@@ -117,6 +124,15 @@ const useChargeInsights = (charges: Charge[], batterySize: number, chargerTypes:
                 lastMonthCost: lastMonthCost,
                 freeCount: freeCharges.length,
                 freePercent: (freeCharges.length / len * 100).toFixed(1)
+            },
+            // Monthly cost insights (total spent, daily cost, free kWh, historical price)
+            monthlyCost: {
+                total: totalCost,
+                daily: totalCost / daysActive,
+                totalFreeKwh: totalFreeKwh,
+                historicalPrice: paidPriceValues.length > 0
+                    ? paidPriceValues.reduce((a, b) => a + b, 0) / paidPriceValues.length
+                    : 0
             },
             // Price insights
             price: {
@@ -181,6 +197,12 @@ const ChargeInsightsModal: React.FC<ChargeInsightsModalProps> = ({
             title: t('chargeInsights.costTitle', 'Insights de Costes'),
             color: 'text-amber-500',
             bgColor: 'bg-amber-500/20'
+        },
+        monthlyCost: {
+            icon: Euro,
+            title: t('chargeInsights.monthlyCostTitle', 'Insights de Coste'),
+            color: 'text-blue-500',
+            bgColor: 'bg-blue-500/20'
         },
         price: {
             icon: TrendingUp,
@@ -297,6 +319,35 @@ const ChargeInsightsModal: React.FC<ChargeInsightsModalProps> = ({
                                     {insights.cost.freeCount} ({insights.cost.freePercent}%)
                                 </span>
                             </div>
+                        </div>
+                    </>
+                );
+
+            case 'monthlyCost':
+                return (
+                    <>
+                        <div className="grid grid-cols-2 gap-3">
+                            <StatItem
+                                label={t('chargeInsights.totalCost', 'Gasto total')}
+                                value={insights.monthlyCost.total.toFixed(2)}
+                                unit="€"
+                                highlight
+                            />
+                            <StatItem
+                                label={t('chargeInsights.dailyCost', 'Coste diario')}
+                                value={insights.monthlyCost.daily.toFixed(2)}
+                                unit="€"
+                            />
+                            <StatItem
+                                label={t('chargeInsights.totalFreeKwh', 'kWh gratis totales')}
+                                value={insights.monthlyCost.totalFreeKwh.toFixed(0)}
+                                unit="kWh"
+                            />
+                            <StatItem
+                                label={t('chargeInsights.historicalPrice', 'Precio €/kWh histórico')}
+                                value={insights.monthlyCost.historicalPrice.toFixed(3)}
+                                unit="€/kWh"
+                            />
                         </div>
                     </>
                 );

@@ -119,7 +119,9 @@
         "effVsDist": "Efizientzia vs Distantzia",
         "topDist": "Top Distantzia",
         "topCons": "Top Kontsumoa",
-        "topDur": "Top Iraupena"
+        "topDur": "Top Iraupena",
+        "topEff": "Top Eraginkortasuna",
+        "topSpeed": "Top Abiadura"
     },
     "records": {
         "title": "Errekordak",
@@ -147,6 +149,8 @@
         "initial": "Hasierakoa",
         "final": "Azkena",
         "energyRecovered": "Berreskuratutako energia",
+        "route": "GPS Ibilbidea",
+        "loadingMap": "Mapa kargatzen…",
         "percentile": "Percentila",
         "consumptionPerTrip": "Kontsumoa/bidaia",
         "avgDistance": "Batez besteko distantzia"
@@ -560,6 +564,10 @@
     "chargeInsights": {
         "kwhTitle": "Energia Analisiak",
         "costTitle": "Kostuen Analisiak",
+        "monthlyCostTitle": "Kostuaren Analisia",
+        "dailyCost": "Eguneko kostua",
+        "totalFreeKwh": "Doako kWh guztira",
+        "historicalPrice": "€/kWh prezio historikoa",
         "priceTitle": "Prezioen Analisiak",
         "countTitle": "Erabilera Analisiak",
         "avgKwh": "Batezbestekoa kargako",

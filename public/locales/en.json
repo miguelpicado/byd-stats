@@ -119,7 +119,9 @@
         "effVsDist": "Efficiency vs Distance",
         "topDist": "Top Distance",
         "topCons": "Top Consumption",
-        "topDur": "Top Duration"
+        "topDur": "Top Duration",
+        "topEff": "Top Efficiency",
+        "topSpeed": "Top Speed"
     },
     "records": {
         "title": "Records",
@@ -149,6 +151,8 @@
         "initial": "Initial",
         "final": "Final",
         "energyRecovered": "Energy recovered",
+        "route": "GPS Route",
+        "loadingMap": "Loading map…",
         "percentile": "Percentile"
     },
     "dashboard": {
@@ -565,6 +569,10 @@
     "chargeInsights": {
         "kwhTitle": "Energy Insights",
         "costTitle": "Cost Insights",
+        "monthlyCostTitle": "Cost Insights",
+        "dailyCost": "Daily cost",
+        "totalFreeKwh": "Total free kWh",
+        "historicalPrice": "Historical €/kWh price",
         "priceTitle": "Price Insights",
         "countTitle": "Usage Insights",
         "avgKwh": "Avg per charge",

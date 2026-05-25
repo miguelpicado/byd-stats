@@ -1,6 +1,6 @@
 // BYD Stats - TripDetailModal Component
 
-import React, { useMemo } from 'react';
+import React, { useMemo, Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { formatDate, formatTime } from '@core/dateUtils';
 import { formatDurationFromSeconds, calculateScore, getScoreColor, calculatePercentile } from '@core/formatters';
@@ -9,14 +9,24 @@ import { MapPin, Clock, Zap, Battery, TrendingUp, Plus } from '../Icons';
 import { useApp } from '../../context/AppContext';
 import { useData } from '../../providers/DataProvider';
 
+// Premium GPS map — lazy so Leaflet/OSM are only loaded when a route is shown
+const TripRouteMap = React.lazy(() => import('../maps/TripRouteMap'));
+
 /**
  * Trip detail modal showing full trip information
  */
 const TripDetailModal: React.FC = () => {
     const { t } = useTranslation();
     const { settings } = useApp();
-    const { selectedTrip: trip, trips: allTrips, stats, modals, closeModal, setSelectedTrip } = useData();
+    const { selectedTrip: trip, trips: allTrips, stats, modals, closeModal, setSelectedTrip, tripRoutes } = useData();
     const summary = stats?.summary;
+
+    // Premium GPS route for this trip, keyed by start_timestamp. Null for non-premium.
+    const route = useMemo(() => {
+        if (!trip || !tripRoutes) return null;
+        const r = tripRoutes[String(trip.start_timestamp)];
+        return Array.isArray(r) && r.length >= 2 ? r : null;
+    }, [trip, tripRoutes]);
 
     const isOpen = modals.tripDetail;
     const onClose = () => {
@@ -57,7 +67,7 @@ const TripDetailModal: React.FC = () => {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="trip-detail-modal-title"
-                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full border border-slate-200 dark:border-slate-700 animate-modal-content"
+                className="relative bg-white dark:bg-slate-800 rounded-2xl p-5 max-w-lg w-full max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-700 animate-modal-content"
                 onClick={(e) => e.stopPropagation()}
             >
                 {/* Header con título, fecha y score en la misma fila */}
@@ -108,6 +118,24 @@ const TripDetailModal: React.FC = () => {
                         <p className="text-slate-500 dark:text-slate-400 text-[10px]">{t('units.kWh100km')}</p>
                     </div>
                 </div>
+
+                {/* Premium GPS route map — only when route data is present */}
+                {route && (
+                    <div className="mb-3">
+                        <div className="flex items-center gap-1.5 mb-1.5">
+                            <MapPin className="w-4 h-4 text-red-400" />
+                            <span className="text-slate-600 dark:text-slate-400 text-xs font-semibold uppercase tracking-wider">
+                                {t('tripDetail.route', 'Ruta GPS')}
+                            </span>
+                            <span className="text-amber-400" title="Premium">&#9733;</span>
+                        </div>
+                        <div className="h-48 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                            <Suspense fallback={<div className="w-full h-full flex items-center justify-center bg-slate-100 dark:bg-slate-700/50 text-slate-400 text-sm">{t('tripDetail.loadingMap', 'Cargando mapa…')}</div>}>
+                                <TripRouteMap path={route} className="w-full h-full" />
+                            </Suspense>
+                        </div>
+                    </div>
+                )}
 
                 {/* Fuel consumption - Only for hybrid vehicles (even if 0L) */}
                 {((summary as any)?.isHybrid || (trip.fuel || 0) > 0) && (
