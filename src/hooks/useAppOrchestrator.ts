@@ -91,7 +91,7 @@ export const useAppOrchestrator = () => {
         if (trips) {
             setRawTrips(trips);
             if (googleSync.isAuthenticated) {
-                googleSync.syncNow(trips);
+                googleSync.syncNow(trips, { forcePush: true });
             }
             closeModal('upload');
             closeModal('history');

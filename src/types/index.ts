@@ -56,7 +56,6 @@ export interface Settings {
     // Car specific
     carModel?: string;
     licensePlate?: string;
-    insurancePolicy?: string;
 
     // Battery & Calculations
     batterySize: number;

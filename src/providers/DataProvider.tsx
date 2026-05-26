@@ -251,7 +251,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
             toast.success(t('sync.importSuccess', 'Datos importados correctamente'));
             
             if (googleSync.isAuthenticated) {
-                googleSync.syncNow(null);
+                googleSync.syncNow(null, { forcePush: true });
             }
         } catch (e) {
             logger.error('Error importing sync data:', e);
@@ -279,7 +279,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
                 setRawTrips(newTrips);
                 logger.info(`Loaded ${newTrips.length} trips (merge: ${merge})`);
                 if (googleSync.isAuthenticated) {
-                    googleSync.syncNow(newTrips);
+                    googleSync.syncNow(newTrips, { forcePush: true });
                 }
             }
         } catch (error: any) {

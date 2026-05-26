@@ -134,24 +134,16 @@ const SettingsModal: React.FC = () => {
                         />
                     </div>
 
-                    <div>
-                        <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.insurancePolicy')}</label>
-                        <input
-                            type="text"
-                            value={settings?.insurancePolicy || ''}
-                            onChange={(e) => onSettingsChange({ ...settings, insurancePolicy: e.target.value })}
-                            placeholder="123456789"
-                            className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
-                        />
-                    </div>
+
 
                     <div>
                         <label className="block text-sm text-slate-600 dark:text-slate-400 mb-2">{t('settings.batterySize')}</label>
                         <input
                             type="number"
                             step="0.01"
-                            value={settings?.batterySize || 0}
-                            onChange={(e) => onSettingsChange({ ...settings, batterySize: parseFloat(e.target.value) || 0 })}
+                            value={settings?.batterySize ?? ''}
+                            onChange={(e) => onSettingsChange({ ...settings, batterySize: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
+                            placeholder="60.48"
                             className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                         />
                     </div>
@@ -185,8 +177,9 @@ const SettingsModal: React.FC = () => {
                                     type="number"
                                     min="0"
                                     max="100"
-                                    value={settings?.soh || 100}
-                                    onChange={(e) => onSettingsChange({ ...settings, soh: parseInt(e.target.value) || 100 })}
+                                    value={settings?.soh ?? ''}
+                                    onChange={(e) => onSettingsChange({ ...settings, soh: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
+                                    placeholder="100"
                                     className="w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600"
                                 />
                                 <button
@@ -264,9 +257,9 @@ const SettingsModal: React.FC = () => {
                                 value={
                                     (settings.priceStrategy === 'average' || (!settings.priceStrategy && settings.useCalculatedPrice))
                                         ? avgElectricPrice.toFixed(3)
-                                        : (settings?.electricPrice || 0)
+                                        : (settings?.electricPrice ?? '')
                                 }
-                                onChange={(e) => onSettingsChange({ ...settings, electricPrice: parseFloat(e.target.value) || 0 })}
+                                onChange={(e) => onSettingsChange({ ...settings, electricPrice: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
                                 disabled={settings.priceStrategy === 'average' || settings.useCalculatedPrice}
                                 className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.priceStrategy === 'average' || settings.useCalculatedPrice) ? 'opacity-60 cursor-not-allowed' : ''
                                     }`}
@@ -350,9 +343,9 @@ const SettingsModal: React.FC = () => {
                                     value={
                                         (settings.fuelPriceStrategy === 'average' || (!settings.fuelPriceStrategy && settings.useCalculatedFuelPrice))
                                             ? avgFuelPrice.toFixed(3)
-                                            : (settings?.fuelPrice || 1.50)
+                                            : (settings?.fuelPrice ?? '')
                                     }
-                                    onChange={(e) => onSettingsChange({ ...settings, fuelPrice: parseFloat(e.target.value) || 1.50 })}
+                                    onChange={(e) => onSettingsChange({ ...settings, fuelPrice: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
                                     disabled={settings.fuelPriceStrategy === 'average' || settings.useCalculatedFuelPrice}
                                     className={`w-full bg-slate-100 dark:bg-slate-700/50 text-slate-900 dark:text-white rounded-xl px-4 py-2 border border-slate-200 dark:border-slate-600 ${(settings.fuelPriceStrategy === 'average' || settings.useCalculatedFuelPrice) ? 'opacity-60 cursor-not-allowed' : ''
                                         }`}
@@ -420,8 +413,9 @@ const SettingsModal: React.FC = () => {
                                         <input
                                             type="number"
                                             step="0.1"
-                                            value={charger?.speedKw || 0}
-                                            onChange={(e) => handleChargerTypeChange(index, 'speedKw', parseFloat(e.target.value) || 0)}
+                                            value={charger?.speedKw ?? ''}
+                                            onChange={(e) => handleChargerTypeChange(index, 'speedKw', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
+                                            placeholder="0.0"
                                             className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
                                         />
                                     </div>
@@ -432,8 +426,9 @@ const SettingsModal: React.FC = () => {
                                             step="0.01"
                                             min="0"
                                             max="1"
-                                            value={charger?.efficiency || 0}
-                                            onChange={(e) => handleChargerTypeChange(index, 'efficiency', parseFloat(e.target.value) || 0)}
+                                            value={charger?.efficiency ?? ''}
+                                            onChange={(e) => handleChargerTypeChange(index, 'efficiency', e.target.value === '' ? undefined : parseFloat(e.target.value) || 0)}
+                                            placeholder="0.00"
                                             className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
                                         />
                                     </div>
@@ -462,8 +457,9 @@ const SettingsModal: React.FC = () => {
                                 <div className="flex items-center gap-2">
                                     <input
                                         type="number"
-                                        value={settings.homeChargerRating || 8}
-                                        onChange={(e) => onSettingsChange({ ...settings, homeChargerRating: parseInt(e.target.value) || 0 })}
+                                        value={settings.homeChargerRating ?? ''}
+                                        onChange={(e) => onSettingsChange({ ...settings, homeChargerRating: e.target.value === '' ? undefined : parseInt(e.target.value) || 0 })}
+                                        placeholder="8"
                                         className="w-20 bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
                                     />
                                     <span className="text-xs text-slate-400">
@@ -548,8 +544,8 @@ const SettingsModal: React.FC = () => {
                                         <input
                                             type="number"
                                             step="0.001"
-                                            value={settings.offPeakPrice || 0.05}
-                                            onChange={(e) => onSettingsChange({ ...settings, offPeakPrice: parseFloat(e.target.value) || 0 })}
+                                            value={settings.offPeakPrice ?? ''}
+                                            onChange={(e) => onSettingsChange({ ...settings, offPeakPrice: e.target.value === '' ? undefined : parseFloat(e.target.value) || 0 })}
                                             className="w-full bg-white dark:bg-slate-700 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm border border-slate-200 dark:border-slate-600"
                                             placeholder="0.05"
                                         />

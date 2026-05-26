@@ -52,7 +52,6 @@ export const DEFAULT_CHARGER_TYPES = [
 export const DEFAULT_SETTINGS = {
     carModel: '',
     licensePlate: '',
-    insurancePolicy: '',
     batterySize: 60.48,
     soh: 100,
     mfgDate: '',

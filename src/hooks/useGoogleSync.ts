@@ -241,28 +241,6 @@ export function useGoogleSync({
             });
         }
 
-        // Check Odometer Offset
-        if (localSettings.odometerOffset !== undefined && remoteSettings.odometerOffset !== undefined &&
-            localSettings.odometerOffset !== remoteSettings.odometerOffset &&
-            localSettings.odometerOffset !== 0 && remoteSettings.odometerOffset !== 0) {
-            differences.push({
-                label: 'Ajuste de Odómetro',
-                local: `${localSettings.odometerOffset} km`,
-                cloud: `${remoteSettings.odometerOffset} km`
-            });
-        }
-
-        // Check Data Volume (significant difference)
-        const localTripsCount = (localData.trips || []).length;
-        const remoteTripsCount = (remoteData.trips || []).length;
-        if (Math.abs(localTripsCount - remoteTripsCount) > 10) {
-            differences.push({
-                label: 'Cantidad de Viajes',
-                local: `${localTripsCount} viajes`,
-                cloud: `${remoteTripsCount} viajes`
-            });
-        }
-
         if (differences.length > 0) {
             return {
                 localData,

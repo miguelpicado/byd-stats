@@ -84,7 +84,6 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
             const validated: Settings = {
                 carModel: updated.carModel ?? prev.carModel ?? '',
                 licensePlate: updated.licensePlate ?? prev.licensePlate ?? '',
-                insurancePolicy: updated.insurancePolicy ?? prev.insurancePolicy ?? '',
                 batterySize: Number(updated.batterySize ?? prev.batterySize ?? 60.48),
                 soh: updated.soh ?? prev.soh ?? 100,
                 electricPrice: updated.electricPrice ?? prev.electricPrice ?? 0.15,
