@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import { fileURLToPath } from 'url';
@@ -9,7 +9,22 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // https://vite.dev/config/
-export default defineConfig({
+export default defineConfig(({ command, mode }) => {
+  // Fail the production build early if Google OAuth is misconfigured.
+  // A blank client ID ships an app where login silently never completes.
+  if (command === 'build') {
+    const env = loadEnv(mode, __dirname, '');
+    if (!env.VITE_GOOGLE_WEB_CLIENT_ID?.trim()) {
+      throw new Error(
+        '\n[BYD Stats] Build abortado: VITE_GOOGLE_WEB_CLIENT_ID está vacío.\n' +
+        'En local: define VITE_GOOGLE_WEB_CLIENT_ID en .env\n' +
+        'En CI: configura el secret VITE_GOOGLE_WEB_CLIENT_ID en GitHub Actions.\n' +
+        'Sin él, el login con Google se desplegaría roto (popup abre pero nunca sincroniza).\n'
+      );
+    }
+  }
+
+  return {
   plugins: [
     react(),
     viteCompression(),
@@ -119,4 +134,5 @@ export default defineConfig({
     setupFiles: './src/setupTests.js',
     css: false,
   }
+  };
 })
