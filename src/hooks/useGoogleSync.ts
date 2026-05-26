@@ -335,7 +335,7 @@ export function useGoogleSync({
         }
     }, [activeCarId]);
 
-    const performSync = useCallback(async (newTripsData: Trip[] | null = null, options: { forcePull?: boolean; forcePush?: boolean } = {}) => {
+    const performSync = useCallback(async (newTripsData: Trip[] | null = null, options: { forcePull?: boolean; forcePush?: boolean; suppressAuthLogout?: boolean } = {}) => {
         logger.info(`[Sync] Initiated. Local trips: ${localTrips?.length}, New data: ${newTripsData?.length}, Online: ${navigator.onLine}`);
 
         if (!navigator.onLine) {
@@ -494,7 +494,7 @@ export function useGoogleSync({
                 (e.result?.error?.code === 401 || e.result?.error?.code === 403) ||
                 e.message?.includes('401') || e.message?.includes('403');
 
-            if (isAuthError) {
+            if (isAuthError && !options.suppressAuthLogout) {
                 logger.warn('[Sync] Authentication expired, logging out...');
                 logout();
             } else {
@@ -502,6 +502,7 @@ export function useGoogleSync({
             }
 
             setError(e.message || "Error de sincronización");
+            throw e; // Re-throw so handleLoginSuccess can catch and surface the error
         } finally {
             setIsSyncing(false);
         }
@@ -517,13 +518,18 @@ export function useGoogleSync({
         setIsAuthenticated(true);
         await fetchUserProfile(accessToken);
 
-        const modalOpened = await checkAndPromptRegistry();
+        try {
+            const modalOpened = await checkAndPromptRegistry();
 
-        if (!modalOpened) {
-            initialAuthSyncDoneRef.current = true; // Prevent duplicate sync from checkAuth effect
-            await performSync();
-        } else {
-            logger.info("[Sync] Suspended pending registry action");
+            if (!modalOpened) {
+                initialAuthSyncDoneRef.current = true; // Prevent duplicate sync from checkAuth effect
+                await performSync(null, { suppressAuthLogout: true });
+            } else {
+                logger.info("[Sync] Suspended pending registry action");
+            }
+        } catch (e: any) {
+            logger.error('[Sync] Post-login sync failed', e);
+            setError(e.message || "Error al sincronizar tras el login");
         }
     }, [fetchUserProfile, performSync, checkAndPromptRegistry]);
 
