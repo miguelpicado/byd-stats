@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' https://accounts.google.com https://apis.google.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    font-src 'self' https://fonts.gstatic.com;
+    img-src 'self' data: https:;
+    connect-src 'self' https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://api.github.com;
+    frame-src https://accounts.google.com;
+    worker-src 'self' blob:;
+    object-src 'none';
+    base-uri 'self';
+  " />
+  <link rel="icon" type="image/png" href="./app_logo.png" />
+  <link rel="apple-touch-icon" href="./app_logo.png" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f172a" />
+  <meta name="description" content="Analiza las estadísticas de tu vehículo BYD de forma local y privada" />
+  <title>BYD Stats - Estadísticas de tu vehículo</title>
+  <link rel="canonical" href="https://bydstats.com/" />
+  <!-- Preconnect to external domains for faster resource loading -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <script src="./install-prompt.js"></script>
+  <script type="module" crossorigin src="./assets/index-V9JAWy4e.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/react-vendor-AhRH9VwB.js">
+  <link rel="modulepreload" crossorigin href="./assets/chart-vendor-Bw2OdqRb.js">
+  <link rel="modulepreload" crossorigin href="./assets/utils-vendor-DdlxZaJz.js">
+  <link rel="stylesheet" crossorigin href="./assets/index-u96sKI25.css">
+<link rel="manifest" href="./manifest.webmanifest"></head>
+
+<body>
+  <div id="root"></div>
+
+</body>
+
+</html>

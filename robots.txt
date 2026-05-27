@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://bydstats.com/sitemap.xml
