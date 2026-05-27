@@ -40,7 +40,7 @@ const UploadOptionsModal: React.FC = () => {
                     <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-green-500 transition-colors">
                         <input
                             type="file"
-                            accept="*/*,image/*,.db,.jpg,.jpeg"
+                            accept="image/*,application/x-sqlite3,application/vnd.sqlite3,application/octet-stream"
                             className="hidden"
                             onChange={(e) => handleFileChange(e, true)}
                         />
@@ -52,7 +52,7 @@ const UploadOptionsModal: React.FC = () => {
                     <label className="block cursor-pointer border-2 border-dashed border-slate-600 rounded-xl p-6 text-center hover:border-amber-500 transition-colors">
                         <input
                             type="file"
-                            accept="*/*,image/*,.db,.jpg,.jpeg"
+                            accept="image/*,application/x-sqlite3,application/vnd.sqlite3,application/octet-stream"
                             className="hidden"
                             onChange={(e) => handleFileChange(e, false)}
                         />
