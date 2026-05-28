@@ -17,12 +17,24 @@ export interface SyncData {
     trips: Trip[];
     settings: Settings;
     charges: Charge[];
+    deletedTripIds?: string[];
 }
 
 export interface RegistryData {
     lastUpdated: string;
     cars: Car[];
 }
+
+/**
+ * Stable deduplication key for a trip.
+ * Priority: id > start_timestamp > end_timestamp > content hash fallback.
+ */
+export const tripKey = (t: Trip): string => {
+    if (t.id) return t.id;
+    if (t.start_timestamp) return `${t.date}-ts${t.start_timestamp}`;
+    if (t.end_timestamp) return `${t.date}-te${t.end_timestamp}`;
+    return `${t.date}-${t.trip}-${t.electricity}-${t.duration}`;
+};
 
 export const googleDriveService = (() => {
     let _token: string | null = null;
@@ -327,14 +339,24 @@ export const googleDriveService = (() => {
      * Returns merged { trips, settings, charges }
      */
     mergeData: (localData: SyncData, remoteData: SyncData): SyncData => {
-        // 1. Merge Trips (Union by date-timestamp)
+        // 0. Merge tombstones (union of local + remote — kept forever)
+        const tombstoneTrips = new Set<string>();
+        (localData?.deletedTripIds || []).forEach(id => tombstoneTrips.add(id));
+        (remoteData?.deletedTripIds || []).forEach(id => tombstoneTrips.add(id));
+
+        // 1. Merge Trips (Union by tripKey, filtering out tombstones)
         const localTrips = (localData && Array.isArray(localData.trips)) ? localData.trips : [];
         const remoteTrips = (remoteData && Array.isArray(remoteData.trips)) ? remoteData.trips : [];
 
         const tripMap = new Map<string, Trip>();
-        localTrips.forEach(t => tripMap.set(`${t.date}-${t.start_timestamp}`, t));
+        localTrips.forEach(t => {
+            const key = tripKey(t);
+            if (tombstoneTrips.has(key)) return;
+            tripMap.set(key, t);
+        });
         remoteTrips.forEach(t => {
-            const key = `${t.date}-${t.start_timestamp}`;
+            const key = tripKey(t);
+            if (tombstoneTrips.has(key)) return;
             if (!tripMap.has(key)) {
                 tripMap.set(key, t);
             }
@@ -431,7 +453,8 @@ export const googleDriveService = (() => {
         return {
             trips: mergedTrips,
             settings: mergedSettings as Settings,
-            charges: mergedCharges
+            charges: mergedCharges,
+            deletedTripIds: tombstoneTrips.size > 0 ? Array.from(tombstoneTrips) : undefined
         };
     }
 }; })();
