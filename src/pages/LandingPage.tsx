@@ -94,7 +94,7 @@ const LandingPage = ({
                     <input
                         id="fileInput"
                         type="file"
-                        accept="image/*,application/x-sqlite3,application/vnd.sqlite3,application/octet-stream,application/json"
+                        accept=".db,.jpg,.jpeg,.json,image/*,application/x-sqlite3,application/vnd.sqlite3,application/octet-stream,application/json"
                         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                         onChange={handleFileChange}
                         disabled={!sqlReady}

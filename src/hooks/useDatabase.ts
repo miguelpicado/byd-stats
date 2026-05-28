@@ -108,7 +108,18 @@ export function useDatabase(): UseDatabaseReturn {
                 throw new Error('Tabla no encontrada');
             }
 
-            const res = db.exec("SELECT * FROM EnergyConsumption WHERE is_deleted = 0 ORDER BY date, start_timestamp");
+            // Check if is_deleted column exists to support databases directly from the car
+            const tableInfo = db.exec("PRAGMA table_info(EnergyConsumption)");
+            let hasIsDeleted = false;
+            if (tableInfo.length && tableInfo[0].values) {
+                hasIsDeleted = tableInfo[0].values.some((col: any[]) => col[1] === 'is_deleted');
+            }
+
+            const query = hasIsDeleted
+                ? "SELECT * FROM EnergyConsumption WHERE is_deleted = 0 ORDER BY date, start_timestamp"
+                : "SELECT * FROM EnergyConsumption ORDER BY date, start_timestamp";
+
+            const res = db.exec(query);
 
             if (res.length && res[0].values.length) {
                 const cols = res[0].columns;

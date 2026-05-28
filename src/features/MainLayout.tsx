@@ -1,5 +1,4 @@
 import React, { Suspense, lazy } from 'react';
-import { Toaster } from 'react-hot-toast';
 // Components
 import BaseLayout from '@components/layout/MainLayout';
 import Header from '@features/navigation/Header';
@@ -83,51 +82,6 @@ const MainLayout = ({
                         handleTabClick={handleTabClick}
                     />
                 )}
-
-                <Toaster
-                    position="bottom-center"
-                    containerStyle={{
-                        bottom: 100, // Move it up to clear the bottom navigation bar
-                    }}
-                    toastOptions={{
-                        duration: 4000,
-                        style: {
-                            background: 'rgba(15, 23, 42, 0.85)',
-                            color: '#fff',
-                            backdropFilter: 'blur(12px) saturate(180%)',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                            borderRadius: '16px',
-                            padding: '12px 20px',
-                            fontSize: '14px',
-                            fontWeight: '500',
-                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.2)',
-                            maxWidth: '350px',
-                        },
-                        success: {
-                            iconTheme: {
-                                primary: '#10b981',
-                                secondary: '#fff',
-                            },
-                            style: {
-                                border: '1px solid rgba(16, 185, 129, 0.3)',
-                            }
-                        },
-                        error: {
-                            iconTheme: {
-                                primary: '#EA0029',
-                                secondary: '#fff',
-                            },
-                            style: {
-                                border: '1px solid rgba(234, 0, 41, 0.3)',
-                            }
-                        },
-                        loading: {
-                            style: {
-                                background: 'rgba(30, 41, 59, 0.9)',
-                            }
-                        }
-                    }}
-                />
 
                 {/* PWA Manager */}
                 <Suspense fallback={null}>
