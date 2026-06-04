@@ -12,6 +12,7 @@ import { useConfirmation } from '@hooks/useConfirmation';
 import { useCar } from '@/context/CarContext';
 import useModalState, { ModalsState } from '@hooks/useModalState';
 import { Trip, Charge, ProcessedData, Settings, LiveData, GpsCoord } from '@/types';
+import { readFileAsText } from '@/utils/fileReader';
 
 // Define context interfaces
 export interface DataState {
@@ -219,7 +220,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const importSyncData = useCallback(async (file: File, merge: boolean = false) => {
         try {
-            const text = await file.text();
+            const text = await readFileAsText(file);
             const data = JSON.parse(text);
 
             if (data.settings) {
@@ -324,7 +325,7 @@ export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
     const loadChargeRegistry = useCallback(async (file: File) => {
         try {
-            const text = await file.text();
+            const text = await readFileAsText(file);
             const lines = text.split('\n').filter(line => line.trim());
 
             if (lines.length < 2) {

@@ -6,6 +6,7 @@ import { useData } from '@/providers/DataProvider';
 import { Charge, ChargerType } from '@/types';
 import { ChargeCsvRowSchema, parseChargeCsvLine } from '@/utils/validation';
 import { logger } from '@core/logger';
+import { readFileAsText } from '@/utils/fileReader';
 
 export const useChargeImporter = () => {
     const { t } = useTranslation();
@@ -18,7 +19,7 @@ export const useChargeImporter = () => {
      */
     const loadChargeRegistry = useCallback(async (file: File) => {
         try {
-            const text = await file.text();
+            const text = await readFileAsText(file);
             const lines = text.split('\n').filter(line => line.trim());
 
             if (lines.length < 2) {

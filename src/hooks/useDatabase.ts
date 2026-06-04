@@ -5,6 +5,7 @@ import { logger } from '@core/logger';
 import { toast } from 'react-hot-toast';
 import { Trip } from '@/types';
 import { parseCsvTrips, mergeTrips } from '@/services/CsvImportService';
+import { readFileAsText, readFileAsArrayBuffer } from '@/utils/fileReader';
 
 // Declare types for window.SQL and initSqlJs
 declare global {
@@ -81,7 +82,7 @@ export function useDatabase(): UseDatabaseReturn {
         try {
             // Handle CSV Import
             if (file.name.toLowerCase().endsWith('.csv')) {
-                const text = await file.text();
+                const text = await readFileAsText(file);
                 const { trips: rows, lineCount } = parseCsvTrips(text);
 
                 if (rows.length === 0) {
@@ -100,7 +101,7 @@ export function useDatabase(): UseDatabaseReturn {
                 return null;
             }
 
-            const buf = await file.arrayBuffer();
+            const buf = await readFileAsArrayBuffer(file);
             const db = new window.SQL.Database(new Uint8Array(buf));
             const t = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name='EnergyConsumption'");
 
@@ -206,7 +207,7 @@ export function useDatabase(): UseDatabaseReturn {
     // Check if JSON file is BYD Stats sync data
     const isJsonSyncData = useCallback(async (file: File): Promise<boolean> => {
         try {
-            const text = await file.text();
+            const text = await readFileAsText(file);
             const data = JSON.parse(text);
             return data && typeof data === 'object' && 'trips' in data && 'charges' in data && 'settings' in data;
         } catch {

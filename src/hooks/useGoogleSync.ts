@@ -1,8 +1,26 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { useGoogleLogin } from '@react-oauth/google';
-import { googleDriveService, GoogleDriveFile, SyncData, RegistryData } from '@/services/googleDrive';
+import { googleDriveService, GoogleDriveFile, SyncData, RegistryData, tripKey } from '@/services/googleDrive';
 import { logger } from '@core/logger';
 import { Trip, Charge, Settings, Car, LiveData, GpsCoord } from '@/types';
+
+/**
+ * Drop trips whose tripKey() is in the SyncData's deletedTripIds list.
+ * Used on cloud-wins paths (fresh login, forcePull, conflict-resolution 'cloud',
+ * importFromCloud) so persistent tombstones written by the premium app survive
+ * a full pull. The PWA does not produce tombstones itself.
+ */
+const applyTripTombstones = (data: SyncData): SyncData => {
+    const ids = data.deletedTripIds;
+    if (!ids || ids.length === 0) return data;
+    const tombs = new Set(ids);
+    const before = data.trips?.length || 0;
+    const filtered = (data.trips || []).filter(t => !tombs.has(tripKey(t)));
+    if (filtered.length !== before) {
+        logger.info(`[Sync] Applied ${tombs.size} trip tombstone(s) — filtered ${before - filtered.length} trip(s).`);
+    }
+    return { ...data, trips: filtered };
+};
 
 // Types for Conflict Resolution
 interface ConflictDifference {
@@ -263,7 +281,7 @@ export function useGoogleSync({
         if (resolution === 'local') {
             finalData = localData;
         } else if (resolution === 'cloud') {
-            finalData = remoteData;
+            finalData = applyTripTombstones(remoteData);
         } else {
             finalData = googleDriveService.mergeData(localData, remoteData);
         }
@@ -405,7 +423,10 @@ export function useGoogleSync({
             let merged: SyncData;
             if (isFreshLogin || options.forcePull) {
                 logger.warn(`[Sync] Pulling data from Cloud. Remote: ${remoteData.trips.length} trips.`);
-                merged = remoteData;
+                // Even on full cloud-wins pulls, honour persistent trip tombstones so trips
+                // the user deleted from the premium app (eternal IDs in deletedTripIds)
+                // don't reappear here.
+                merged = applyTripTombstones(remoteData);
             } else if (options.forcePush) {
                 logger.warn(`[Sync] Pushing local data to Cloud. Local: ${currentTrips.length} trips.`);
                 merged = localDataToMerge;
@@ -554,7 +575,7 @@ export function useGoogleSync({
         setIsSyncing(true);
         try {
             logger.info(`Importing data from cloud file: ${fileId}`);
-            const remoteData = await googleDriveService.downloadFile(fileId);
+            const remoteData = applyTripTombstones(await googleDriveService.downloadFile(fileId));
 
             const currentTrips = localTrips || [];
             const currentCharges = localCharges || [];
