@@ -21,12 +21,10 @@
         }
 
         .prose h4 {
-            font-size: 0.875rem;
+            font-size: 1rem;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
             margin-top: 1.5rem;
-            color: #94a3b8;
+            color: #f1f5f9;
         }
 
         .prose p {
@@ -42,11 +40,16 @@
             color: #cbd5e1;
         }
 
+        .prose li {
+            margin-top: 0.25rem;
+        }
+
         .prose code {
             background-color: #1e293b;
             padding: 0.2rem 0.4rem;
             border-radius: 0.25rem;
             font-family: monospace;
+            color: #f1f5f9;
         }
     </style>
 </head>
@@ -64,30 +67,60 @@
 
         <div class="prose">
             <h3>Política de Privacidad</h3>
-            <p><strong>Resumen:</strong> Tus datos son tuyos. BYD Stats funciona localmente y no vende ni envía tu
-                información a servidores externos de forma automática.</p>
+            <p class="text-sm text-slate-500">Última actualización: 5 de junio de 2026</p>
+
+            <div class="bg-blue-500/10 border border-blue-500/20 rounded-xl p-4 my-6">
+                <p class="text-sm text-blue-300"><strong>Resumen rápido:</strong> Tus datos son tuyos. En la versión local (PWA) no enviamos nada fuera de tu dispositivo (salvo que uses la sincronización con tu propio Google Drive). En la versión Premium (Android), almacenamos tus datos en servidores de base de datos cifrados exclusivos de la app (Google Cloud Firebase) con el fin de registrar viajes y permitir el control remoto. No vendemos tus datos a anunciantes ni a terceros.</p>
+            </div>
+
+            <p>En <strong>BYD Stats Community</strong> nos tomamos muy en serio la privacidad de tus datos. Esta política describe cómo se recopila, almacena, utiliza y protege la información en la aplicación BYD Stats (tanto en su versión Web/PWA como en la versión Premium de Android).</p>
 
             <h4>1. Recopilación de Datos</h4>
-            <p>La aplicación procesa exclusivamente los datos contenidos en el archivo <code>EC_Database.db</code>
-                generado por tu vehículo BYD. Estos datos incluyen registros de viajes, eficiencia, consumos y
-                ubicaciones (coordenadas GPS de inicio/fin si las guardas).</p>
+            <p>Dependiendo de cómo utilices la aplicación, procesamos diferentes tipos de datos:</p>
+            <ul>
+                <li><strong>Datos Locales (Modo PWA/Básico):</strong> Procesamos el archivo de base de datos <code>EC_Database.db</code> que subes manualmente desde el almacenamiento USB de tu vehículo. Contiene consumos, eficiencias, odómetro, temperatura y coordenadas GPS de inicio y fin de viajes.</li>
+                <li><strong>Registro de Usuario (Modo Premium):</strong> Identificador único (UID) y correo electrónico asociados a tu cuenta a través de Firebase Authentication.</li>
+                <li><strong>Credenciales BYD (Modo Premium):</strong> El usuario y contraseña de tu cuenta oficial BYD y el PIN de control remoto se solicitan para conectar la app. Estos datos se cifran con tecnología AES-256 en la base de datos Firestore y solo se descifran puntualmente en funciones del servidor para interactuar con la API oficial de BYD. Nunca salen de la infraestructura segura de la app.</li>
+                <li><strong>Telemetría en Tiempo Real (Modo Premium):</strong> Nivel de carga de la batería (SoC %), estado del cargador, kilometraje, temperatura de la batería, presiones de los neumáticos, posición GPS actual y estado físico del vehículo (puertas, ventanas, climatización).</li>
+                <li><strong>Grabación de Viajes (Modo Premium):</strong> Historial detallado de trayectos (coordenadas GPS continuas, velocidades y consumos) registrados en segundo plano mientras realizas un viaje activo.</li>
+            </ul>
 
             <h4>2. Uso de la Información</h4>
-            <p>La información se utiliza únicamente para generar las estadísticas, gráficas y reportes que ves en la
-                pantalla. No realizamos seguimiento de usuario ni profiling publicitario.</p>
+            <p>Utilizamos tus datos únicamente para ofrecer las funcionalidades del servicio:</p>
+            <ul>
+                <li>Procesar tus bases de datos de viajes para mostrar estadísticas y gráficas avanzadas.</li>
+                <li>Conectarse a la API de BYD en tu nombre para obtener actualizaciones automáticas del estado de tu vehículo y para ejecutar los comandos de control remoto que tú ordenes (bloquear/desbloquear puertas, iniciar/parar clima, claxon, etc.).</li>
+                <li>Monitorear viajes activos y detectar cargas automáticas.</li>
+                <li>Enviar notificaciones push informativas y de seguridad (ej. alertas de ubicación sospechosa en caso de que el coche se mueva más de 500 metros sin viaje activo, avisos de target SoC al cargar).</li>
+            </ul>
 
             <h4>3. Almacenamiento y Seguridad</h4>
             <ul>
-                <li><strong>Local:</strong> Los datos se guardan en el almacenamiento local de tu navegador o
-                    dispositivo (IndexedDB/LocalStorage).</li>
-                <li><strong>Nube (Opcional):</strong> Si activas la Sincronización con Google Drive, los datos se
-                    subirán a tu cuenta privada de Google Drive (en la carpeta de "application data"). Solo tú tienes
-                    acceso a esos archivos.</li>
+                <li><strong>Almacenamiento Local:</strong> Los datos del modo PWA se guardan en tu propio navegador usando bases de datos locales (IndexedDB/LocalStorage).</li>
+                <li><strong>Servidores en la Nube (Modo Premium):</strong> Para sincronizar datos entre dispositivos y habilitar el control remoto, los datos se almacenan cifrados en <strong>Google Cloud Firebase (Firestore)</strong> en la región de la Unión Europea (<code>europe-west1</code>), conforme a la normativa de protección de datos europea (RGPD).</li>
+                <li><strong>Sincronización con Google Drive (Opcional):</strong> Si activas la sincronización con Google Drive, la app guardará copias de seguridad de tus datos directamente en tu propia cuenta de Google Drive en una carpeta privada dedicada a la aplicación (<code>appDataFolder</code>). Solo tú tienes acceso a esos archivos.</li>
             </ul>
 
-            <h4>4. Servicios de Terceros</h4>
-            <p>Utilizamos las APIs de Google solo para la función de sincronización opcional. Puedes consultar la
-                política de privacidad de Google para saber cómo manejan ellos tu cuenta de Google.</p>
+            <h4>4. Integraciones y Servicios de Terceros</h4>
+            <p>Para ofrecer un servicio completo y seguro, integramos los siguientes servicios de terceros:</p>
+            <ul>
+                <li><strong>Google Smart Home (Opt-in):</strong> Si vinculas de forma voluntaria la app con Google Home / Google Assistant para controlar tu vehículo por voz, compartiremos de forma segura con los servidores de Google los datos estrictamente necesarios (modelo de coche, SoC %, estado del clima y del bloqueo, y ubicación solo si ejecutas comandos de búsqueda). Puedes revocar este vínculo en cualquier momento.</li>
+                <li><strong>A Better Routeplanner - ABRP (Opt-in):</strong> Si habilitas la sincronización telemétrica con ABRP, enviaremos datos de SoC, ubicación y estado de carga a su API externa para mejorar la planificación de tus rutas.</li>
+                <li><strong>API de Geoapify:</strong> Usamos este servicio para el "road snapping" (ajustar las coordenadas GPS de tus viajes a carreteras reales). No se transmiten datos que identifiquen tu cuenta personal.</li>
+                <li><strong>Google Play Billing:</strong> Para gestionar y verificar tu suscripción de renovación automática de forma segura.</li>
+                <li><strong>Google Play Integrity:</strong> Para validar la integridad del dispositivo y de la aplicación, evitando fraudes y accesos no autorizados.</li>
+                <li><strong>Firebase Cloud Messaging (FCM):</strong> Para la entrega de notificaciones automáticas.</li>
+            </ul>
+
+            <h4>5. Retención y Eliminación de Datos</h4>
+            <p>Conservamos tus datos solo mientras tu cuenta esté activa o sea necesario para el servicio:</p>
+            <ul>
+                <li>Los datos locales se pueden eliminar en cualquier momento borrando el historial en los ajustes de la app o borrando los datos de tu navegador.</li>
+                <li>Puedes eliminar por completo tu cuenta y todos tus datos sincronizados en la nube (credenciales BYD, logs, viajes, cargas, vínculos) directamente desde la sección de Ajustes de la App o escribiendo a <code>contacto@bydstats.com</code>. Esta eliminación es permanente, irreversible e inmediata.</li>
+            </ul>
+
+            <h4>6. Tus Derechos (RGPD)</h4>
+            <p>De acuerdo con el Reglamento General de Protección de Datos (RGPD) de la UE, tienes derecho a acceder a tus datos, rectificarlos, solicitar su portabilidad (exportándolos en formatos comunes como CSV o JSON desde la app) o exigir su eliminación definitiva. Para cualquier consulta sobre tus datos, puedes ponerte en contacto con soporte a través de <code>contacto@bydstats.com</code>.</p>
         </div>
 
         <footer class="mt-24 text-center text-slate-600 text-sm">

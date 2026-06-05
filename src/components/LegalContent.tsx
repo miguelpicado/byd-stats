@@ -41,6 +41,20 @@ const LegalContent = ({ section = 'privacy' }: { section?: string }) => {
                     </p>
                 </section>
 
+                <div className="mt-8 p-4 bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-slate-100 dark:border-slate-800 text-center">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                        {t('legal.privacy.onlineVersionNote')}{' '}
+                        <a
+                            href="https://bydstats.com/privacidad/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-red-600 dark:text-red-400 hover:underline font-semibold"
+                        >
+                            bydstats.com/privacidad/
+                        </a>
+                    </p>
+                </div>
+
                 <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
                     <p className="text-[10px] text-slate-500 text-center">{t('legal.lastUpdate')}</p>
                 </div>
