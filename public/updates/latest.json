@@ -1,8 +1,8 @@
-{
-  "version": "1.1.23",
-  "url": "https://bydstats.com/updates/byd-stats-v1.1.23.zip",
-  "checksum": "eb5c78cd59265cde87876e913fef7a8e32fc09e4de669ae0b2db2ddb314d0602",
-  "minAppVersion": "1.6.0",
-  "changelog": "Automated OTA Release via GitHub Actions: 1.1.23",
-  "releasedAt": "2026-06-05T12:58:49Z"
+﻿{
+    "changelog":  "Add refresh vehicles option and fix disconnect button",
+    "version":  "1.3.18",
+    "checksum":  "ce0e1cb025ca86e39388a16474614bbb1236d216b1e2ca31b741e9ce7c78126f",
+    "releasedAt":  "2026-07-06T16:33:00Z",
+    "minAppVersion":  "1.6.0",
+    "url":  "https://bydstats.com/updates/byd-stats-v1.3.18.zip"
 }
