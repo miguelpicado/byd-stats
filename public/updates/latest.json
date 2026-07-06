@@ -1,8 +1,8 @@
 ﻿{
-    "changelog":  "Add refresh vehicles option and fix disconnect button",
-    "version":  "1.3.18",
-    "checksum":  "ce0e1cb025ca86e39388a16474614bbb1236d216b1e2ca31b741e9ce7c78126f",
-    "releasedAt":  "2026-07-06T16:33:00Z",
+    "changelog":  "Add OTA update check button to HelpModal",
+    "version":  "1.3.19",
+    "checksum":  "b1496f28a3a85eacb9caed2658e8efd52162657141649afc23abd2685df48a6e",
+    "releasedAt":  "2026-07-06T16:48:51Z",
     "minAppVersion":  "1.6.0",
-    "url":  "https://bydstats.com/updates/byd-stats-v1.3.18.zip"
+    "url":  "https://bydstats.com/updates/byd-stats-v1.3.19.zip"
 }
